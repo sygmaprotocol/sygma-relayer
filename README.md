@@ -1,4 +1,4 @@
-# Chainbridge Core
+# Chainbridge Hub
 
 <a href="https://discord.gg/ykXsJKfhgq">
   <img alt="discord" src="https://img.shields.io/discord/593655374469660673?label=Discord&style=for-the-badge&logo=discord&logoColor=white" />
@@ -924,6 +924,3 @@ to ensure a statement and patch release is made in a timely manner.
 Please email us a description of the flaw and any related information (e.g. reproduction steps, version) to
 [security at chainsafe dot io](mailto:security@chainsafe.io).
 
-## License
-
-_GNU Lesser General Public License v3.0_
