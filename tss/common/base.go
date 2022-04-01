@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"errors"
 
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -48,6 +49,19 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *Wrap
 		case wMsg := <-msgChan:
 			{
 				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							switch x := r.(type) {
+							case string:
+								b.ErrChn <- errors.New(x)
+							case error:
+								b.ErrChn <- x
+							default:
+								b.ErrChn <- errors.New("unknown panic")
+							}
+						}
+					}()
+
 					msg, err := UnmarshalTssMessage(wMsg.Payload)
 					if err != nil {
 						b.ErrChn <- err
