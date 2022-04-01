@@ -17,13 +17,14 @@ type Communication interface {
 
 type Party interface {
 	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error)
+	Start() *tss.Error
 }
 
 // BaseTss contains common variables and methods to
 // all tss processes.
 type BaseTss struct {
 	Host          host.Host
-	MsgID         string
+	SessionID     string
 	Party         Party
 	PartyStore    map[string]*tss.PartyID
 	Communication Communication
@@ -92,7 +93,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					return
 				}
 
-				go b.Communication.Broadcast(peers, msgBytes, messageType, b.MsgID)
+				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID)
 			}
 		case <-ctx.Done():
 			{

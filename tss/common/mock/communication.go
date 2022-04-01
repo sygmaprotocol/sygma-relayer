@@ -107,6 +107,20 @@ func (m *MockParty) EXPECT() *MockPartyMockRecorder {
 	return m.recorder
 }
 
+// Start mocks base method.
+func (m *MockParty) Start() *tss.Error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(*tss.Error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockPartyMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockParty)(nil).Start))
+}
+
 // UpdateFromBytes mocks base method.
 func (m *MockParty) UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error) {
 	m.ctrl.T.Helper()

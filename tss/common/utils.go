@@ -36,3 +36,13 @@ func PeersFromParties(parties []*tss.PartyID) ([]peer.ID, error) {
 
 	return peers, nil
 }
+
+func PartiesFromPeers(peers peer.IDSlice) tss.SortedPartyIDs {
+	unsortedParties := make(tss.UnSortedPartyIDs, len(peers))
+
+	for i, peer := range peers {
+		unsortedParties[i] = CreatePartyID(peer.String())
+	}
+
+	return tss.SortPartyIDs(unsortedParties)
+}
