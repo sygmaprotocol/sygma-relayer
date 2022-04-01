@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	common "github.com/ChainSafe/chainbridge-core/tss/common"
+	tss "github.com/binance-chain/tss-lib/tss"
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )
@@ -81,4 +82,42 @@ func (m *MockCommunication) Subscribe(topic common.ChainBridgeMessageType, sessi
 func (mr *MockCommunicationMockRecorder) Subscribe(topic, sessionID, channel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCommunication)(nil).Subscribe), topic, sessionID, channel)
+}
+
+// MockParty is a mock of Party interface.
+type MockParty struct {
+	ctrl     *gomock.Controller
+	recorder *MockPartyMockRecorder
+}
+
+// MockPartyMockRecorder is the mock recorder for MockParty.
+type MockPartyMockRecorder struct {
+	mock *MockParty
+}
+
+// NewMockParty creates a new mock instance.
+func NewMockParty(ctrl *gomock.Controller) *MockParty {
+	mock := &MockParty{ctrl: ctrl}
+	mock.recorder = &MockPartyMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockParty) EXPECT() *MockPartyMockRecorder {
+	return m.recorder
+}
+
+// UpdateFromBytes mocks base method.
+func (m *MockParty) UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateFromBytes", wireBytes, from, isBroadcast)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(*tss.Error)
+	return ret0, ret1
+}
+
+// UpdateFromBytes indicates an expected call of UpdateFromBytes.
+func (mr *MockPartyMockRecorder) UpdateFromBytes(wireBytes, from, isBroadcast interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFromBytes", reflect.TypeOf((*MockParty)(nil).UpdateFromBytes), wireBytes, from, isBroadcast)
 }

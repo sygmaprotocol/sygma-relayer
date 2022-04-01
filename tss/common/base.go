@@ -15,12 +15,16 @@ type Communication interface {
 	CancelSubscribe(topic ChainBridgeMessageType, sessionID string)
 }
 
+type Party interface {
+	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error)
+}
+
 // BaseTss contains common variables and methods to
 // all tss processes.
 type BaseTss struct {
 	Host          host.Host
 	MsgID         string
-	Party         tss.Party
+	Party         Party
 	PartyStore    map[string]*tss.PartyID
 	Communication Communication
 	Peers         []peer.ID

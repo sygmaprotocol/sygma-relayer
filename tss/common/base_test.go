@@ -18,6 +18,7 @@ type BaseTssTestSuite struct {
 	gomockController  *gomock.Controller
 	mockMessage       *mock_tss.MockMessage
 	mockCommunication *mock_tss.MockCommunication
+	mockParty         *mock_tss.MockParty
 }
 
 func TestRunBaseTssTestSuite(t *testing.T) {
@@ -26,6 +27,7 @@ func TestRunBaseTssTestSuite(t *testing.T) {
 func (s *BaseTssTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockMessage = mock_tss.NewMockMessage(s.gomockController)
+	s.mockParty = mock_tss.NewMockParty(s.gomockController)
 	s.mockCommunication = mock_tss.NewMockCommunication(s.gomockController)
 }
 
@@ -147,6 +149,84 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 
 	cancel()
 	outChn <- s.mockMessage
+
+	s.Equal(len(errChn), 0)
+}
+
+func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
+	msgChan := make(chan *common.WrappedMessage)
+	errChn := make(chan error, 1)
+	partyStore := make(map[string]*tss.PartyID)
+	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
+	party := common.CreatePartyID(peerID)
+	partyStore[peerID] = party
+	baseTss := common.BaseTss{
+		ErrChn:     errChn,
+		PartyStore: partyStore,
+		Party:      s.mockParty,
+	}
+	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	wrappedMsg := &common.WrappedMessage{
+		Payload: msg,
+	}
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{})
+
+	go baseTss.ProcessInboundMessages(context.Background(), msgChan)
+
+	msgChan <- wrappedMsg
+	err := <-errChn
+
+	s.NotNil(err)
+}
+
+func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
+	msgChan := make(chan *common.WrappedMessage)
+	errChn := make(chan error, 1)
+	partyStore := make(map[string]*tss.PartyID)
+	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
+	party := common.CreatePartyID(peerID)
+	partyStore[peerID] = party
+	baseTss := common.BaseTss{
+		ErrChn:     errChn,
+		PartyStore: partyStore,
+		Party:      s.mockParty,
+	}
+	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	wrappedMsg := &common.WrappedMessage{
+		Payload: msg,
+	}
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(true, nil)
+
+	go baseTss.ProcessInboundMessages(context.Background(), msgChan)
+
+	msgChan <- wrappedMsg
+
+	s.Equal(len(errChn), 0)
+}
+
+func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
+	msgChan := make(chan *common.WrappedMessage, 1)
+	errChn := make(chan error, 1)
+	partyStore := make(map[string]*tss.PartyID)
+	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
+	party := common.CreatePartyID(peerID)
+	partyStore[peerID] = party
+	baseTss := common.BaseTss{
+		ErrChn:     errChn,
+		PartyStore: partyStore,
+		Party:      s.mockParty,
+	}
+	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	wrappedMsg := &common.WrappedMessage{
+		Payload: msg,
+	}
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{}).AnyTimes()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go baseTss.ProcessInboundMessages(ctx, msgChan)
+
+	cancel()
+	msgChan <- wrappedMsg
 
 	s.Equal(len(errChn), 0)
 }
