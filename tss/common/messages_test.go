@@ -17,11 +17,11 @@ func TestRunTssMessageTestSuite(t *testing.T) {
 
 func (s *TssMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 	originalMsg := &common.TssMessage{
-		MsgBytes:   []byte{1},
-		IsBrodcast: true,
-		From:       "fromAddress",
+		MsgBytes:    []byte{1},
+		IsBroadcast: true,
+		From:        "fromAddress",
 	}
-	msgBytes, err := common.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBrodcast, originalMsg.From)
+	msgBytes, err := common.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBroadcast, originalMsg.From)
 	s.Nil(err)
 
 	unmarshaledMsg, err := common.UnmarshalTssMessage(msgBytes)

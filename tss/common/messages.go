@@ -3,16 +3,16 @@ package common
 import "encoding/json"
 
 type TssMessage struct {
-	MsgBytes   []byte `json:"msgBytes"`
-	From       string `json:"from"`
-	IsBrodcast bool   `json:"isBrodcast"`
+	MsgBytes    []byte `json:"msgBytes"`
+	From        string `json:"from"`
+	IsBroadcast bool   `json:"isBroadcast"`
 }
 
-func MarshalTssMessage(msgBytes []byte, isBrodcast bool, from string) ([]byte, error) {
+func MarshalTssMessage(msgBytes []byte, isBroadcast bool, from string) ([]byte, error) {
 	tssMsg := &TssMessage{
-		IsBrodcast: isBrodcast,
-		From:       from,
-		MsgBytes:   msgBytes,
+		IsBroadcast: isBroadcast,
+		From:        from,
+		MsgBytes:    msgBytes,
 	}
 
 	msgBytes, err := json.Marshal(tssMsg)
