@@ -29,8 +29,6 @@ const (
 	InitiateMsg
 	// ReadMsg
 	ReadyMsg
-	// StartSignMsg
-	StartSignMsg
 	// StartMsg
 	StartMsg
 	// Unknown is the message indicates the undefined message type
@@ -64,8 +62,6 @@ func (msgType ChainBridgeMessageType) String() string {
 		return "BullyMsgPingResponse"
 	case InitiateMsg:
 		return "InitiateMsg"
-	case StartSignMsg:
-		return "StartSignMsg"
 	case StartMsg:
 		return "StartMsg"
 	case ReadyMsg:

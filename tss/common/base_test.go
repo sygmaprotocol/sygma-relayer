@@ -24,6 +24,7 @@ type BaseTssTestSuite struct {
 func TestRunBaseTssTestSuite(t *testing.T) {
 	suite.Run(t, new(BaseTssTestSuite))
 }
+
 func (s *BaseTssTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockMessage = mock_tss.NewMockMessage(s.gomockController)

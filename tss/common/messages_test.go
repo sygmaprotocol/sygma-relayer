@@ -29,3 +29,24 @@ func (s *TssMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 
 	s.Equal(originalMsg, unmarshaledMsg)
 }
+
+type StartMessageTestSuite struct {
+	suite.Suite
+}
+
+func TestRunStartMessageTestSuite(t *testing.T) {
+	suite.Run(t, new(StartMessageTestSuite))
+}
+
+func (s *StartMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
+	originalMsg := &common.StartMessage{
+		Params: []string{"test"},
+	}
+	msgBytes, err := common.MarshalStartMessage(originalMsg.Params)
+	s.Nil(err)
+
+	unmarshaledMsg, err := common.UnmarshalStartMessage(msgBytes)
+	s.Nil(err)
+
+	s.Equal(originalMsg, unmarshaledMsg)
+}
