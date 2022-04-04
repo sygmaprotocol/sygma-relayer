@@ -25,7 +25,7 @@ type Party interface {
 // all tss processes.
 type BaseTss struct {
 	Host          host.Host
-	SessionID     string
+	SID           string
 	Party         Party
 	PartyStore    map[string]*tss.PartyID
 	Communication Communication
@@ -107,7 +107,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					return
 				}
 
-				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID)
+				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID())
 			}
 		case <-ctx.Done():
 			{
@@ -124,4 +124,9 @@ func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 	} else {
 		return PeersFromParties(msg.GetTo())
 	}
+}
+
+// SessionID
+func (b *BaseTss) SessionID() string {
+	return b.SID
 }

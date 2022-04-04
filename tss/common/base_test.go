@@ -114,7 +114,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 	peerID, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	baseTss := common.BaseTss{
 		Peers:         []peer.ID{peerID},
-		SessionID:     "keygen",
+		SID:           "keygen",
 		Communication: s.mockCommunication,
 		ErrChn:        errChn,
 	}
