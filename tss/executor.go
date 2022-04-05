@@ -42,13 +42,21 @@ func NewCoordinator(
 	}
 }
 
-// Execute calculates process leader and coordinates party readiness.
-func (c *Coordinator) Execute(ctx context.Context) {
+// Execute calculates process leader and coordinates party readiness and start the tss processes.
+func (c *Coordinator) Execute(ctx context.Context, status chan error) {
 	if c.isLeader() {
 		go c.initiate(ctx)
 	} else {
 		go c.waitForStart(ctx)
 	}
+
+	err := <-c.errChn
+	if err != nil {
+		log.Err(err)
+		status <- err
+	}
+
+	status <- nil
 }
 
 // IsLeader returns if the peer is the leader for the current

@@ -21,7 +21,6 @@ type Keygen struct {
 	common.BaseTss
 	storer    SaveDataStorer
 	threshold int
-	cancel    context.CancelFunc
 }
 
 func NewKeygen(
@@ -30,7 +29,7 @@ func NewKeygen(
 	host host.Host,
 	comm common.Communication,
 	storer SaveDataStorer,
-	cancel context.CancelFunc,
+	errChn chan error,
 ) *Keygen {
 	partyStore := make(map[string]*tss.PartyID)
 	return &Keygen{
@@ -40,11 +39,11 @@ func NewKeygen(
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
-			Log:           log.With().Str("SessionID", sessionID).Logger(),
+			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
+			ErrChn:        errChn,
 		},
 		storer:    storer,
 		threshold: threshold,
-		cancel:    cancel,
 	}
 }
 
@@ -84,9 +83,13 @@ func (k *Keygen) Stop() {
 	k.Communication.CancelSubscribe(common.KeyGenMsg, k.SessionID())
 }
 
-// Ready returns if enough parties are ready to start the tss process.
+// Ready returns true if all parties from the peerstore are ready.
 func (k *Keygen) Ready(readyMap map[peer.ID]bool) bool {
-	return true
+	if len(readyMap) == len(k.Host.Peerstore().Peers()) {
+		return true
+	}
+
+	return false
 }
 
 // StartParams returns params necessary to start the tss process which
@@ -109,8 +112,8 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 					k.ErrChn <- err
 				}
 
-				k.cancel()
 				k.ErrChn <- nil
+				return
 			}
 		case <-ctx.Done():
 			{

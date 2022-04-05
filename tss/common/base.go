@@ -91,8 +91,6 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 		select {
 		case msg := <-outChn:
 			{
-				b.Log.Debug().Msgf("sending message to %s", msg.GetTo())
-
 				wireBytes, routing, err := msg.WireBytes()
 				if err != nil {
 					b.ErrChn <- err
@@ -110,6 +108,8 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					b.ErrChn <- err
 					return
 				}
+
+				b.Log.Debug().Msgf("sending message to %s", peers)
 
 				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID())
 			}
