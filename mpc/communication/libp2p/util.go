@@ -8,6 +8,11 @@ import (
 	"io"
 )
 
+const (
+	LengthHeader = 4        // LengthHeader represent how many bytes we used as header
+	MaxPayload   = 20000000 // 20M
+)
+
 // ReadStreamWithBuffer read data from the given stream
 func ReadStreamWithBuffer(stream network.Stream) ([]byte, error) {
 	streamReader := bufio.NewReader(stream)

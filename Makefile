@@ -35,6 +35,7 @@ genmocks:
 	mockgen -destination=./chains/evm/calls/transactor/itx/mock/itx.go -source=./chains/evm/calls/transactor/itx/itx.go
 	mockgen -destination=./chains/evm/calls/transactor/itx//mock/minimalForwarder.go -source=./chains/evm/calls/transactor/itx/minimalForwarder.go
 	mockgen -destination=chains/evm/cli/bridge/mock/vote-proposal.go -source=./chains/evm/cli/bridge/vote-proposal.go
+	mockgen -destination=./mpc/communication/libp2p/mock/stream.go github.com/libp2p/go-libp2p-core/network Stream
 
 e2e-setup:
 	docker-compose --file=./e2e/evm-evm/docker-compose.e2e.yml up
