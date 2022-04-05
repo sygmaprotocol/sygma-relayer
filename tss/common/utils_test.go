@@ -73,3 +73,32 @@ func (s *PeersFromPartiesTestSuite) Test_ValidParties() {
 	s.Nil(err)
 	s.Equal(peers, []peer.ID{peerID1, peerID2})
 }
+
+type SortPeersForSessionTestSuite struct {
+	suite.Suite
+}
+
+func TestRunSortPeersForSessionTestSuite(t *testing.T) {
+	suite.Run(t, new(SortPeersForSessionTestSuite))
+}
+
+func (s *SortPeersForSessionTestSuite) Test_NoPeers() {
+	sortedPeers := common.SortPeersForSession([]peer.ID{}, "sessioniD")
+
+	s.Equal(sortedPeers, common.SortablePeerSlice{})
+}
+
+func (s *SortPeersForSessionTestSuite) Test_ValidPeers() {
+	peer1, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
+	peer2, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
+	peer3, _ := peer.Decode("QmYayosTHxL2xa4jyrQ2PmbhGbrkSxsGM1kzXLTT8SsLVy")
+	peers := []peer.ID{peer3, peer2, peer1}
+
+	sortedPeers := common.SortPeersForSession(peers, "sessionID")
+
+	s.Equal(sortedPeers, common.SortablePeerSlice{
+		common.PeerMsg{SessionID: "sessionID", ID: peer1},
+		common.PeerMsg{SessionID: "sessionID", ID: peer2},
+		common.PeerMsg{SessionID: "sessionID", ID: peer3},
+	})
+}

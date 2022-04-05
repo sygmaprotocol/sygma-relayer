@@ -24,24 +24,27 @@ type Coordinator struct {
 	errChn        chan error
 }
 
-func NewCoordinator(host host.Host) *Coordinator {
-	return &Coordinator{host: host}
+func NewCoordinator(
+	host host.Host,
+	tssProcess TssProcess,
+	communication common.Communication,
+	errChn chan error,
+) *Coordinator {
+	return &Coordinator{
+		host:          host,
+		tssProcess:    tssProcess,
+		communication: communication,
+		errChn:        errChn,
+	}
 }
 
 // Execute calculates process leader and coordinates party readiness.
-func (c *Coordinator) Execute(ctx context.Context) error {
-	isLeader, err := c.IsLeader()
-	if err != nil {
-		return err
-	}
-
-	if isLeader {
+func (c *Coordinator) Execute(ctx context.Context) {
+	if c.IsLeader() {
 		go c.initiate(ctx)
 	} else {
 		go c.waitForStart(ctx)
 	}
-
-	return nil
 }
 
 // initiate sends initiate message to all peers and waits
@@ -129,6 +132,8 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 
 // IsLeader returns if the peer is the leader for the current
 // tss process.
-func (c *Coordinator) IsLeader() (bool, error) {
-	return true, nil
+func (c *Coordinator) IsLeader() bool {
+	peers := c.host.Peerstore().Peers()
+	sessionID := c.tssProcess.SessionID()
+	return c.host.ID() == common.SortPeersForSession(peers, sessionID)[0].ID
 }
