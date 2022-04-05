@@ -7,6 +7,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type TssProcess interface {
@@ -22,6 +24,7 @@ type Coordinator struct {
 	tssProcess    TssProcess
 	communication common.Communication
 	errChn        chan error
+	log           zerolog.Logger
 }
 
 func NewCoordinator(
@@ -35,16 +38,25 @@ func NewCoordinator(
 		tssProcess:    tssProcess,
 		communication: communication,
 		errChn:        errChn,
+		log:           log.With().Str("SessionID", tssProcess.SessionID()).Logger(),
 	}
 }
 
 // Execute calculates process leader and coordinates party readiness.
 func (c *Coordinator) Execute(ctx context.Context) {
-	if c.IsLeader() {
+	if c.isLeader() {
 		go c.initiate(ctx)
 	} else {
 		go c.waitForStart(ctx)
 	}
+}
+
+// IsLeader returns if the peer is the leader for the current
+// tss process.
+func (c *Coordinator) isLeader() bool {
+	peers := c.host.Peerstore().Peers()
+	sessionID := c.tssProcess.SessionID()
+	return c.host.ID().Pretty() == common.SortPeersForSession(peers, sessionID)[0].ID.Pretty()
 }
 
 // initiate sends initiate message to all peers and waits
@@ -66,6 +78,8 @@ func (c *Coordinator) initiate(ctx context.Context) {
 		select {
 		case wMsg := <-readyChan:
 			{
+				c.log.Debug().Msgf("received ready message from %s", wMsg.From)
+
 				readyMap[wMsg.From] = true
 				if !c.tssProcess.Ready(readyMap) {
 					continue
@@ -84,6 +98,7 @@ func (c *Coordinator) initiate(ctx context.Context) {
 			}
 		case <-ticker.C:
 			{
+				c.log.Debug().Msgf("broadcasted initiate message")
 				go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, common.InitiateMsg, c.tssProcess.SessionID())
 			}
 		case <-ctx.Done():
@@ -109,10 +124,13 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 		select {
 		case wMsg := <-msgChan:
 			{
+				c.log.Debug().Msgf("sent ready message to %s", wMsg.From)
 				go c.communication.Broadcast(peer.IDSlice{wMsg.From}, []byte{}, common.ReadyMsg, c.tssProcess.SessionID())
 			}
 		case startMsg := <-startMsgChn:
 			{
+				c.log.Debug().Msgf("received start message from %s", startMsg.From)
+
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
 					c.errChn <- err
@@ -128,12 +146,4 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 			}
 		}
 	}
-}
-
-// IsLeader returns if the peer is the leader for the current
-// tss process.
-func (c *Coordinator) IsLeader() bool {
-	peers := c.host.Peerstore().Peers()
-	sessionID := c.tssProcess.SessionID()
-	return c.host.ID() == common.SortPeersForSession(peers, sessionID)[0].ID
 }

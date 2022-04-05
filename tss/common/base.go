@@ -7,11 +7,11 @@ import (
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog"
 )
 
 type Communication interface {
 	Broadcast(peers peer.IDSlice, msg []byte, msgType ChainBridgeMessageType, sessionID string)
-	ReleaseStream(sessionID string)
 	Subscribe(topic ChainBridgeMessageType, sessionID string, channel chan *WrappedMessage)
 	CancelSubscribe(topic ChainBridgeMessageType, sessionID string)
 }
@@ -30,6 +30,7 @@ type BaseTss struct {
 	PartyStore    map[string]*tss.PartyID
 	Communication Communication
 	Peers         []peer.ID
+	Log           zerolog.Logger
 
 	ErrChn chan error
 }
@@ -61,6 +62,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *Wrap
 							}
 						}
 					}()
+					b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
 					msg, err := UnmarshalTssMessage(wMsg.Payload)
 					if err != nil {
@@ -89,6 +91,8 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 		select {
 		case msg := <-outChn:
 			{
+				b.Log.Debug().Msgf("sending message to %s", msg.GetTo())
+
 				wireBytes, routing, err := msg.WireBytes()
 				if err != nil {
 					b.ErrChn <- err

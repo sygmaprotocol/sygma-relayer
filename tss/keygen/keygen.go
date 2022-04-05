@@ -7,8 +7,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog/log"
 )
 
 type SaveDataStorer interface {
@@ -38,6 +40,7 @@ func NewKeygen(
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
+			Log:           log.With().Str("SessionID", sessionID).Logger(),
 		},
 		storer:    storer,
 		threshold: threshold,
@@ -66,6 +69,8 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 	go k.processEndMessage(ctx, endChn)
 
 	k.Party = keygen.NewLocalParty(tssParams, outChn, endChn)
+
+	k.Log.Info().Msgf("Started keygen process")
 	go func() {
 		err := k.Party.Start()
 		if err != nil {
@@ -96,6 +101,8 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 		select {
 		case key := <-endChn:
 			{
+				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToECDSAPubKey()))
+
 				keyshare := store.NewKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
 				if err != nil {
