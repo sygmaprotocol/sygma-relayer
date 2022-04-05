@@ -126,7 +126,6 @@ func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 	}
 }
 
-// SessionID
 func (b *BaseTss) SessionID() string {
 	return b.SID
 }

@@ -143,7 +143,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
 		IsBroadcast: true,
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
-	}, errors.New("error")).AnyTimes().Times(0)
+	}, errors.New("error")).AnyTimes()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go baseTss.ProcessOutboundMessages(ctx, outChn, common.KeyGenMsg)

@@ -22,7 +22,14 @@ type Keygen struct {
 	cancel    context.CancelFunc
 }
 
-func NewKeygen(sessionID string, threshold int, host host.Host, comm common.Communication, storer SaveDataStorer) *Keygen {
+func NewKeygen(
+	sessionID string,
+	threshold int,
+	host host.Host,
+	comm common.Communication,
+	storer SaveDataStorer,
+	cancel context.CancelFunc,
+) *Keygen {
 	partyStore := make(map[string]*tss.PartyID)
 	return &Keygen{
 		BaseTss: common.BaseTss{
@@ -34,6 +41,7 @@ func NewKeygen(sessionID string, threshold int, host host.Host, comm common.Comm
 		},
 		storer:    storer,
 		threshold: threshold,
+		cancel:    cancel,
 	}
 }
 

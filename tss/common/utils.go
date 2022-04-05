@@ -2,6 +2,7 @@ package common
 
 import (
 	"math/big"
+	"sort"
 
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -45,4 +46,17 @@ func PartiesFromPeers(peers peer.IDSlice) tss.SortedPartyIDs {
 	}
 
 	return tss.SortPartyIDs(unsortedParties)
+}
+
+func SortPeersForSession(peers []peer.ID, sessionID string) SortablePeerSlice {
+	sortedPeers := make(SortablePeerSlice, len(peers))
+	for i, p := range peers {
+		pMsg := PeerMsg{
+			ID:        p,
+			SessionID: sessionID,
+		}
+		sortedPeers[i] = pMsg
+	}
+	sort.Sort(sortedPeers)
+	return sortedPeers
 }
