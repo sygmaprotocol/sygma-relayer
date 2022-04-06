@@ -123,6 +123,12 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 	}
 }
 
+// StartParams returns params necessary to start the tss process which
+// are sent in the start message.
+func (b *BaseTss) StartParams() []string {
+	return []string{}
+}
+
 // BroccastPeers returns peers that should receive the tss message
 func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 	if msg.IsBroadcast() {

@@ -100,12 +100,6 @@ func (k *Keygen) Ready(readyMap map[peer.ID]bool) bool {
 	return len(readyMap) == len(k.Host.Peerstore().Peers())
 }
 
-// StartParams returns params necessary to start the tss process which
-// are sent in the start message.
-func (k *Keygen) StartParams() []string {
-	return []string{}
-}
-
 // processEndMessage waits for the final message with generated key share and stores it locally.
 func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
 	ticker := time.NewTicker(k.Timeout)
