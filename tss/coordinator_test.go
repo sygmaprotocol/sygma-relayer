@@ -94,6 +94,8 @@ func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
 		comm.PeerCommunications = peerComms
 	}
 
+	s.mockStorer.EXPECT().LockKeyshare().Times(3)
+	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -143,6 +145,8 @@ func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
 		comm.PeerCommunications = peerComms
 	}
 
+	s.mockStorer.EXPECT().LockKeyshare().Times(3)
+	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())

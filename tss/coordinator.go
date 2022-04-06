@@ -51,6 +51,7 @@ func (c *Coordinator) Execute(ctx context.Context, status chan error) {
 	}
 
 	err := <-c.errChn
+	c.tssProcess.Stop()
 	if err != nil {
 		log.Err(err)
 		status <- err

@@ -34,6 +34,18 @@ func (m *MockSaveDataStorer) EXPECT() *MockSaveDataStorerMockRecorder {
 	return m.recorder
 }
 
+// LockKeyshare mocks base method.
+func (m *MockSaveDataStorer) LockKeyshare() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "LockKeyshare")
+}
+
+// LockKeyshare indicates an expected call of LockKeyshare.
+func (mr *MockSaveDataStorerMockRecorder) LockKeyshare() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockKeyshare", reflect.TypeOf((*MockSaveDataStorer)(nil).LockKeyshare))
+}
+
 // StoreKeyshare mocks base method.
 func (m *MockSaveDataStorer) StoreKeyshare(keyshare store.Keyshare) error {
 	m.ctrl.T.Helper()
@@ -46,4 +58,16 @@ func (m *MockSaveDataStorer) StoreKeyshare(keyshare store.Keyshare) error {
 func (mr *MockSaveDataStorerMockRecorder) StoreKeyshare(keyshare interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreKeyshare", reflect.TypeOf((*MockSaveDataStorer)(nil).StoreKeyshare), keyshare)
+}
+
+// UnlockKeyshare mocks base method.
+func (m *MockSaveDataStorer) UnlockKeyshare() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UnlockKeyshare")
+}
+
+// UnlockKeyshare indicates an expected call of UnlockKeyshare.
+func (mr *MockSaveDataStorerMockRecorder) UnlockKeyshare() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlockKeyshare", reflect.TypeOf((*MockSaveDataStorer)(nil).UnlockKeyshare))
 }

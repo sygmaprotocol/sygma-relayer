@@ -21,6 +21,8 @@ var (
 
 type SaveDataStorer interface {
 	StoreKeyshare(keyshare store.Keyshare) error
+	LockKeyshare()
+	UnlockKeyshare()
 }
 
 type Keygen struct {
@@ -58,6 +60,8 @@ func NewKeygen(
 //
 // Should be run only after all the participating parties are ready.
 func (k *Keygen) Start(ctx context.Context, params []string) {
+	k.storer.LockKeyshare()
+
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
 	k.PopulatePartyStore(parties)
 
@@ -85,9 +89,10 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 	}()
 }
 
-// Stop ends all subscriptions created when starting the tss process.
+// Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
 	k.Communication.CancelSubscribe(common.KeyGenMsg, k.SessionID())
+	k.storer.UnlockKeyshare()
 }
 
 // Ready returns true if all parties from the peerstore are ready.
