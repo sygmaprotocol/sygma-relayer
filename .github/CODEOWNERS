@@ -1,4 +1,5 @@
 # CODEOWNERS: https://help.github.com/articles/about-codeowners/
 
 # Primary repo maintainers
-*       @P1sar @waymobetta @mpetrun5 @tcar121293 @MakMuftic @nmlinaric @vezenovm
+*       @P1sar @waymobetta @mpetrun5 @tcar121293 @MakMuftic @nmlinaric @vezenovm @freddyli7
+tss/*   @timoth-y
