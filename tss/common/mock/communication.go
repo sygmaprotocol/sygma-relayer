@@ -60,18 +60,6 @@ func (mr *MockCommunicationMockRecorder) CancelSubscribe(topic, sessionID interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelSubscribe", reflect.TypeOf((*MockCommunication)(nil).CancelSubscribe), topic, sessionID)
 }
 
-// ReleaseStream mocks base method.
-func (m *MockCommunication) ReleaseStream(sessionID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReleaseStream", sessionID)
-}
-
-// ReleaseStream indicates an expected call of ReleaseStream.
-func (mr *MockCommunicationMockRecorder) ReleaseStream(sessionID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseStream", reflect.TypeOf((*MockCommunication)(nil).ReleaseStream), sessionID)
-}
-
 // Subscribe mocks base method.
 func (m *MockCommunication) Subscribe(topic common.ChainBridgeMessageType, sessionID string, channel chan *common.WrappedMessage) {
 	m.ctrl.T.Helper()
