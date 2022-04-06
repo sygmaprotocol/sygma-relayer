@@ -2,6 +2,9 @@ package keygen
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
@@ -11,6 +14,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	KeygenTimeout = time.Minute * 15
 )
 
 type SaveDataStorer interface {
@@ -100,6 +107,7 @@ func (k *Keygen) StartParams() []string {
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
 func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
+	ticker := time.NewTicker(KeygenTimeout)
 	for {
 		select {
 		case key := <-endChn:
@@ -113,6 +121,11 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 				}
 
 				k.ErrChn <- nil
+				return
+			}
+		case <-ticker.C:
+			{
+				k.ErrChn <- errors.New(fmt.Sprintf("keygen process timed out in: %s", KeygenTimeout))
 				return
 			}
 		case <-ctx.Done():

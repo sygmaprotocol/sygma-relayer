@@ -54,6 +54,7 @@ func (c *Coordinator) Execute(ctx context.Context, status chan error) {
 	if err != nil {
 		log.Err(err)
 		status <- err
+		return
 	}
 
 	status <- nil
@@ -87,7 +88,6 @@ func (c *Coordinator) initiate(ctx context.Context) {
 		case wMsg := <-readyChan:
 			{
 				c.log.Debug().Msgf("received ready message from %s", wMsg.From)
-
 				readyMap[wMsg.From] = true
 				if !c.tssProcess.Ready(readyMap) {
 					continue

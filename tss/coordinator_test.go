@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
@@ -103,6 +104,46 @@ func (s *ExecutorTestSutite) Test_ValidKeygenProcess() {
 	for i := 0; i < s.partyNumber; i++ {
 		err := <-status
 		s.Nil(err)
+	}
+	cancel()
+}
+
+func (s *ExecutorTestSutite) Test_KeygenTimeoutOut() {
+	keygen.KeygenTimeout = time.Second * 5
+
+	errChn := make(chan error)
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	for _, host := range s.hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[string]chan *common.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
+		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
+	}
+	for self, comm := range communicationMap {
+		peerComms := make(map[string]tsstest.Receiver)
+		for p, otherComm := range communicationMap {
+			if self.Pretty() == p.Pretty() {
+				continue
+			}
+			peerComms[p.Pretty()] = otherComm
+		}
+		comm.PeerCommunications = peerComms
+	}
+
+	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
+	status := make(chan error, s.partyNumber)
+	ctx, cancel := context.WithCancel(context.Background())
+	for _, coordinator := range coordinators {
+		go coordinator.Execute(ctx, status)
+	}
+
+	for i := 0; i < s.partyNumber; i++ {
+		err := <-status
+		s.NotNil(err)
 	}
 	cancel()
 }
