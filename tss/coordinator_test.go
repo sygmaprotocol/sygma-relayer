@@ -3,6 +3,7 @@ package tss_test
 import (
 	"context"
 	"crypto/rand"
+	"runtime"
 	"testing"
 	"time"
 
@@ -38,43 +39,43 @@ func NewHost() (host.Host, error) {
 	return h, nil
 }
 
-type ExecutorTestSutite struct {
+type ExecutorTestSuite struct {
 	suite.Suite
 	gomockController *gomock.Controller
 	mockStorer       *mock_keygen.MockSaveDataStorer
 
-	hosts       []host.Host
 	threshold   int
 	partyNumber int
 }
 
 func TestRunExecutorTestSuite(t *testing.T) {
-	suite.Run(t, new(ExecutorTestSutite))
+	suite.Run(t, new(ExecutorTestSuite))
 }
 
-func (s *ExecutorTestSutite) SetupTest() {
+func (s *ExecutorTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockStorer = mock_keygen.NewMockSaveDataStorer(s.gomockController)
 
 	s.partyNumber = 3
 	s.threshold = 1
-
-	for i := 0; i < s.partyNumber; i++ {
-		host, _ := NewHost()
-		s.hosts = append(s.hosts, host)
-	}
-	for _, host := range s.hosts {
-		for _, peer := range s.hosts {
-			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
-		}
-	}
 }
 
-func (s *ExecutorTestSutite) Test_ValidKeygenProcess() {
+func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
 	errChn := make(chan error)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
-	for _, host := range s.hosts {
+
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber; i++ {
+		host, _ := NewHost()
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *common.WrappedMessage),
@@ -106,21 +107,31 @@ func (s *ExecutorTestSutite) Test_ValidKeygenProcess() {
 		s.Nil(err)
 	}
 	cancel()
+	s.Equal(1, runtime.NumGoroutine())
 }
 
-func (s *ExecutorTestSutite) Test_KeygenTimeoutOut() {
-	keygen.KeygenTimeout = time.Second * 5
-
+func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
 	errChn := make(chan error)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
-	for _, host := range s.hosts {
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber; i++ {
+		host, _ := NewHost()
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *common.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
+		keygen.Timeout = time.Second * 5
 		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
 	}
 	for self, comm := range communicationMap {
@@ -146,4 +157,5 @@ func (s *ExecutorTestSutite) Test_KeygenTimeoutOut() {
 		s.NotNil(err)
 	}
 	cancel()
+	s.Equal(1, runtime.NumGoroutine())
 }

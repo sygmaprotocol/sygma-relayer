@@ -48,6 +48,7 @@ func NewKeygen(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
 			ErrChn:        errChn,
+			Timeout:       KeygenTimeout,
 		},
 		storer:    storer,
 		threshold: threshold,
@@ -107,7 +108,7 @@ func (k *Keygen) StartParams() []string {
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
 func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
-	ticker := time.NewTicker(KeygenTimeout)
+	ticker := time.NewTicker(k.Timeout)
 	for {
 		select {
 		case key := <-endChn:

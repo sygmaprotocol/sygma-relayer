@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -31,6 +32,7 @@ type BaseTss struct {
 	Communication Communication
 	Peers         []peer.ID
 	Log           zerolog.Logger
+	Timeout       time.Duration
 
 	ErrChn chan error
 }
