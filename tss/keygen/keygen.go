@@ -93,11 +93,7 @@ func (k *Keygen) Stop() {
 
 // Ready returns true if all parties from the peerstore are ready.
 func (k *Keygen) Ready(readyMap map[peer.ID]bool) bool {
-	if len(readyMap) == len(k.Host.Peerstore().Peers()) {
-		return true
-	}
-
-	return false
+	return readyMap == len(k.Host.Peerstore().Peers()) {
 }
 
 // StartParams returns params necessary to start the tss process which
@@ -126,7 +122,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 			}
 		case <-ticker.C:
 			{
-				k.ErrChn <- errors.New(fmt.Sprintf("keygen process timed out in: %s", KeygenTimeout))
+				k.ErrChn <- fmt.Errorf("keygen process timed out in: %s", KeygenTimeout))
 				return
 			}
 		case <-ctx.Done():
