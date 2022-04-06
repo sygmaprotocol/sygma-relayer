@@ -3,7 +3,6 @@ package tss_test
 import (
 	"context"
 	"crypto/rand"
-	"runtime"
 	"testing"
 	"time"
 
@@ -107,7 +106,6 @@ func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
 		s.Nil(err)
 	}
 	cancel()
-	s.Equal(1, runtime.NumGoroutine())
 }
 
 func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
@@ -157,5 +155,4 @@ func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
 		s.NotNil(err)
 	}
 	cancel()
-	s.Equal(1, runtime.NumGoroutine())
 }
