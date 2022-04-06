@@ -73,7 +73,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *Wrap
 					}
 
 					ok, err := b.Party.UpdateFromBytes(msg.MsgBytes, b.PartyStore[msg.From], msg.IsBroadcast)
-					if !ok && err != nil {
+					if !ok {
 						b.ErrChn <- err
 					}
 				}()
