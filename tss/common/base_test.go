@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	mock_tss "github.com/ChainSafe/chainbridge-core/tss/common/mock"
@@ -128,6 +129,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 
 	go baseTss.ProcessOutboundMessages(context.Background(), outChn, common.KeyGenMsg)
 	outChn <- s.mockMessage
+	time.Sleep(time.Millisecond * 50)
 
 	s.Equal(len(errChn), 0)
 }
