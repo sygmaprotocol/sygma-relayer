@@ -1,17 +1,17 @@
 package communication
 
 import (
-	"github.com/ChainSafe/chainbridge-core/communication/libp2p"
+	"github.com/ChainSafe/chainbridge-core/communication/p2p"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog"
 )
 
 // WrappedMessage is a message with type in it
 type WrappedMessage struct {
-	MessageType libp2p.ChainBridgeMessageType `json:"message_type"`
-	SessionID   SessionID                     `json:"message_id"`
-	Payload     []byte                        `json:"payload"`
-	From        peer.ID                       `json:"from"`
+	MessageType p2p.ChainBridgeMessageType `json:"message_type"`
+	SessionID   SessionID                  `json:"message_id"`
+	Payload     []byte                     `json:"payload"`
+	From        peer.ID                    `json:"from"`
 }
 
 //
@@ -30,8 +30,8 @@ func (sid SubscriptionID) MarshalZerologObject(e *zerolog.Event) {
 
 // Communication
 type Communication interface {
-	Broadcast(peers peer.IDSlice, msg []byte, msgType libp2p.ChainBridgeMessageType, sID SessionID)
+	Broadcast(peers peer.IDSlice, msg []byte, msgType p2p.ChainBridgeMessageType, sID SessionID)
 	ReleaseStream(sID SessionID)
-	Subscribe(msgType libp2p.ChainBridgeMessageType, sID SessionID, channel chan *WrappedMessage) SubscriptionID
+	Subscribe(msgType p2p.ChainBridgeMessageType, sID SessionID, channel chan *WrappedMessage) SubscriptionID
 	UnSubscribe(subID SubscriptionID)
 }

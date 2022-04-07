@@ -1,4 +1,4 @@
-package libp2p
+package p2p
 
 import (
 	comm "github.com/ChainSafe/chainbridge-core/communication"
