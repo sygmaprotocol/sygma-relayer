@@ -12,13 +12,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type Communication interface {
-	Broadcast(peers peer.IDSlice, msg []byte, msgType communication.ChainBridgeMessageType, sessionID string)
-	EndSession(sessionID string)
-	Subscribe(topic communication.ChainBridgeMessageType, sessionID string, channel chan *communication.WrappedMessage) string
-	UnSubscribe(topic communication.ChainBridgeMessageType, sessionID string)
-}
-
 type Party interface {
 	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error)
 	Start() *tss.Error
@@ -31,7 +24,7 @@ type BaseTss struct {
 	SID           string
 	Party         Party
 	PartyStore    map[string]*tss.PartyID
-	Communication Communication
+	Communication communication.Communication
 	Peers         []peer.ID
 	Log           zerolog.Logger
 	Timeout       time.Duration

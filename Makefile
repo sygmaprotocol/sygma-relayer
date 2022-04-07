@@ -38,6 +38,7 @@ genmocks:
 	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
 	mockgen -destination=./tss/common/mock/communication.go -source=./tss/common/base.go -package mock_tss
 	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go 
+	mockgen -source=./communication/communication.go -destination=./communication/mock/communication.go 
 
 e2e-setup:
 	docker-compose --file=./e2e/evm-evm/docker-compose.e2e.yml up

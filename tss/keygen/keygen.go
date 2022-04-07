@@ -28,15 +28,16 @@ type SaveDataStorer interface {
 
 type Keygen struct {
 	common.BaseTss
-	storer    SaveDataStorer
-	threshold int
+	storer         SaveDataStorer
+	threshold      int
+	subscriptionID string
 }
 
 func NewKeygen(
 	sessionID string,
 	threshold int,
 	host host.Host,
-	comm common.Communication,
+	comm communication.Communication,
 	storer SaveDataStorer,
 	errChn chan error,
 ) *Keygen {
@@ -73,7 +74,7 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 	msgChn := make(chan *communication.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
 
-	k.Communication.Subscribe(communication.TssKeyGenMsg, k.SessionID(), msgChn)
+	k.subscriptionID = k.Communication.Subscribe(communication.TssKeyGenMsg, k.SessionID(), msgChn)
 
 	go k.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
 	go k.ProcessInboundMessages(ctx, msgChn)
@@ -92,7 +93,7 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
-	k.Communication.EndSession(k.SessionID())
+	k.Communication.UnSubscribe(k.subscriptionID)
 	k.storer.UnlockKeyshare()
 }
 

@@ -23,7 +23,7 @@ type TssProcess interface {
 type Coordinator struct {
 	host          host.Host
 	tssProcess    TssProcess
-	communication common.Communication
+	communication communication.Communication
 	errChn        chan error
 	log           zerolog.Logger
 }
@@ -31,7 +31,7 @@ type Coordinator struct {
 func NewCoordinator(
 	host host.Host,
 	tssProcess TssProcess,
-	communication common.Communication,
+	communication communication.Communication,
 	errChn chan error,
 ) *Coordinator {
 	return &Coordinator{
@@ -81,8 +81,8 @@ func (c *Coordinator) initiate(ctx context.Context) {
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
 
-	c.communication.Subscribe(communication.TssReadyMsg, c.tssProcess.SessionID(), readyChan)
-	defer c.communication.UnSubscribe(communication.TssReadyMsg, c.tssProcess.SessionID())
+	subID := c.communication.Subscribe(communication.TssReadyMsg, c.tssProcess.SessionID(), readyChan)
+	defer c.communication.UnSubscribe(subID)
 
 	go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID())
 	for {
@@ -125,10 +125,10 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 	msgChan := make(chan *communication.WrappedMessage)
 	startMsgChn := make(chan *communication.WrappedMessage)
 
-	c.communication.Subscribe(communication.TssInitiateMsg, c.tssProcess.SessionID(), msgChan)
-	defer c.communication.UnSubscribe(communication.TssInitiateMsg, c.tssProcess.SessionID())
-	c.communication.Subscribe(communication.TssStartMsg, c.tssProcess.SessionID(), startMsgChn)
-	defer c.communication.UnSubscribe(communication.TssStartMsg, c.tssProcess.SessionID())
+	initSubID := c.communication.Subscribe(communication.TssInitiateMsg, c.tssProcess.SessionID(), msgChan)
+	defer c.communication.UnSubscribe(initSubID)
+	startSubID := c.communication.Subscribe(communication.TssStartMsg, c.tssProcess.SessionID(), startMsgChn)
+	defer c.communication.UnSubscribe(startSubID)
 
 	for {
 		select {

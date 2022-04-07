@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/communication"
+	mock_communication "github.com/ChainSafe/chainbridge-core/communication/mock"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	mock_tss "github.com/ChainSafe/chainbridge-core/tss/common/mock"
 	"github.com/binance-chain/tss-lib/tss"
@@ -19,7 +20,7 @@ type BaseTssTestSuite struct {
 	suite.Suite
 	gomockController  *gomock.Controller
 	mockMessage       *mock_tss.MockMessage
-	mockCommunication *mock_tss.MockCommunication
+	mockCommunication *mock_communication.MockCommunication
 	mockParty         *mock_tss.MockParty
 }
 
@@ -31,7 +32,7 @@ func (s *BaseTssTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockMessage = mock_tss.NewMockMessage(s.gomockController)
 	s.mockParty = mock_tss.NewMockParty(s.gomockController)
-	s.mockCommunication = mock_tss.NewMockCommunication(s.gomockController)
+	s.mockCommunication = mock_communication.NewMockCommunication(s.gomockController)
 }
 
 func (s *BaseTssTestSuite) Test_BroadcastPeers_BroadcastMessage() {

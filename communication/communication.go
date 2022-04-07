@@ -12,10 +12,8 @@ type WrappedMessage struct {
 	From        peer.ID                `json:"from"`
 }
 
-// Communication
 type Communication interface {
 	Broadcast(peers peer.IDSlice, msg []byte, msgType ChainBridgeMessageType, sessionID string)
-	EndSession(sessionID string)
 	Subscribe(msgType ChainBridgeMessageType, sessionID string, channel chan *WrappedMessage) string
 	UnSubscribe(subscriptionID string)
 }

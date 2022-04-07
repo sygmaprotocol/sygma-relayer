@@ -50,8 +50,8 @@ func (ts *TestCommunication) EndSession(sessionID string) {
 	ts.Subscriptions = make(map[string]chan *communication.WrappedMessage)
 }
 
-func (ts *TestCommunication) UnSubscribe(topic communication.ChainBridgeMessageType, sessionID string) {
-	delete(ts.Subscriptions, string(topic)+sessionID)
+func (ts *TestCommunication) UnSubscribe(subscriptionID string) {
+	delete(ts.Subscriptions, subscriptionID)
 }
 
 func (ts *TestCommunication) ReceiveMessage(msg *communication.WrappedMessage, topic communication.ChainBridgeMessageType, sessionID string) {

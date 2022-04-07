@@ -7,84 +7,9 @@ package mock_tss
 import (
 	reflect "reflect"
 
-	communication "github.com/ChainSafe/chainbridge-core/communication"
 	tss "github.com/binance-chain/tss-lib/tss"
 	gomock "github.com/golang/mock/gomock"
-	peer "github.com/libp2p/go-libp2p-core/peer"
 )
-
-// MockCommunication is a mock of Communication interface.
-type MockCommunication struct {
-	ctrl     *gomock.Controller
-	recorder *MockCommunicationMockRecorder
-}
-
-// MockCommunicationMockRecorder is the mock recorder for MockCommunication.
-type MockCommunicationMockRecorder struct {
-	mock *MockCommunication
-}
-
-// NewMockCommunication creates a new mock instance.
-func NewMockCommunication(ctrl *gomock.Controller) *MockCommunication {
-	mock := &MockCommunication{ctrl: ctrl}
-	mock.recorder = &MockCommunicationMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCommunication) EXPECT() *MockCommunicationMockRecorder {
-	return m.recorder
-}
-
-// Broadcast mocks base method.
-func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType communication.ChainBridgeMessageType, sessionID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID)
-}
-
-// Broadcast indicates an expected call of Broadcast.
-func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID)
-}
-
-// EndSession mocks base method.
-func (m *MockCommunication) EndSession(sessionID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EndSession", sessionID)
-}
-
-// EndSession indicates an expected call of EndSession.
-func (mr *MockCommunicationMockRecorder) EndSession(sessionID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndSession", reflect.TypeOf((*MockCommunication)(nil).EndSession), sessionID)
-}
-
-// Subscribe mocks base method.
-func (m *MockCommunication) Subscribe(topic communication.ChainBridgeMessageType, sessionID string, channel chan *communication.WrappedMessage) string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", topic, sessionID, channel)
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Subscribe indicates an expected call of Subscribe.
-func (mr *MockCommunicationMockRecorder) Subscribe(topic, sessionID, channel interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCommunication)(nil).Subscribe), topic, sessionID, channel)
-}
-
-// UnSubscribe mocks base method.
-func (m *MockCommunication) UnSubscribe(topic communication.ChainBridgeMessageType, sessionID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UnSubscribe", topic, sessionID)
-}
-
-// UnSubscribe indicates an expected call of UnSubscribe.
-func (mr *MockCommunicationMockRecorder) UnSubscribe(topic, sessionID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnSubscribe", reflect.TypeOf((*MockCommunication)(nil).UnSubscribe), topic, sessionID)
-}
 
 // MockParty is a mock of Party interface.
 type MockParty struct {
