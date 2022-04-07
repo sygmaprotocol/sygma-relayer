@@ -42,7 +42,7 @@ func GetConfig(path string) (Config, error) {
 	}
 	for _, chain := range rawConfig.ChainConfigs {
 		if chain["type"] == "" || chain["type"] == nil {
-			return config, fmt.Errorf("Chain 'type' must be provided for every configured chain")
+			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
 	}
 
