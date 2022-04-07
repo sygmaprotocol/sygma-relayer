@@ -23,7 +23,7 @@ type Libp2pCommunication struct {
 }
 
 func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
-	logger := log.With().Str("module", "communication").Str("peer", h.ID().Pretty()).Logger()
+	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
 	c := Libp2pCommunication{
 		h:                    h,
 		protocolID:           protocolID,
@@ -43,7 +43,7 @@ func (c *Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
 	msgType comm.ChainBridgeMessageType,
-	sessionID comm.SessionID,
+	sessionID string,
 ) {
 	hostID := c.h.ID()
 	wMsg := comm.WrappedMessage{
@@ -54,17 +54,17 @@ func (c *Libp2pCommunication) Broadcast(
 	}
 	marshaledMsg, err := json.Marshal(wMsg)
 	if err != nil {
-		c.logger.Error().Err(err).EmbedObject(sessionID).Msg("unable to marshal message")
+		c.logger.Error().Err(err).Str("SessionID", sessionID).Msg("unable to marshal message")
 		return
 	}
-	c.logger.Debug().EmbedObject(msgType).EmbedObject(sessionID).Msg(
+	c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
 		"broadcasting message",
 	)
 	for _, p := range peers {
 		if hostID != p {
 			stream, err := c.h.NewStream(context.TODO(), p, c.protocolID)
 			if err != nil {
-				c.logger.Error().Err(err).EmbedObject(msgType).EmbedObject(sessionID).Msgf(
+				c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
 					"unable to open stream toward %s", p.Pretty(),
 				)
 				return
@@ -72,14 +72,14 @@ func (c *Libp2pCommunication) Broadcast(
 
 			err = WriteStreamWithBuffer(marshaledMsg, stream)
 			if err != nil {
-				c.logger.Error().Str("to", string(p)).Err(err).Msg("unable to send message")
+				c.logger.Error().Str("To", string(p)).Err(err).Msg("unable to send message")
 				return
 			}
 			c.logger.Trace().Str(
-				"from", string(wMsg.From)).Str(
-				"to", p.Pretty()).EmbedObject(
-				wMsg.MessageType).EmbedObject(
-				wMsg.SessionID).Msg(
+				"From", string(wMsg.From)).Str(
+				"To", p.Pretty()).Str(
+				"MsgType", msgType.String()).Str(
+				"SessionID", sessionID).Msg(
 				"message sent",
 			)
 			c.streamManager.AddStream(sessionID, stream)
@@ -90,9 +90,9 @@ func (c *Libp2pCommunication) Broadcast(
 // Subscribe
 func (c *Libp2pCommunication) Subscribe(
 	msgType comm.ChainBridgeMessageType,
-	sessionID comm.SessionID,
+	sessionID string,
 	channel chan *comm.WrappedMessage,
-) comm.SubscriptionID {
+) string {
 	c.subscriberLocker.Lock()
 	defer c.subscriberLocker.Unlock()
 
@@ -103,15 +103,15 @@ func (c *Libp2pCommunication) Subscribe(
 	}
 
 	sID := subManager.Subscribe(sessionID, channel)
-	c.logger.Info().Str("sessionID", string(sessionID)).Msgf("subscribed to topic %s", msgType)
+	c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
 	return sID
 }
 
 // UnSubscribe
 func (c *Libp2pCommunication) UnSubscribe(
 	msgType comm.ChainBridgeMessageType,
-	sessionID comm.SessionID,
-	subID comm.SubscriptionID,
+	sessionID string,
+	subID string,
 ) {
 	c.subscriberLocker.Lock()
 	defer c.subscriberLocker.Unlock()
@@ -129,9 +129,9 @@ func (c *Libp2pCommunication) UnSubscribe(
 }
 
 // ReleaseStream
-func (c *Libp2pCommunication) ReleaseStream(sessionID comm.SessionID) {
+func (c *Libp2pCommunication) ReleaseStream(sessionID string) {
 	c.streamManager.ReleaseStream(sessionID)
-	c.logger.Info().Str("sessionID", string(sessionID)).Msg("released stream")
+	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
 }
 
 /** Helper methods **/
@@ -140,7 +140,7 @@ func (c Libp2pCommunication) startProcessingStream() {
 	c.h.SetStreamHandler(c.protocolID, func(s network.Stream) {
 		msg, err := c.processMessageFromStream(s)
 		if err != nil {
-			c.logger.Error().Err(err).Str("streamID", s.ID()).Msg("unable to process message")
+			c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
 			return
 		}
 
@@ -152,7 +152,7 @@ func (c Libp2pCommunication) startProcessingStream() {
 }
 
 func (c *Libp2pCommunication) getSubscribers(
-	msgType comm.ChainBridgeMessageType, sessionID comm.SessionID,
+	msgType comm.ChainBridgeMessageType, sessionID string,
 ) []chan *comm.WrappedMessage {
 	c.subscriberLocker.Lock()
 	defer c.subscriberLocker.Unlock()
@@ -182,9 +182,9 @@ func (c *Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.
 	c.streamManager.AddStream(wrappedMsg.SessionID, s)
 
 	c.logger.Trace().Str(
-		"from", string(wrappedMsg.From)).Str(
-		"msgType", wrappedMsg.MessageType.String()).Str(
-		"sessionID", string(wrappedMsg.SessionID)).Msg(
+		"From", string(wrappedMsg.From)).Str(
+		"MsgType", wrappedMsg.MessageType.String()).Str(
+		"SessionID", wrappedMsg.SessionID).Msg(
 		"processed message",
 	)
 

@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -12,25 +11,25 @@ import (
 //
 // Each stream is connected to a specific session, by sessionID
 type StreamManager struct {
-	unusedStreams map[comm.SessionID][]network.Stream
-	streamLocker  *sync.RWMutex
-	logger        zerolog.Logger
+	streamsBySessionID map[string][]network.Stream
+	streamLocker       *sync.RWMutex
+	logger             zerolog.Logger
 }
 
 // NewStreamManager creates new StreamManager
 func NewStreamManager() *StreamManager {
 	return &StreamManager{
-		unusedStreams: make(map[comm.SessionID][]network.Stream),
-		streamLocker:  &sync.RWMutex{},
-		logger:        log.With().Str("module", "communication").Logger(),
+		streamsBySessionID: make(map[string][]network.Stream),
+		streamLocker:       &sync.RWMutex{},
+		logger:             log.With().Str("module", "communication").Logger(),
 	}
 }
 
 // ReleaseStream removes reference on streams mapped to provided sessionID
-func (sm *StreamManager) ReleaseStream(sessionID comm.SessionID) {
+func (sm *StreamManager) ReleaseStream(sessionID string) {
 	sm.streamLocker.RLock()
-	usedStreams, okStream := sm.unusedStreams[sessionID]
-	unknownStreams, okUnknown := sm.unusedStreams["UNKNOWN"]
+	usedStreams, okStream := sm.streamsBySessionID[sessionID]
+	unknownStreams, okUnknown := sm.streamsBySessionID["UNKNOWN"]
 	sm.streamLocker.RUnlock()
 	streamsForReset := append(usedStreams, unknownStreams...)
 	if okStream || okUnknown {
@@ -42,24 +41,24 @@ func (sm *StreamManager) ReleaseStream(sessionID comm.SessionID) {
 			}
 		}
 		sm.streamLocker.Lock()
-		delete(sm.unusedStreams, sessionID)
+		delete(sm.streamsBySessionID, sessionID)
 		sm.streamLocker.Unlock()
 	}
 }
 
 // AddStream saves and maps provided stream to provided sessionID
-func (sm *StreamManager) AddStream(sessionID comm.SessionID, stream network.Stream) {
+func (sm *StreamManager) AddStream(sessionID string, stream network.Stream) {
 	if stream == nil {
 		return
 	}
 	sm.streamLocker.Lock()
 	defer sm.streamLocker.Unlock()
-	entries, ok := sm.unusedStreams[sessionID]
+	entries, ok := sm.streamsBySessionID[sessionID]
 	if !ok {
 		entries := []network.Stream{stream}
-		sm.unusedStreams[sessionID] = entries
+		sm.streamsBySessionID[sessionID] = entries
 	} else {
 		entries = append(entries, stream)
-		sm.unusedStreams[sessionID] = entries
+		sm.streamsBySessionID[sessionID] = entries
 	}
 }
