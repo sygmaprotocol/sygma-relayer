@@ -1,10 +1,12 @@
 package libp2p
 
-import "github.com/ChainSafe/chainbridge-core/mpc/communication"
+import "github.com/rs/zerolog"
+
+type ChainBridgeMessageType uint8
 
 const (
 	// TssKeyGenMsg message type used for communicating key generation.
-	TssKeyGenMsg communication.ChainBridgeMessageType = iota
+	TssKeyGenMsg ChainBridgeMessageType = iota
 	// TssKeySignMsg message type used for communicating signature for specific message.
 	TssKeySignMsg
 	// TssInitiateMsg message type sent by the leader to signify preparation for a tss process.
@@ -29,8 +31,12 @@ const (
 	CoordinatorPingResponseMsg
 )
 
-// StrMsg converts ChainBridgeMessageType to string
-func StrMsg(msgType communication.ChainBridgeMessageType) string {
+func (msgType ChainBridgeMessageType) MarshalZerologObject(e *zerolog.Event) {
+	e.Str("msgType", msgType.String())
+}
+
+// String implement fmt.Stringer
+func (msgType ChainBridgeMessageType) String() string {
 	switch msgType {
 	case TssKeyGenMsg:
 		return "TssKeyGenMsg"
