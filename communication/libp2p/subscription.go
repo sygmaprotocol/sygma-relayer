@@ -1,7 +1,7 @@
 package libp2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/mpc/communication"
+	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -23,7 +23,7 @@ func NewSessionSubscriptionManager() *SessionSubscriptionManager {
 	}
 }
 
-// GetSubscribers return all subscribers for specific session
+// GetSubscribers return all subscriptionManagers for specific session
 func (ms *SessionSubscriptionManager) GetSubscribers(
 	sessionID comm.SessionID,
 ) []chan *comm.WrappedMessage {
@@ -40,7 +40,7 @@ func (ms *SessionSubscriptionManager) GetSubscribers(
 	return subsAsArray
 }
 
-// Subscribe adds provided channel to session subscribers.
+// Subscribe adds provided channel to session subscriptionManagers.
 // Returns SubscriptionID that is unique identifier of this subscription and is needed to UnSubscribe.
 func (ms *SessionSubscriptionManager) Subscribe(
 	sessionID comm.SessionID, channel chan *comm.WrappedMessage,

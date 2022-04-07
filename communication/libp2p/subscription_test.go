@@ -1,7 +1,7 @@
 package libp2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/mpc/communication"
+	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

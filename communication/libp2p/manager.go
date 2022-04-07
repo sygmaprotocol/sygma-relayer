@@ -1,6 +1,7 @@
 package libp2p
 
 import (
+	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -11,7 +12,7 @@ import (
 //
 // Each stream is connected to a specific session, by sessionID
 type StreamManager struct {
-	unusedStreams map[string][]network.Stream
+	unusedStreams map[comm.SessionID][]network.Stream
 	streamLocker  *sync.RWMutex
 	logger        zerolog.Logger
 }
@@ -19,14 +20,14 @@ type StreamManager struct {
 // NewStreamManager creates new StreamManager
 func NewStreamManager() *StreamManager {
 	return &StreamManager{
-		unusedStreams: make(map[string][]network.Stream),
+		unusedStreams: make(map[comm.SessionID][]network.Stream),
 		streamLocker:  &sync.RWMutex{},
 		logger:        log.With().Str("module", "communication").Logger(),
 	}
 }
 
 // ReleaseStream removes reference on streams mapped to provided sessionID
-func (sm *StreamManager) ReleaseStream(sessionID string) {
+func (sm *StreamManager) ReleaseStream(sessionID comm.SessionID) {
 	sm.streamLocker.RLock()
 	usedStreams, okStream := sm.unusedStreams[sessionID]
 	unknownStreams, okUnknown := sm.unusedStreams["UNKNOWN"]
@@ -47,7 +48,7 @@ func (sm *StreamManager) ReleaseStream(sessionID string) {
 }
 
 // AddStream saves and maps provided stream to provided sessionID
-func (sm *StreamManager) AddStream(sessionID string, stream network.Stream) {
+func (sm *StreamManager) AddStream(sessionID comm.SessionID, stream network.Stream) {
 	if stream == nil {
 		return
 	}

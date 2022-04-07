@@ -1,7 +1,7 @@
 package libp2p
 
 import (
-	mock_network "github.com/ChainSafe/chainbridge-core/mpc/communication/libp2p/mock"
+	"github.com/ChainSafe/chainbridge-core/communication/libp2p/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 	"testing"
