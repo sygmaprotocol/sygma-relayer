@@ -18,7 +18,7 @@ type Libp2pCommunication struct {
 	protocolID           protocol.ID
 	streamManager        *StreamManager
 	logger               zerolog.Logger
-	subscriptionManagers map[ChainBridgeMessageType]*SessionSubscriptionManager
+	subscriptionManagers map[comm.ChainBridgeMessageType]*SessionSubscriptionManager
 	subscriberLocker     *sync.Mutex
 }
 
@@ -29,7 +29,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 		protocolID:           protocolID,
 		streamManager:        NewStreamManager(),
 		logger:               logger,
-		subscriptionManagers: make(map[ChainBridgeMessageType]*SessionSubscriptionManager),
+		subscriptionManagers: make(map[comm.ChainBridgeMessageType]*SessionSubscriptionManager),
 		subscriberLocker:     &sync.Mutex{},
 	}
 	c.startProcessingStream()
@@ -42,7 +42,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 func (c *Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
-	msgType ChainBridgeMessageType,
+	msgType comm.ChainBridgeMessageType,
 	sessionID comm.SessionID,
 ) {
 	hostID := c.h.ID()
@@ -89,7 +89,7 @@ func (c *Libp2pCommunication) Broadcast(
 
 // Subscribe
 func (c *Libp2pCommunication) Subscribe(
-	msgType ChainBridgeMessageType,
+	msgType comm.ChainBridgeMessageType,
 	sessionID comm.SessionID,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
@@ -109,7 +109,7 @@ func (c *Libp2pCommunication) Subscribe(
 
 // UnSubscribe
 func (c *Libp2pCommunication) UnSubscribe(
-	msgType ChainBridgeMessageType,
+	msgType comm.ChainBridgeMessageType,
 	sessionID comm.SessionID,
 	subID comm.SubscriptionID,
 ) {
@@ -152,7 +152,7 @@ func (c Libp2pCommunication) startProcessingStream() {
 }
 
 func (c *Libp2pCommunication) getSubscribers(
-	msgType ChainBridgeMessageType, sessionID comm.SessionID,
+	msgType comm.ChainBridgeMessageType, sessionID comm.SessionID,
 ) []chan *comm.WrappedMessage {
 	c.subscriberLocker.Lock()
 	defer c.subscriberLocker.Unlock()

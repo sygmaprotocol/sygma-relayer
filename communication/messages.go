@@ -1,4 +1,4 @@
-package p2p
+package communication
 
 import "github.com/rs/zerolog"
 

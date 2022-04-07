@@ -1,7 +1,9 @@
 package p2p
 
 import (
+	"errors"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -10,7 +12,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewHost(privKey crypto.PrivKey, rconf config.RelayerConfig) (host.Host, error) {
+func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host, error) {
+	if privKey == nil {
+		return nil, errors.New("unable to create host: private key not defined")
+	}
+
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", rconf.Port)),
 		libp2p.Identity(privKey),
@@ -25,14 +31,13 @@ func NewHost(privKey crypto.PrivKey, rconf config.RelayerConfig) (host.Host, err
 		)
 		return nil, err
 	}
-	h.Addrs()[0].String()
-	fullAddr := util.GetHostAddress(h)
-	log.Info().Str("peerID", h.ID().Pretty()).Msg(
-		fmt.Sprintf("host %s created", fullAddr),
+
+	log.Info().Str("peerID", h.ID().Pretty()).Msgf(
+		"new host created with address: %s", h.Addrs()[0].String(),
 	)
 
 	for _, p := range rconf.Peers {
-		h.Peerstore().AddAddr(addrInfo.ID, addrInfo.Addrs[0], peerstore.PermanentAddrTTL)
+		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
 	}
 	return h, nil
 }
