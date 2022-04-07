@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/tss"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
 	mock_keygen "github.com/ChainSafe/chainbridge-core/tss/keygen/mock"
 	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
@@ -38,7 +38,7 @@ func NewHost() (host.Host, error) {
 	return h, nil
 }
 
-type ExecutorTestSuite struct {
+type CoordinatorTestSuite struct {
 	suite.Suite
 	gomockController *gomock.Controller
 	mockStorer       *mock_keygen.MockSaveDataStorer
@@ -47,11 +47,11 @@ type ExecutorTestSuite struct {
 	partyNumber int
 }
 
-func TestRunExecutorTestSuite(t *testing.T) {
-	suite.Run(t, new(ExecutorTestSuite))
+func TestRunCoordinatorTestSuite(t *testing.T) {
+	suite.Run(t, new(CoordinatorTestSuite))
 }
 
-func (s *ExecutorTestSuite) SetupTest() {
+func (s *CoordinatorTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockStorer = mock_keygen.NewMockSaveDataStorer(s.gomockController)
 
@@ -59,7 +59,7 @@ func (s *ExecutorTestSuite) SetupTest() {
 	s.threshold = 1
 }
 
-func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
+func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	errChn := make(chan error)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
@@ -77,7 +77,7 @@ func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
 	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *common.WrappedMessage),
+			Subscriptions: make(map[string]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
@@ -110,7 +110,7 @@ func (s *ExecutorTestSuite) Test_ValidKeygenProcess() {
 	cancel()
 }
 
-func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
+func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 	errChn := make(chan error)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
@@ -127,7 +127,7 @@ func (s *ExecutorTestSuite) Test_KeygenTimeoutOut() {
 	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *common.WrappedMessage),
+			Subscriptions: make(map[string]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)

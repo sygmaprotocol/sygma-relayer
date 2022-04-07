@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -38,7 +39,7 @@ func NewCoordinator(
 		tssProcess:    tssProcess,
 		communication: communication,
 		errChn:        errChn,
-		log:           log.With().Str("SessionID", tssProcess.SessionID()).Logger(),
+		log:           log.With().Str("SessionID", string(tssProcess.SessionID())).Logger(),
 	}
 }
 
@@ -76,14 +77,14 @@ func (c *Coordinator) initiate(ctx context.Context) {
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
-	readyChan := make(chan *common.WrappedMessage)
+	readyChan := make(chan *communication.WrappedMessage)
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
 
-	c.communication.Subscribe(common.ReadyMsg, c.tssProcess.SessionID(), readyChan)
-	defer c.communication.CancelSubscribe(common.ReadyMsg, c.tssProcess.SessionID())
+	c.communication.Subscribe(communication.TssReadyMsg, c.tssProcess.SessionID(), readyChan)
+	defer c.communication.UnSubscribe(communication.TssReadyMsg, c.tssProcess.SessionID())
 
-	go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, common.InitiateMsg, c.tssProcess.SessionID())
+	go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID())
 	for {
 		select {
 		case wMsg := <-readyChan:
@@ -101,14 +102,14 @@ func (c *Coordinator) initiate(ctx context.Context) {
 					return
 				}
 
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, common.StartMsg, c.tssProcess.SessionID())
+				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, c.tssProcess.SessionID())
 				go c.tssProcess.Start(ctx, startParams)
 				return
 			}
 		case <-ticker.C:
 			{
 				c.log.Debug().Msgf("broadcasted initiate message")
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, common.InitiateMsg, c.tssProcess.SessionID())
+				go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID())
 			}
 		case <-ctx.Done():
 			{
@@ -121,20 +122,20 @@ func (c *Coordinator) initiate(ctx context.Context) {
 // waitForStart responds to initiate messages and starts the tss process
 // when it receives the start message.
 func (c *Coordinator) waitForStart(ctx context.Context) {
-	msgChan := make(chan *common.WrappedMessage)
-	startMsgChn := make(chan *common.WrappedMessage)
+	msgChan := make(chan *communication.WrappedMessage)
+	startMsgChn := make(chan *communication.WrappedMessage)
 
-	c.communication.Subscribe(common.InitiateMsg, c.tssProcess.SessionID(), msgChan)
-	defer c.communication.CancelSubscribe(common.InitiateMsg, c.tssProcess.SessionID())
-	c.communication.Subscribe(common.StartMsg, c.tssProcess.SessionID(), startMsgChn)
-	defer c.communication.CancelSubscribe(common.StartMsg, c.tssProcess.SessionID())
+	c.communication.Subscribe(communication.TssInitiateMsg, c.tssProcess.SessionID(), msgChan)
+	defer c.communication.UnSubscribe(communication.TssInitiateMsg, c.tssProcess.SessionID())
+	c.communication.Subscribe(communication.TssStartMsg, c.tssProcess.SessionID(), startMsgChn)
+	defer c.communication.UnSubscribe(communication.TssStartMsg, c.tssProcess.SessionID())
 
 	for {
 		select {
 		case wMsg := <-msgChan:
 			{
 				c.log.Debug().Msgf("sent ready message to %s", wMsg.From)
-				go c.communication.Broadcast(peer.IDSlice{wMsg.From}, []byte{}, common.ReadyMsg, c.tssProcess.SessionID())
+				go c.communication.Broadcast(peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, c.tssProcess.SessionID())
 			}
 		case startMsg := <-startMsgChn:
 			{

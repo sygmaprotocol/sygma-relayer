@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
@@ -69,12 +70,12 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 	tssParams := tss.NewParameters(pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
 
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *common.WrappedMessage)
+	msgChn := make(chan *communication.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
 
-	k.Communication.Subscribe(common.KeyGenMsg, k.SessionID(), msgChn)
+	k.Communication.Subscribe(communication.TssKeyGenMsg, k.SessionID(), msgChn)
 
-	go k.ProcessOutboundMessages(ctx, outChn, common.KeyGenMsg)
+	go k.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
 	go k.ProcessInboundMessages(ctx, msgChn)
 	go k.processEndMessage(ctx, endChn)
 
@@ -91,7 +92,7 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
-	k.Communication.CancelSubscribe(common.KeyGenMsg, k.SessionID())
+	k.Communication.EndSession(k.SessionID())
 	k.storer.UnlockKeyshare()
 }
 

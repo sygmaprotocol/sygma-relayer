@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -12,9 +13,10 @@ import (
 )
 
 type Communication interface {
-	Broadcast(peers peer.IDSlice, msg []byte, msgType ChainBridgeMessageType, sessionID string)
-	Subscribe(topic ChainBridgeMessageType, sessionID string, channel chan *WrappedMessage)
-	CancelSubscribe(topic ChainBridgeMessageType, sessionID string)
+	Broadcast(peers peer.IDSlice, msg []byte, msgType communication.ChainBridgeMessageType, sessionID string)
+	EndSession(sessionID string)
+	Subscribe(topic communication.ChainBridgeMessageType, sessionID string, channel chan *communication.WrappedMessage) string
+	UnSubscribe(topic communication.ChainBridgeMessageType, sessionID string)
 }
 
 type Party interface {
@@ -46,7 +48,7 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *WrappedMessage) {
+func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *communication.WrappedMessage) {
 	for {
 		select {
 		case wMsg := <-msgChan:
@@ -88,7 +90,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *Wrap
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType ChainBridgeMessageType) {
+func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType communication.ChainBridgeMessageType) {
 	for {
 		select {
 		case msg := <-outChn:
