@@ -2,34 +2,32 @@ package p2p
 
 import (
 	comm "github.com/ChainSafe/chainbridge-core/communication"
-	"math/rand"
-	"strconv"
 	"sync"
-	"time"
 )
 
 // SessionSubscriptionManager manages channel subscriptions by comm.SessionID
 type SessionSubscriptionManager struct {
-	lock                      *sync.Mutex
-	r                         rand.Source
-	subscribersMapBySessionID map[string]map[string]chan *comm.WrappedMessage
+	lock *sync.Mutex
+	// sessionID -> messageType -> subscriptionID
+	subscribersMap map[string]map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage
 }
 
-func NewSessionSubscriptionManager() *SessionSubscriptionManager {
-	return &SessionSubscriptionManager{
-		lock:                      &sync.Mutex{},
-		r:                         rand.NewSource(time.Now().Unix()),
-		subscribersMapBySessionID: make(map[string]map[string]chan *comm.WrappedMessage),
+func NewSessionSubscriptionManager() SessionSubscriptionManager {
+	return SessionSubscriptionManager{
+		lock: &sync.Mutex{},
+		subscribersMap: make(
+			map[string]map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage,
+		),
 	}
 }
 
-// GetSubscribers return all subscriptionManagers for specific session
-func (ms *SessionSubscriptionManager) GetSubscribers(
+func (ms *SessionSubscriptionManager) getSubscribers(
 	sessionID string,
+	msgType comm.ChainBridgeMessageType,
 ) []chan *comm.WrappedMessage {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
-	subsAsMap, ok := ms.subscribersMapBySessionID[sessionID]
+	subsAsMap, ok := ms.subscribersMap[sessionID][msgType]
 	if !ok {
 		return nil
 	}
@@ -40,33 +38,44 @@ func (ms *SessionSubscriptionManager) GetSubscribers(
 	return subsAsArray
 }
 
-// Subscribe adds provided channel to session subscriptionManagers.
-// Returns SubscriptionID that is unique identifier of this subscription and is needed to UnSubscribe.
-func (ms *SessionSubscriptionManager) Subscribe(
-	sessionID string, channel chan *comm.WrappedMessage,
-) string {
+func (ms *SessionSubscriptionManager) subscribe(
+	sessionID string, msgType comm.ChainBridgeMessageType, channel chan *comm.WrappedMessage,
+) comm.SubscriptionID {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
-	// create subscription id
-	subID := strconv.FormatInt(ms.r.Int63(), 10)
-	sessionSubscribers, ok := ms.subscribersMapBySessionID[sessionID]
+
+	_, ok := ms.subscribersMap[sessionID]
 	if !ok {
-		sessionSubscribers = map[string]chan *comm.WrappedMessage{}
+		ms.subscribersMap[sessionID] =
+			map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage{}
 	}
-	sessionSubscribers[subID] = channel
-	ms.subscribersMapBySessionID[sessionID] = sessionSubscribers
+
+	_, ok = ms.subscribersMap[sessionID][msgType]
+	if !ok {
+		ms.subscribersMap[sessionID][msgType] =
+			map[string]chan *comm.WrappedMessage{}
+	}
+
+	subID := comm.NewSubscriptionID(sessionID, msgType)
+	ms.subscribersMap[sessionID][msgType][subID.SubscriptionIdentifier()] = channel
 	return subID
 }
 
-// UnSubscribe a specific subscription, defined by SubscriptionID
-func (ms *SessionSubscriptionManager) UnSubscribe(
-	sessionID string, subscriptionID string,
+func (ms *SessionSubscriptionManager) unSubscribe(
+	subscriptionID comm.SubscriptionID,
 ) {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
-	_, ok := ms.subscribersMapBySessionID[sessionID]
+
+	sessionID, msgType, subID, err := subscriptionID.Unwrap()
+	if err != nil {
+		return
+	}
+
+	_, ok := ms.subscribersMap[sessionID][msgType][subID]
 	if !ok {
 		return
 	}
-	delete(ms.subscribersMapBySessionID[sessionID], subscriptionID)
+
+	delete(ms.subscribersMap[sessionID][msgType], subID)
 }

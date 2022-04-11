@@ -1,7 +1,5 @@
 package communication
 
-import "github.com/rs/zerolog"
-
 type ChainBridgeMessageType uint8
 
 const (
@@ -29,11 +27,9 @@ const (
 	CoordinatorPingMsg
 	// CoordinatorPingResponseMsg message type used to respond on CoordinatorPingMsg message.
 	CoordinatorPingResponseMsg
+	// Unknown message type
+	Unknown
 )
-
-func (msgType ChainBridgeMessageType) MarshalZerologObject(e *zerolog.Event) {
-	e.Str("msgType", msgType.String())
-}
 
 // String implement fmt.Stringer
 func (msgType ChainBridgeMessageType) String() string {

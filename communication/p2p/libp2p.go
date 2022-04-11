@@ -10,27 +10,24 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"sync"
 )
 
 type Libp2pCommunication struct {
-	h                    host.Host
-	protocolID           protocol.ID
-	streamManager        *StreamManager
-	logger               zerolog.Logger
-	subscriptionManagers map[comm.ChainBridgeMessageType]*SessionSubscriptionManager
-	subscriberLocker     *sync.Mutex
+	SessionSubscriptionManager
+	h             host.Host
+	protocolID    protocol.ID
+	streamManager *StreamManager
+	logger        zerolog.Logger
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
+func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
 	c := Libp2pCommunication{
-		h:                    h,
-		protocolID:           protocolID,
-		streamManager:        NewStreamManager(),
-		logger:               logger,
-		subscriptionManagers: make(map[comm.ChainBridgeMessageType]*SessionSubscriptionManager),
-		subscriberLocker:     &sync.Mutex{},
+		SessionSubscriptionManager: NewSessionSubscriptionManager(),
+		h:                          h,
+		protocolID:                 protocolID,
+		streamManager:              NewStreamManager(),
+		logger:                     logger,
 	}
 	c.startProcessingStream()
 	return c
@@ -39,7 +36,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 /** Communication interface methods **/
 
 // Broadcast sends
-func (c *Libp2pCommunication) Broadcast(
+func (c Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
 	msgType comm.ChainBridgeMessageType,
@@ -88,48 +85,26 @@ func (c *Libp2pCommunication) Broadcast(
 }
 
 // Subscribe
-func (c *Libp2pCommunication) Subscribe(
-	msgType comm.ChainBridgeMessageType,
+func (c Libp2pCommunication) Subscribe(
 	sessionID string,
+	msgType comm.ChainBridgeMessageType,
 	channel chan *comm.WrappedMessage,
-) string {
-	c.subscriberLocker.Lock()
-	defer c.subscriberLocker.Unlock()
-
-	subManager, ok := c.subscriptionManagers[msgType]
-	if !ok {
-		subManager = NewSessionSubscriptionManager()
-		c.subscriptionManagers[msgType] = subManager
-	}
-
-	sID := subManager.Subscribe(sessionID, channel)
-	c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
-	return sID
+) comm.SubscriptionID {
+	subID := c.subscribe(sessionID, msgType, channel)
+	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
+	return subID
 }
 
 // UnSubscribe
-func (c *Libp2pCommunication) UnSubscribe(
-	msgType comm.ChainBridgeMessageType,
-	sessionID string,
-	subID string,
+func (c Libp2pCommunication) UnSubscribe(
+	subID comm.SubscriptionID,
 ) {
-	c.subscriberLocker.Lock()
-	defer c.subscriberLocker.Unlock()
-
-	subManager, ok := c.subscriptionManagers[msgType]
-	if !ok {
-		c.logger.Debug().Msgf("cannot find the given channels %s", msgType.String())
-		return
-	}
-	if subManager == nil {
-		return
-	}
-
-	subManager.UnSubscribe(sessionID, subID)
+	c.unSubscribe(subID)
+	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
 }
 
-// ReleaseStream
-func (c *Libp2pCommunication) ReleaseStream(sessionID string) {
+// EndSession
+func (c Libp2pCommunication) EndSession(sessionID string) {
 	c.streamManager.ReleaseStream(sessionID)
 	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
 }
@@ -144,29 +119,14 @@ func (c Libp2pCommunication) startProcessingStream() {
 			return
 		}
 
-		subscribers := c.getSubscribers(msg.MessageType, msg.SessionID)
+		subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
 		for _, sub := range subscribers {
 			sub <- msg
 		}
 	})
 }
 
-func (c *Libp2pCommunication) getSubscribers(
-	msgType comm.ChainBridgeMessageType, sessionID string,
-) []chan *comm.WrappedMessage {
-	c.subscriberLocker.Lock()
-	defer c.subscriberLocker.Unlock()
-
-	messageIDSubscriber, ok := c.subscriptionManagers[msgType]
-	if !ok {
-		c.logger.Debug().Msgf("fail to find subscription manager for message type %s", msgType)
-		return nil
-	}
-
-	return messageIDSubscriber.GetSubscribers(sessionID)
-}
-
-func (c *Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	msgBytes, err := ReadStreamWithBuffer(s)
 	if err != nil {
 		c.streamManager.AddStream("UNKNOWN", s)
