@@ -35,7 +35,6 @@ func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
 
 /** Communication interface methods **/
 
-// Broadcast sends
 func (c Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
@@ -84,7 +83,6 @@ func (c Libp2pCommunication) Broadcast(
 	}
 }
 
-// Subscribe
 func (c Libp2pCommunication) Subscribe(
 	sessionID string,
 	msgType comm.ChainBridgeMessageType,
@@ -95,7 +93,6 @@ func (c Libp2pCommunication) Subscribe(
 	return subID
 }
 
-// UnSubscribe
 func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
@@ -103,7 +100,7 @@ func (c Libp2pCommunication) UnSubscribe(
 	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
 }
 
-// EndSession
+// TODO - is needed ?
 func (c Libp2pCommunication) EndSession(sessionID string) {
 	c.streamManager.ReleaseStream(sessionID)
 	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
