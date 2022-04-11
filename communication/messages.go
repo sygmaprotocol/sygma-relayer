@@ -1,5 +1,6 @@
 package communication
 
+// ChainBridgeMessageType represents message type identificator
 type ChainBridgeMessageType uint8
 
 const (

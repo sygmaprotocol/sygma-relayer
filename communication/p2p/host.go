@@ -12,9 +12,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// NewHost creates new host.Host from private key and relayer configuration
 func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host, error) {
 	if privKey == nil {
-		return nil, errors.New("unable to create host: private key not defined")
+		return nil, errors.New("unable to create libp2p host: private key not defined")
 	}
 
 	opts := []libp2p.Option{
@@ -26,14 +27,11 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 
 	h, err := libp2p.New(opts...)
 	if err != nil {
-		log.Error().Msg(
-			"unable to create libp2p host",
-		)
-		return nil, err
+		return nil, fmt.Errorf("unable to create libp2p host: %v", err)
 	}
 
 	log.Info().Str("peerID", h.ID().Pretty()).Msgf(
-		"new host created with address: %s", h.Addrs()[0].String(),
+		"new libp2p host created with address: %s", h.Addrs()[0].String(),
 	)
 
 	for _, p := range rconf.Peers {

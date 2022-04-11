@@ -2,18 +2,16 @@ package p2p
 
 import (
 	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"sync"
 )
 
 // StreamManager manages instances of network.Stream
 //
-// Each stream is connected to a specific session, by sessionID
+// Each stream is mapped to a specific session, by sessionID
 type StreamManager struct {
 	streamsBySessionID map[string][]network.Stream
 	streamLocker       *sync.RWMutex
-	logger             zerolog.Logger
 }
 
 // NewStreamManager creates new StreamManager
@@ -21,7 +19,6 @@ func NewStreamManager() *StreamManager {
 	return &StreamManager{
 		streamsBySessionID: make(map[string][]network.Stream),
 		streamLocker:       &sync.RWMutex{},
-		logger:             log.With().Str("module", "communication").Logger(),
 	}
 }
 
@@ -37,7 +34,7 @@ func (sm *StreamManager) ReleaseStream(sessionID string) {
 		for _, el := range streamsForReset {
 			err := el.Reset()
 			if err != nil {
-				sm.logger.Error().Err(err).Msg("fail to reset the stream,skip it")
+				log.Error().Err(err).Msgf("failed to reset the stream %s, skip it", el.ID())
 			}
 		}
 		sm.streamLocker.Lock()
