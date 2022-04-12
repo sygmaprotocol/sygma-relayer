@@ -2,7 +2,8 @@ package tss_test
 
 import (
 	"context"
-	"crypto/rand"
+	"fmt"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -20,8 +21,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func NewHost() (host.Host, error) {
-	priv, _, err := crypto.GenerateRSAKeyPair(2048, rand.Reader)
+func newHost(i int) (host.Host, error) {
+	privBytes, err := ioutil.ReadFile(fmt.Sprintf("./test/pks/%d.pk", i))
+	if err != nil {
+		return nil, err
+	}
+
+	priv, err := crypto.UnmarshalPrivateKey(privBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +44,25 @@ func NewHost() (host.Host, error) {
 	return h, nil
 }
 
+func setupCommunication(commMap map[peer.ID]*tsstest.TestCommunication) {
+	for self, comm := range commMap {
+		peerComms := make(map[string]tsstest.Receiver)
+		for p, otherComm := range commMap {
+			if self.Pretty() == p.Pretty() {
+				continue
+			}
+			peerComms[p.Pretty()] = otherComm
+		}
+		comm.PeerCommunications = peerComms
+	}
+}
+
 type CoordinatorTestSuite struct {
 	suite.Suite
 	gomockController *gomock.Controller
 	mockStorer       *mock_keygen.MockSaveDataStorer
 
+	hosts       []host.Host
 	threshold   int
 	partyNumber int
 }
@@ -51,22 +71,16 @@ func TestRunCoordinatorTestSuite(t *testing.T) {
 	suite.Run(t, new(CoordinatorTestSuite))
 }
 
-func (s *CoordinatorTestSuite) SetupTest() {
+func (s *CoordinatorTestSuite) SetupSuite() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockStorer = mock_keygen.NewMockSaveDataStorer(s.gomockController)
 
 	s.partyNumber = 3
 	s.threshold = 1
-}
-
-func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
-	errChn := make(chan error)
-	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
-	coordinators := []*tss.Coordinator{}
 
 	hosts := []host.Host{}
 	for i := 0; i < s.partyNumber; i++ {
-		host, _ := NewHost()
+		host, _ := newHost(i)
 		hosts = append(hosts, host)
 	}
 	for _, host := range hosts {
@@ -74,7 +88,15 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
 		}
 	}
-	for _, host := range hosts {
+	s.hosts = hosts
+}
+
+func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
+	errChn := make(chan error)
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+
+	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *communication.WrappedMessage),
@@ -83,16 +105,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
 		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
 	}
-	for self, comm := range communicationMap {
-		peerComms := make(map[string]tsstest.Receiver)
-		for p, otherComm := range communicationMap {
-			if self.Pretty() == p.Pretty() {
-				continue
-			}
-			peerComms[p.Pretty()] = otherComm
-		}
-		comm.PeerCommunications = peerComms
-	}
+	setupCommunication(communicationMap)
 
 	s.mockStorer.EXPECT().LockKeyshare().Times(3)
 	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
@@ -114,17 +127,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 	errChn := make(chan error)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
-	hosts := []host.Host{}
-	for i := 0; i < s.partyNumber; i++ {
-		host, _ := NewHost()
-		hosts = append(hosts, host)
-	}
-	for _, host := range hosts {
-		for _, peer := range hosts {
-			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
-		}
-	}
-	for _, host := range hosts {
+	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *communication.WrappedMessage),
@@ -134,16 +137,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 		keygen.Timeout = time.Second * 5
 		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
 	}
-	for self, comm := range communicationMap {
-		peerComms := make(map[string]tsstest.Receiver)
-		for p, otherComm := range communicationMap {
-			if self.Pretty() == p.Pretty() {
-				continue
-			}
-			peerComms[p.Pretty()] = otherComm
-		}
-		comm.PeerCommunications = peerComms
-	}
+	setupCommunication(communicationMap)
 
 	s.mockStorer.EXPECT().LockKeyshare().Times(3)
 	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
@@ -160,3 +154,53 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 	}
 	cancel()
 }
+
+/*
+func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
+	errChn := make(chan error)
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber; i++ {
+		host, _ := NewHost()
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+	for _, host := range hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		keygen := .NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
+		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
+	}
+	for self, comm := range communicationMap {
+		peerComms := make(map[string]tsstest.Receiver)
+		for p, otherComm := range communicationMap {
+			if self.Pretty() == p.Pretty() {
+				continue
+			}
+			peerComms[p.Pretty()] = otherComm
+		}
+		comm.PeerCommunications = peerComms
+	}
+
+	status := make(chan error, s.partyNumber)
+	ctx, cancel := context.WithCancel(context.Background())
+	for _, coordinator := range coordinators {
+		go coordinator.Execute(ctx, status)
+	}
+
+	for i := 0; i < s.partyNumber; i++ {
+		err := <-status
+		s.Nil(err)
+	}
+	cancel()
+}
+*/
