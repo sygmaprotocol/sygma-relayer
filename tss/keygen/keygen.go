@@ -117,6 +117,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 					k.ErrChn <- err
 				}
 
+				fmt.Println("STORED KEYSHARE")
 				k.ErrChn <- nil
 				return
 			}

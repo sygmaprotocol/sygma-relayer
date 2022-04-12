@@ -16,8 +16,8 @@ type TssProcess interface {
 	Start(ctx context.Context, params []string)
 	Stop()
 	Ready(readyMap map[peer.ID]bool) bool
+	StartParams(readyMap map[peer.ID]bool) []string
 	SessionID() string
-	StartParams() []string
 }
 
 type Coordinator struct {
@@ -95,7 +95,7 @@ func (c *Coordinator) initiate(ctx context.Context) {
 					continue
 				}
 
-				startParams := c.tssProcess.StartParams()
+				startParams := c.tssProcess.StartParams(readyMap)
 				startMsgBytes, err := common.MarshalStartMessage(startParams)
 				if err != nil {
 					c.errChn <- err
