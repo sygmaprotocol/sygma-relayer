@@ -48,6 +48,21 @@ func PartiesFromPeers(peers peer.IDSlice) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(unsortedParties)
 }
 
+func PeersFromIDS(peerIDS []string) ([]peer.ID, error) {
+	peers := make([]peer.ID, len(peerIDS))
+
+	for i, id := range peerIDS {
+		peerID, err := peer.Decode(id)
+		if err != nil {
+			return peers, err
+		}
+
+		peers[i] = peerID
+	}
+
+	return peers, nil
+}
+
 func SortPeersForSession(peers []peer.ID, sessionID string) SortablePeerSlice {
 	sortedPeers := make(SortablePeerSlice, len(peers))
 	for i, p := range peers {
