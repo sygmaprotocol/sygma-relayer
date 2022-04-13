@@ -125,7 +125,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
+func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	for _, host := range s.hosts {
@@ -191,5 +191,45 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	sig1 := <-resultChn
 	sig2 := <-resultChn
 	s.Equal(sig1, sig2)
+	cancel()
+}
+
+func (s *CoordinatorTestSuite) Test_SigningTimeout() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+
+	for i, host := range s.hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+
+		msgBytes := []byte("Message")
+		msg := big.NewInt(0)
+		msg.SetBytes(msgBytes)
+		signing, err := signing.NewSigning(msg, "signing", host, &communication, fetcher)
+		if err != nil {
+			panic(err)
+		}
+		signing.Timeout = time.Millisecond * 200
+		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication))
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for _, coordinator := range coordinators {
+		go coordinator.Execute(ctx, resultChn, statusChn)
+	}
+
+	err := <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.NotNil(err)
+	err = <-statusChn
+	s.NotNil(err)
 	cancel()
 }

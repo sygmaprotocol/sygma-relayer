@@ -140,21 +140,21 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 }
 
 // processEndMessage routes signature to result channel.
-func (k *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
-	ticker := time.NewTicker(k.Timeout)
+func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
+	ticker := time.NewTicker(s.Timeout)
 	for {
 		select {
 		case sig := <-endChn:
 			{
-				k.Log.Info().Msg("Successfully generated signature")
+				s.Log.Info().Msg("Successfully generated signature")
 
-				k.resultChn <- sig
-				k.ErrChn <- nil
+				s.resultChn <- sig
+				s.ErrChn <- nil
 				return
 			}
 		case <-ticker.C:
 			{
-				k.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
+				s.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
 				return
 			}
 		case <-ctx.Done():
