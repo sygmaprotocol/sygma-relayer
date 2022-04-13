@@ -2,6 +2,7 @@ package signing
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -27,7 +28,7 @@ type Signing struct {
 	common.BaseTss
 	key            store.Keyshare
 	msg            *big.Int
-	sigChn         chan *signing.SignatureData
+	resultChn      chan interface{}
 	subscriptionID string
 }
 
@@ -37,8 +38,6 @@ func NewSigning(
 	host host.Host,
 	comm communication.Communication,
 	fetcher SaveDataFetcher,
-	errChn chan error,
-	sigChn chan *signing.SignatureData,
 ) (*Signing, error) {
 	key, err := fetcher.GetKeyshare()
 	if err != nil {
@@ -54,18 +53,24 @@ func NewSigning(
 			Peers:         key.Peers,
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
-			ErrChn:        errChn,
 			Timeout:       SigningTimeout,
 		},
-		key:    key,
-		msg:    msg,
-		sigChn: sigChn,
+		key: key,
+		msg: msg,
 	}, nil
 }
 
 // Start initializes the signing party and starts the signing tss process.
 // Params contains peer subset that leaders sends with start message.
-func (s *Signing) Start(ctx context.Context, params []string) {
+func (s *Signing) Start(
+	ctx context.Context,
+	resultChn chan interface{},
+	errChn chan error,
+	params []string,
+) {
+	s.ErrChn = errChn
+	s.resultChn = resultChn
+
 	peerSubset, err := common.PeersFromIDS(params)
 	if err != nil {
 		s.ErrChn <- err
@@ -84,15 +89,17 @@ func (s *Signing) Start(ctx context.Context, params []string) {
 	pCtx := tss.NewPeerContext(parties)
 	tssParams := tss.NewParameters(pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
 
+	sigChn := make(chan *signing.SignatureData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *communication.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(communication.TssKeySignMsg, s.SessionID(), msgChn)
 	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
 	go s.ProcessInboundMessages(ctx, msgChn)
+	go s.processEndMessage(ctx, sigChn)
 
 	s.Log.Info().Msgf("Started signing process")
 
-	s.Party = signing.NewLocalParty(s.msg, tssParams, s.key.Key, outChn, s.sigChn)
+	s.Party = signing.NewLocalParty(s.msg, tssParams, s.key.Key, outChn, sigChn)
 	go func() {
 		err := s.Party.Start()
 		if err != nil {
@@ -130,4 +137,30 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 	}
 
 	return params
+}
+
+// processEndMessage routes signature to result channel.
+func (k *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
+	ticker := time.NewTicker(k.Timeout)
+	for {
+		select {
+		case sig := <-endChn:
+			{
+				k.Log.Info().Msg("Successfully generated signature")
+
+				k.resultChn <- sig
+				k.ErrChn <- nil
+				return
+			}
+		case <-ticker.C:
+			{
+				k.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
+				return
+			}
+		case <-ctx.Done():
+			{
+				return
+			}
+		}
+	}
 }
