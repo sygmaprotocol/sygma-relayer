@@ -29,7 +29,8 @@ func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
 		streamManager:              NewStreamManager(),
 		logger:                     logger,
 	}
-	c.startProcessingStream()
+	// start processing incoming messages
+	c.h.SetStreamHandler(c.protocolID, c.streamHandlerFunc)
 	return c
 }
 
@@ -108,19 +109,20 @@ func (c Libp2pCommunication) EndSession(sessionID string) {
 
 /** Helper methods **/
 
-func (c Libp2pCommunication) startProcessingStream() {
-	c.h.SetStreamHandler(c.protocolID, func(s network.Stream) {
-		msg, err := c.processMessageFromStream(s)
-		if err != nil {
-			c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
-			return
-		}
+func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
+	msg, err := c.processMessageFromStream(s)
+	if err != nil {
+		c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
+		return
+	}
 
-		subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
-		for _, sub := range subscribers {
+	subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
+	for _, sub := range subscribers {
+		sub := sub
+		go func() {
 			sub <- msg
-		}
-	})
+		}()
+	}
 }
 
 func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
