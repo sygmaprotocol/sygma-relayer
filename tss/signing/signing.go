@@ -21,8 +21,6 @@ var (
 
 type SaveDataFetcher interface {
 	GetKeyshare() (store.Keyshare, error)
-	LockKeyshare()
-	UnlockKeyshare()
 }
 
 type Signing struct {
@@ -42,8 +40,6 @@ func NewSigning(
 	errChn chan error,
 	sigChn chan *signing.SignatureData,
 ) (*Signing, error) {
-	fetcher.LockKeyshare()
-	defer fetcher.UnlockKeyshare()
 	key, err := fetcher.GetKeyshare()
 	if err != nil {
 		return nil, err
@@ -76,6 +72,12 @@ func (s *Signing) Start(ctx context.Context, params []string) {
 		return
 	}
 
+	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
+		s.Log.Info().Msgf("Party is not in signing subset")
+		s.ErrChn <- nil
+		return
+	}
+
 	s.Peers = peerSubset
 	parties := common.PartiesFromPeers(s.Peers)
 	s.PopulatePartyStore(parties)
@@ -88,15 +90,15 @@ func (s *Signing) Start(ctx context.Context, params []string) {
 	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
 	go s.ProcessInboundMessages(ctx, msgChn)
 
-	s.Party = signing.NewLocalParty(big.NewInt(0), tssParams, s.key.Key, outChn, s.sigChn)
+	s.Log.Info().Msgf("Started signing process")
+
+	s.Party = signing.NewLocalParty(s.msg, tssParams, s.key.Key, outChn, s.sigChn)
 	go func() {
 		err := s.Party.Start()
 		if err != nil {
 			s.ErrChn <- err
 		}
 	}()
-
-	s.Log.Info().Msgf("Started signing process")
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -119,10 +121,9 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 	}
 
 	sortedPeers := common.SortPeersForSession(peers, s.SessionID())
-	params := make([]string, len(peers))
-	for i, peer := range sortedPeers {
-		params[i] = peer.ID.Pretty()
-
+	params := []string{}
+	for _, peer := range sortedPeers {
+		params = append(params, peer.ID.Pretty())
 		if len(params) == s.key.Threshold+1 {
 			break
 		}

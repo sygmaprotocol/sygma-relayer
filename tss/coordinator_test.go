@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"testing"
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
 	mock_keygen "github.com/ChainSafe/chainbridge-core/tss/keygen/mock"
+	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
+	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/golang/mock/gomock"
 	libp2p "github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -96,20 +100,23 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 
-	for _, host := range s.hosts {
+	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
+		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, storer, errChn)
 		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
 	}
 	setupCommunication(communicationMap)
 
-	s.mockStorer.EXPECT().LockKeyshare().Times(3)
-	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
-	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
+	/*
+		s.mockStorer.EXPECT().LockKeyshare().Times(3)
+		s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
+		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
+	*/
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for _, coordinator := range coordinators {
@@ -155,52 +162,41 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 	cancel()
 }
 
-/*
 func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	errChn := make(chan error)
+	sigChn := make(chan *tssSigning.SignatureData)
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 
-	hosts := []host.Host{}
-	for i := 0; i < s.partyNumber; i++ {
-		host, _ := NewHost()
-		hosts = append(hosts, host)
-	}
-	for _, host := range hosts {
-		for _, peer := range hosts {
-			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
-		}
-	}
-	for _, host := range hosts {
+	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[string]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := .NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
+		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+
+		msgBytes := []byte("Message")
+		msg := big.NewInt(0)
+		msg.SetBytes(msgBytes)
+		keygen, err := signing.NewSigning(msg, "signing", host, &communication, fetcher, errChn, sigChn)
+		if err != nil {
+			panic(err)
+		}
 		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, errChn))
 	}
-	for self, comm := range communicationMap {
-		peerComms := make(map[string]tsstest.Receiver)
-		for p, otherComm := range communicationMap {
-			if self.Pretty() == p.Pretty() {
-				continue
-			}
-			peerComms[p.Pretty()] = otherComm
-		}
-		comm.PeerCommunications = peerComms
-	}
+	setupCommunication(communicationMap)
 
-	status := make(chan error, s.partyNumber)
+	statusChn := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, status)
+		go coordinator.Execute(ctx, statusChn)
 	}
 
-	for i := 0; i < s.partyNumber; i++ {
-		err := <-status
-		s.Nil(err)
-	}
+	err := <-statusChn
+	s.Nil(err)
+	sig1 := <-sigChn
+	sig2 := <-sigChn
+	s.Equal(sig1, sig2)
 	cancel()
 }
-*/
