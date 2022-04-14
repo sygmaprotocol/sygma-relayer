@@ -90,7 +90,10 @@ func (c Libp2pCommunication) Subscribe(
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	subID := c.subscribe(sessionID, msgType, channel)
-	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
+	c.logger.Trace().Str(
+		"SessionID", sessionID).Msgf(
+		"subscribed to message type %s", msgType,
+	)
 	return subID
 }
 
@@ -98,9 +101,14 @@ func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
 	c.unSubscribe(subID)
-	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
+	c.logger.Trace().Str(
+		"SessionID", subID.SessionID()).Str(
+		"SubID", subID.SubscriptionIdentifier()).Msgf(
+		"unsubscribed from message type %s", subID.MessageType().String(),
+	)
 }
 
+// TODO - check if there is a need to manualy release streams
 func (c Libp2pCommunication) EndSession(sessionID string) {
 	c.streamManager.ReleaseStream(sessionID)
 	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
