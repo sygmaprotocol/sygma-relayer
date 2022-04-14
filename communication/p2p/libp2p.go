@@ -73,7 +73,7 @@ func (c Libp2pCommunication) Broadcast(
 				return
 			}
 			c.logger.Trace().Str(
-				"From", string(wMsg.From)).Str(
+				"From", wMsg.From.Pretty()).Str(
 				"To", p.Pretty()).Str(
 				"MsgType", msgType.String()).Str(
 				"SessionID", sessionID).Msg(
@@ -101,7 +101,6 @@ func (c Libp2pCommunication) UnSubscribe(
 	// c.logger.Info().Str("SessionID", sessionID).Msgf("subscribed to message type %s", msgType)
 }
 
-// TODO - is needed ?
 func (c Libp2pCommunication) EndSession(sessionID string) {
 	c.streamManager.ReleaseStream(sessionID)
 	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
@@ -141,7 +140,7 @@ func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.W
 	c.streamManager.AddStream(wrappedMsg.SessionID, s)
 
 	c.logger.Trace().Str(
-		"From", string(wrappedMsg.From)).Str(
+		"From", wrappedMsg.From.Pretty()).Str(
 		"MsgType", wrappedMsg.MessageType.String()).Str(
 		"SessionID", wrappedMsg.SessionID).Msg(
 		"processed message",
