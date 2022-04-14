@@ -148,7 +148,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 	go func() {
 		select {
-		case _ = <-firstSubChannel:
+		case <-firstSubChannel:
 			s.Fail("host[0] should be unsubscribed")
 			break
 		default:
