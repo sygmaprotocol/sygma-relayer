@@ -79,7 +79,7 @@ func (c Libp2pCommunication) sendMessage(
 		return
 	}
 
-	err = WriteStreamWithBuffer(msg, stream)
+	err = WriteStream(msg, stream)
 	if err != nil {
 		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
 		return
@@ -143,7 +143,7 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 }
 
 func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
-	msgBytes, err := ReadStreamWithBuffer(s)
+	msgBytes, err := ReadStream(s)
 	if err != nil {
 		c.streamManager.AddStream("UNKNOWN", s)
 		return nil, err

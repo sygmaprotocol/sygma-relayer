@@ -13,8 +13,8 @@ const (
 	MaxPayload   = 20000000 // 20M
 )
 
-// ReadStreamWithBuffer read data from the given stream
-func ReadStreamWithBuffer(stream network.Stream) ([]byte, error) {
+// ReadStream read data from the given stream
+func ReadStream(stream network.Stream) ([]byte, error) {
 	streamReader := bufio.NewReader(stream)
 	lengthBytes := make([]byte, LengthHeader)
 	n, err := io.ReadFull(streamReader, lengthBytes)
@@ -33,8 +33,8 @@ func ReadStreamWithBuffer(stream network.Stream) ([]byte, error) {
 	return dataBuf, nil
 }
 
-// WriteStreamWithBuffer write the message to stream
-func WriteStreamWithBuffer(msg []byte, stream network.Stream) error {
+// WriteStream write the message to stream
+func WriteStream(msg []byte, stream network.Stream) error {
 	length := uint32(len(msg))
 	lengthBytes := make([]byte, LengthHeader)
 	binary.LittleEndian.PutUint32(lengthBytes, length)
