@@ -53,7 +53,7 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 		for j := 0; j < numberOfTestHosts; j++ {
 			if i != j {
 				adrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
-					"/ip4/127.0.0.1/tcp/4000/p2p/%s", s.testHosts[j].ID().Pretty(),
+					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, s.testHosts[j].ID().Pretty(),
 				))
 				s.testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
 			}
