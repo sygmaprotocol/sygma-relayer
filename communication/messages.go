@@ -32,7 +32,7 @@ const (
 	Unknown
 )
 
-// String implement fmt.Stringer
+// String implements fmt.Stringer
 func (msgType ChainBridgeMessageType) String() string {
 	switch msgType {
 	case TssKeyGenMsg:

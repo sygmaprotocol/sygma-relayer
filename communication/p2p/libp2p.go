@@ -58,30 +58,40 @@ func (c Libp2pCommunication) Broadcast(
 		"broadcasting message",
 	)
 	for _, p := range peers {
-		if hostID != p {
-			stream, err := c.h.NewStream(context.TODO(), p, c.protocolID)
-			if err != nil {
-				c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
-					"unable to open stream toward %s", p.Pretty(),
-				)
-				return
-			}
-
-			err = WriteStreamWithBuffer(marshaledMsg, stream)
-			if err != nil {
-				c.logger.Error().Str("To", string(p)).Err(err).Msg("unable to send message")
-				return
-			}
-			c.logger.Trace().Str(
-				"From", wMsg.From.Pretty()).Str(
-				"To", p.Pretty()).Str(
-				"MsgType", msgType.String()).Str(
-				"SessionID", sessionID).Msg(
-				"message sent",
-			)
-			c.streamManager.AddStream(sessionID, stream)
+		if hostID == p {
+			continue // don't send message to itself
 		}
+		c.sendMessage(p, marshaledMsg, msgType, sessionID)
 	}
+}
+
+func (c Libp2pCommunication) sendMessage(
+	to peer.ID,
+	msg []byte,
+	msgType comm.ChainBridgeMessageType,
+	sessionID string,
+) {
+	stream, err := c.h.NewStream(context.TODO(), to, c.protocolID)
+	if err != nil {
+		c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
+			"unable to open stream toward %s", to.Pretty(),
+		)
+		return
+	}
+
+	err = WriteStreamWithBuffer(msg, stream)
+	if err != nil {
+		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
+		return
+	}
+	c.logger.Trace().Str(
+		"From", c.h.ID().Pretty()).Str(
+		"To", to.Pretty()).Str(
+		"MsgType", msgType.String()).Str(
+		"SessionID", sessionID).Msg(
+		"message sent",
+	)
+	c.streamManager.AddStream(sessionID, stream)
 }
 
 func (c Libp2pCommunication) Subscribe(
