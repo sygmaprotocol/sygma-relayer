@@ -13,7 +13,7 @@ const (
 	MaxPayload   = 20000000 // 20M
 )
 
-// ReadStreamWithBuffer read data from the given stream
+// ReadStreamWithBuffer reads data from the given stream
 func ReadStreamWithBuffer(stream network.Stream) ([]byte, error) {
 	streamReader := bufio.NewReader(stream)
 	lengthBytes := make([]byte, LengthHeader)
