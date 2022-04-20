@@ -15,7 +15,8 @@ type WrappedMessage struct {
 // Communication defines methods for communicating between peers
 type Communication interface {
 	// Broadcast sends message to provided peers
-	Broadcast(peers peer.IDSlice, msg []byte, msgType ChainBridgeMessageType, sessionID string)
+	// If error has occurred on sending any message, broadcast will be aborted and error will be sent to errChan
+	Broadcast(peers peer.IDSlice, msg []byte, msgType ChainBridgeMessageType, sessionID string, errChan chan error)
 	// Subscribe subscribes provided channel to a specific message type for a provided session
 	// Returns SubscriptionID - unique identifier of created subscription that is used to unsubscribe from subscription
 	Subscribe(sessionID string, msgType ChainBridgeMessageType, channel chan *WrappedMessage) SubscriptionID

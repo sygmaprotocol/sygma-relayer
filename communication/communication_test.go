@@ -89,12 +89,17 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
+	errChan := make(chan error)
+
 	testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		communication.CoordinatorPingMsg,
 		"1",
+		errChan,
 	)
+
+	s.Len(errChan, 0)
 }
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {
@@ -126,12 +131,17 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
+	errChan := make(chan error)
+
 	testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		communication.CoordinatorPingMsg,
 		"1",
+		errChan,
 	)
+
+	s.Len(errChan, 0)
 
 	/** After unsubscribe only one subscriber got a message **/
 
@@ -142,7 +152,10 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		nil,
 		communication.CoordinatorPingMsg,
 		"1",
+		errChan,
 	)
+
+	s.Len(errChan, 0)
 
 	time.Sleep(1 * time.Second)
 

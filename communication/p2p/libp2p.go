@@ -41,6 +41,7 @@ func (c Libp2pCommunication) Broadcast(
 	msg []byte,
 	msgType comm.ChainBridgeMessageType,
 	sessionID string,
+	errChan chan error,
 ) {
 	hostID := c.h.ID()
 	wMsg := comm.WrappedMessage{
@@ -61,37 +62,12 @@ func (c Libp2pCommunication) Broadcast(
 		if hostID == p {
 			continue // don't send message to itself
 		}
-		c.sendMessage(p, marshaledMsg, msgType, sessionID)
+		err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
+		if err != nil {
+			errChan <- err
+			return
+		}
 	}
-}
-
-func (c Libp2pCommunication) sendMessage(
-	to peer.ID,
-	msg []byte,
-	msgType comm.ChainBridgeMessageType,
-	sessionID string,
-) {
-	stream, err := c.h.NewStream(context.TODO(), to, c.protocolID)
-	if err != nil {
-		c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
-			"unable to open stream toward %s", to.Pretty(),
-		)
-		return
-	}
-
-	err = WriteStream(msg, stream)
-	if err != nil {
-		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
-		return
-	}
-	c.logger.Trace().Str(
-		"From", c.h.ID().Pretty()).Str(
-		"To", to.Pretty()).Str(
-		"MsgType", msgType.String()).Str(
-		"SessionID", sessionID).Msg(
-		"message sent",
-	)
-	c.streamManager.AddStream(sessionID, stream)
 }
 
 func (c Libp2pCommunication) Subscribe(
@@ -125,6 +101,35 @@ func (c Libp2pCommunication) EndSession(sessionID string) {
 }
 
 /** Helper methods **/
+
+func (c Libp2pCommunication) sendMessage(
+	to peer.ID,
+	msg []byte,
+	msgType comm.ChainBridgeMessageType,
+	sessionID string,
+) error {
+	stream, err := c.h.NewStream(context.TODO(), to, c.protocolID)
+	if err != nil {
+		c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
+			"unable to open stream toward %s", to.Pretty(),
+		)
+		return err
+	}
+
+	err = WriteStream(msg, stream)
+	if err != nil {
+		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
+		return err
+	}
+	c.logger.Trace().Str(
+		"To", to.Pretty()).Str(
+		"MsgType", msgType.String()).Str(
+		"SessionID", sessionID).Msg(
+		"message sent",
+	)
+	c.streamManager.AddStream(sessionID, stream)
+	return nil
+}
 
 func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 	msg, err := c.processMessageFromStream(s)
