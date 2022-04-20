@@ -33,7 +33,7 @@ func ReadStreamWithBuffer(stream network.Stream) ([]byte, error) {
 	return dataBuf, nil
 }
 
-// WriteStreamWithBuffer write the message to stream
+// WriteStreamWithBuffer writes the message to stream
 func WriteStreamWithBuffer(msg []byte, stream network.Stream) error {
 	length := uint32(len(msg))
 	lengthBytes := make([]byte, LengthHeader)
