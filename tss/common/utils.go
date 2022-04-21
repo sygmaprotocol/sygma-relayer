@@ -29,7 +29,7 @@ func PeersFromParties(parties []*tss.PartyID) ([]peer.ID, error) {
 	for i, party := range parties {
 		peerID, err := peer.Decode(party.Id)
 		if err != nil {
-			return peers, err
+			return nil, err
 		}
 
 		peers[i] = peerID
