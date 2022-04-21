@@ -114,12 +114,6 @@ func (c Libp2pCommunication) UnSubscribe(
 	)
 }
 
-// TODO - check if there is a need to manualy release streams
-func (c Libp2pCommunication) EndSession(sessionID string) {
-	c.streamManager.ReleaseStream(sessionID)
-	c.logger.Info().Str("SessionID", sessionID).Msg("released stream")
-}
-
 /** Helper methods **/
 
 func (c Libp2pCommunication) sendMessage(

@@ -56,6 +56,8 @@ func (s *StreamManagerTestSuite) TestStreamManager_ManagingSubscriptionsWithUnkn
 	stream3 := mock_network.NewMockStream(s.mockController)
 
 	streamManager.AddStream("1", stream1)
+	// should not affect as stream is nil
+	streamManager.AddStream("1", nil)
 	streamManager.AddStream("2", stream2)
 	streamManager.AddStream("UNKNOWN", stream3)
 
