@@ -3,7 +3,6 @@ package p2p
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -77,8 +76,8 @@ func (c Libp2pCommunication) Broadcast(
 		p := peerID
 		go func() {
 			if !c.isAllowedPeer(p) {
-				errChan <- errors.New(fmt.Sprintf(
-					"message sent from peer %s that is not allowed", p.Pretty()),
+				errChan <- fmt.Errorf(
+					"message sent from peer %s that is not allowed", p.Pretty(),
 				)
 				return
 			}
@@ -171,8 +170,8 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	remotePeerID := s.Conn().RemotePeer()
 	if !c.isAllowedPeer(remotePeerID) {
-		return nil, errors.New(fmt.Sprintf(
-			"message sent from peer %s that is not allowed", s.Conn().RemotePeer().Pretty()),
+		return nil, fmt.Errorf(
+			"message sent from peer %s that is not allowed", s.Conn().RemotePeer().Pretty(),
 		)
 	}
 

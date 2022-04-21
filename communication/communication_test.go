@@ -143,10 +143,8 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 		errChan,
 	)
 	fmt.Println(len(errChan))
-	select {
-	case e := <-errChan:
-		s.NotNil(e)
-	}
+	e := <-errChan
+	s.NotNil(e)
 }
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {

@@ -18,7 +18,6 @@ import (
 type Libp2pCommunicationTestSuite struct {
 	suite.Suite
 	mockController *gomock.Controller
-	testPeer       peer.ID
 	mockHost       *mock_host.MockHost
 	testProtocolID protocol.ID
 	allowedPeers   peer.IDSlice
