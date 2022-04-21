@@ -18,10 +18,11 @@ import (
 
 type CommunicationIntegrationTestSuite struct {
 	suite.Suite
-	mockController *gomock.Controller
-	testHosts      []host.Host
-	testProtocolID protocol.ID
-	testSessionID  string
+	mockController     *gomock.Controller
+	testHosts          []host.Host
+	testCommunications []communication.Communication
+	testProtocolID     protocol.ID
+	testSessionID      string
 }
 
 const numberOfTestHosts = 3
@@ -49,6 +50,7 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 	}
 
 	// populate peerstores
+	peersAdrInfos := map[int][]*peer.AddrInfo{}
 	for i := 0; i < numberOfTestHosts; i++ {
 		for j := 0; j < numberOfTestHosts; j++ {
 			if i != j {
@@ -56,21 +58,29 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, s.testHosts[j].ID().Pretty(),
 				))
 				s.testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
+				peersAdrInfos[i] = append(peersAdrInfos[i], adrInfoForHost)
 			}
 		}
+	}
+
+	for i := 0; i < numberOfTestHosts; i++ {
+		com := p2p.NewCommunication(
+			s.testHosts[i],
+			s.testProtocolID,
+			relayer.RelayerConfig{
+				MpcConfig: relayer.MpcRelayerConfig{
+					Peers: peersAdrInfos[i],
+					Port:  0,
+				},
+			})
+		s.testCommunications = append(s.testCommunications, com)
 	}
 }
 func (s *CommunicationIntegrationTestSuite) TearDownTest() {}
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_SubscribersGotMessage() {
-	var testCommunications []communication.Communication
-	for i := 0; i < numberOfTestHosts; i++ {
-		com := p2p.NewCommunication(s.testHosts[i], s.testProtocolID)
-		testCommunications = append(testCommunications, com)
-	}
-
 	firstSubChannel := make(chan *communication.WrappedMessage)
-	testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+	s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
 
 	go func() {
 		msg := <-firstSubChannel
@@ -80,7 +90,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	}()
 
 	secondSubChannel := make(chan *communication.WrappedMessage)
-	testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
 
 	go func() {
 		msg := <-secondSubChannel
@@ -91,7 +101,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 	errChan := make(chan error)
 
-	testCommunications[2].Broadcast(
+	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		communication.CoordinatorPingMsg,
@@ -102,17 +112,48 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.Len(errChan, 0)
 }
 
-func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {
-	var testCommunications []communication.Communication
-	for i := 0; i < numberOfTestHosts; i++ {
-		com := p2p.NewCommunication(s.testHosts[i], s.testProtocolID)
-		testCommunications = append(testCommunications, com)
-	}
+func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
+	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
+	externalHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
+		Peers: []*peer.AddrInfo{},
+		Port:  uint16(4005),
+	})
 
+	firstSubChannel := make(chan *communication.WrappedMessage)
+	s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+
+	secondSubChannel := make(chan *communication.WrappedMessage)
+	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+
+	// only check for first subscriber, as broadcast should stop on first error
+	go func() {
+		msg := <-firstSubChannel
+		s.Equal("1", msg.SessionID)
+		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(s.testHosts[2].ID(), msg.From)
+	}()
+
+	errChan := make(chan error)
+
+	s.testCommunications[2].Broadcast(
+		[]peer.ID{s.testHosts[0].ID(), externalHost.ID(), s.testHosts[1].ID()},
+		nil,
+		communication.CoordinatorPingMsg,
+		"1",
+		errChan,
+	)
+	fmt.Println(len(errChan))
+	select {
+	case e := <-errChan:
+		s.NotNil(e)
+	}
+}
+
+func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {
 	/** Both subscribers got a message **/
 
 	firstSubChannel := make(chan *communication.WrappedMessage)
-	firstSubID := testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+	firstSubID := s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
 
 	go func() {
 		msg := <-firstSubChannel
@@ -122,7 +163,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	}()
 
 	secondSubChannel := make(chan *communication.WrappedMessage)
-	testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
 
 	go func() {
 		msg := <-secondSubChannel
@@ -133,7 +174,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 	errChan := make(chan error)
 
-	testCommunications[2].Broadcast(
+	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		communication.CoordinatorPingMsg,
@@ -145,9 +186,9 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 	/** After unsubscribe only one subscriber got a message **/
 
-	testCommunications[0].UnSubscribe(firstSubID)
+	s.testCommunications[0].UnSubscribe(firstSubID)
 
-	testCommunications[2].Broadcast(
+	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		communication.CoordinatorPingMsg,

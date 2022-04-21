@@ -3,7 +3,10 @@ package p2p
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	comm "github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -18,17 +21,26 @@ type Libp2pCommunication struct {
 	protocolID    protocol.ID
 	streamManager *StreamManager
 	logger        zerolog.Logger
+	allowedPeers  peer.IDSlice
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID, config relayer.RelayerConfig) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
+
+	var allowedPeers peer.IDSlice
+	for _, pAdrInfo := range config.MpcConfig.Peers {
+		allowedPeers = append(allowedPeers, pAdrInfo.ID)
+	}
+
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
 		h:                          h,
 		protocolID:                 protocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     logger,
+		allowedPeers:               allowedPeers,
 	}
+
 	// start processing incoming messages
 	c.h.SetStreamHandler(c.protocolID, c.streamHandlerFunc)
 	return c
@@ -58,15 +70,24 @@ func (c Libp2pCommunication) Broadcast(
 	c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
 		"broadcasting message",
 	)
-	for _, p := range peers {
-		if hostID == p {
+	for _, peerID := range peers {
+		if hostID == peerID {
 			continue // don't send message to itself
 		}
-		err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
-		if err != nil {
-			errChan <- err
-			return
-		}
+		p := peerID
+		go func() {
+			if !c.isAllowedPeer(p) {
+				errChan <- errors.New(fmt.Sprintf(
+					"message sent from peer %s that is not allowed", p.Pretty()),
+				)
+				return
+			}
+			err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
+			if err != nil {
+				errChan <- err
+				return
+			}
+		}()
 	}
 }
 
@@ -148,6 +169,13 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 }
 
 func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+	remotePeerID := s.Conn().RemotePeer()
+	if !c.isAllowedPeer(remotePeerID) {
+		return nil, errors.New(fmt.Sprintf(
+			"message sent from peer %s that is not allowed", s.Conn().RemotePeer().Pretty()),
+		)
+	}
+
 	msgBytes, err := ReadStream(s)
 	if err != nil {
 		c.streamManager.AddStream("UNKNOWN", s)
@@ -160,6 +188,8 @@ func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.W
 		return nil, err
 	}
 
+	wrappedMsg.From = remotePeerID
+
 	c.streamManager.AddStream(wrappedMsg.SessionID, s)
 
 	c.logger.Trace().Str(
@@ -170,4 +200,13 @@ func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.W
 	)
 
 	return &wrappedMsg, nil
+}
+
+func (c Libp2pCommunication) isAllowedPeer(pID peer.ID) bool {
+	for _, allowedPeer := range c.allowedPeers {
+		if pID == allowedPeer {
+			return true
+		}
+	}
+	return false
 }

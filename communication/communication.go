@@ -9,7 +9,7 @@ type WrappedMessage struct {
 	MessageType ChainBridgeMessageType `json:"message_type"`
 	SessionID   string                 `json:"message_id"`
 	Payload     []byte                 `json:"payload"`
-	From        peer.ID                `json:"from"`
+	From        peer.ID                `json:"-"`
 }
 
 // Communication defines methods for communicating between peers
