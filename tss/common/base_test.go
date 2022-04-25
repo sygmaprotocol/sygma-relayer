@@ -153,6 +153,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 	go baseTss.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
 
 	cancel()
+	time.Sleep(time.Millisecond * 10)
 	outChn <- s.mockMessage
 
 	s.Equal(len(errChn), 0)
