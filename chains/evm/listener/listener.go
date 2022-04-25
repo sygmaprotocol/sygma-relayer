@@ -74,37 +74,46 @@ func (l *EVMListener) ListenToEvents(
 					continue
 				}
 
-				logs, err := l.eventListener.FetchDeposits(context.Background(), l.bridgeAddress, startBlock, startBlock)
+				if startBlock.Int64()%20 == 0 {
+					// Logging process every 20 bocks to exclude spam
+					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for briding events")
+				}
+
+				deposits, err := l.eventListener.FetchDeposits(context.Background(), l.bridgeAddress, startBlock, startBlock)
 				if err != nil {
 					// Filtering logs error really can appear only on wrong configuration or temporary network problem
 					// so i do no see any reason to break execution
 					log.Error().Err(err).Str("DomainID", string(domainID)).Msgf("Unable to filter logs")
 					continue
 				}
-				for _, eventLog := range logs {
-					log.Debug().Msgf("Deposit log found from sender: %s in block: %s with  destinationDomainId: %v, resourceID: %s, depositNonce: %v", eventLog.SenderAddress, startBlock.String(), eventLog.DestinationDomainID, eventLog.ResourceID, eventLog.DepositNonce)
-					m, err := l.eventHandler.HandleEvent(domainID, eventLog.DestinationDomainID, eventLog.DepositNonce, eventLog.ResourceID, eventLog.Data, eventLog.HandlerResponse)
-					if err != nil {
-						log.Error().Str("block", startBlock.String()).Uint8("domainID", domainID).Msgf("%v", err)
-					} else {
-						log.Debug().Msgf("Resolved message %+v in block %s", m, startBlock.String())
-						ch <- m
-					}
-				}
-				if startBlock.Int64()%20 == 0 {
-					// Logging process every 20 bocks to exclude spam
-					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for deposit events")
-				}
-				// TODO: We can store blocks to DB inside listener or make listener send something to channel each block to save it.
+				l.handleDeposits(deposits, startBlock, domainID, ch)
+
 				//Write to block store. Not a critical operation, no need to retry
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 				}
+
 				// Goto next block
 				startBlock.Add(startBlock, big.NewInt(1))
 			}
 		}
 	}()
+
 	return ch
+}
+
+func (l *EVMListener) handleDeposits(deposits []*events.Deposit, block *big.Int, domainID uint8, ch chan *message.Message) {
+	for _, d := range deposits {
+		log.Debug().Msgf("Deposit log found from sender: %s in block: %s with  destinationDomainId: %v, resourceID: %s, depositNonce: %v", d.SenderAddress, block.String(), eventLog.DestinationDomainID, eventLog.ResourceID, eventLog.DepositNonce)
+
+		m, err := l.eventHandler.HandleEvent(domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
+		if err != nil {
+			log.Error().Str("block", block.String()).Uint8("domainID", domainID).Msgf("%v", err)
+			continue
+		}
+
+		log.Debug().Msgf("Resolved message %+v in block %s", m, block.String())
+		ch <- m
+	}
 }
