@@ -119,7 +119,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 
 // StartParams returns params necessary to start the tss process which
 // are sent in the start message.
-func (b *BaseTss) StartParams(readyParams map[peer.ID]bool) []string {
+func (b *BaseTss) StartParams(readyMap map[peer.ID]bool) []string {
 	return []string{}
 }
 
