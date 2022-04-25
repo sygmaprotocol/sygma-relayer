@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ethereum/go-ethereum/common"
@@ -34,7 +34,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
 
 	calldata := deposit.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -71,7 +71,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
 
 	calldata := deposit.ConstructErc20DepositDataWithPriority(recipientByteSlice, big.NewInt(2), uint8(1))
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -116,7 +116,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectDataLen() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 32)...)
 	calldata = append(calldata, metadata...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -150,7 +150,7 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerEmptyMetadata() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 
 	calldata := deposit.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), []byte{})
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -189,7 +189,7 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerIncorrectDataLen() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 16)...)
 	calldata = append(calldata, metadata...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -210,7 +210,7 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandler() {
 	metadata := []byte("metadata.url")
 
 	calldata := deposit.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -246,7 +246,7 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerWithPriority() {
 	metadata := []byte("metadata.url")
 
 	calldata := deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), big.NewInt(2), metadata, uint8(1))
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -313,7 +313,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 16)...)
 	calldata = append(calldata, metadata...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -340,7 +340,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 	metadata := []byte("")
 	calldata := deposit.ConstructGenericDepositData(metadata)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -379,7 +379,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 	metadata := []byte("0xdeadbeef")
 	calldata := deposit.ConstructGenericDepositData(metadata)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,

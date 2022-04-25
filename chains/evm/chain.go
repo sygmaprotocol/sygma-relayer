@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
@@ -64,7 +65,8 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 	eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
 	eventHandler.RegisterEventHandler(config.Erc721Handler, listener.Erc721EventHandler)
 	eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
-	evmListener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.Bridge))
+	eventListener := events.NewListener(client)
+	evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
 
 	mh := voter.NewEVMMessageHandler(*bridgeContract)
 	mh.RegisterMessageHandler(config.Erc20Handler, voter.ERC20MessageHandler)

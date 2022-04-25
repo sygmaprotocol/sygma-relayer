@@ -2,10 +2,10 @@ package listener_test
 
 import (
 	"errors"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"math/big"
 	"testing"
 
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 
@@ -47,7 +47,7 @@ func (s *ListenerTestSuite) TestErc20HandleEvent() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(recipientByteSlice))), 32)...)
 	calldata = append(calldata, recipientByteSlice...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -90,7 +90,7 @@ func (s *ListenerTestSuite) TestErc20HandleEventIncorrectCalldataLen() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(recipientByteSlice))), 16)...)
 	calldata = append(calldata, recipientByteSlice...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -119,7 +119,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithMetadata_Sucess() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadataByteSlice))), 32)...)
 	calldata = append(calldata, metadataByteSlice...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -162,7 +162,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithoutMetadata_Success() {
 	calldata = append(calldata, recipientByteSlice...)
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(0)), 32)...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
@@ -203,7 +203,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_IncorrectCalldataLen_Failure()
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(recipientByteSlice))), 16)...)
 	calldata = append(calldata, recipientByteSlice...)
 
-	depositLog := &evmclient.DepositLogs{
+	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,

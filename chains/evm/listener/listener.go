@@ -8,8 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/types"
@@ -23,20 +22,24 @@ type EventHandler interface {
 }
 type ChainClient interface {
 	LatestBlock() (*big.Int, error)
-	FetchDepositLogs(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*evmclient.DepositLogs, error)
 	CallContract(ctx context.Context, callArgs map[string]interface{}, blockNumber *big.Int) ([]byte, error)
 }
 
+type EventListener interface {
+	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
+}
+
 type EVMListener struct {
-	chainReader   ChainClient
+	client        ChainClient
+	eventListener EventListener
 	eventHandler  EventHandler
 	bridgeAddress common.Address
 }
 
 // NewEVMListener creates an EVMListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewEVMListener(chainReader ChainClient, handler EventHandler, bridgeAddress common.Address) *EVMListener {
-	return &EVMListener{chainReader: chainReader, eventHandler: handler, bridgeAddress: bridgeAddress}
+func NewEVMListener(client ChainClient, eventListener EventListener, handler EventHandler, bridgeAddress common.Address) *EVMListener {
+	return &EVMListener{client: client, eventListener: eventListener, eventHandler: handler, bridgeAddress: bridgeAddress}
 }
 
 func (l *EVMListener) ListenToEvents(
@@ -54,7 +57,7 @@ func (l *EVMListener) ListenToEvents(
 			case <-stopChn:
 				return
 			default:
-				head, err := l.chainReader.LatestBlock()
+				head, err := l.client.LatestBlock()
 				if err != nil {
 					log.Error().Err(err).Msg("Unable to get latest block")
 					time.Sleep(blockRetryInterval)
@@ -71,7 +74,7 @@ func (l *EVMListener) ListenToEvents(
 					continue
 				}
 
-				logs, err := l.chainReader.FetchDepositLogs(context.Background(), l.bridgeAddress, startBlock, startBlock)
+				logs, err := l.eventListener.FetchDeposits(context.Background(), l.bridgeAddress, startBlock, startBlock)
 				if err != nil {
 					// Filtering logs error really can appear only on wrong configuration or temporary network problem
 					// so i do no see any reason to break execution

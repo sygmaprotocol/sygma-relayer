@@ -1,14 +1,10 @@
 package evmclient_test
 
 import (
-	"encoding/hex"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"strings"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,6 +32,8 @@ func (s *EvmClientTestSuite) SetupTest() {
 }
 func (s *EvmClientTestSuite) TearDownTest() {}
 
+/*
+
 func (s *EvmClientTestSuite) TestUnpackDepositEventLogFailedUnpack() {
 	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 
@@ -58,3 +56,5 @@ func (s *EvmClientTestSuite) TestUnpackDepositEventLogValidData() {
 	s.Equal(dl.ResourceID, expectedRID)
 	s.Equal(dl.HandlerResponse, []byte{})
 }
+
+*/
