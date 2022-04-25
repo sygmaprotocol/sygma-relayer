@@ -65,5 +65,4 @@ func SendErrorOrContinue(errChan chan error, err error) {
 	default:
 		// error dropped
 	}
-	return
 }
