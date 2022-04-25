@@ -125,9 +125,15 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 	secondSubChannel := make(chan *communication.WrappedMessage)
 	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
 
-	// only check for first subscriber, as broadcast should stop on first error
 	go func() {
 		msg := <-firstSubChannel
+		s.Equal("1", msg.SessionID)
+		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(s.testHosts[2].ID(), msg.From)
+	}()
+
+	go func() {
+		msg := <-secondSubChannel
 		s.Equal("1", msg.SessionID)
 		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
@@ -142,7 +148,6 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 		"1",
 		errChan,
 	)
-	fmt.Println(len(errChan))
 	e := <-errChan
 	s.NotNil(e)
 }

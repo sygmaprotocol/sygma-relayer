@@ -75,15 +75,9 @@ func (c Libp2pCommunication) Broadcast(
 		}
 		p := peerID
 		go func() {
-			if !c.isAllowedPeer(p) {
-				errChan <- fmt.Errorf(
-					"message sent from peer %s that is not allowed", p.Pretty(),
-				)
-				return
-			}
 			err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
 			if err != nil {
-				errChan <- err
+				SendErrorOrContinue(errChan, err)
 				return
 			}
 		}()
