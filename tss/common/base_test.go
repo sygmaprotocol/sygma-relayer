@@ -131,7 +131,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
 	}, nil)
 	s.mockMessage.EXPECT().IsBroadcast().Return(true)
-	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), communication.TssKeyGenMsg, "keygen")
+	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), communication.TssKeyGenMsg, "keygen", gomock.Any())
 
 	go baseTss.ProcessOutboundMessages(context.Background(), outChn, communication.TssKeyGenMsg)
 	time.Sleep(time.Millisecond * 50)
