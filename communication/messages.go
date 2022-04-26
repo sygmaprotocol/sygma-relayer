@@ -1,7 +1,6 @@
 package communication
 
-import "github.com/rs/zerolog"
-
+// ChainBridgeMessageType represents message type identificator
 type ChainBridgeMessageType uint8
 
 const (
@@ -21,21 +20,19 @@ const (
 	CoordinatorElectionMsg
 	// CoordinatorAliveMsg  message type used to respond on CoordinatorElectionMsg message, signaling that peer is alive and ready for new election process.
 	CoordinatorAliveMsg
-	// CoordinatorEndMsg message type used to communicate that peer is going offline and will not participate in the future.
-	CoordinatorEndMsg
+	// CoordinatorLeaveMsg message type used to communicate that peer is going offline and will not participate in the future.
+	CoordinatorLeaveMsg
 	// CoordinatorSelectMsg message type used to communicate that sender has pronounced itself as a leader.
 	CoordinatorSelectMsg
 	// CoordinatorPingMsg message type used to check if the current coordinator is alive.
 	CoordinatorPingMsg
 	// CoordinatorPingResponseMsg message type used to respond on CoordinatorPingMsg message.
 	CoordinatorPingResponseMsg
+	// Unknown message type
+	Unknown
 )
 
-func (msgType ChainBridgeMessageType) MarshalZerologObject(e *zerolog.Event) {
-	e.Str("msgType", msgType.String())
-}
-
-// String implement fmt.Stringer
+// String implements fmt.Stringer
 func (msgType ChainBridgeMessageType) String() string {
 	switch msgType {
 	case TssKeyGenMsg:
@@ -54,8 +51,8 @@ func (msgType ChainBridgeMessageType) String() string {
 		return "CoordinatorElectionMsg"
 	case CoordinatorAliveMsg:
 		return "CoordinatorAliveMsg"
-	case CoordinatorEndMsg:
-		return "CoordinatorEndMsg"
+	case CoordinatorLeaveMsg:
+		return "CoordinatorLeaveMsg"
 	case CoordinatorSelectMsg:
 		return "CoordinatorSelectMsg"
 	case CoordinatorPingMsg:

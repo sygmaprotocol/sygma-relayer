@@ -15,7 +15,7 @@ type RelayerConfig struct {
 
 type MpcRelayerConfig struct {
 	Peers []*peer.AddrInfo
-	Port  int64
+	Port  uint16
 }
 
 type RawRelayerConfig struct {
@@ -27,7 +27,7 @@ type RawRelayerConfig struct {
 
 type RawMpcRelayerConfig struct {
 	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port  int64     `mapstructure:"Port" json:"port"`
+	Port  uint16    `mapstructure:"Port" json:"port"`
 }
 
 type RawPeer struct {

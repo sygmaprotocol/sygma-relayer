@@ -36,39 +36,39 @@ func (m *MockCommunication) EXPECT() *MockCommunicationMockRecorder {
 }
 
 // Broadcast mocks base method.
-func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType communication.ChainBridgeMessageType, sessionID string) {
+func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType communication.ChainBridgeMessageType, sessionID string, errChan chan error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID)
+	m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID, errChan)
 }
 
 // Broadcast indicates an expected call of Broadcast.
-func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID interface{}) *gomock.Call {
+func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID, errChan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID, errChan)
 }
 
 // Subscribe mocks base method.
-func (m *MockCommunication) Subscribe(msgType communication.ChainBridgeMessageType, sessionID string, channel chan *communication.WrappedMessage) string {
+func (m *MockCommunication) Subscribe(sessionID string, msgType communication.ChainBridgeMessageType, channel chan *communication.WrappedMessage) communication.SubscriptionID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", msgType, sessionID, channel)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "Subscribe", sessionID, msgType, channel)
+	ret0, _ := ret[0].(communication.SubscriptionID)
 	return ret0
 }
 
 // Subscribe indicates an expected call of Subscribe.
-func (mr *MockCommunicationMockRecorder) Subscribe(msgType, sessionID, channel interface{}) *gomock.Call {
+func (mr *MockCommunicationMockRecorder) Subscribe(sessionID, msgType, channel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCommunication)(nil).Subscribe), msgType, sessionID, channel)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCommunication)(nil).Subscribe), sessionID, msgType, channel)
 }
 
 // UnSubscribe mocks base method.
-func (m *MockCommunication) UnSubscribe(subscriptionID string) {
+func (m *MockCommunication) UnSubscribe(subID communication.SubscriptionID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UnSubscribe", subscriptionID)
+	m.ctrl.Call(m, "UnSubscribe", subID)
 }
 
 // UnSubscribe indicates an expected call of UnSubscribe.
-func (mr *MockCommunicationMockRecorder) UnSubscribe(subscriptionID interface{}) *gomock.Call {
+func (mr *MockCommunicationMockRecorder) UnSubscribe(subID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnSubscribe", reflect.TypeOf((*MockCommunication)(nil).UnSubscribe), subscriptionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnSubscribe", reflect.TypeOf((*MockCommunication)(nil).UnSubscribe), subID)
 }

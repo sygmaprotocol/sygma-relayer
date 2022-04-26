@@ -12,7 +12,7 @@ import (
 	mock_keygen "github.com/ChainSafe/chainbridge-core/tss/keygen/mock"
 	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
 	"github.com/golang/mock/gomock"
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -77,7 +77,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
@@ -127,7 +127,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeoutOut() {
 	for _, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer, errChn)
