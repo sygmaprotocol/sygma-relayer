@@ -70,6 +70,14 @@ func (c *Coordinator) isLeader() bool {
 	return c.host.ID().Pretty() == common.SortPeersForSession(peers, sessionID)[0].ID.Pretty()
 }
 
+// broadcastInitiateMsg sends TssInitiateMsg to all peers
+func (c *Coordinator) broadcastInitiateMsg() {
+	c.log.Debug().Msgf("broadcasted initiate message")
+	go c.communication.Broadcast(
+		c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID(), nil,
+	)
+}
+
 // initiate sends initiate message to all peers and waits
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
@@ -84,13 +92,7 @@ func (c *Coordinator) initiate(ctx context.Context) {
 	subID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
-	broadcastInitiateMsg := func() {
-		c.log.Debug().Msgf("broadcasted initiate message")
-		go c.communication.Broadcast(
-			c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID(), nil,
-		)
-	}
-	broadcastInitiateMsg()
+	c.broadcastInitiateMsg()
 
 	for {
 		select {
@@ -117,7 +119,7 @@ func (c *Coordinator) initiate(ctx context.Context) {
 			}
 		case <-ticker.C:
 			{
-				broadcastInitiateMsg()
+				c.broadcastInitiateMsg()
 			}
 		case <-ctx.Done():
 			{
