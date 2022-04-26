@@ -57,8 +57,8 @@ func WriteStream(msg []byte, stream network.Stream) error {
 	return nil
 }
 
-// SendErrorOrContinue passes error to errChan if possible, if not drops error
-func SendErrorOrContinue(errChan chan error, err error) {
+// SendError passes error to errChan if possible, if not drops error
+func SendError(errChan chan error, err error) {
 	select {
 	case errChan <- err:
 		// error sent

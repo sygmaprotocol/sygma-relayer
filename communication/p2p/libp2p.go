@@ -77,7 +77,7 @@ func (c Libp2pCommunication) Broadcast(
 		go func() {
 			err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
 			if err != nil {
-				SendErrorOrContinue(errChan, err)
+				SendError(errChan, err)
 				return
 			}
 		}()
