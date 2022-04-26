@@ -29,7 +29,7 @@ func (ms *SessionSubscriptionManager) getSubscribers(
 	defer ms.lock.Unlock()
 	subsAsMap, ok := ms.subscribersMap[sessionID][msgType]
 	if !ok {
-		return nil
+		return []chan *comm.WrappedMessage{}
 	}
 	var subsAsArray []chan *comm.WrappedMessage
 	for _, sub := range subsAsMap {
