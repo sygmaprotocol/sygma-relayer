@@ -28,14 +28,14 @@ type EventListener interface {
 	ListenToEvents(startBlock, blockConfirmations *big.Int, blockRetryInterval time.Duration, domainID uint8, blockstore *store.BlockStore, stopChn <-chan struct{}, errChn chan<- error) <-chan *message.Message
 }
 
-type ProposalVoter interface {
-	VoteProposal(message *message.Message) error
+type ProposalExecutor interface {
+	Execute(message *message.Message) error
 }
 
 // EVMChain is struct that aggregates all data required for
 type EVMChain struct {
 	listener   EventListener
-	writer     ProposalVoter
+	writer     ProposalExecutor
 	blockstore *store.BlockStore
 	config     *chain.EVMConfig
 }
@@ -74,16 +74,11 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 	mh.RegisterMessageHandler(config.GenericHandler, voter.GenericMessageHandler)
 
 	var evmVoter *voter.EVMVoter
-	evmVoter, err = voter.NewVoterWithSubscription(mh, client, bridgeContract)
-	if err != nil {
-		log.Error().Msgf("failed creating voter with subscription: %s. Falling back to default voter.", err.Error())
-		evmVoter = voter.NewVoter(mh, client, bridgeContract)
-	}
-
+	evmVoter = voter.NewVoter(mh, client, bridgeContract)
 	return NewEVMChain(evmListener, evmVoter, blockstore, config), nil
 }
 
-func NewEVMChain(listener EventListener, writer ProposalVoter, blockstore *store.BlockStore, config *chain.EVMConfig) *EVMChain {
+func NewEVMChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *chain.EVMConfig) *EVMChain {
 	return &EVMChain{listener: listener, writer: writer, blockstore: blockstore, config: config}
 }
 
@@ -117,7 +112,7 @@ func (c *EVMChain) PollEvents(stop <-chan struct{}, sysErr chan<- error, eventsC
 }
 
 func (c *EVMChain) Write(msg *message.Message) error {
-	return c.writer.VoteProposal(msg)
+	return c.writer.Execute(msg)
 }
 
 func (c *EVMChain) DomainID() uint8 {

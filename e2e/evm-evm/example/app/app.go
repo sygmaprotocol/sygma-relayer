@@ -79,12 +79,7 @@ func Run() error {
 				mh.RegisterMessageHandler(config.GenericHandler, voter.GenericMessageHandler)
 
 				var evmVoter *voter.EVMVoter
-				evmVoter, err = voter.NewVoterWithSubscription(mh, client, bridgeContract)
-				if err != nil {
-					log.Error().Msgf("failed creating voter with subscription: %s. Falling back to default voter.", err.Error())
-					evmVoter = voter.NewVoter(mh, client, bridgeContract)
-				}
-
+				evmVoter = voter.NewVoter(mh, client, bridgeContract)
 				chain := evm.NewEVMChain(evmListener, evmVoter, blockstore, config)
 
 				chains = append(chains, chain)

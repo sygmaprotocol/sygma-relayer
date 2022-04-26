@@ -105,7 +105,7 @@ func (l *EVMListener) ListenToEvents(
 
 func (l *EVMListener) handleDeposits(deposits []*events.Deposit, block *big.Int, domainID uint8, ch chan *message.Message) {
 	for _, d := range deposits {
-		log.Debug().Msgf("Deposit log found from sender: %s in block: %s with  destinationDomainId: %v, resourceID: %s, depositNonce: %v", d.SenderAddress, block.String(), eventLog.DestinationDomainID, eventLog.ResourceID, eventLog.DepositNonce)
+		log.Debug().Msgf("Deposit log found from sender: %s in block: %s with  destinationDomainId: %v, resourceID: %s, depositNonce: %v", d.SenderAddress, block.String(), d.DestinationDomainID, d.ResourceID, d.DepositNonce)
 
 		m, err := l.eventHandler.HandleEvent(domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
 		if err != nil {
