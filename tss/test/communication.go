@@ -1,6 +1,7 @@
 package tsstest
 
 import (
+	"fmt"
 	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -12,7 +13,7 @@ type Receiver interface {
 
 type TestCommunication struct {
 	Host               host.Host
-	Subscriptions      map[string]chan *communication.WrappedMessage
+	Subscriptions      map[communication.SubscriptionID]chan *communication.WrappedMessage
 	PeerCommunications map[string]Receiver
 }
 
@@ -21,6 +22,7 @@ func (tc *TestCommunication) Broadcast(
 	msg []byte,
 	msgType communication.ChainBridgeMessageType,
 	sessionID string,
+	errChan chan error,
 ) {
 	wMsg := communication.WrappedMessage{
 		MessageType: msgType,
@@ -38,22 +40,19 @@ func (tc *TestCommunication) Broadcast(
 }
 
 func (ts *TestCommunication) Subscribe(
-	topic communication.ChainBridgeMessageType,
 	sessionID string,
+	topic communication.ChainBridgeMessageType,
 	channel chan *communication.WrappedMessage,
-) string {
-	ts.Subscriptions[string(topic)+sessionID] = channel
-	return string(topic) + sessionID
+) communication.SubscriptionID {
+	subID := communication.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))
+	ts.Subscriptions[subID] = channel
+	return subID
 }
 
-func (ts *TestCommunication) EndSession(sessionID string) {
-	ts.Subscriptions = make(map[string]chan *communication.WrappedMessage)
-}
-
-func (ts *TestCommunication) UnSubscribe(subscriptionID string) {
+func (ts *TestCommunication) UnSubscribe(subscriptionID communication.SubscriptionID) {
 	delete(ts.Subscriptions, subscriptionID)
 }
 
 func (ts *TestCommunication) ReceiveMessage(msg *communication.WrappedMessage, topic communication.ChainBridgeMessageType, sessionID string) {
-	ts.Subscriptions[string(topic)+sessionID] <- msg
+	ts.Subscriptions[communication.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }

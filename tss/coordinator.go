@@ -74,17 +74,25 @@ func (c *Coordinator) isLeader() bool {
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	readyChan := make(chan *communication.WrappedMessage)
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
 
-	subID := c.communication.Subscribe(communication.TssReadyMsg, c.tssProcess.SessionID(), readyChan)
+	subID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
-	go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID())
+	errChanForInitiateMsg := make(chan error)
+	broadcastInitiateMsg := func() {
+		c.log.Debug().Msgf("broadcasted initiate message")
+		go c.communication.Broadcast(
+			c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID(), errChanForInitiateMsg,
+		)
+	}
+	broadcastInitiateMsg()
+
 	for {
 		select {
 		case wMsg := <-readyChan:
@@ -102,14 +110,21 @@ func (c *Coordinator) initiate(ctx context.Context) {
 					return
 				}
 
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, c.tssProcess.SessionID())
+				errChan := make(chan error)
+				go c.communication.Broadcast(
+					c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, c.tssProcess.SessionID(), errChan,
+				)
 				go c.tssProcess.Start(ctx, startParams)
 				return
 			}
+		case err := <-errChanForInitiateMsg:
+			{
+				c.log.Error().Err(err).Msgf("error on broadcast")
+				broadcastInitiateMsg()
+			}
 		case <-ticker.C:
 			{
-				c.log.Debug().Msgf("broadcasted initiate message")
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID())
+				broadcastInitiateMsg()
 			}
 		case <-ctx.Done():
 			{
@@ -125,9 +140,9 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 	msgChan := make(chan *communication.WrappedMessage)
 	startMsgChn := make(chan *communication.WrappedMessage)
 
-	initSubID := c.communication.Subscribe(communication.TssInitiateMsg, c.tssProcess.SessionID(), msgChan)
+	initSubID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssInitiateMsg, msgChan)
 	defer c.communication.UnSubscribe(initSubID)
-	startSubID := c.communication.Subscribe(communication.TssStartMsg, c.tssProcess.SessionID(), startMsgChn)
+	startSubID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
 	for {
@@ -135,7 +150,10 @@ func (c *Coordinator) waitForStart(ctx context.Context) {
 		case wMsg := <-msgChan:
 			{
 				c.log.Debug().Msgf("sent ready message to %s", wMsg.From)
-				go c.communication.Broadcast(peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, c.tssProcess.SessionID())
+				readyErrChan := make(chan error)
+				go c.communication.Broadcast(
+					peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, c.tssProcess.SessionID(), readyErrChan,
+				)
 			}
 		case startMsg := <-startMsgChn:
 			{

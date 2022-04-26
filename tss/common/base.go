@@ -108,7 +108,8 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 
 				b.Log.Debug().Msgf("sending message to %s", peers)
 
-				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID())
+				errChan := make(chan error)
+				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), errChan)
 			}
 		case <-ctx.Done():
 			{
