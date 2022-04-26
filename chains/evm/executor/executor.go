@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
@@ -17,18 +16,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ethereum/go-ethereum/common"
-	ethereumTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 )
-
-type ChainClient interface {
-	RelayerAddress() common.Address
-	CallContract(ctx context.Context, callArgs map[string]interface{}, blockNumber *big.Int) ([]byte, error)
-	SubscribePendingTransactions(ctx context.Context, ch chan<- common.Hash) (*rpc.ClientSubscription, error)
-	TransactionByHash(ctx context.Context, hash common.Hash) (tx *ethereumTypes.Transaction, isPending bool, err error)
-	calls.ContractCallerDispatcher
-}
 
 type MessageHandler interface {
 	HandleMessage(m *message.Message) (*proposal.Proposal, error)
@@ -46,7 +34,7 @@ type Executor struct {
 	mh      MessageHandler
 }
 
-func NewExecutor(mh MessageHandler, client ChainClient, bridgeContract BridgeContract) *Executor {
+func NewExecutor(mh MessageHandler, bridgeContract BridgeContract) *Executor {
 	return &Executor{}
 }
 
@@ -103,11 +91,12 @@ func (e *Executor) Execute(m *message.Message) error {
 				if err != nil {
 					continue
 				}
-
-				if ps.Status == message.ProposalStatusExecuted {
-					cancel()
-					return nil
+				if ps.Status != message.ProposalStatusExecuted {
+					continue
 				}
+
+				cancel()
+				return nil
 			}
 		}
 	}
