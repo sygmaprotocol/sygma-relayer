@@ -29,7 +29,7 @@ type Signing struct {
 	key            store.Keyshare
 	msg            *big.Int
 	resultChn      chan interface{}
-	subscriptionID string
+	subscriptionID communication.SubscriptionID
 }
 
 func NewSigning(
@@ -92,7 +92,7 @@ func (s *Signing) Start(
 	sigChn := make(chan *signing.SignatureData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *communication.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(communication.TssKeySignMsg, s.SessionID(), msgChn)
+	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), communication.TssKeySignMsg, msgChn)
 	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
 	go s.ProcessInboundMessages(ctx, msgChn)
 	go s.processEndMessage(ctx, sigChn)

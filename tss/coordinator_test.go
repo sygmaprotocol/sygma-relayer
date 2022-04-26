@@ -163,7 +163,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
@@ -201,7 +201,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[string]chan *communication.WrappedMessage),
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
