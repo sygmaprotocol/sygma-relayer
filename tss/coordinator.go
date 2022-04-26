@@ -74,7 +74,7 @@ func (c *Coordinator) isLeader() bool {
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context) {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	readyChan := make(chan *communication.WrappedMessage)
