@@ -77,8 +77,9 @@ func Run() error {
 				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
+				executor := executor.NewExecutor(mh, bridgeContract)
 
-				chain := evm.NewEVMChain(evmListener, nil, blockstore, config)
+				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
 
 				chains = append(chains, chain)
 			}
