@@ -13,10 +13,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
@@ -68,14 +68,12 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 	eventListener := events.NewListener(client)
 	evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
 
-	mh := voter.NewEVMMessageHandler(*bridgeContract)
-	mh.RegisterMessageHandler(config.Erc20Handler, voter.ERC20MessageHandler)
-	mh.RegisterMessageHandler(config.Erc721Handler, voter.ERC721MessageHandler)
-	mh.RegisterMessageHandler(config.GenericHandler, voter.GenericMessageHandler)
+	mh := executor.NewEVMMessageHandler(*bridgeContract)
+	mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
+	mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
+	mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
 
-	var evmVoter *voter.EVMVoter
-	evmVoter = voter.NewVoter(mh, client, bridgeContract)
-	return NewEVMChain(evmListener, evmVoter, blockstore, config), nil
+	return NewEVMChain(evmListener, nil, blockstore, config), nil
 }
 
 func NewEVMChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *chain.EVMConfig) *EVMChain {

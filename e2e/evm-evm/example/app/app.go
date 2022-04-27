@@ -15,8 +15,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
@@ -73,14 +73,12 @@ func Run() error {
 				eventListener := events.NewListener(client)
 				evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
 
-				mh := voter.NewEVMMessageHandler(*bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, voter.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, voter.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, voter.GenericMessageHandler)
+				mh := executor.NewEVMMessageHandler(*bridgeContract)
+				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
+				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
+				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
 
-				var evmVoter *voter.EVMVoter
-				evmVoter = voter.NewVoter(mh, client, bridgeContract)
-				chain := evm.NewEVMChain(evmListener, evmVoter, blockstore, config)
+				chain := evm.NewEVMChain(evmListener, nil, blockstore, config)
 
 				chains = append(chains, chain)
 			}

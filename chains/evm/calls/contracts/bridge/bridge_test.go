@@ -12,7 +12,7 @@ import (
 
 	mock_transactor "github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/mock"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter/proposal"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
@@ -266,31 +266,6 @@ func (s *ProposalStatusTestSuite) TestBridge_ExecuteProposal_Success() {
 	s.Nil(err)
 }
 
-func (s *ProposalStatusTestSuite) TestBridge_VoteProposal_Success() {
-	s.mockTransactor.EXPECT().Transact(
-		gomock.Any(),
-		gomock.Any(),
-		gomock.Any(),
-	).Return(&common.Hash{37, 38, 39}, nil)
-	res, err := s.bridgeContract.VoteProposal(&s.proposal, signAndSend.DefaultTransactionOptions)
-	s.Equal(
-		&common.Hash{37, 38, 39},
-		res,
-	)
-	s.Nil(err)
-}
-
-func (s *ProposalStatusTestSuite) TestBridge_SimulateVoteProposal_Success() {
-	s.mockContractCaller.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCaller.EXPECT().CallContract(
-		gomock.Any(),
-		gomock.Any(),
-		nil,
-	).Return([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}, nil)
-	err := s.bridgeContract.SimulateVoteProposal(&s.proposal)
-	s.Nil(err)
-}
-
 func (s *ProposalStatusTestSuite) TestBridge_Pause_Success() {
 	s.mockTransactor.EXPECT().Transact(
 		gomock.Any(),
@@ -379,21 +354,6 @@ func (s *ProposalStatusTestSuite) TestBridge_ProposalStatus_Success() {
 	res, err := s.bridgeContract.ProposalStatus(&s.proposal)
 	s.Equal(
 		message.ProposalStatus(message.ProposalStatus{Status: 0x3, YesVotes: big.NewInt(28), YesVotesTotal: 0x3, ProposedBlock: big.NewInt(31)}),
-		res,
-	)
-	s.Nil(err)
-}
-
-func (s *ProposalStatusTestSuite) TestBridge_IsProposalVotedBy_Success() {
-	s.mockContractCaller.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCaller.EXPECT().CallContract(
-		gomock.Any(),
-		gomock.Any(),
-		nil,
-	).Return([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, nil)
-	res, err := s.bridgeContract.IsProposalVotedBy(common.HexToAddress(testHandlerAddress), &s.proposal)
-	s.Equal(
-		true,
 		res,
 	)
 	s.Nil(err)

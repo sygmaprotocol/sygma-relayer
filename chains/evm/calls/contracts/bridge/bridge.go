@@ -13,7 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter/proposal"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -216,35 +216,6 @@ func (c *BridgeContract) ExecuteProposal(
 	)
 }
 
-func (c *BridgeContract) VoteProposal(
-	proposal *proposal.Proposal,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceId[:])).
-		Str("handler", proposal.HandlerAddress.String()).
-		Msgf("Vote proposal")
-	return c.ExecuteTransaction(
-		"voteProposal",
-		opts,
-		proposal.Source, proposal.DepositNonce, proposal.ResourceId, proposal.Data,
-	)
-}
-
-func (c *BridgeContract) SimulateVoteProposal(proposal *proposal.Proposal) error {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceId[:])).
-		Str("handler", proposal.HandlerAddress.String()).
-		Msgf("Simulate vote proposal")
-	_, err := c.CallContract(
-		"voteProposal",
-		proposal.Source, proposal.DepositNonce, proposal.ResourceId, proposal.Data,
-	)
-	return err
-}
-
 func (c *BridgeContract) Pause(opts transactor.TransactOptions) (*common.Hash, error) {
 	log.Debug().Msg("Pause transfers")
 	return c.ExecuteTransaction(
@@ -311,20 +282,6 @@ func (c *BridgeContract) ProposalStatus(p *proposal.Proposal) (message.ProposalS
 		return message.ProposalStatus{}, err
 	}
 	out := *abi.ConvertType(res[0], new(message.ProposalStatus)).(*message.ProposalStatus)
-	return out, nil
-}
-
-func (c *BridgeContract) IsProposalVotedBy(by common.Address, p *proposal.Proposal) (bool, error) {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
-		Str("handler", p.HandlerAddress.String()).
-		Msgf("Getting is proposal voted by %s", by.String())
-	res, err := c.CallContract("_hasVotedOnProposal", idAndNonce(p.Source, p.DepositNonce), p.GetDataHash(), by)
-	if err != nil {
-		return false, err
-	}
-	out := *abi.ConvertType(res[0], new(bool)).(*bool)
 	return out, nil
 }
 
