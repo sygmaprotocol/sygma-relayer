@@ -72,9 +72,8 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 	mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
 	mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
 	mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
-	executor := executor.NewExecutor(mh, bridgeContract)
 
-	return NewEVMChain(evmListener, executor, blockstore, config), nil
+	return NewEVMChain(evmListener, nil, blockstore, config), nil
 }
 
 func NewEVMChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *chain.EVMConfig) *EVMChain {
