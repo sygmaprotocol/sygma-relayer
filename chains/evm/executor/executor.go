@@ -39,8 +39,20 @@ type Executor struct {
 	mh      MessageHandler
 }
 
-func NewExecutor(mh MessageHandler, bridgeContract BridgeContract) *Executor {
-	return &Executor{}
+func NewExecutor(
+	host host.Host,
+	comm communication.Communication,
+	mh MessageHandler,
+	bridgeContract BridgeContract,
+	fetcher signing.SaveDataFetcher,
+) *Executor {
+	return &Executor{
+		host:    host,
+		comm:    comm,
+		mh:      mh,
+		bridge:  bridgeContract,
+		fetcher: fetcher,
+	}
 }
 
 func (e *Executor) Execute(m *message.Message) error {

@@ -5,6 +5,7 @@ package app
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,6 +18,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/communication/p2p"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
@@ -26,6 +28,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -41,6 +44,21 @@ func Run() error {
 		panic(err)
 	}
 	blockstore := store.NewBlockStore(db)
+
+	privBytes, err := ioutil.ReadFile(configuration.RelayerConfig.MpcConfig.KeystorePath)
+	if err != nil {
+		panic(err)
+	}
+	priv, err := crypto.UnmarshalPrivateKey(privBytes)
+	if err != nil {
+		panic(err)
+	}
+	host, err := p2p.NewHost(priv, configuration.RelayerConfig.MpcConfig)
+	if err != nil {
+		panic(err)
+	}
+	comm := p2p.NewCommunication(host, "p2p/chainbridge", configuration.RelayerConfig)
+	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
@@ -77,7 +95,7 @@ func Run() error {
 				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
-				executor := executor.NewExecutor(mh, bridgeContract)
+				executor := executor.NewExecutor(host, comm, mh, bridgeContract, keyshareStore)
 
 				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
 
