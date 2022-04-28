@@ -30,7 +30,7 @@ type Keygen struct {
 	common.BaseTss
 	storer         SaveDataStorer
 	threshold      int
-	subscriptionID string
+	subscriptionID communication.SubscriptionID
 }
 
 func NewKeygen(
@@ -78,7 +78,7 @@ func (k *Keygen) Start(
 	msgChn := make(chan *communication.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
 
-	k.subscriptionID = k.Communication.Subscribe(communication.TssKeyGenMsg, k.SessionID(), msgChn)
+	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), communication.TssKeyGenMsg, msgChn)
 
 	go k.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
 	go k.ProcessInboundMessages(ctx, msgChn)
