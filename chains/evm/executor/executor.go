@@ -12,10 +12,13 @@ import (
 	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
 
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 )
 
 type MessageHandler interface {
@@ -24,6 +27,8 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	ProposalStatus(p *proposal.Proposal) (message.ProposalStatus, error)
+	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
 }
 
 type Executor struct {
@@ -52,8 +57,15 @@ func (e *Executor) Execute(m *message.Message) error {
 		return nil
 	}
 
+	propHash, err := e.bridge.ProposalHash(prop)
+	if err != nil {
+		return err
+	}
+
+	msg := big.NewInt(0)
+	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
-		big.NewInt(0),
+		msg,
 		fmt.Sprintf("%d-%d", m.Destination, m.DepositNonce),
 		e.host,
 		e.comm,
@@ -72,21 +84,26 @@ func (e *Executor) Execute(m *message.Message) error {
 	defer ticker.Stop()
 	for {
 		select {
-		case sig := <-sigChn:
+		case sigResult := <-sigChn:
 			{
-				fmt.Println(sig)
-				cancel()
-				return nil
+				signatureData := sigResult.(*tssSigning.SignatureData)
+				sig := signatureData.Signature.R
+				sig = append(sig[:], signatureData.Signature.S[:]...)
+				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+				hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
+				if err != nil {
+					cancel()
+					return err
+				}
+				fmt.Println(hash)
 			}
 		case status := <-statusChn:
 			{
-				fmt.Println(status)
 				cancel()
-				return nil
+				return status
 			}
 		case <-ticker.C:
 			{
-
 				ps, err := e.bridge.ProposalStatus(prop)
 				if err != nil {
 					continue
@@ -94,7 +111,6 @@ func (e *Executor) Execute(m *message.Message) error {
 				if ps.Status != message.ProposalStatusExecuted {
 					continue
 				}
-
 				cancel()
 				return nil
 			}

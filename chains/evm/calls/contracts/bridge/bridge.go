@@ -12,6 +12,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -202,6 +203,7 @@ func (c *BridgeContract) GenericDeposit(
 
 func (c *BridgeContract) ExecuteProposal(
 	proposal *proposal.Proposal,
+	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -212,8 +214,43 @@ func (c *BridgeContract) ExecuteProposal(
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, true,
+		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature,
 	)
+}
+
+func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
+	domainType, _ := abi.NewType("uint8", "uint8", nil)
+	depositNonceType, _ := abi.NewType("uint64", "uint64", nil)
+	dataType, _ := abi.NewType("bytes", "bytes", nil)
+	resourceType, _ := abi.NewType("bytes32", "bytes32", nil)
+
+	arguments := abi.Arguments{
+		{
+			Type: domainType,
+		},
+		{
+			Type: depositNonceType,
+		},
+		{
+			Type: dataType,
+		},
+		{
+			Type: resourceType,
+		},
+	}
+
+	bytes, err := arguments.Pack(
+		proposal.Source,
+		proposal.DepositNonce,
+		proposal.Data,
+		proposal.ResourceId,
+	)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	hash := crypto.Keccak256Hash(bytes)
+	return hash.Bytes(), nil
 }
 
 func (c *BridgeContract) Pause(opts transactor.TransactOptions) (*common.Hash, error) {

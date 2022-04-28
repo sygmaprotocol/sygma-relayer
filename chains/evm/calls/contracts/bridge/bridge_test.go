@@ -258,7 +258,7 @@ func (s *ProposalStatusTestSuite) TestBridge_ExecuteProposal_Success() {
 		gomock.Any(),
 		gomock.Any(),
 	).Return(&common.Hash{36, 37, 38}, nil)
-	res, err := s.bridgeContract.ExecuteProposal(&s.proposal, signAndSend.DefaultTransactionOptions)
+	res, err := s.bridgeContract.ExecuteProposal(&s.proposal, []byte("signature"), signAndSend.DefaultTransactionOptions)
 	s.Equal(
 		&common.Hash{36, 37, 38},
 		res,
