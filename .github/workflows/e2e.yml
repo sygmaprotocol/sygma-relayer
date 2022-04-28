@@ -1,6 +1,5 @@
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push
 
 name: E2E tests
 jobs:
