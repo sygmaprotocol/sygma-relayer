@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"fmt"
+
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog"
 )
@@ -14,8 +15,10 @@ type RelayerConfig struct {
 }
 
 type MpcRelayerConfig struct {
-	Peers []*peer.AddrInfo
-	Port  uint16
+	Peers        []*peer.AddrInfo
+	Port         uint16
+	KeysharePath string
+	KeystorePath string
 }
 
 type RawRelayerConfig struct {
@@ -26,8 +29,10 @@ type RawRelayerConfig struct {
 }
 
 type RawMpcRelayerConfig struct {
-	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port  uint16    `mapstructure:"Port" json:"port"`
+	Peers        []RawPeer `mapstructure:"Peers" json:"peers"`
+	Port         uint16    `mapstructure:"Port" json:"port"`
+	KeysharePath string    `mapstructure:"KeysharePath" json:"keysharePath"`
+	KeystorePath string    `mapstructure:"KeystorePath" json:"keystorePath"`
 }
 
 type RawPeer struct {
@@ -65,6 +70,8 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	}
 	config.MpcConfig.Peers = peers
 	config.MpcConfig.Port = rawConfig.MpcConfig.Port
+	config.MpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
+	config.MpcConfig.KeystorePath = rawConfig.MpcConfig.KeystorePath
 
 	return config, nil
 }
