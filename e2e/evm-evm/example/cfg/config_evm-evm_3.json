@@ -6,10 +6,10 @@
       "keystorePath": "/cfg/pks/2.pk",
       "peers": [
         {
-          "peerAddress": "/ip4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"
+          "peerAddress": "/dns/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"
         },
         {
-          "peerAddress": "/ip4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"
+          "peerAddress": "/dns/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"
         }
       ]
     }
