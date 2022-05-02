@@ -3,6 +3,7 @@ package p2p
 import (
 	"errors"
 	"fmt"
+
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -35,7 +36,15 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 	)
 
 	for _, p := range rconf.Peers {
+
+		fmt.Println("PEERS")
+		fmt.Println(p.ID)
+		fmt.Println(p.Addrs[0])
+
 		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
 	}
+
+	fmt.Println(h.Peerstore().Peers())
+
 	return h, nil
 }
