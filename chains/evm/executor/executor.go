@@ -114,6 +114,8 @@ func (e *Executor) Execute(m *message.Message) error {
 			}
 		case status := <-statusChn:
 			{
+				log.Info().Msgf("Excited execution of proposal %v with status: %v", prop, status)
+
 				cancel()
 				return status
 			}

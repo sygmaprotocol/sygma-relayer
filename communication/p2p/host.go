@@ -37,14 +37,14 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 
 	for _, p := range rconf.Peers {
 
-		fmt.Println("PEERS")
-		fmt.Println(p.ID)
-		fmt.Println(p.Addrs[0])
+		log.Info().Msgf("PEERS")
+		log.Info().Msgf("%s", p.ID)
+		log.Info().Msgf("%+v", p.Addrs[0])
 
 		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
 	}
 
-	fmt.Println(h.Peerstore().Peers())
+	log.Info().Msgf("%+v", h.Peerstore().Peers())
 
 	return h, nil
 }
