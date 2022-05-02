@@ -14,6 +14,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
@@ -55,6 +56,7 @@ func NewExecutor(
 	}
 }
 
+// Execute starts a signing process and executes proposal when signature is generated
 func (e *Executor) Execute(m *message.Message) error {
 	prop, err := e.mh.HandleMessage(m)
 	if err != nil {
@@ -107,7 +109,8 @@ func (e *Executor) Execute(m *message.Message) error {
 					cancel()
 					return err
 				}
-				fmt.Println(hash)
+
+				log.Info().Msgf("Sent proposal %v execution with hash: %s", prop, hash)
 			}
 		case status := <-statusChn:
 			{
@@ -123,6 +126,8 @@ func (e *Executor) Execute(m *message.Message) error {
 				if ps.Status != message.ProposalStatusExecuted {
 					continue
 				}
+
+				log.Info().Msgf("Successfully executed proposal %v", prop)
 				cancel()
 				return nil
 			}
