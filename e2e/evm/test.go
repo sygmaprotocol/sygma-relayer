@@ -193,7 +193,7 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
-	s.Equal([]*big.Int{big.NewInt(50000000000)}, depositTx.GasPrice())
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
