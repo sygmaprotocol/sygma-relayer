@@ -102,16 +102,9 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, transactor.TransactOptions{
 		Priority: uint8(2), // fast
 	})
-
-	if err != nil {
-		return
-	}
 	s.Nil(err)
 
 	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
 	s.Equal([]*big.Int{big.NewInt(140000000000)}, depositTx.GasPrice())
@@ -170,9 +163,6 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Nil(err)
 
 	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
 	s.Nil(err)
 	// check gas price of deposit tx - 80 gwei (default)
 	s.Equal([]*big.Int{big.NewInt(8000000000)}, depositTx.GasPrice())
@@ -202,15 +192,9 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, transactor.TransactOptions{
 		Priority: uint8(0), // slow
 	})
-	if err != nil {
-		return
-	}
 	s.Nil(err)
 
 	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
 	s.Equal([]*big.Int{big.NewInt(50000000000)}, depositTx.GasPrice())
