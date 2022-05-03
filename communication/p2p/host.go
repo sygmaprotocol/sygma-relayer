@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	noise "github.com/libp2p/go-libp2p-noise"
+	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/rs/zerolog/log"
 )
 
@@ -35,16 +37,21 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 		"new libp2p host created with address: %s", h.Addrs()[0].String(),
 	)
 
-	for _, p := range rconf.Peers {
-
-		log.Info().Msgf("PEERS")
-		log.Info().Msgf("%s", p.ID)
-		log.Info().Msgf("%+v", p.Addrs[0])
-
-		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
+	resolver, err := madns.NewResolver()
+	if err != nil {
+		return nil, err
 	}
+	for _, p := range rconf.Peers {
+		addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
+		if err != nil {
+			log.Err(err).Msgf("Error occured during dns resolution")
 
-	log.Info().Msgf("%+v", h.Peerstore().Peers())
+			h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
+		} else {
+			h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
+		}
+
+	}
 
 	return h, nil
 }
