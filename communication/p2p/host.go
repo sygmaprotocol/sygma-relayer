@@ -44,13 +44,10 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 	for _, p := range rconf.Peers {
 		addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
 		if err != nil {
-			log.Err(err).Msgf("Error occured during dns resolution")
-
-			h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
-		} else {
-			h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
+			return nil, err
 		}
 
+		h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
 	}
 
 	return h, nil
