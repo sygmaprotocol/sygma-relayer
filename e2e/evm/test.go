@@ -8,10 +8,13 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
@@ -40,19 +43,17 @@ func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 Tes
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	relayerAddresses1 []common.Address
-	relayerAddresses2 []common.Address
-	client1           TestClient
-	client2           TestClient
-	gasPricer1        calls.GasPricer
-	gasPricer2        calls.GasPricer
-	fabric1           calls.TxFabric
-	fabric2           calls.TxFabric
-	erc20RID          [32]byte
-	erc721RID         [32]byte
-	genericRID        [32]byte
-	config1           local.EVME2EConfig
-	config2           local.EVME2EConfig
+	client1    TestClient
+	client2    TestClient
+	gasPricer1 calls.GasPricer
+	gasPricer2 calls.GasPricer
+	fabric1    calls.TxFabric
+	fabric2    calls.TxFabric
+	erc20RID   [32]byte
+	erc721RID  [32]byte
+	genericRID [32]byte
+	config1    local.EVME2EConfig
+	config2    local.EVME2EConfig
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -117,7 +118,6 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
 
-/*
 func (s *IntegrationTestSuite) TestErc721Deposit() {
 	tokenId := big.NewInt(1)
 	metadata := "metadata.url"
@@ -158,10 +158,10 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	)
 	s.Nil(err)
 
-	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 80 gwei (default)
-	s.Equal([]*big.Int{big.NewInt(8000000000)}, depositTx.GasPrice())
+	s.Equal(big.NewInt(8000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -202,4 +202,3 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	s.Nil(err)
 	s.Equal(true, exists)
 }
-*/
