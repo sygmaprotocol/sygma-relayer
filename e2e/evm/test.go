@@ -8,13 +8,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
@@ -120,6 +117,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
 
+/*
 func (s *IntegrationTestSuite) TestErc721Deposit() {
 	tokenId := big.NewInt(1)
 	metadata := "metadata.url"
@@ -204,3 +202,4 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	s.Nil(err)
 	s.Equal(true, exists)
 }
+*/

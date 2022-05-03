@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
 
@@ -104,6 +105,15 @@ func (e *Executor) Execute(m *message.Message) error {
 				sig := signatureData.Signature.R
 				sig = append(sig[:], signatureData.Signature.S[:]...)
 				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+				sig[64] += 27
+
+				sigPublicKey, err := crypto.Ecrecover(propHash, sig)
+				if err != nil {
+					log.Err(err).Msgf("Failed recovering signature")
+				}
+
+				log.Info().Msgf("Signature public key: %s", common.BytesToAddress(sigPublicKey))
+
 				hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
 				if err != nil {
 					cancel()
