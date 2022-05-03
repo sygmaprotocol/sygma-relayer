@@ -99,7 +99,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	})
 	s.Nil(err)
 
-	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
 	s.Equal([]*big.Int{big.NewInt(140000000000)}, depositTx.GasPrice())

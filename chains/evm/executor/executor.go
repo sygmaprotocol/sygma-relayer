@@ -13,7 +13,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
 
@@ -107,13 +106,6 @@ func (e *Executor) Execute(m *message.Message) error {
 				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 				sig[64] += 27
 
-				sigPublicKey, err := crypto.Ecrecover(propHash, sig)
-				if err != nil {
-					log.Err(err).Msgf("Failed recovering signature")
-				}
-
-				log.Info().Msgf("Signature public key: %s", common.BytesToAddress(sigPublicKey))
-
 				hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
 				if err != nil {
 					cancel()
@@ -124,7 +116,7 @@ func (e *Executor) Execute(m *message.Message) error {
 			}
 		case status := <-statusChn:
 			{
-				log.Info().Msgf("Excited execution of proposal %v with status: %v", prop, status)
+				log.Info().Msgf("Exited execution of proposal %v with status: %v", prop, status)
 
 				cancel()
 				return status
