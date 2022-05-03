@@ -102,7 +102,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
-	s.Equal([]*big.Int{big.NewInt(140000000000)}, depositTx.GasPrice())
+	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
