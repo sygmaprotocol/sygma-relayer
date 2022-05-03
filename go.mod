@@ -8,6 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/golang/mock v1.6.0
 	github.com/imdario/mergo v0.3.12
+	github.com/multiformats/go-multiaddr-dns v0.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cobra v1.1.3
@@ -80,7 +81,6 @@ require (
 	github.com/miekg/dns v1.1.43 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
-	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multistream v0.2.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect

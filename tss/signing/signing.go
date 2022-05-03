@@ -11,6 +11,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
@@ -43,6 +44,8 @@ func NewSigning(
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(crypto.PubkeyToAddress(*key.Key.ECDSAPub.ToECDSAPubKey()))
 
 	partyStore := make(map[string]*tss.PartyID)
 	return &Signing{

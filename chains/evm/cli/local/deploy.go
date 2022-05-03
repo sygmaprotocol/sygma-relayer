@@ -27,13 +27,7 @@ var BobKp = keystore.TestKeyRing.EthereumKeys[keystore.BobKey]
 var EveKp = keystore.TestKeyRing.EthereumKeys[keystore.EveKey]
 
 var (
-	DefaultRelayerAddresses = []common.Address{
-		common.HexToAddress(keystore.TestKeyRing.EthereumKeys[keystore.AliceKey].Address()),
-		common.HexToAddress(keystore.TestKeyRing.EthereumKeys[keystore.BobKey].Address()),
-		common.HexToAddress(keystore.TestKeyRing.EthereumKeys[keystore.CharlieKey].Address()),
-		common.HexToAddress(keystore.TestKeyRing.EthereumKeys[keystore.DaveKey].Address()),
-		common.HexToAddress(keystore.TestKeyRing.EthereumKeys[keystore.EveKey].Address()),
-	}
+	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")
 )
 
 type EVME2EConfig struct {
@@ -60,14 +54,13 @@ func PrepareLocalEVME2EEnv(
 	domainID uint8,
 	threshold *big.Int,
 	mintTo common.Address,
-	relayerAddresses []common.Address,
 ) (EVME2EConfig, error) {
 	staticGasPricer := evmgaspricer.NewStaticGasPriceDeterminant(ethClient, nil)
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
 	bridgeContractAddress, err := bridgeContract.DeployContract(
-		domainID, relayerAddresses, threshold, big.NewInt(0), big.NewInt(100),
+		domainID, []common.Address{MpcAddress}, threshold, big.NewInt(0), big.NewInt(100),
 	)
 	if err != nil {
 		return EVME2EConfig{}, err

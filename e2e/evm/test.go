@@ -32,14 +32,12 @@ type TestClient interface {
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 }
 
-func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient, relayerAddresses1, relayerAddresses2 []common.Address) *IntegrationTestSuite {
+func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
-		fabric1:           fabric1,
-		fabric2:           fabric2,
-		client1:           client1,
-		client2:           client2,
-		relayerAddresses1: relayerAddresses1,
-		relayerAddresses2: relayerAddresses2,
+		fabric1: fabric1,
+		fabric2: fabric2,
+		client1: client1,
+		client2: client2,
 	}
 }
 
@@ -61,13 +59,13 @@ type IntegrationTestSuite struct {
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From(), s.relayerAddresses1)
+	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From())
 	if err != nil {
 		panic(err)
 	}
 	s.config1 = config1
 
-	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From(), s.relayerAddresses2)
+	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From())
 	if err != nil {
 		panic(err)
 	}
