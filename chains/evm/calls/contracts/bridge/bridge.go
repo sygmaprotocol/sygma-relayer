@@ -340,6 +340,18 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	return out, nil
 }
 
+func (c *BridgeContract) AdminChangeFeeHandler(
+	feeHandlerAddr common.Address,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Setting fee handler %s", feeHandlerAddr.String())
+	return c.ExecuteTransaction(
+		"adminChangeFeeHandler",
+		opts,
+		feeHandlerAddr,
+	)
+}
+
 func idAndNonce(srcId uint8, nonce uint64) *big.Int {
 	var data []byte
 	data = append(data, big.NewInt(int64(nonce)).Bytes()...)
