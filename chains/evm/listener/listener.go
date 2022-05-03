@@ -76,7 +76,7 @@ func (l *EVMListener) ListenToEvents(
 
 				if startBlock.Int64()%20 == 0 {
 					// Logging process every 20 bocks to exclude spam
-					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for briding events")
+					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for bridging events")
 				}
 
 				deposits, err := l.eventListener.FetchDeposits(context.Background(), l.bridgeAddress, startBlock, startBlock)
