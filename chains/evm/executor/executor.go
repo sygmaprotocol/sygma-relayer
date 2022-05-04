@@ -121,6 +121,7 @@ func (e *Executor) Execute(m *message.Message) error {
 					continue
 				}
 				if ps.Status != message.ProposalStatusExecuted {
+					log.Debug().Msgf("Proposal %v status: %s", prop, ps.Status)
 					continue
 				}
 
