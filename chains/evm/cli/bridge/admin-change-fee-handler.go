@@ -18,7 +18,7 @@ import (
 var adminChangeFeeHandlerCmd = &cobra.Command{
 	Use:   "admin-change-fee-handler",
 	Short: "Change the fee handler address in bridge by admin",
-	Long:  "The admin-change-fee-handler subcommand changes the fee handler address in bridge by admin",
+	Long:  "The admin-change-fee-handler subcommand sets the fee handler address in bridge by admin",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
@@ -48,6 +48,7 @@ var adminChangeFeeHandlerCmd = &cobra.Command{
 }
 
 func BindAdminChangeFeeHandlerFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&Bridge, "bridge", "", "Bridge contract address")
 	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
 	flags.MarkFlagsAsRequired(cmd, "fee_handler")
 }
@@ -57,6 +58,9 @@ func init() {
 }
 
 func ValidateAdminChangeFeeHandlerFlags(cmd *cobra.Command, args []string) error {
+	if !common.IsHexAddress(Bridge) {
+		return fmt.Errorf("invalid bridge address %s", Bridge)
+	}
 	if !common.IsHexAddress(FeeHandler) {
 		return fmt.Errorf("invalid fee handler address %s", FeeHandler)
 	}
@@ -64,10 +68,10 @@ func ValidateAdminChangeFeeHandlerFlags(cmd *cobra.Command, args []string) error
 }
 
 func ProcessAdminChangeFeeHandlerFlags(cmd *cobra.Command, args []string) error {
-	var err error
+	BridgeAddr = common.HexToAddress(Bridge)
 	FeeHandlerAddr = common.HexToAddress(FeeHandler)
 
-	return err
+	return nil
 }
 
 func AdminChangeFeeHandlerCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
@@ -79,7 +83,6 @@ func AdminChangeFeeHandlerCmd(cmd *cobra.Command, args []string, contract *bridg
 		return err
 	}
 
-	log.Info().Msgf("Admin changes fee handler"+
-		" with transaction: %s", h.Hex())
+	log.Info().Msgf("Admin changes fee handler with transaction: %s", h.Hex())
 	return nil
 }

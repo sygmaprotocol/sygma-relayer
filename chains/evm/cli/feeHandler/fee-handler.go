@@ -23,4 +23,7 @@ var FeeHandlerCmd = &cobra.Command{
 
 func init() {
 	FeeHandlerCmd.AddCommand(setFeeOracleCmd)
+	FeeHandlerCmd.AddCommand(setFeePropertiesCmd)
+	FeeHandlerCmd.AddCommand(changeFeeCmd)
+	FeeHandlerCmd.AddCommand(distributeFeeCmd)
 }

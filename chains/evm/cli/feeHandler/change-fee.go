@@ -14,10 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var setFeeOracleCmd = &cobra.Command{
-	Use:   "set-fee-oracle",
-	Short: "Set the fee oracle address to fee handler",
-	Long:  "The set-fee-oracle subcommand sets the fee oracle address to fee handler. Only call this command if feeHandlerWithOracle is deployed",
+var changeFeeCmd = &cobra.Command{
+	Use:   "change-fee",
+	Short: "Change the fee in basic fee handler",
+	Long:  "The change-fee subcommand sets the new fee to the basic fee handler. Only call this command if basicFeeHandler is deployed",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
@@ -33,52 +33,49 @@ var setFeeOracleCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return SetFeeOracleCmd(cmd, args, feeHandler.NewFeeHandlerWithOracleContract(c, FeeHandlerWithOracleAddr, t))
+		return ChangeFeeCmd(cmd, args, feeHandler.NewBasicFeeHandlerContract(c, BasicFeeHandlerAddr, t))
 	},
 	Args: func(cmd *cobra.Command, args []string) error {
-		err := ValidateSetFeeOracleFlags(cmd, args)
+		err := ValidateChangeFeeFlags(cmd, args)
 		if err != nil {
 			return err
 		}
 
-		err = ProcessSetFeeOracleFlags(cmd, args)
+		err = ProcessChangeFeeFlags(cmd, args)
 		return err
 	},
 }
 
-func BindSetFeeOracleFlags(cmd *cobra.Command) {
+func BindChangeFeeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
-	cmd.Flags().StringVar(&FeeOracleAddress, "fee_oracle", "", "Fee oracle identity address")
-	flags.MarkFlagsAsRequired(cmd, "fee_handler", "fee_oracle")
+	cmd.Flags().Uint64Var(&Fee, "fee", 0, "Fee to be taken when making a deposit (in ETH, decimals are allowed)")
+	flags.MarkFlagsAsRequired(cmd, "fee_handler", "fee")
 }
 
 func init() {
-	BindSetFeeOracleFlags(setFeeOracleCmd)
+	BindChangeFeeFlags(changeFeeCmd)
 }
 
-func ValidateSetFeeOracleFlags(cmd *cobra.Command, args []string) error {
+func ValidateChangeFeeFlags(cmd *cobra.Command, args []string) error {
 	if !common.IsHexAddress(FeeHandler) {
 		return fmt.Errorf("invalid fee handler address %s", FeeHandler)
 	}
-	if !common.IsHexAddress(FeeOracleAddress) {
-		return fmt.Errorf("invalid fee oracle address %s", FeeOracleAddress)
-	}
 	return nil
 }
 
-func ProcessSetFeeOracleFlags(cmd *cobra.Command, args []string) error {
-	FeeHandlerWithOracleAddr = common.HexToAddress(FeeHandler)
-	FeeOracleAddr = common.HexToAddress(FeeOracleAddress)
+func ProcessChangeFeeFlags(cmd *cobra.Command, args []string) error {
+	BasicFeeHandlerAddr = common.HexToAddress(FeeHandler)
+
 	return nil
 }
 
-func SetFeeOracleCmd(cmd *cobra.Command, args []string, contract *feeHandler.FeeHandlerWithOracleContract) error {
-	tx, err := contract.SetFeeOracle(FeeOracleAddr, transactor.TransactOptions{GasLimit: gasLimit})
+func ChangeFeeCmd(cmd *cobra.Command, args []string, contract *feeHandler.BasicFeeHandlerContract) error {
+	tx, err := contract.ChangeFee(Fee, transactor.TransactOptions{GasLimit: gasLimit})
 	if err != nil {
 		log.Error().Err(fmt.Errorf("failed to set fee oracle address. error: %v", err))
 		return err
 	}
 
-	log.Info().Msgf("Fee oracle address setup with transaction: %s", tx.Hex())
+	log.Info().Msgf("New fee is set up with transaction: %s", tx.Hex())
 	return nil
 }

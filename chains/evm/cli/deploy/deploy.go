@@ -52,24 +52,23 @@ const (
 
 var (
 	// Flags for all EVM Deploy CLI commands
-	Bridge           bool
-	BridgeAddress    string
-	DeployAll        bool
-	DomainId         uint8
-	GenericHandler   bool
-	Erc20            bool
-	Erc20Handler     bool
-	Erc20Name        string
-	Erc20Symbol      string
-	Erc721           bool
-	Erc721Handler    bool
-	Erc721Name       string
-	Erc721Symbol     string
-	Erc721BaseURI    string
-	FeeHandler       bool
-	Fee              uint64
-	RelayerThreshold uint64
-	Relayers         []string
+	Bridge               bool
+	BridgeAddress        string
+	DeployAll            bool
+	DomainId             uint8
+	GenericHandler       bool
+	Erc20                bool
+	Erc20Handler         bool
+	Erc20Name            string
+	Erc20Symbol          string
+	Erc721               bool
+	Erc721Handler        bool
+	Erc721Name           string
+	Erc721Symbol         string
+	Erc721BaseURI        string
+	FeeHandlerWithOracle bool
+	RelayerThreshold     uint64
+	Relayers             []string
 )
 
 func BindDeployEVMFlags(cmd *cobra.Command) {
@@ -87,8 +86,7 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Erc721Symbol, "erc721-symbol", "", "ERC721 contract symbol")
 	cmd.Flags().StringVar(&Erc721BaseURI, "erc721-base-uri", "", "ERC721 base URI")
 	cmd.Flags().BoolVar(&GenericHandler, "generic-handler", false, "Deploy generic handler")
-	cmd.Flags().BoolVar(&FeeHandler, "fee-handler", false, "Deploy fee handler with fee oracle. The basic fee handler will be deployed by default")
-	//cmd.Flags().Uint64Var(&Fee, "fee", 0, "Fee to be taken when making a deposit (in ETH, decimals are allowed)")
+	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler_with_oracle", false, "Deploy fee handler with fee oracle. The basic fee handler will be deployed by default")
 	cmd.Flags().StringSliceVar(&Relayers, "relayers", []string{}, "List of initial relayers")
 	cmd.Flags().Uint64Var(&RelayerThreshold, "relayer-threshold", 1, "Number of votes required for a proposal to pass")
 }
@@ -208,7 +206,7 @@ func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPr
 
 			// fee handler deployment
 			feeHandlerAddress := common.Address{}
-			if FeeHandler {
+			if FeeHandlerWithOracle {
 				// deploy fee handler with oracle
 				fhwo := feeHandler.NewFeeHandlerWithOracleContract(ethClient, common.Address{}, t)
 				feeHandlerWithOracleAddress, err := fhwo.DeployContract(BridgeAddr)
@@ -296,6 +294,8 @@ ERC721 Token: %s
 ERC721 Handler: %s
 ---------------------------------------------------------
 Generic Handler: %s
+---------------------------------------------------------
+Fee Handler: %s
 =========================================================
 	`,
 		deployedContracts["bridge"],
@@ -304,6 +304,7 @@ Generic Handler: %s
 		deployedContracts["erc721Token"],
 		deployedContracts["erc721Handler"],
 		deployedContracts["genericHandler"],
+		deployedContracts["feeHandler"],
 	)
 	return nil
 }

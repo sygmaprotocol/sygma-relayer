@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
+	"math/big"
 	"strings"
 )
 
@@ -34,5 +35,19 @@ func (b *BasicFeeHandlerContract) ChangeFee(
 		"changeFee",
 		opts,
 		newFee,
+	)
+}
+
+func (b *BasicFeeHandlerContract) DistributeFee(
+	addrs []common.Address,
+	amounts []*big.Int,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("distributing the fee to: addresses: %v, amounts: %v", addrs, amounts)
+	return b.ExecuteTransaction(
+		"transferFee",
+		opts,
+		addrs,
+		amounts,
 	)
 }

@@ -5,9 +5,11 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
+	"math/big"
 	"strings"
 )
 
@@ -48,5 +50,21 @@ func (f *FeeHandlerWithOracleContract) SetFeeProperties(
 		opts,
 		gasUsed,
 		feePercent,
+	)
+}
+
+func (f *FeeHandlerWithOracleContract) DistributeFee(
+	resourceID types.ResourceID,
+	addrs []common.Address,
+	amounts []*big.Int,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("distributing the fee to: addresses: %v, amounts: %v, resourceId: %v", addrs, amounts, resourceID)
+	return f.ExecuteTransaction(
+		"transferFee",
+		opts,
+		resourceID,
+		addrs,
+		amounts,
 	)
 }

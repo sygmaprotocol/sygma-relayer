@@ -9,6 +9,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
 	"github.com/ChainSafe/chainbridge-core/util"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -40,15 +41,16 @@ var setFeePropertiesCmd = &cobra.Command{
 			return err
 		}
 
-		ProcessSetFeePropertiesFlags(cmd, args)
-		return nil
+		err = ProcessSetFeePropertiesFlags(cmd, args)
+		return err
 	},
 }
 
 func BindSetFeePropertiesFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
 	cmd.Flags().Uint32Var(&GasUsed, "gas_used", 0, "Gas used for transfer")
 	cmd.Flags().Uint16Var(&FeePercent, "fee_percent", 0, "Additional amount added to fee amount. total fee = fee + fee * fee_percent")
-	flags.MarkFlagsAsRequired(cmd, "gas_used", "fee_percent")
+	flags.MarkFlagsAsRequired(cmd, "fee_handler", "gas_used", "fee_percent")
 }
 
 func init() {
@@ -56,13 +58,20 @@ func init() {
 }
 
 func ValidateSetFeePropertiesFlags(cmd *cobra.Command, args []string) error {
+	if !common.IsHexAddress(FeeHandler) {
+		return fmt.Errorf("invalid fee handler address %s", FeeHandler)
+	}
 	if GasUsed == 0 {
 		return fmt.Errorf("invalid gas_used value: %v", GasUsed)
 	}
 	return nil
 }
 
-func ProcessSetFeePropertiesFlags(cmd *cobra.Command, args []string) {}
+func ProcessSetFeePropertiesFlags(cmd *cobra.Command, args []string) error {
+	FeeHandlerWithOracleAddr = common.HexToAddress(FeeHandler)
+
+	return nil
+}
 
 func SetFeePropertiesCmd(cmd *cobra.Command, args []string, contract *feeHandler.FeeHandlerWithOracleContract) error {
 	tx, err := contract.SetFeeProperties(GasUsed, FeePercent, transactor.TransactOptions{GasLimit: gasLimit})
