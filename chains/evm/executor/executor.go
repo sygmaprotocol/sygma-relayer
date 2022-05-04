@@ -89,7 +89,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	}
 	coordinator := tss.NewCoordinator(e.host, signing, e.comm)
 	sigChn := make(chan interface{})
-	statusChn := make(chan error)
+	statusChn := make(chan error, 1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go coordinator.Execute(ctx, sigChn, statusChn)
@@ -113,13 +113,6 @@ func (e *Executor) Execute(m *message.Message) error {
 				}
 
 				log.Info().Msgf("Sent proposal %v execution with hash: %s", prop, hash)
-			}
-		case status := <-statusChn:
-			{
-				log.Info().Msgf("Exited execution of proposal %v with status: %v", prop, status)
-
-				cancel()
-				return status
 			}
 		case <-ticker.C:
 			{
