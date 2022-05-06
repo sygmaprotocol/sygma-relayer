@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"time"
 
+	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+
 	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
@@ -19,7 +21,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 )
 
 type MessageHandler interface {
@@ -91,24 +92,18 @@ func (e *Executor) Execute(m *message.Message) error {
 	sigChn := make(chan interface{})
 	statusChn := make(chan error, 1)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go coordinator.Execute(ctx, sigChn, statusChn)
-
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go coordinator.Execute(ctx, sigChn, statusChn)
 	for {
 		select {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				sig := signatureData.Signature.R
-				sig = append(sig[:], signatureData.Signature.S[:]...)
-				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-				sig[64] += 27
-
-				hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
+				hash, err := e.executeProposal(prop, signatureData)
 				if err != nil {
-					cancel()
 					return err
 				}
 
@@ -126,9 +121,22 @@ func (e *Executor) Execute(m *message.Message) error {
 				}
 
 				log.Info().Msgf("Successfully executed proposal %v", prop)
-				cancel()
 				return nil
 			}
 		}
 	}
+}
+
+func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+	sig := signatureData.Signature.R
+	sig = append(sig[:], signatureData.Signature.S[:]...)
+	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+	sig[64] += 27
+
+	hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, err
 }
