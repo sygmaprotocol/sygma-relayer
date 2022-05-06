@@ -70,6 +70,7 @@ func (s *Signing) Start(
 ) {
 	s.ErrChn = errChn
 	s.resultChn = resultChn
+	ctx, s.Cancel = context.WithCancel(ctx)
 
 	peerSubset, err := common.PeersFromIDS(params)
 	if err != nil {
@@ -111,6 +112,7 @@ func (s *Signing) Start(
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (s *Signing) Stop() {
 	s.Communication.UnSubscribe(s.subscriptionID)
+	s.Cancel()
 }
 
 // Ready returns true if threshold+1 parties are ready to start the signing process.

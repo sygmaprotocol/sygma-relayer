@@ -30,6 +30,7 @@ type BaseTss struct {
 	Timeout       time.Duration
 
 	ErrChn chan error
+	Cancel context.CancelFunc
 }
 
 // PopulatePartyStore populates party store map with sorted parties for
