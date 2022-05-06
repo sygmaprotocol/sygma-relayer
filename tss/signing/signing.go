@@ -14,6 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -117,6 +118,7 @@ func (s *Signing) Stop() {
 
 // Ready returns true if threshold+1 parties are ready to start the signing process.
 func (s *Signing) Ready(readyMap map[peer.ID]bool) bool {
+	readyMap = s.readyParticipants(readyMap)
 	return len(readyMap) == s.key.Threshold+1
 }
 
@@ -124,6 +126,7 @@ func (s *Signing) Ready(readyMap map[peer.ID]bool) bool {
 // by sorting hashes of peer IDs and session ID and chosing ready peers alphabetically
 // until threshold is satisfied.
 func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
+	readyMap = s.readyParticipants(readyMap)
 	peers := []peer.ID{}
 	for peer := range readyMap {
 		peers = append(peers, peer)
@@ -165,4 +168,22 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 			}
 		}
 	}
+}
+
+// readyParticipants returns all ready peers that contain a valid key share
+func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool {
+	readyParticipants := make(map[peer.ID]bool)
+	for peer, ready := range readyMap {
+		if !ready {
+			continue
+		}
+
+		if !slices.Contains(s.key.Peers, peer) {
+			continue
+		}
+
+		readyParticipants[peer] = true
+	}
+
+	return readyParticipants
 }
