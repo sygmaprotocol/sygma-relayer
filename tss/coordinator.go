@@ -57,6 +57,7 @@ func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, s
 	coordinator := c.getCoordinator()
 	go c.start(ctx, coordinator, resultChn, errChn)
 
+	retried := false
 	ctx, cancel := context.WithTimeout(ctx, coordinatorTimeout)
 	defer cancel()
 	defer c.tssProcess.Stop()
@@ -75,22 +76,24 @@ func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, s
 				}
 
 				log.Err(err).Msgf("Tss process failed with error: %v", err)
+
+				if retried {
+					statusChn <- err
+					return
+				}
+
 				switch err.(type) {
 				case *CoordinatorError:
 					{
-						go func() {
-							c.tssProcess.Stop()
-							cancel()
-
-							coordinatorChn := make(chan peer.ID)
-							c.bully.Coordinator([]peer.ID{c.getCoordinator()}, coordinatorChn, errChn)
-							coordinator := <-coordinatorChn
-							go c.start(ctx, coordinator, resultChn, statusChn)
-						}()
+						c.tssProcess.Stop()
+						retried = true
+						go c.retry(ctx, resultChn, errChn)
 					}
 				case *tss.Error:
 					{
-						log.Error().Msgf("TSS ERROR")
+						c.tssProcess.Stop()
+						retried = true
+						go c.retry(ctx, resultChn, errChn)
 					}
 				default:
 					{
@@ -109,6 +112,13 @@ func (c *Coordinator) start(ctx context.Context, coordinator peer.ID, resultChn 
 	} else {
 		c.waitForStart(ctx, resultChn, errChn)
 	}
+}
+
+func (c *Coordinator) retry(ctx context.Context, resultChn chan interface{}, errChn chan error) {
+	coordinatorChn := make(chan peer.ID)
+	c.bully.Coordinator([]peer.ID{c.getCoordinator()}, coordinatorChn, errChn)
+	coordinator := <-coordinatorChn
+	go c.start(ctx, coordinator, resultChn, errChn)
 }
 
 // getLeader returns the static leader for current session
