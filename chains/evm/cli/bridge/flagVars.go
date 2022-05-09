@@ -23,7 +23,6 @@ var (
 	Execute         string
 	Hash            bool
 	TokenContract   string
-	FeeHandler      string
 )
 
 //processed flag vars
@@ -36,7 +35,6 @@ var (
 	DepositSigBytes    [4]byte
 	ExecuteSigBytes    [4]byte
 	DataBytes          []byte
-	FeeHandlerAddr     common.Address
 )
 
 // global flags

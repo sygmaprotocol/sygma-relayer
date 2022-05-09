@@ -8,6 +8,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/erc721"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/feeHandler"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/utils"
 	"github.com/spf13/cobra"
@@ -91,4 +92,7 @@ func init() {
 
 	// utils
 	EvmRootCLI.AddCommand(utils.UtilsCmd)
+
+	// fee handler
+	EvmRootCLI.AddCommand(feeHandler.FeeHandlerCmd)
 }

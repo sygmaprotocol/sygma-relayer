@@ -47,10 +47,10 @@ var setFeePropertiesCmd = &cobra.Command{
 }
 
 func BindSetFeePropertiesFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
-	cmd.Flags().Uint32Var(&GasUsed, "gas_used", 0, "Gas used for transfer")
-	cmd.Flags().Uint16Var(&FeePercent, "fee_percent", 0, "Additional amount added to fee amount. total fee = fee + fee * fee_percent")
-	flags.MarkFlagsAsRequired(cmd, "fee_handler", "gas_used", "fee_percent")
+	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
+	cmd.Flags().Uint32Var(&GasUsed, "gas-used", 0, "Gas used for transfer")
+	cmd.Flags().Uint16Var(&FeePercent, "fee-percent", 0, "Additional amount added to fee amount. total fee = fee + fee * fee_percent")
+	flags.MarkFlagsAsRequired(cmd, "fee-handler", "gas-used", "fee-percent")
 }
 
 func init() {
@@ -62,7 +62,7 @@ func ValidateSetFeePropertiesFlags(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid fee handler address %s", FeeHandler)
 	}
 	if GasUsed == 0 {
-		return fmt.Errorf("invalid gas_used value: %v", GasUsed)
+		return fmt.Errorf("invalid gas-used value: %v", GasUsed)
 	}
 	return nil
 }

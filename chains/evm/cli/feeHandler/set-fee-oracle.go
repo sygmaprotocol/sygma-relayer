@@ -47,9 +47,9 @@ var setFeeOracleCmd = &cobra.Command{
 }
 
 func BindSetFeeOracleFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
-	cmd.Flags().StringVar(&FeeOracleAddress, "fee_oracle", "", "Fee oracle identity address")
-	flags.MarkFlagsAsRequired(cmd, "fee_handler", "fee_oracle")
+	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
+	cmd.Flags().StringVar(&FeeOracleAddress, "fee-oracle", "", "Fee oracle identity address")
+	flags.MarkFlagsAsRequired(cmd, "fee-handler", "fee-oracle")
 }
 
 func init() {

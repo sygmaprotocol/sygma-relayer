@@ -108,6 +108,7 @@ Available Commands:
   deploy      Deploy smart contracts
   erc20       Set of commands for interacting with ERC20 contract
   erc721      Set of commands for interacting with an ERC721 contract
+  fee-handler Set of commands for interacting with an feeHandler contract
   utils       Set of utility commands
 
 Flags:
@@ -187,18 +188,19 @@ Usage:
    evm-cli admin [command]
 
 Available Commands:
-  add-admin         Add a new admin
-  add-relayer       Add a new relayer
-  get-threshold     Get the relayer vote threshold
-  is-relayer        Check if an address is registered as a relayer
-  pause             Pause deposits and proposals
-  remove-admin      Remove an existing admin
-  remove-relayer    Remove an existing relayer
-  set-deposit-nonce Set the deposit nonce
-  set-fee           Set a new fee for deposits
-  set-threshold     Set a new relayer vote threshold
-  unpause           Unpause deposits and proposals
-  withdraw          Withdraw tokens from a handler contract
+  add-admin          Add a new admin
+  add-relayer        Add a new relayer
+  change-fee-handler Change the fee handler address in bridge by admin
+  get-threshold      Get the relayer vote threshold
+  is-relayer         Check if an address is registered as a relayer
+  pause              Pause deposits and proposals
+  remove-admin       Remove an existing admin
+  remove-relayer     Remove an existing relayer
+  set-deposit-nonce  Set the deposit nonce
+  set-fee            Set a new fee for deposits
+  set-threshold      Set a new relayer vote threshold
+  unpause            Unpause deposits and proposals
+  withdraw           Withdraw tokens from a handler contract
 
 Flags:
   -h, --help   help for admin
@@ -308,7 +310,9 @@ Flags:
   -h, --help            help for set-fee
 ```
 
-#### `set-fee`
+#### ~~`set-fee`~~  
+**This subcommand has been removed. Please see `change-fee-handler` for details.**  
+
 The set-fee subcommand sets a new fee for deposits.
 
 ```bash
@@ -319,6 +323,20 @@ Flags:
       --bridge string   Bridge contract address
       --fee string      New fee (in ether)
   -h, --help            help for set-fee
+```
+
+#### `change-fee-handler`
+The change-fee-handler subcommand sets the fee handler address in bridge.  
+This CLI replaces `set-fee`
+
+```bash
+Usage:
+   evm-cli bridge admin-change-fee-handler [flags]
+
+Flags:
+      --bridge string        Bridge contract address
+      --fee-handler string   Fee handler contract address
+  -h, --help                 help for admin-change-fee-handler
 ```
 
 #### `set-threshold`
@@ -498,7 +516,7 @@ Flags:
       --erc721-handler           Deploy ERC721 handler
       --erc721-name string       ERC721 contract name
       --erc721-symbol string     ERC721 contract symbol
-      --fee uint                 Fee to be taken when making a deposit (in ETH, decimals are allowed)
+      --fee-handler-with-oracle  Deploy fee handler with fee oracle. The basic fee handler will be deployed by default
       --generic-handler          Deploy generic handler
   -h, --help                     help for deploy
       --relayer-threshold uint   Number of votes required for a proposal to pass (default 1)
@@ -701,6 +719,84 @@ Flags:
   -h, --help              help for owner
       --token string      ERC721 token ID
 ```
+
+&nbsp;
+
+### `Fee Handler`
+Fee handler related instructions.
+
+
+```bash
+Usage:
+   evm-cli fee-handler [command]
+
+Available Commands:
+  change-fee         Change the fee in basic fee handler
+  distribute-fee     Distribute the fee from fee handler contract to the specified addresses
+  set-fee-oracle     Set the fee oracle address to fee handler
+  set-fee-properties Set the fee properties to fee handler
+
+Flags:
+  -h, --help   help for fee-handler
+```
+
+#### `change-fee`
+The change-fee subcommand sets the new fee to the basic fee handler. Only call this command if basicFeeHandler is deployed.
+
+```bash
+Usage:
+   evm-cli fee-handler change-fee [flags]
+
+Flags:
+      --fee uint             Fee to be taken when making a deposit (in ETH, decimals are allowed)
+      --fee-handler string   Fee handler contract address
+  -h, --help                 help for change-fee
+```
+
+#### `distribute-fee`
+The distribute-fee subcommand transfers the fee from fee handler contract to the specified addresses
+
+```bash
+Usage:
+   evm-cli fee-handler distribute-fee [flags]
+
+Flags:
+      --decimals uint                Resource token decimals
+      --distribution-array strings   Array of fee distribution, follow the format of "--distribution-array address,amount,..." where address,amount must be paired
+      --fee-handler string           Fee handler contract address
+      --fee-handler-with-oracle      Using Fee handler with oracle. Default is basic fee handler
+  -h, --help                         help for distribute-fee
+      --resource-id string           ResourceID to be used when making deposits
+```
+
+#### `set-fee-oracle`
+The set-fee-oracle subcommand sets the fee oracle address to fee handler. Only call this command if feeHandlerWithOracle is deployed
+
+```bash
+Usage:
+   evm-cli fee-handler set-fee-oracle [flags]
+
+Flags:
+      --fee-handler string   Fee handler contract address
+      --fee-oracle string    Fee oracle identity address
+  -h, --help                 help for set-fee-oracle
+```
+
+#### `set-fee-properties`
+The set-fee-properties subcommand sets the fee handler properties to fee handler. Only call this command if feeHandlerWithOracle is deployed
+
+```bash
+Usage:
+   evm-cli fee-handler set-fee-properties [flags]
+
+Flags:
+      --fee-handler string   Fee handler contract address
+      --fee-percent uint16   Additional amount added to fee amount. total fee = fee + fee * fee_percent
+      --gas-used uint32      Gas used for transfer
+  -h, --help                 help for set-fee-properties
+```
+
+&nbsp;
 
 ### `Utils`
 Set of utility commands.

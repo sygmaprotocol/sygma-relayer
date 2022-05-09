@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"math/big"
 )
 
 var changeFeeCmd = &cobra.Command{
@@ -47,9 +48,9 @@ var changeFeeCmd = &cobra.Command{
 }
 
 func BindChangeFeeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
+	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
 	cmd.Flags().Uint64Var(&Fee, "fee", 0, "Fee to be taken when making a deposit (in ETH, decimals are allowed)")
-	flags.MarkFlagsAsRequired(cmd, "fee_handler", "fee")
+	flags.MarkFlagsAsRequired(cmd, "fee-handler", "fee")
 }
 
 func init() {
@@ -70,7 +71,7 @@ func ProcessChangeFeeFlags(cmd *cobra.Command, args []string) error {
 }
 
 func ChangeFeeCmd(cmd *cobra.Command, args []string, contract *feeHandler.BasicFeeHandlerContract) error {
-	tx, err := contract.ChangeFee(Fee, transactor.TransactOptions{GasLimit: gasLimit})
+	tx, err := contract.ChangeFee(big.NewInt(0).SetUint64(Fee), transactor.TransactOptions{GasLimit: gasLimit})
 	if err != nil {
 		log.Error().Err(fmt.Errorf("failed to set fee oracle address. error: %v", err))
 		return err

@@ -11,15 +11,15 @@ import (
 
 // flag vars
 var (
-	FeeHandler             string
-	FeeOracleAddress       string
-	GasUsed                uint32
-	FeePercent             uint16
-	Fee                    uint64
-	DistributionArray      []string
-	Decimals               uint64
-	ResourceID             string
-	IsFeeHandlerWithOracle bool
+	FeeHandler           string
+	FeeOracleAddress     string
+	GasUsed              uint32
+	FeePercent           uint16
+	Fee                  uint64
+	DistributionArray    []string
+	Decimals             uint64
+	ResourceID           string
+	FeeHandlerWithOracle bool
 )
 
 // processed flag vars

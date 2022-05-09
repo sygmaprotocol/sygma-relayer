@@ -27,7 +27,7 @@ func NewBasicFeeHandlerContract(
 }
 
 func (b *BasicFeeHandlerContract) ChangeFee(
-	newFee uint64,
+	newFee *big.Int,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().Msgf("Changing new fee %v", newFee)

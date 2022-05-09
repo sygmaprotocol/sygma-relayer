@@ -270,34 +270,6 @@ func (s *AdminTestSuite) TestValidateSetDepositNonceInvalidAddress() {
 	s.NotNil(err)
 }
 
-func (s *AdminTestSuite) TestValidateSetFeeFlags() {
-	cmd := new(cobra.Command)
-	BindSetFeeFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateSetFeeFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateSetFeeInvalidAddress() {
-	cmd := new(cobra.Command)
-	BindSetFeeFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateSetFeeFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
 func (s *AdminTestSuite) TestValidateSetThresholdFlags() {
 	cmd := new(cobra.Command)
 	BindSetThresholdFlags(cmd)
@@ -420,4 +392,38 @@ func (s *AdminTestSuite) TestValidateWithdrawAmountTokenConflict() {
 		[]string{},
 	)
 	s.NotNil(err)
+}
+
+func (s *AdminTestSuite) TestValidateAdminChangeFeeHandlerInvalidAddresses() {
+	cmd := new(cobra.Command)
+	BindAdminChangeFeeHandlerFlags(cmd)
+
+	err := cmd.Flag("bridge").Value.Set(invalidAddr)
+	s.Nil(err)
+	err = cmd.Flag("fee-handler").Value.Set(invalidAddr)
+	s.Nil(err)
+
+	err = ValidateAdminChangeFeeHandlerFlags(
+		cmd,
+		[]string{},
+	)
+
+	s.NotNil(err)
+}
+
+func (s *AdminTestSuite) TestValidateAdminChangeFeeHandlerValidAddresses() {
+	cmd := new(cobra.Command)
+	BindAdminChangeFeeHandlerFlags(cmd)
+
+	err := cmd.Flag("bridge").Value.Set(validAddr)
+	s.Nil(err)
+	err = cmd.Flag("fee-handler").Value.Set(validAddr)
+	s.Nil(err)
+
+	err = ValidateAdminChangeFeeHandlerFlags(
+		cmd,
+		[]string{},
+	)
+
+	s.Nil(err)
 }

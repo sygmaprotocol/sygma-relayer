@@ -1,8 +1,7 @@
-package bridge
+package admin
 
 import (
 	"fmt"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -15,10 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var adminChangeFeeHandlerCmd = &cobra.Command{
-	Use:   "admin-change-fee-handler",
+var changeFeeHandlerCmd = &cobra.Command{
+	Use:   "change-fee-handler",
 	Short: "Change the fee handler address in bridge by admin",
-	Long:  "The admin-change-fee-handler subcommand sets the fee handler address in bridge by admin",
+	Long:  "The change-fee-handler subcommand sets the fee handler address in bridge by admin",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
@@ -49,12 +48,12 @@ var adminChangeFeeHandlerCmd = &cobra.Command{
 
 func BindAdminChangeFeeHandlerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Bridge, "bridge", "", "Bridge contract address")
-	cmd.Flags().StringVar(&FeeHandler, "fee_handler", "", "Fee handler contract address")
-	flags.MarkFlagsAsRequired(cmd, "fee_handler")
+	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
+	flags.MarkFlagsAsRequired(cmd, "bridge", "fee-handler")
 }
 
 func init() {
-	BindAdminChangeFeeHandlerFlags(adminChangeFeeHandlerCmd)
+	BindAdminChangeFeeHandlerFlags(changeFeeHandlerCmd)
 }
 
 func ValidateAdminChangeFeeHandlerFlags(cmd *cobra.Command, args []string) error {
