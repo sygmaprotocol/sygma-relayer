@@ -55,6 +55,7 @@ func NewSigning(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
 			Timeout:       SigningTimeout,
+			Cancel:        func() {},
 		},
 		key: key,
 		msg: msg,
@@ -117,9 +118,9 @@ func (s *Signing) Stop() {
 }
 
 // Ready returns true if threshold+1 parties are ready to start the signing process.
-func (s *Signing) Ready(readyMap map[peer.ID]bool) bool {
+func (s *Signing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
 	readyMap = s.readyParticipants(readyMap)
-	return len(readyMap) == s.key.Threshold+1
+	return len(readyMap) == s.key.Threshold+1, nil
 }
 
 // StartParams returns peer subset for this tss process. It is calculated
