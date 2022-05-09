@@ -106,6 +106,8 @@ func (k *Keygen) Stop() {
 }
 
 // Ready returns true if all parties from the peerstore are ready.
+// Error is returned if excluded peers exist as we need all peers to participate
+// in keygen process.
 func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
 	if len(excludedPeers) > 0 {
 		return false, errors.New("error")

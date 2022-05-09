@@ -11,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -25,7 +26,7 @@ type Bully interface {
 type TssProcess interface {
 	Start(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string)
 	Stop()
-	Ready(readyMap map[peer.ID]bool) bool
+	Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error)
 	StartParams(readyMap map[peer.ID]bool) []string
 	SessionID() string
 }
@@ -55,11 +56,9 @@ func NewCoordinator(
 func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, statusChn chan error) {
 	errChn := make(chan error)
 	coordinator := c.getCoordinator()
-	go c.start(ctx, coordinator, resultChn, errChn)
+	go c.start(ctx, coordinator, resultChn, errChn, []peer.ID{})
 
 	retried := false
-	ctx, cancel := context.WithTimeout(ctx, coordinatorTimeout)
-	defer cancel()
 	defer c.tssProcess.Stop()
 	for {
 		select {
@@ -82,18 +81,24 @@ func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, s
 					return
 				}
 
-				switch err.(type) {
+				switch err := err.(type) {
 				case *CoordinatorError:
 					{
 						c.tssProcess.Stop()
 						retried = true
-						go c.retry(ctx, resultChn, errChn)
+						go c.retry(ctx, resultChn, errChn, []peer.ID{err.Coordinator})
 					}
 				case *tss.Error:
 					{
 						c.tssProcess.Stop()
 						retried = true
-						go c.retry(ctx, resultChn, errChn)
+						excludedPeers, err := common.PeersFromParties(err.Culprits())
+						if err != nil {
+							statusChn <- err
+							return
+						}
+
+						go c.retry(ctx, resultChn, errChn, excludedPeers)
 					}
 				default:
 					{
@@ -106,19 +111,22 @@ func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, s
 	}
 }
 
-func (c *Coordinator) start(ctx context.Context, coordinator peer.ID, resultChn chan interface{}, errChn chan error) {
+// start initiates listeners for coordinator and participants with static calculated coordinator
+func (c *Coordinator) start(ctx context.Context, coordinator peer.ID, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	if coordinator.Pretty() == c.host.ID().Pretty() {
-		c.initiate(ctx, resultChn, errChn)
+		c.initiate(ctx, resultChn, errChn, excludedPeers)
 	} else {
 		c.waitForStart(ctx, resultChn, errChn)
 	}
 }
 
-func (c *Coordinator) retry(ctx context.Context, resultChn chan interface{}, errChn chan error) {
+// retry initiates full bully process to calculate coordinator and starts a new tss process after
+// an expected error ocurred during regular tss execution
+func (c *Coordinator) retry(ctx context.Context, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	coordinatorChn := make(chan peer.ID)
 	c.bully.Coordinator([]peer.ID{c.getCoordinator()}, coordinatorChn, errChn)
 	coordinator := <-coordinatorChn
-	go c.start(ctx, coordinator, resultChn, errChn)
+	go c.start(ctx, coordinator, resultChn, errChn, excludedPeers)
 }
 
 // getLeader returns the static leader for current session
@@ -139,7 +147,7 @@ func (c *Coordinator) broadcastInitiateMsg() {
 // initiate sends initiate message to all peers and waits
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
-func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, errChn chan error) {
+func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	readyChan := make(chan *communication.WrappedMessage)
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
@@ -155,8 +163,16 @@ func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, 
 		case wMsg := <-readyChan:
 			{
 				c.log.Debug().Msgf("received ready message from %s", wMsg.From)
-				readyMap[wMsg.From] = true
-				if !c.tssProcess.Ready(readyMap) {
+
+				if !slices.Contains(excludedPeers, wMsg.From) {
+					readyMap[wMsg.From] = true
+				}
+				ready, err := c.tssProcess.Ready(readyMap, excludedPeers)
+				if err != nil {
+					errChn <- err
+					return
+				}
+				if !ready {
 					continue
 				}
 
