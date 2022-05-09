@@ -66,6 +66,7 @@ func (k *Keygen) Start(
 	params []string,
 ) {
 	k.ErrChn = errChn
+	ctx, k.Cancel = context.WithCancel(ctx)
 	k.storer.LockKeyshare()
 
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
@@ -99,6 +100,7 @@ func (k *Keygen) Start(
 func (k *Keygen) Stop() {
 	k.Communication.UnSubscribe(k.subscriptionID)
 	k.storer.UnlockKeyshare()
+	k.Cancel()
 }
 
 // Ready returns true if all parties from the peerstore are ready.
