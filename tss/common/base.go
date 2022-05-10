@@ -30,6 +30,7 @@ type BaseTss struct {
 	Timeout       time.Duration
 
 	ErrChn chan error
+	Cancel context.CancelFunc
 }
 
 // PopulatePartyStore populates party store map with sorted parties for
@@ -88,6 +89,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 		select {
 		case msg := <-outChn:
 			{
+				b.Log.Debug().Msg(msg.String())
 				wireBytes, routing, err := msg.WireBytes()
 				if err != nil {
 					b.ErrChn <- err
@@ -107,7 +109,6 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 				}
 
 				b.Log.Debug().Msgf("sending message to %s", peers)
-
 				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), nil)
 			}
 		case <-ctx.Done():
@@ -120,7 +121,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 
 // StartParams returns params necessary to start the tss process which
 // are sent in the start message.
-func (b *BaseTss) StartParams() []string {
+func (b *BaseTss) StartParams(readyMap map[peer.ID]bool) []string {
 	return []string{}
 }
 

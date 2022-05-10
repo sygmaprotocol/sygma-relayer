@@ -39,7 +39,6 @@ func NewKeygen(
 	host host.Host,
 	comm communication.Communication,
 	storer SaveDataStorer,
-	errChn chan error,
 ) *Keygen {
 	partyStore := make(map[string]*tss.PartyID)
 	return &Keygen{
@@ -50,7 +49,6 @@ func NewKeygen(
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
-			ErrChn:        errChn,
 			Timeout:       KeygenTimeout,
 		},
 		storer:    storer,
@@ -61,7 +59,14 @@ func NewKeygen(
 // Start initializes the keygen party and starts the keygen tss process.
 //
 // Should be run only after all the participating parties are ready.
-func (k *Keygen) Start(ctx context.Context, params []string) {
+func (k *Keygen) Start(
+	ctx context.Context,
+	resultChn chan interface{},
+	errChn chan error,
+	params []string,
+) {
+	k.ErrChn = errChn
+	ctx, k.Cancel = context.WithCancel(ctx)
 	k.storer.LockKeyshare()
 
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
@@ -95,6 +100,7 @@ func (k *Keygen) Start(ctx context.Context, params []string) {
 func (k *Keygen) Stop() {
 	k.Communication.UnSubscribe(k.subscriptionID)
 	k.storer.UnlockKeyshare()
+	k.Cancel()
 }
 
 // Ready returns true if all parties from the peerstore are ready.

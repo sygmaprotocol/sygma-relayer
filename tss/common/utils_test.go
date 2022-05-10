@@ -74,6 +74,39 @@ func (s *PeersFromPartiesTestSuite) Test_ValidParties() {
 	s.Equal(peers, []peer.ID{peerID1, peerID2})
 }
 
+type PeersFromIDSTestSuite struct {
+	suite.Suite
+}
+
+func TestRunPeersFromIDSTestSuite(t *testing.T) {
+	suite.Run(t, new(PeersFromIDSTestSuite))
+}
+
+func (s *PeersFromIDSTestSuite) Test_NoIDS() {
+	peers, err := common.PeersFromIDS([]string{})
+
+	s.Nil(err)
+	s.Equal(peers, []peer.ID{})
+}
+
+func (s *PeersFromIDSTestSuite) Test_InvalidParty() {
+	_, err := common.PeersFromIDS([]string{"invalid"})
+
+	s.NotNil(err)
+}
+
+func (s *PeersFromIDSTestSuite) Test_ValidIDS() {
+	party1 := common.CreatePartyID("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
+	party2 := common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
+	peerID1, _ := peer.Decode(party1.Id)
+	peerID2, _ := peer.Decode(party2.Id)
+
+	peers, err := common.PeersFromIDS([]string{party1.Id, party2.Id})
+
+	s.Nil(err)
+	s.Equal(peers, []peer.ID{peerID1, peerID2})
+}
+
 type SortPeersForSessionTestSuite struct {
 	suite.Suite
 }
@@ -101,4 +134,25 @@ func (s *SortPeersForSessionTestSuite) Test_ValidPeers() {
 		common.PeerMsg{SessionID: "sessionID", ID: peer2},
 		common.PeerMsg{SessionID: "sessionID", ID: peer3},
 	})
+}
+
+type PartiesFromPeersTestSuite struct {
+	suite.Suite
+}
+
+func TestRunPartiesFromPeersTestSuite(t *testing.T) {
+	suite.Run(t, new(PartiesFromPeersTestSuite))
+}
+
+func (s *PartiesFromPeersTestSuite) Test_ValidPeers() {
+	party1 := common.CreatePartyID("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
+	party1.Index = 1
+	party2 := common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
+	party2.Index = 0
+	peerID1, _ := peer.Decode(party1.Id)
+	peerID2, _ := peer.Decode(party2.Id)
+
+	sortedParties := common.PartiesFromPeers([]peer.ID{peerID1, peerID2})
+
+	s.Equal(sortedParties, tss.SortedPartyIDs{party2, party1})
 }
