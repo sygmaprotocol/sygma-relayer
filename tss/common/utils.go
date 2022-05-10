@@ -54,7 +54,7 @@ func PeersFromIDS(peerIDS []string) ([]peer.ID, error) {
 	for i, id := range peerIDS {
 		peerID, err := peer.Decode(id)
 		if err != nil {
-			return peers, err
+			return nil, err
 		}
 
 		peers[i] = peerID
