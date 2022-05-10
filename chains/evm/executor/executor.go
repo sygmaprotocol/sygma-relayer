@@ -88,7 +88,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	if err != nil {
 		return err
 	}
-	coordinator := tss.NewCoordinator(e.host, signing, e.comm)
+	coordinator := tss.NewCoordinator(e.host, signing, e.comm, nil)
 	sigChn := make(chan interface{})
 	statusChn := make(chan error, 1)
 

@@ -37,18 +37,23 @@ type Coordinator struct {
 	communication communication.Communication
 	bully         Bully
 	log           zerolog.Logger
+
+	CoordinatorTimeout time.Duration
 }
 
 func NewCoordinator(
 	host host.Host,
 	tssProcess TssProcess,
 	communication communication.Communication,
+	bully Bully,
 ) *Coordinator {
 	return &Coordinator{
-		host:          host,
-		tssProcess:    tssProcess,
-		communication: communication,
-		log:           log.With().Str("SessionID", string(tssProcess.SessionID())).Logger(),
+		host:               host,
+		bully:              bully,
+		tssProcess:         tssProcess,
+		communication:      communication,
+		log:                log.With().Str("SessionID", string(tssProcess.SessionID())).Logger(),
+		CoordinatorTimeout: coordinatorTimeout,
 	}
 }
 
@@ -210,7 +215,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, resultChn chan interface
 	startSubID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
-	coordinatorTimeoutTicker := time.NewTicker(coordinatorTimeout)
+	coordinatorTimeoutTicker := time.NewTicker(c.CoordinatorTimeout)
 	defer coordinatorTimeoutTicker.Stop()
 	for {
 		select {
