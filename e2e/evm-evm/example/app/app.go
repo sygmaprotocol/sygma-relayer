@@ -76,16 +76,21 @@ func Run() error {
 					panic(err)
 				}
 
+				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
-				bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
+				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				eventHandler := listener.NewETHDepositHandler(*bridgeContract)
-				eventHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
-				eventHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
-				eventHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
+				depositHandler := listener.NewETHDepositHandler(*bridgeContract)
+				depositHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+				depositHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+				depositHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
 				eventListener := events.NewListener(client)
-				evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
+				eventHandlers := make([]listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, bridgeAddress))
+				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := executor.NewEVMMessageHandler(*bridgeContract)
 				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
@@ -98,7 +103,7 @@ func Run() error {
 				chains = append(chains, chain)
 			}
 		default:
-			panic(fmt.Errorf("Type '%s' not recognized", chainConfig["type"]))
+			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
 

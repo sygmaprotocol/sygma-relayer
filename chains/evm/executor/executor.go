@@ -33,11 +33,12 @@ type BridgeContract interface {
 }
 
 type Executor struct {
-	host    host.Host
-	comm    communication.Communication
-	fetcher signing.SaveDataFetcher
-	bridge  BridgeContract
-	mh      MessageHandler
+	coordinator *tss.Coordinator
+	host        host.Host
+	comm        communication.Communication
+	fetcher     signing.SaveDataFetcher
+	bridge      BridgeContract
+	mh          MessageHandler
 }
 
 func NewExecutor(
@@ -87,12 +88,11 @@ func (e *Executor) Execute(m *message.Message) error {
 	if err != nil {
 		return err
 	}
-	coordinator := tss.NewCoordinator(e.host, signing, e.comm)
+
 	sigChn := make(chan interface{})
 	statusChn := make(chan error, 1)
-
 	ctx, cancel := context.WithCancel(context.Background())
-	go coordinator.Execute(ctx, sigChn, statusChn)
+	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()

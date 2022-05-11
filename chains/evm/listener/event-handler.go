@@ -30,6 +30,15 @@ type DepositEventHandler struct {
 	domainID      uint8
 }
 
+func NewDepositEventHandler(eventListener EventListener, depositHandler DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+	return &DepositEventHandler{
+		eventListener:  eventListener,
+		depositHandler: depositHandler,
+		bridgeAddress:  bridgeAddress,
+		domainID:       domainID,
+	}
+}
+
 func (eh *DepositEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
 	deposits, err := eh.eventListener.FetchDeposits(context.Background(), eh.bridgeAddress, block, block)
 	if err != nil {
@@ -55,6 +64,13 @@ type KeygenEventHandler struct {
 	bridgeAddress common.Address
 }
 
+func NewKeygenEventHandler(eventListener EventListener, bridgeAddress common.Address) *KeygenEventHandler {
+	return &KeygenEventHandler{
+		eventListener: eventListener,
+		bridgeAddress: bridgeAddress,
+	}
+}
+
 func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
 	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, block, block)
 	if err != nil {
@@ -70,6 +86,13 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 type RefreshEventHandler struct {
 	eventListener EventListener
 	bridgeAddress common.Address
+}
+
+func NewRefreshEventHandler(eventListener EventListener, bridgeAddress common.Address) *RefreshEventHandler {
+	return &RefreshEventHandler{
+		eventListener: eventListener,
+		bridgeAddress: bridgeAddress,
+	}
 }
 
 func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {

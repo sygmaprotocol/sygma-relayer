@@ -52,16 +52,21 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 		return nil, err
 	}
 
+	bridgeAddress := common.HexToAddress(config.Bridge)
 	gasPricer := evmgaspricer.NewLondonGasPriceClient(client, nil)
 	t := signAndSend.NewSignAndSendTransactor(txFabric, gasPricer, client)
 	bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
 
-	eventHandler := listener.NewETHDepositHandler(*bridgeContract)
-	eventHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
-	eventHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
-	eventHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
+	depositHandler := listener.NewETHDepositHandler(*bridgeContract)
+	depositHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+	depositHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+	depositHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
 	eventListener := events.NewListener(client)
-	evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
+	eventHandlers := make([]listener.EventHandler, 0)
+	eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+	eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, bridgeAddress))
+	eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, bridgeAddress))
+	evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 	mh := executor.NewEVMMessageHandler(*bridgeContract)
 	mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
