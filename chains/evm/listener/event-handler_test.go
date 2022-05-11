@@ -59,7 +59,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		},
 	}
 
-	message, err := listener.Erc20EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -102,7 +102,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 		},
 	}
 
-	message, err := listener.Erc20EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -127,7 +127,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectDataLen() {
 
 	sourceID := uint8(1)
 
-	message, err := listener.Erc20EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 
 	s.Nil(message)
 	s.EqualError(err, errIncorrectDataLen.Error())
@@ -146,7 +146,7 @@ func (s *Erc721HandlerTestSuite) TearDownSuite() {}
 func (s *Erc721HandlerTestSuite) SetupTest()     {}
 func (s *Erc721HandlerTestSuite) TearDownTest()  {}
 
-func (s *Erc721HandlerTestSuite) TestErc721EventHandlerEmptyMetadata() {
+func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 
 	calldata := deposit.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), []byte{})
@@ -176,13 +176,13 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerEmptyMetadata() {
 		},
 	}
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721EventHandlerIncorrectDataLen() {
+func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerIncorrectDataLen() {
 	metadata := []byte("0xdeadbeef")
 
 	var calldata []byte
@@ -200,12 +200,12 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerIncorrectDataLen() {
 
 	sourceID := uint8(1)
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(m)
 	s.EqualError(err, "invalid calldata length: less than 84 bytes")
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721EventHandler() {
+func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 	metadata := []byte("metadata.url")
 
@@ -236,12 +236,12 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandler() {
 		},
 	}
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)
 }
-func (s *Erc721HandlerTestSuite) TestErc721EventHandlerWithPriority() {
+func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 	metadata := []byte("metadata.url")
 
@@ -287,7 +287,7 @@ func (s *Erc721HandlerTestSuite) TestErc721EventHandlerWithPriority() {
 		},
 	}
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)
@@ -323,7 +323,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 	}
 
 	sourceID := uint8(1)
-	message, err := listener.GenericEventHandler(
+	message, err := listener.GenericDepositHandler(
 		sourceID,
 		depositLog.DestinationDomainID,
 		depositLog.DepositNonce,
@@ -361,7 +361,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 		},
 	}
 
-	message, err := listener.GenericEventHandler(
+	message, err := listener.GenericDepositHandler(
 		sourceID,
 		depositLog.DestinationDomainID,
 		depositLog.DepositNonce,
@@ -400,7 +400,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 		},
 	}
 
-	message, err := listener.GenericEventHandler(
+	message, err := listener.GenericDepositHandler(
 		sourceID,
 		depositLog.DestinationDomainID,
 		depositLog.DepositNonce,

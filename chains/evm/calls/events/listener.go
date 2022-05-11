@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
-	"github.com/ChainSafe/chainbridge-core/util"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -28,7 +27,7 @@ func NewListener(client ChainClient) *Listener {
 }
 
 func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*Deposit, error) {
-	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(util.Deposit), startBlock, endBlock)
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(DepositSig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -64,4 +63,22 @@ func (l *Listener) UnpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
 	}
 
 	return &dl, nil
+}
+
+func (l *Listener) FetchKeygenEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(StartKeygenSig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	return logs, nil
+}
+
+func (l *Listener) FetchRefreshEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(KeyRefreshSig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	return logs, nil
 }

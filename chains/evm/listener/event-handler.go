@@ -12,63 +12,63 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type EventHandlers map[common.Address]EventHandlerFunc
-type EventHandlerFunc func(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
+type DepositHandlers map[common.Address]DepositHandlerFunc
+type DepositHandlerFunc func(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
 
-type ETHEventHandler struct {
-	bridgeContract bridge.BridgeContract
-	eventHandlers  EventHandlers
+type ETHDepositHandler struct {
+	bridgeContract  bridge.BridgeContract
+	DepositHandlers DepositHandlers
 }
 
-// NewETHEventHandler creates an instance of ETHEventHandler that contains
+// NewETHDepositHandler creates an instance of ETHDepositHandler that contains
 // handler functions for processing deposit events
-func NewETHEventHandler(bridgeContract bridge.BridgeContract) *ETHEventHandler {
-	return &ETHEventHandler{
+func NewETHDepositHandler(bridgeContract bridge.BridgeContract) *ETHDepositHandler {
+	return &ETHDepositHandler{
 		bridgeContract: bridgeContract,
 	}
 }
 
-func (e *ETHEventHandler) HandleEvent(sourceID, destID uint8, depositNonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+func (e *ETHDepositHandler) HandleDeposit(sourceID, destID uint8, depositNonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	handlerAddr, err := e.bridgeContract.GetHandlerAddressForResourceID(resourceID)
 	if err != nil {
 		return nil, err
 	}
 
-	eventHandler, err := e.matchAddressWithHandlerFunc(handlerAddr)
+	depositHandler, err := e.matchAddressWithHandlerFunc(handlerAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return eventHandler(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse)
+	return depositHandler(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse)
 }
 
 // matchAddressWithHandlerFunc matches a handler address with an associated handler function
-func (e *ETHEventHandler) matchAddressWithHandlerFunc(handlerAddress common.Address) (EventHandlerFunc, error) {
-	hf, ok := e.eventHandlers[handlerAddress]
+func (e *ETHDepositHandler) matchAddressWithHandlerFunc(handlerAddress common.Address) (DepositHandlerFunc, error) {
+	hf, ok := e.DepositHandlers[handlerAddress]
 	if !ok {
 		return nil, errors.New("no corresponding event handler for this address exists")
 	}
 	return hf, nil
 }
 
-// RegisterEventHandler registers an event handler by associating a handler function to a specified address
-func (e *ETHEventHandler) RegisterEventHandler(handlerAddress string, handler EventHandlerFunc) {
+// RegisterDepositHandler registers an event handler by associating a handler function to a specified address
+func (e *ETHDepositHandler) RegisterDepositHandler(handlerAddress string, handler DepositHandlerFunc) {
 	if handlerAddress == "" {
 		return
 	}
 
-	if e.eventHandlers == nil {
-		e.eventHandlers = make(map[common.Address]EventHandlerFunc)
+	if e.DepositHandlers == nil {
+		e.DepositHandlers = make(map[common.Address]DepositHandlerFunc)
 	}
 
 	log.Info().Msgf("Registered event handler for address %s", handlerAddress)
 
-	e.eventHandlers[common.HexToAddress(handlerAddress)] = handler
+	e.DepositHandlers[common.HexToAddress(handlerAddress)] = handler
 }
 
-// Erc20EventHandler converts data pulled from event logs into message
+// Erc20DepositHandler converts data pulled from event logs into message
 // handlerResponse can be an empty slice
-func Erc20EventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -107,8 +107,8 @@ func Erc20EventHandler(sourceID, destId uint8, nonce uint64, resourceID types.Re
 	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, metadata), nil
 }
 
-// GenericEventHandler converts data pulled from generic deposit event logs into message
-func GenericEventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+// GenericDepositHandler converts data pulled from generic deposit event logs into message
+func GenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	if len(calldata) < 32 {
 		err := errors.New("invalid calldata length: less than 32 bytes")
 		return nil, err
@@ -126,8 +126,8 @@ func GenericEventHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 	return message.NewMessage(sourceID, destId, nonce, resourceID, message.GenericTransfer, payload, meta), nil
 }
 
-// Erc721EventHandler converts data pulled from ERC721 deposit event logs into message
-func Erc721EventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+// Erc721DepositHandler converts data pulled from ERC721 deposit event logs into message
+func Erc721DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	if len(calldata) < 64 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err

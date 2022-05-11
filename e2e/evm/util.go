@@ -9,15 +9,49 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/consts"
 
-	"github.com/ChainSafe/chainbridge-core/util"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/rs/zerolog/log"
 )
 
 var TestTimeout = time.Second * 600
+
+type EventSig string
+
+func (es EventSig) GetTopic() common.Hash {
+	return crypto.Keccak256Hash([]byte(es))
+}
+
+const (
+	Deposit       EventSig = "Deposit(uint8,bytes32,uint64,address,bytes,bytes)"
+	ProposalEvent EventSig = "ProposalEvent(uint8,uint64,uint8,bytes32)"
+	ProposalVote  EventSig = "ProposalVote(uint8,uint64,uint8,bytes32)"
+)
+
+type ProposalStatus int
+
+const (
+	Inactive ProposalStatus = iota
+	Active
+	Passed
+	Executed
+	Cancelled
+)
+
+func IsActive(status uint8) bool {
+	return ProposalStatus(status) == Active
+}
+
+func IsFinalized(status uint8) bool {
+	return ProposalStatus(status) == Passed
+}
+
+func IsExecuted(status uint8) bool {
+	return ProposalStatus(status) == Executed
+}
 
 func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
 	startBlock, _ := client.LatestBlock()
@@ -26,7 +60,7 @@ func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
 		FromBlock: startBlock,
 		Addresses: []common.Address{bridge},
 		Topics: [][]common.Hash{
-			{util.ProposalEvent.GetTopic()},
+			{ProposalEvent.GetTopic()},
 		},
 	}
 	timeout := time.After(TestTimeout)
@@ -68,7 +102,7 @@ func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
 			}
 			status := abi.ConvertType(out[2], new(uint8)).(*uint8)
 			// Check status
-			if util.IsExecuted(*status) {
+			if IsExecuted(*status) {
 				log.Info().Msgf("Got Proposal executed event status, continuing..., status: %v", *status)
 				return nil
 			} else {
@@ -85,7 +119,7 @@ func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
 }
 
 func checkProposalExecuted(client TestClient, startBlock, endBlock *big.Int, bridge common.Address, a abi.ABI) (bool, error) {
-	logs, err := client.FetchEventLogs(context.TODO(), bridge, string(util.ProposalEvent), startBlock, endBlock)
+	logs, err := client.FetchEventLogs(context.TODO(), bridge, string(ProposalEvent), startBlock, endBlock)
 	if err != nil {
 		return false, err
 	}
@@ -95,7 +129,7 @@ func checkProposalExecuted(client TestClient, startBlock, endBlock *big.Int, bri
 			return false, err
 		}
 		status := abi.ConvertType(out[2], new(uint8)).(*uint8)
-		if util.IsExecuted(*status) {
+		if IsExecuted(*status) {
 			log.Info().Msgf("Got Proposal executed event status, continuing..., status: %v", *status)
 			return true, nil
 		} else {

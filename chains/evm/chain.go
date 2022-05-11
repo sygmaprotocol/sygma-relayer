@@ -4,9 +4,9 @@
 package evm
 
 import (
+	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -25,7 +25,7 @@ import (
 )
 
 type EventListener interface {
-	ListenToEvents(startBlock, blockConfirmations *big.Int, blockRetryInterval time.Duration, domainID uint8, blockstore *store.BlockStore, stopChn <-chan struct{}, errChn chan<- error) <-chan *message.Message
+	ListenToEvents(ctx context.Context, startBlock *big.Int, msgChan chan *message.Message, errChan chan<- error)
 }
 
 type ProposalExecutor interface {
@@ -56,10 +56,10 @@ func SetupDefaultEVMChain(rawConfig map[string]interface{}, txFabric calls.TxFab
 	t := signAndSend.NewSignAndSendTransactor(txFabric, gasPricer, client)
 	bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
 
-	eventHandler := listener.NewETHEventHandler(*bridgeContract)
-	eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
-	eventHandler.RegisterEventHandler(config.Erc721Handler, listener.Erc721EventHandler)
-	eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
+	eventHandler := listener.NewETHDepositHandler(*bridgeContract)
+	eventHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+	eventHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+	eventHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
 	eventListener := events.NewListener(client)
 	evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
 
@@ -77,7 +77,7 @@ func NewEVMChain(listener EventListener, writer ProposalExecutor, blockstore *st
 
 // PollEvents is the goroutine that polls blocks and searches Deposit events in them.
 // Events are then sent to eventsChan.
-func (c *EVMChain) PollEvents(stop <-chan struct{}, sysErr chan<- error, eventsChan chan *message.Message) {
+func (c *EVMChain) PollEvents(ctx context.Context, sysErr chan<- error, msgChan chan *message.Message) {
 	log.Info().Msg("Polling Blocks...")
 
 	startBlock, err := c.blockstore.GetStartBlock(
@@ -91,17 +91,7 @@ func (c *EVMChain) PollEvents(stop <-chan struct{}, sysErr chan<- error, eventsC
 		return
 	}
 
-	ech := c.listener.ListenToEvents(startBlock, c.config.BlockConfirmations, c.config.BlockRetryInterval, *c.config.GeneralChainConfig.Id, c.blockstore, stop, sysErr)
-	for {
-		select {
-		case <-stop:
-			return
-		case newEvent := <-ech:
-			// Here we can place middlewares for custom logic?
-			eventsChan <- newEvent
-			continue
-		}
-	}
+	go c.listener.ListenToEvents(ctx, startBlock, msgChan, sysErr)
 }
 
 func (c *EVMChain) Write(msg *message.Message) error {

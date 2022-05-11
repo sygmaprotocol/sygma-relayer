@@ -20,7 +20,7 @@ var errIncorrectCalldataLen = errors.New("invalid calldata length: less than 84 
 
 type ListenerTestSuite struct {
 	suite.Suite
-	mockEventHandler *mock_listener.MockEventHandler
+	mockDepositHandler *mock_listener.MockDepositHandler
 }
 
 func TestRunTestSuite(t *testing.T) {
@@ -31,7 +31,7 @@ func (s *ListenerTestSuite) SetupSuite()    {}
 func (s *ListenerTestSuite) TearDownSuite() {}
 func (s *ListenerTestSuite) SetupTest() {
 	gomockController := gomock.NewController(s.T())
-	s.mockEventHandler = mock_listener.NewMockEventHandler(gomockController)
+	s.mockDepositHandler = mock_listener.NewMockDepositHandler(gomockController)
 }
 func (s *ListenerTestSuite) TearDownTest() {}
 
@@ -72,7 +72,7 @@ func (s *ListenerTestSuite) TestErc20HandleEvent() {
 		},
 	}
 
-	m, err := listener.Erc20EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(m, expected)
@@ -101,7 +101,7 @@ func (s *ListenerTestSuite) TestErc20HandleEventIncorrectCalldataLen() {
 
 	sourceID := uint8(1)
 
-	m, err := listener.Erc20EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(m)
 	s.EqualError(err, errIncorrectCalldataLen.Error())
 }
@@ -146,7 +146,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithMetadata_Sucess() {
 		},
 	}
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)
@@ -189,7 +189,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithoutMetadata_Success() {
 		},
 	}
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)
@@ -214,7 +214,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_IncorrectCalldataLen_Failure()
 
 	sourceID := uint8(1)
 
-	m, err := listener.Erc721EventHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
 	s.Nil(m)
 	s.EqualError(err, errIncorrectCalldataLen.Error())
 }

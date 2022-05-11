@@ -5,6 +5,7 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -13,12 +14,13 @@ import (
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/rs/zerolog/log"
 )
 
-type EventHandler interface {
-	HandleEvent(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
+type DepositHandler interface {
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
 }
 type ChainClient interface {
 	LatestBlock() (*big.Int, error)
@@ -27,82 +29,71 @@ type ChainClient interface {
 
 type EventListener interface {
 	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
+	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 }
 
 type EVMListener struct {
-	client        ChainClient
-	eventListener EventListener
-	eventHandler  EventHandler
-	bridgeAddress common.Address
+	client         ChainClient
+	eventListener  EventListener
+	depositHandler DepositHandler
+	bridgeAddress  common.Address
+	domainID       uint8
+
+	blockstore         *store.BlockStore
+	blockRetryInterval time.Duration
+	blockConfirmations *big.Int
 }
 
 // NewEVMListener creates an EVMListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewEVMListener(client ChainClient, eventListener EventListener, handler EventHandler, bridgeAddress common.Address) *EVMListener {
-	return &EVMListener{client: client, eventListener: eventListener, eventHandler: handler, bridgeAddress: bridgeAddress}
+func NewEVMListener(client ChainClient, eventListener EventListener, depositHandler DepositHandler, bridgeAddress common.Address) *EVMListener {
+	return &EVMListener{client: client, eventListener: eventListener, depositHandler: depositHandler, bridgeAddress: bridgeAddress}
 }
 
-func (l *EVMListener) ListenToEvents(
-	startBlock, blockDelay *big.Int,
-	blockRetryInterval time.Duration,
-	domainID uint8,
-	blockstore *store.BlockStore,
-	stopChn <-chan struct{},
-	errChn chan<- error,
-) <-chan *message.Message {
-	ch := make(chan *message.Message)
-	go func() {
-		for {
-			select {
-			case <-stopChn:
-				return
-			default:
-				head, err := l.client.LatestBlock()
-				if err != nil {
-					log.Error().Err(err).Msg("Unable to get latest block")
-					time.Sleep(blockRetryInterval)
-					continue
-				}
+// ListenToEvents goes block by block of a network and executes event handlers that are
+// configured for the listener.
+func (l *EVMListener) ListenToEvents(ctx context.Context, startBlock *big.Int, msgChan chan *message.Message, errChn chan<- error) {
+	block := startBlock
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			block, err := l.nextBlock(block)
+			if err != nil {
+				log.Err(err).Msgf("Unable to fetch next block because of: %s", err)
+				time.Sleep(l.blockRetryInterval)
+				continue
+			}
 
-				if startBlock == nil {
-					startBlock = head
-				}
-
-				// Sleep if the difference is less than blockDelay; (latest - current) < BlockDelay
-				if big.NewInt(0).Sub(head, startBlock).Cmp(blockDelay) == -1 {
-					time.Sleep(blockRetryInterval)
-					continue
-				}
-
-				if startBlock.Int64()%20 == 0 {
-					// Logging process every 20 bocks to exclude spam
-					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for bridging events")
-				}
-
-				deposits, err := l.eventListener.FetchDeposits(context.Background(), l.bridgeAddress, startBlock, startBlock)
-				if err != nil {
-					// Filtering logs error really can appear only on wrong configuration or temporary network problem
-					// so i do no see any reason to break execution
-					log.Error().Err(err).Str("DomainID", string(domainID)).Msgf("Unable to filter logs")
-					continue
-				}
-				l.handleDeposits(deposits, startBlock, domainID, ch)
-
-				//Write to block store. Not a critical operation, no need to retry
-				err = blockstore.StoreBlock(startBlock, domainID)
-				if err != nil {
-					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
-				}
-
-				// Goto next block
-				startBlock.Add(startBlock, big.NewInt(1))
+			//Write to block store. Not a critical operation, no need to retry
+			err = l.blockstore.StoreBlock(block, l.domainID)
+			if err != nil {
+				log.Error().Str("block", block.String()).Err(err).Msg("Failed to write latest block to blockstore")
 			}
 		}
-	}()
-
-	return ch
+	}
 }
 
+func (l *EVMListener) nextBlock(previousBlock *big.Int) (*big.Int, error) {
+	head, err := l.client.LatestBlock()
+	if err != nil {
+		return nil, err
+	}
+	if previousBlock == nil {
+		return head, nil
+	}
+
+	nextBlock := previousBlock.Add(previousBlock, big.NewInt(1))
+	if big.NewInt(0).Sub(head, nextBlock).Cmp(l.blockConfirmations) == -1 {
+		return nil, fmt.Errorf("block %s difference from head %s less than configured block confirmations %s", nextBlock, head, l.blockConfirmations)
+	}
+
+	return nextBlock, nil
+}
+
+/*
 func (l *EVMListener) handleDeposits(deposits []*events.Deposit, block *big.Int, domainID uint8, ch chan *message.Message) {
 	for _, d := range deposits {
 		log.Debug().Msgf("Deposit log found from sender: %s in block: %s with  destinationDomainId: %v, resourceID: %s, depositNonce: %v", d.SenderAddress, block.String(), d.DestinationDomainID, d.ResourceID, d.DepositNonce)
@@ -110,10 +101,11 @@ func (l *EVMListener) handleDeposits(deposits []*events.Deposit, block *big.Int,
 		m, err := l.eventHandler.HandleEvent(domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
 		if err != nil {
 			log.Error().Str("block", block.String()).Uint8("domainID", domainID).Msgf("%v", err)
-			continue
+			continueblock delay
 		}
 
 		log.Debug().Msgf("Resolved message %+v in block %s", m, block.String())
 		ch <- m
 	}
 }
+*/

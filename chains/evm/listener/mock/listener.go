@@ -13,45 +13,46 @@ import (
 	message "github.com/ChainSafe/chainbridge-core/relayer/message"
 	types "github.com/ChainSafe/chainbridge-core/types"
 	common "github.com/ethereum/go-ethereum/common"
+	types0 "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEventHandler is a mock of EventHandler interface.
-type MockEventHandler struct {
+// MockDepositHandler is a mock of DepositHandler interface.
+type MockDepositHandler struct {
 	ctrl     *gomock.Controller
-	recorder *MockEventHandlerMockRecorder
+	recorder *MockDepositHandlerMockRecorder
 }
 
-// MockEventHandlerMockRecorder is the mock recorder for MockEventHandler.
-type MockEventHandlerMockRecorder struct {
-	mock *MockEventHandler
+// MockDepositHandlerMockRecorder is the mock recorder for MockDepositHandler.
+type MockDepositHandlerMockRecorder struct {
+	mock *MockDepositHandler
 }
 
-// NewMockEventHandler creates a new mock instance.
-func NewMockEventHandler(ctrl *gomock.Controller) *MockEventHandler {
-	mock := &MockEventHandler{ctrl: ctrl}
-	mock.recorder = &MockEventHandlerMockRecorder{mock}
+// NewMockDepositHandler creates a new mock instance.
+func NewMockDepositHandler(ctrl *gomock.Controller) *MockDepositHandler {
+	mock := &MockDepositHandler{ctrl: ctrl}
+	mock.recorder = &MockDepositHandlerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
+func (m *MockDepositHandler) EXPECT() *MockDepositHandlerMockRecorder {
 	return m.recorder
 }
 
-// HandleEvent mocks base method.
-func (m *MockEventHandler) HandleEvent(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+// HandleDeposit mocks base method.
+func (m *MockDepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvent", sourceID, destID, nonce, resourceID, calldata, handlerResponse)
+	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, handlerResponse)
 	ret0, _ := ret[0].(*message.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// HandleEvent indicates an expected call of HandleEvent.
-func (mr *MockEventHandlerMockRecorder) HandleEvent(sourceID, destID, nonce, resourceID, calldata, handlerResponse interface{}) *gomock.Call {
+// HandleDeposit indicates an expected call of HandleDeposit.
+func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, handlerResponse interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvent", reflect.TypeOf((*MockEventHandler)(nil).HandleEvent), sourceID, destID, nonce, resourceID, calldata, handlerResponse)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, handlerResponse)
 }
 
 // MockChainClient is a mock of ChainClient interface.
@@ -143,4 +144,34 @@ func (m *MockEventListener) FetchDeposits(ctx context.Context, address common.Ad
 func (mr *MockEventListenerMockRecorder) FetchDeposits(ctx, address, startBlock, endBlock interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchDeposits", reflect.TypeOf((*MockEventListener)(nil).FetchDeposits), ctx, address, startBlock, endBlock)
+}
+
+// FetchKeygenEvents mocks base method.
+func (m *MockEventListener) FetchKeygenEvents(ctx context.Context, address common.Address, startBlock, endBlock *big.Int) ([]types0.Log, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchKeygenEvents", ctx, address, startBlock, endBlock)
+	ret0, _ := ret[0].([]types0.Log)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchKeygenEvents indicates an expected call of FetchKeygenEvents.
+func (mr *MockEventListenerMockRecorder) FetchKeygenEvents(ctx, address, startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchKeygenEvents", reflect.TypeOf((*MockEventListener)(nil).FetchKeygenEvents), ctx, address, startBlock, endBlock)
+}
+
+// FetchRefreshEvents mocks base method.
+func (m *MockEventListener) FetchRefreshEvents(ctx context.Context, address common.Address, startBlock, endBlock *big.Int) ([]types0.Log, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchRefreshEvents", ctx, address, startBlock, endBlock)
+	ret0, _ := ret[0].([]types0.Log)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchRefreshEvents indicates an expected call of FetchRefreshEvents.
+func (mr *MockEventListenerMockRecorder) FetchRefreshEvents(ctx, address, startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRefreshEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRefreshEvents), ctx, address, startBlock, endBlock)
 }

@@ -4,6 +4,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -79,10 +80,10 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
 
-				eventHandler := listener.NewETHEventHandler(*bridgeContract)
-				eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
-				eventHandler.RegisterEventHandler(config.Erc721Handler, listener.Erc721EventHandler)
-				eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
+				eventHandler := listener.NewETHDepositHandler(*bridgeContract)
+				eventHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+				eventHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+				eventHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
 				eventListener := events.NewListener(client)
 				evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
 
@@ -107,8 +108,9 @@ func Run() error {
 	)
 
 	errChn := make(chan error)
-	stopChn := make(chan struct{})
-	go r.Start(stopChn, errChn)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go r.Start(ctx, errChn)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
@@ -120,7 +122,6 @@ func Run() error {
 	select {
 	case err := <-errChn:
 		log.Error().Err(err).Msg("failed to listen and serve")
-		close(stopChn)
 		return err
 	case sig := <-sysErr:
 		log.Info().Msgf("terminating got ` [%v] signal", sig)
