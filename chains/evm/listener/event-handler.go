@@ -53,7 +53,6 @@ func (eh *DepositEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 type KeygenEventHandler struct {
 	eventListener EventListener
 	bridgeAddress common.Address
-	domainID      uint8
 }
 
 func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
@@ -71,7 +70,6 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 type RefreshEventHandler struct {
 	eventListener EventListener
 	bridgeAddress common.Address
-	domainID      uint8
 }
 
 func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
