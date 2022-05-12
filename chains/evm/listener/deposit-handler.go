@@ -17,14 +17,15 @@ type DepositHandlerFunc func(sourceID, destId uint8, nonce uint64, resourceID ty
 
 type ETHDepositHandler struct {
 	bridgeContract  bridge.BridgeContract
-	DepositHandlers DepositHandlers
+	depositHandlers DepositHandlers
 }
 
 // NewETHDepositHandler creates an instance of ETHDepositHandler that contains
 // handler functions for processing deposit events
 func NewETHDepositHandler(bridgeContract bridge.BridgeContract) *ETHDepositHandler {
 	return &ETHDepositHandler{
-		bridgeContract: bridgeContract,
+		bridgeContract:  bridgeContract,
+		depositHandlers: make(map[common.Address]DepositHandlerFunc),
 	}
 }
 
@@ -44,9 +45,9 @@ func (e *ETHDepositHandler) HandleDeposit(sourceID, destID uint8, depositNonce u
 
 // matchAddressWithHandlerFunc matches a handler address with an associated handler function
 func (e *ETHDepositHandler) matchAddressWithHandlerFunc(handlerAddress common.Address) (DepositHandlerFunc, error) {
-	hf, ok := e.DepositHandlers[handlerAddress]
+	hf, ok := e.depositHandlers[handlerAddress]
 	if !ok {
-		return nil, errors.New("no corresponding event handler for this address exists")
+		return nil, errors.New("no corresponding deposit handler for this address exists")
 	}
 	return hf, nil
 }
@@ -57,13 +58,9 @@ func (e *ETHDepositHandler) RegisterDepositHandler(handlerAddress string, handle
 		return
 	}
 
-	if e.DepositHandlers == nil {
-		e.DepositHandlers = make(map[common.Address]DepositHandlerFunc)
-	}
-
-	log.Info().Msgf("Registered event handler for address %s", handlerAddress)
-
-	e.DepositHandlers[common.HexToAddress(handlerAddress)] = handler
+	log.Info().Msgf("%s ---- %+v", handlerAddress, e.depositHandlers)
+	log.Info().Msgf("Registered deposit handler for address %s", handlerAddress)
+	e.depositHandlers[common.HexToAddress(handlerAddress)] = handler
 }
 
 // Erc20DepositHandler converts data pulled from event logs into message

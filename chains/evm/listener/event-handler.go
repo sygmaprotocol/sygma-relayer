@@ -22,6 +22,7 @@ type EventListener interface {
 type DepositHandler interface {
 	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
 }
+
 type DepositEventHandler struct {
 	eventListener  EventListener
 	depositHandler DepositHandler
