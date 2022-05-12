@@ -245,6 +245,15 @@ func (c *BridgeContract) Unpause(opts transactor.TransactOptions) (*common.Hash,
 	)
 }
 
+func (c *BridgeContract) EndKeygen(mpcAddress common.Address, opts transactor.TransactOptions) (*common.Hash, error) {
+	log.Debug().Msg("Ending keygen process")
+	return c.ExecuteTransaction(
+		"endKeygen",
+		opts,
+		mpcAddress,
+	)
+}
+
 func (c *BridgeContract) Withdraw(
 	handlerAddress,
 	tokenAddress,

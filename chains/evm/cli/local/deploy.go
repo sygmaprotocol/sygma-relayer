@@ -60,8 +60,12 @@ func PrepareLocalEVME2EEnv(
 
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
 	bridgeContractAddress, err := bridgeContract.DeployContract(
-		domainID, []common.Address{MpcAddress}, threshold, big.NewInt(0), big.NewInt(100),
+		domainID, big.NewInt(0), big.NewInt(100),
 	)
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
+	_, err = bridgeContract.EndKeygen(MpcAddress, transactor.TransactOptions{})
 	if err != nil {
 		return EVME2EConfig{}, err
 	}
