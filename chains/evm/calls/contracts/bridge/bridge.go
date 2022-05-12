@@ -2,7 +2,6 @@ package bridge
 
 import (
 	"bytes"
-	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -227,8 +226,7 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 	}
 
 	hash := crypto.Keccak256Hash(bytes)
-	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(hash), string(hash.Bytes()))
-	return []byte(msg), nil
+	return hash.Bytes(), nil
 }
 
 func (c *BridgeContract) Pause(opts transactor.TransactOptions) (*common.Hash, error) {
