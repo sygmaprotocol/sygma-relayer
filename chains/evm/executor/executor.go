@@ -27,8 +27,8 @@ type MessageHandler interface {
 }
 
 type BridgeContract interface {
-	ProposalStatus(p *proposal.Proposal) (message.ProposalStatus, error)
-	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	IsProposalExecuted(p *proposal.Proposal) (bool, error)
+	ExecuteProposal(proposal *proposal.Proposal, signature []byte, revertOnFail bool, opts transactor.TransactOptions) (*common.Hash, error)
 	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
 }
 
@@ -64,11 +64,11 @@ func (e *Executor) Execute(m *message.Message) error {
 		return err
 	}
 
-	ps, err := e.bridge.ProposalStatus(prop)
+	isExecuted, err := e.bridge.IsProposalExecuted(prop)
 	if err != nil {
 		return err
 	}
-	if ps.Status == message.ProposalStatusExecuted {
+	if isExecuted {
 		return nil
 	}
 
@@ -106,7 +106,7 @@ func (e *Executor) Execute(m *message.Message) error {
 				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 				sig[64] += 27
 
-				hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
+				hash, err := e.bridge.ExecuteProposal(prop, sig, m.RevertOnFail, transactor.TransactOptions{})
 				if err != nil {
 					cancel()
 					return err
@@ -116,11 +116,8 @@ func (e *Executor) Execute(m *message.Message) error {
 			}
 		case <-ticker.C:
 			{
-				ps, err := e.bridge.ProposalStatus(prop)
-				if err != nil {
-					continue
-				}
-				if ps.Status != message.ProposalStatusExecuted {
+				isExecuted, err := e.bridge.IsProposalExecuted(prop)
+				if err != nil || !isExecuted {
 					continue
 				}
 

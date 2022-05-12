@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -34,18 +33,6 @@ func NewBridgeContract(
 	a, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	b := common.FromHex(consts.BridgeBin)
 	return &BridgeContract{contracts.NewContract(bridgeContractAddress, a, b, client, transactor)}
-}
-
-func (c *BridgeContract) AddRelayer(
-	relayerAddr common.Address,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Adding new relayer %s", relayerAddr.String())
-	return c.ExecuteTransaction(
-		"adminAddRelayer",
-		opts,
-		relayerAddr,
-	)
 }
 
 func (c *BridgeContract) AdminSetGenericResource(
@@ -89,18 +76,6 @@ func (c *BridgeContract) SetDepositNonce(
 		"adminSetDepositNonce",
 		opts,
 		domainId, depositNonce,
-	)
-}
-
-func (c *BridgeContract) SetThresholdInput(
-	threshold uint64,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting threshold %d", threshold)
-	return c.ExecuteTransaction(
-		"adminChangeRelayerThreshold",
-		opts,
-		big.NewInt(0).SetUint64(threshold),
 	)
 }
 
@@ -204,6 +179,7 @@ func (c *BridgeContract) GenericDeposit(
 func (c *BridgeContract) ExecuteProposal(
 	proposal *proposal.Proposal,
 	signature []byte,
+	revertOnFail bool,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -214,7 +190,7 @@ func (c *BridgeContract) ExecuteProposal(
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature,
+		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature, revertOnFail,
 	)
 }
 
@@ -288,37 +264,17 @@ func (c *BridgeContract) Withdraw(
 	return c.ExecuteTransaction("adminWithdraw", opts, handlerAddress, data.Bytes())
 }
 
-func (c *BridgeContract) GetThreshold() (uint8, error) {
-	log.Debug().Msg("Getting threshold")
-	res, err := c.CallContract("_relayerThreshold")
-	if err != nil {
-		return 0, err
-	}
-	out := *abi.ConvertType(res[0], new(uint8)).(*uint8)
-	return out, nil
-}
-
-func (c *BridgeContract) IsRelayer(relayerAddress common.Address) (bool, error) {
-	log.Debug().Msgf("Getting is %s a relayer", relayerAddress.String())
-	res, err := c.CallContract("isRelayer", relayerAddress)
-	if err != nil {
-		return false, err
-	}
-	out := abi.ConvertType(res[0], new(bool)).(*bool)
-	return *out, nil
-}
-
-func (c *BridgeContract) ProposalStatus(p *proposal.Proposal) (message.ProposalStatus, error) {
+func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
 		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
 		Str("handler", p.HandlerAddress.String()).
-		Msg("Getting proposal status")
-	res, err := c.CallContract("getProposal", p.Source, p.DepositNonce, p.GetDataHash())
+		Msg("Getting is proposla exectued")
+	res, err := c.CallContract("isProposalExecuted", p.Source, p.DepositNonce)
 	if err != nil {
-		return message.ProposalStatus{}, err
+		return false, err
 	}
-	out := *abi.ConvertType(res[0], new(message.ProposalStatus)).(*message.ProposalStatus)
+	out := *abi.ConvertType(res[0], new(bool)).(*bool)
 	return out, nil
 }
 
@@ -332,11 +288,4 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	}
 	out := *abi.ConvertType(res[0], new(common.Address)).(*common.Address)
 	return out, nil
-}
-
-func idAndNonce(srcId uint8, nonce uint64) *big.Int {
-	var data []byte
-	data = append(data, big.NewInt(int64(nonce)).Bytes()...)
-	data = append(data, uint8(srcId))
-	return big.NewInt(0).SetBytes(data)
 }

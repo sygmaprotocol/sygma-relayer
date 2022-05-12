@@ -104,7 +104,7 @@ func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 		priority := calldata[(64 + recipientAddressLength.Int64() + 1):((64 + recipientAddressLength.Int64()) + 1 + priorityLength.Int64())]
 		metadata.Priority = priority[0]
 	}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, metadata), nil
+	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, metadata, true), nil
 }
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
@@ -123,7 +123,7 @@ func GenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID type
 
 	// generic handler has specific payload length and doesn't support arbitrary metadata
 	meta := message.Metadata{}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.GenericTransfer, payload, meta), nil
+	return message.NewMessage(sourceID, destId, nonce, resourceID, message.GenericTransfer, payload, meta, false), nil
 }
 
 // Erc721DepositHandler converts data pulled from ERC721 deposit event logs into message
@@ -169,5 +169,5 @@ func Erc721DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types
 		priority := calldata[(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64() + 1):(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64() + 1 + priorityLength.Int64())]
 		meta.Priority = priority[0]
 	}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.NonFungibleTransfer, payload, meta), nil
+	return message.NewMessage(sourceID, destId, nonce, resourceID, message.NonFungibleTransfer, payload, meta, true), nil
 }

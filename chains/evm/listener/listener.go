@@ -37,6 +37,7 @@ type EVMListener struct {
 // and calls event handler when one occurs
 func NewEVMListener(client ChainClient, eventHandlers []EventHandler, blockstore *store.BlockStore, config *chain.EVMConfig) *EVMListener {
 	return &EVMListener{
+		client:             client,
 		eventHandlers:      eventHandlers,
 		blockstore:         blockstore,
 		domainID:           *config.GeneralChainConfig.Id,
