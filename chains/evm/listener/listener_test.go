@@ -70,6 +70,7 @@ func (s *ListenerTestSuite) TestErc20HandleEvent() {
 			amountParsed,
 			recipientAddressParsed,
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -144,6 +145,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithMetadata_Sucess() {
 			recipientAddressParsed,
 			metadataParsed,
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -187,6 +189,7 @@ func (s *ListenerTestSuite) TestErc721HandleEvent_WithoutMetadata_Success() {
 			recipientAddressParsed,
 			metadataParsed,
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)

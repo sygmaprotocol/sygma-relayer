@@ -65,7 +65,7 @@ func (c *Coordinator) isLeader(sessionID string) bool {
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
-	log.Debug().Msgf("broadcasted initiate message for session: %s")
+	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
 	go c.communication.Broadcast(
 		c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, sessionID, nil,
 	)

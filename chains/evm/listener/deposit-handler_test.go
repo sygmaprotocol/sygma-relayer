@@ -57,6 +57,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 			amountParsed,
 			recipientAddressParsed,
 		},
+		RevertOnFail: true,
 	}
 
 	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -100,6 +101,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 		Metadata: message.Metadata{
 			Priority: uint8(1),
 		},
+		RevertOnFail: true,
 	}
 
 	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -174,6 +176,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 			recipientAddressParsed,
 			metadata,
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -234,6 +237,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 			recipientAddressParsed,
 			parsedMetadata,
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -285,6 +289,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 		Metadata: message.Metadata{
 			Priority: uint8(1),
 		},
+		RevertOnFail: true,
 	}
 
 	m, err := listener.Erc721DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -359,6 +364,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 		Payload: []interface{}{
 			metadata,
 		},
+		RevertOnFail: false,
 	}
 
 	message, err := listener.GenericDepositHandler(
@@ -398,6 +404,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 		Payload: []interface{}{
 			metadata,
 		},
+		RevertOnFail: false,
 	}
 
 	message, err := listener.GenericDepositHandler(
