@@ -46,7 +46,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	}
 
 	err := <-errChn
-	tssProcess.Stop()
 	if err != nil {
 		log.Err(err).Msgf("Error occurred during tss process")
 		statusChn <- err
