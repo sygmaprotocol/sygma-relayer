@@ -106,7 +106,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -139,7 +139,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -180,7 +180,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -221,7 +221,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		signing.Timeout = time.Millisecond * 200
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)

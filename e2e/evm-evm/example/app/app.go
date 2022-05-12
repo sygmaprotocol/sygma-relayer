@@ -28,6 +28,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/rs/zerolog/log"
@@ -59,6 +60,7 @@ func Run() error {
 		panic(err)
 	}
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", configuration.RelayerConfig)
+	coordinator := tss.NewCoordinator(host, comm)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
@@ -96,7 +98,7 @@ func Run() error {
 				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
-				executor := executor.NewExecutor(host, comm, mh, bridgeContract, keyshareStore)
+				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
 				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
 

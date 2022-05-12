@@ -44,16 +44,18 @@ type Executor struct {
 func NewExecutor(
 	host host.Host,
 	comm communication.Communication,
+	coordinator *tss.Coordinator,
 	mh MessageHandler,
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
 ) *Executor {
 	return &Executor{
-		host:    host,
-		comm:    comm,
-		mh:      mh,
-		bridge:  bridgeContract,
-		fetcher: fetcher,
+		host:        host,
+		comm:        comm,
+		coordinator: coordinator,
+		mh:          mh,
+		bridge:      bridgeContract,
+		fetcher:     fetcher,
 	}
 }
 

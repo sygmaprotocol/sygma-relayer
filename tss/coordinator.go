@@ -26,7 +26,6 @@ type Coordinator struct {
 
 func NewCoordinator(
 	host host.Host,
-	tssProcess TssProcess,
 	communication communication.Communication,
 ) *Coordinator {
 	return &Coordinator{
