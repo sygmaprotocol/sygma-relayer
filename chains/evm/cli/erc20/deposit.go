@@ -1,15 +1,15 @@
 package erc20
 
 import (
+	"encoding/hex"
 	"fmt"
-	"math/big"
-
 	callsUtil "github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/util"
+	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
@@ -61,11 +61,18 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Recipient, "recipient", "", "Address of recipient")
 	cmd.Flags().StringVar(&Bridge, "bridge", "", "Address of bridge contract")
 	cmd.Flags().StringVar(&Amount, "amount", "", "Amount to deposit")
-	cmd.Flags().Uint8Var(&DomainID, "domain", 0, "Destination domain ID")
+	cmd.Flags().Uint8Var(&FromDomainID, "from-domain", 0, "Source domain ID")
+	cmd.Flags().Uint8Var(&ToDomainID, "to-domain", 0, "Destination domain ID")
 	cmd.Flags().StringVar(&ResourceID, "resource", "", "Resource ID for transfer")
-	cmd.Flags().Uint64Var(&Decimals, "decimals", 0, "ERC20 token decimals")
+	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals")
+	cmd.Flags().Uint64Var(&Decimals, "erc20-token-decimals", 0, "ERC20 token decimals")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed")
-	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "domain", "resource", "decimals")
+	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price")
+	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate")
+	cmd.Flags().StringVar(&TokenRate, "ter", "", "Token rate")
+	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp")
+	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix")
+	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "to-domain", "resource", "erc20-token-decimals")
 }
 
 func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
@@ -94,13 +101,17 @@ func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	ResourceIdBytesArr, err = flags.ProcessResourceID(ResourceID)
+	if FeeOracleSignature != "" {
+		ValidFeeOracleSignature, err = hex.DecodeString(FeeOracleSignature)
+	}
 	return err
 }
 
 func DepositCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
 	hash, err := contract.Erc20Deposit(
-		RecipientAddress, RealAmount, ResourceIdBytesArr,
-		uint8(DomainID), transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority]},
+		RecipientAddress, RealAmount, ResourceIdBytesArr, BaseRate, TokenRate, big.NewInt(int64(DestGasPrice)),
+		ExpirationTimestamp, FromDomainID, ToDomainID, int64(Decimals), int64(DestNativeTokenDecimals),
+		ValidFeeOracleSignature, transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority]},
 	)
 	if err != nil {
 		log.Error().Err(fmt.Errorf("erc20 deposit error: %v", err))

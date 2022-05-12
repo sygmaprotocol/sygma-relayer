@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	mock_calls "github.com/ChainSafe/chainbridge-core/chains/evm/calls/mock"
@@ -29,13 +30,19 @@ type ProposalStatusTestSuite struct {
 }
 
 var (
-	testContractAddress   = "0x5f75ce92326e304962b22749bd71e36976171285"
-	testInteractorAddress = "0x1B33100D4f077f027042c01241D617b264d77931"
-	testRelayerAddress    = "0x0E223343BE5E126d7Cd1F6228F8F86fA04aD80fe"
-	testHandlerAddress    = "0xb157b07c616860546464b733a056be414167a09b"
-	testResourceId        = [32]byte{66}
-	testDomainId          = uint8(0)
-	metadata              = message.Metadata{}
+	testContractAddress     = "0x5f75ce92326e304962b22749bd71e36976171285"
+	testInteractorAddress   = "0x1B33100D4f077f027042c01241D617b264d77931"
+	testRelayerAddress      = "0x0E223343BE5E126d7Cd1F6228F8F86fA04aD80fe"
+	testHandlerAddress      = "0xb157b07c616860546464b733a056be414167a09b"
+	testResourceId          = [32]byte{66}
+	testDomainId            = uint8(0)
+	metadata                = message.Metadata{}
+	testBer                 = "1000.0"
+	testTer                 = "1000.0"
+	testDestGasPrice        = big.NewInt(1000000000)
+	testExpirationTimestamp = time.Now().Unix() + 3600
+	testFeeOracleSig        = []byte("")
+	testTokenDecimals       = int64(18)
 )
 
 func TestRunProposalStatusTestSuite(t *testing.T) {
@@ -118,7 +125,6 @@ func (s *ProposalStatusTestSuite) TestDeployContract_Success() {
 	address, err := bc.PackMethod("",
 		uint8(1),
 		[]common.Address{a},
-		big.NewInt(0).SetUint64(1),
 		big.NewInt(0).SetUint64(1),
 		big.NewInt(0),
 	)
@@ -216,7 +222,8 @@ func (s *ProposalStatusTestSuite) TestBridge_Erc20Deposit_Success() {
 		gomock.Any(),
 		gomock.Any(),
 	).Return(&common.Hash{30, 31, 32, 33}, nil)
-	res, err := s.bridgeContract.Erc20Deposit(common.HexToAddress(testInteractorAddress), big.NewInt(10), testResourceId, testDomainId, signAndSend.DefaultTransactionOptions)
+	res, err := s.bridgeContract.Erc20Deposit(common.HexToAddress(testInteractorAddress), big.NewInt(10), testResourceId,
+		testBer, testTer, testDestGasPrice, testExpirationTimestamp, testDomainId, testDomainId, testTokenDecimals, testTokenDecimals, testFeeOracleSig, signAndSend.DefaultTransactionOptions)
 	s.Equal(
 		&common.Hash{30, 31, 32, 33},
 		res,
@@ -230,7 +237,9 @@ func (s *ProposalStatusTestSuite) TestBridge_Erc721Deposit_Success() {
 		gomock.Any(),
 		gomock.Any(),
 	).Return(&common.Hash{32, 33, 34, 35}, nil)
-	res, err := s.bridgeContract.Erc721Deposit(big.NewInt(55), "token_uri", common.HexToAddress(testInteractorAddress), testResourceId, testDomainId, signAndSend.DefaultTransactionOptions)
+	res, err := s.bridgeContract.Erc721Deposit(big.NewInt(55), "token_uri", common.HexToAddress(testInteractorAddress), testResourceId,
+		testBer, testTer, testDestGasPrice, testExpirationTimestamp, testDomainId,
+		testDomainId, testTokenDecimals, testTokenDecimals, testFeeOracleSig, signAndSend.DefaultTransactionOptions)
 	s.Equal(
 		&common.Hash{32, 33, 34, 35},
 		res,
@@ -244,7 +253,9 @@ func (s *ProposalStatusTestSuite) TestBridge_GenericDeposit_Success() {
 		gomock.Any(),
 		gomock.Any(),
 	).Return(&common.Hash{35, 36, 37, 38}, nil)
-	res, err := s.bridgeContract.GenericDeposit([]byte{1, 2, 3}, testResourceId, testDomainId, signAndSend.DefaultTransactionOptions)
+	res, err := s.bridgeContract.GenericDeposit([]byte{1, 2, 3}, testResourceId, testBer, testTer, testDestGasPrice,
+		testExpirationTimestamp, testDomainId, testDomainId, testTokenDecimals, testTokenDecimals, testFeeOracleSig,
+		signAndSend.DefaultTransactionOptions)
 	s.Equal(
 		&common.Hash{35, 36, 37, 38},
 		res,

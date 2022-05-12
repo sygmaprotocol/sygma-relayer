@@ -120,12 +120,13 @@ func (c *BridgeContract) deposit(
 	resourceID types.ResourceID,
 	destDomainID uint8,
 	data []byte,
+	feeData []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	return c.ExecuteTransaction(
 		"deposit",
 		opts,
-		destDomainID, resourceID, data,
+		destDomainID, resourceID, data, feeData,
 	)
 }
 
@@ -133,13 +134,27 @@ func (c *BridgeContract) Erc20Deposit(
 	recipient common.Address,
 	amount *big.Int,
 	resourceID types.ResourceID,
-	destDomainID uint8,
+	baseRate, tokenRate string,
+	destGasPrice *big.Int,
+	expirationTimestamp int64,
+	fromDomainID, destDomainID uint8,
+	tokenDecimal, baseCurrencyDecimal int64,
+	feeOracleSignature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("recipient", recipient.String()).
 		Str("resourceID", hexutil.Encode(resourceID[:])).
 		Str("amount", amount.String()).
+		Str("baseRate", baseRate).
+		Str("tokenRate", tokenRate).
+		Str("destGasPrice", destGasPrice.String()).
+		Int64("expirationTimestamp", expirationTimestamp).
+		Uint8("fromDomainID", fromDomainID).
+		Uint8("destDomainID", destDomainID).
+		Int64("tokenDecimal", tokenDecimal).
+		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
+		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
 		Msgf("ERC20 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -147,7 +162,11 @@ func (c *BridgeContract) Erc20Deposit(
 	} else {
 		data = deposit.ConstructErc20DepositDataWithPriority(recipient.Bytes(), amount, opts.Priority)
 	}
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -160,13 +179,27 @@ func (c *BridgeContract) Erc721Deposit(
 	metadata string,
 	recipient common.Address,
 	resourceID types.ResourceID,
-	destDomainID uint8,
+	baseRate, tokenRate string,
+	destGasPrice *big.Int,
+	expirationTimestamp int64,
+	fromDomainID, destDomainID uint8,
+	tokenDecimal, baseCurrencyDecimal int64,
+	feeOracleSignature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("recipient", recipient.String()).
 		Str("resourceID", hexutil.Encode(resourceID[:])).
 		Str("tokenID", tokenId.String()).
+		Str("baseRate", baseRate).
+		Str("tokenRate", tokenRate).
+		Str("destGasPrice", destGasPrice.String()).
+		Int64("expirationTimestamp", expirationTimestamp).
+		Uint8("fromDomainID", fromDomainID).
+		Uint8("destDomainID", destDomainID).
+		Int64("tokenDecimal", tokenDecimal).
+		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
+		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
 		Msgf("ERC721 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -174,7 +207,11 @@ func (c *BridgeContract) Erc721Deposit(
 	} else {
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -185,14 +222,32 @@ func (c *BridgeContract) Erc721Deposit(
 func (c *BridgeContract) GenericDeposit(
 	metadata []byte,
 	resourceID types.ResourceID,
-	destDomainID uint8,
+	baseRate, tokenRate string,
+	destGasPrice *big.Int,
+	expirationTimestamp int64,
+	fromDomainID, destDomainID uint8,
+	tokenDecimal, baseCurrencyDecimal int64,
+	feeOracleSignature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("resourceID", hexutil.Encode(resourceID[:])).
+		Str("baseRate", baseRate).
+		Str("tokenRate", tokenRate).
+		Str("destGasPrice", destGasPrice.String()).
+		Int64("expirationTimestamp", expirationTimestamp).
+		Uint8("fromDomainID", fromDomainID).
+		Uint8("destDomainID", destDomainID).
+		Int64("tokenDecimal", tokenDecimal).
+		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
+		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
 		Msgf("Generic deposit")
 	data := deposit.ConstructGenericDepositData(metadata)
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
