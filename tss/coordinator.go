@@ -38,6 +38,7 @@ func NewCoordinator(
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
 	sessionID := tssProcess.SessionID()
 	errChn := make(chan error)
+	defer tssProcess.Stop()
 	if c.isLeader(sessionID) {
 		go c.initiate(ctx, tssProcess, resultChn, errChn)
 	} else {
@@ -47,7 +48,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	err := <-errChn
 	tssProcess.Stop()
 	if err != nil {
-		log.Err(err)
+		log.Err(err).Msgf("Error occurred during tss process")
 		statusChn <- err
 		return
 	}
