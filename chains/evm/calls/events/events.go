@@ -13,9 +13,10 @@ func (es EventSig) GetTopic() common.Hash {
 }
 
 const (
-	DepositSig     EventSig = "Deposit(uint8,bytes32,uint64,address,bytes,bytes)"
-	StartKeygenSig EventSig = "StartKeygen()"
-	KeyRefreshSig  EventSig = "KeyRefresh()"
+	DepositSig           EventSig = "Deposit(uint8,bytes32,uint64,address,bytes,bytes)"
+	StartKeygenSig       EventSig = "StartKeygen()"
+	KeyRefreshSig        EventSig = "KeyRefresh()"
+	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32)"
 )
 
 // Deposit struct holds event data with all necessary parameters and a handler response
