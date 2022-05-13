@@ -19,6 +19,7 @@ type MpcRelayerConfig struct {
 	Port         uint16
 	KeysharePath string
 	KeystorePath string
+	Threshold    int
 }
 
 type RawRelayerConfig struct {
@@ -33,6 +34,7 @@ type RawMpcRelayerConfig struct {
 	Port         uint16    `mapstructure:"Port" json:"port"`
 	KeysharePath string    `mapstructure:"KeysharePath" json:"keysharePath"`
 	KeystorePath string    `mapstructure:"KeystorePath" json:"keystorePath"`
+	Threshold    int       `mapstructure:"Threshold" json:"threshold"`
 }
 
 type RawPeer struct {
@@ -72,6 +74,7 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	config.MpcConfig.Port = rawConfig.MpcConfig.Port
 	config.MpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
 	config.MpcConfig.KeystorePath = rawConfig.MpcConfig.KeystorePath
+	config.MpcConfig.Threshold = rawConfig.MpcConfig.Threshold
 
 	return config, nil
 }

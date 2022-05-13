@@ -74,10 +74,23 @@ type KeygenEventHandler struct {
 	threshold     int
 }
 
-func NewKeygenEventHandler(eventListener EventListener, bridgeAddress common.Address) *KeygenEventHandler {
+func NewKeygenEventHandler(
+	eventListener EventListener,
+	coordinator *tss.Coordinator,
+	host host.Host,
+	communication communication.Communication,
+	storer keygen.SaveDataStorer,
+	bridgeAddress common.Address,
+	threshold int,
+) *KeygenEventHandler {
 	return &KeygenEventHandler{
 		eventListener: eventListener,
+		coordinator:   coordinator,
+		host:          host,
+		communication: communication,
+		storer:        storer,
 		bridgeAddress: bridgeAddress,
+		threshold:     threshold,
 	}
 }
 

@@ -90,7 +90,7 @@ func Run() error {
 				eventListener := events.NewListener(client)
 				eventHandlers := make([]listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, bridgeAddress))
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
