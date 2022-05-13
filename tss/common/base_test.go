@@ -206,7 +206,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 	wrappedMsg := &communication.WrappedMessage{
 		Payload: msg,
 	}
-	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(true, nil)
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(true, nil).AnyTimes()
 
 	go baseTss.ProcessInboundMessages(context.Background(), msgChan)
 

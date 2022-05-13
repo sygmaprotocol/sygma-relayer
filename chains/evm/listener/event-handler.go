@@ -1,173 +1,134 @@
 package listener
 
 import (
-	"errors"
+	"context"
+	"fmt"
 	"math/big"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/tss"
+	"github.com/ChainSafe/chainbridge-core/tss/keygen"
 	"github.com/ChainSafe/chainbridge-core/types"
-	"github.com/rs/zerolog/log"
-
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/rs/zerolog/log"
 )
 
-type EventHandlers map[common.Address]EventHandlerFunc
-type EventHandlerFunc func(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
-
-type ETHEventHandler struct {
-	bridgeContract bridge.BridgeContract
-	eventHandlers  EventHandlers
+type EventListener interface {
+	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
+	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 }
 
-// NewETHEventHandler creates an instance of ETHEventHandler that contains
-// handler functions for processing deposit events
-func NewETHEventHandler(bridgeContract bridge.BridgeContract) *ETHEventHandler {
-	return &ETHEventHandler{
-		bridgeContract: bridgeContract,
+type DepositHandler interface {
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
+}
+
+type DepositEventHandler struct {
+	eventListener  EventListener
+	depositHandler DepositHandler
+
+	bridgeAddress common.Address
+	domainID      uint8
+}
+
+func NewDepositEventHandler(eventListener EventListener, depositHandler DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+	return &DepositEventHandler{
+		eventListener:  eventListener,
+		depositHandler: depositHandler,
+		bridgeAddress:  bridgeAddress,
+		domainID:       domainID,
 	}
 }
 
-func (e *ETHEventHandler) HandleEvent(sourceID, destID uint8, depositNonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	handlerAddr, err := e.bridgeContract.GetHandlerAddressForResourceID(resourceID)
+func (eh *DepositEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
+	deposits, err := eh.eventListener.FetchDeposits(context.Background(), eh.bridgeAddress, block, block)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
 	}
 
-	eventHandler, err := e.matchAddressWithHandlerFunc(handlerAddr)
+	for _, d := range deposits {
+		m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
+		if err != nil {
+			log.Error().Str("block", block.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+			continue
+		}
+
+		log.Debug().Msgf("Resolved message %+v in block %s", m, block.String())
+		msgChan <- m
+	}
+
+	return nil
+}
+
+type KeygenEventHandler struct {
+	eventListener EventListener
+	coordinator   *tss.Coordinator
+	host          host.Host
+	communication communication.Communication
+	storer        keygen.SaveDataStorer
+	bridgeAddress common.Address
+	threshold     int
+}
+
+func NewKeygenEventHandler(
+	eventListener EventListener,
+	coordinator *tss.Coordinator,
+	host host.Host,
+	communication communication.Communication,
+	storer keygen.SaveDataStorer,
+	bridgeAddress common.Address,
+	threshold int,
+) *KeygenEventHandler {
+	return &KeygenEventHandler{
+		eventListener: eventListener,
+		coordinator:   coordinator,
+		host:          host,
+		communication: communication,
+		storer:        storer,
+		bridgeAddress: bridgeAddress,
+		threshold:     threshold,
+	}
+}
+
+func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
+	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, block, block)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
+	}
+	if len(keygenEvents) == 0 {
+		return nil
 	}
 
-	return eventHandler(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse)
+	keygen := keygen.NewKeygen(block.String(), eh.threshold, eh.host, eh.communication, eh.storer)
+	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
+
+	return nil
 }
 
-// matchAddressWithHandlerFunc matches a handler address with an associated handler function
-func (e *ETHEventHandler) matchAddressWithHandlerFunc(handlerAddress common.Address) (EventHandlerFunc, error) {
-	hf, ok := e.eventHandlers[handlerAddress]
-	if !ok {
-		return nil, errors.New("no corresponding event handler for this address exists")
-	}
-	return hf, nil
+type RefreshEventHandler struct {
+	eventListener EventListener
+	bridgeAddress common.Address
 }
 
-// RegisterEventHandler registers an event handler by associating a handler function to a specified address
-func (e *ETHEventHandler) RegisterEventHandler(handlerAddress string, handler EventHandlerFunc) {
-	if handlerAddress == "" {
-		return
+func NewRefreshEventHandler(eventListener EventListener, bridgeAddress common.Address) *RefreshEventHandler {
+	return &RefreshEventHandler{
+		eventListener: eventListener,
+		bridgeAddress: bridgeAddress,
 	}
-
-	if e.eventHandlers == nil {
-		e.eventHandlers = make(map[common.Address]EventHandlerFunc)
-	}
-
-	log.Info().Msgf("Registered event handler for address %s", handlerAddress)
-
-	e.eventHandlers[common.HexToAddress(handlerAddress)] = handler
 }
 
-// Erc20EventHandler converts data pulled from event logs into message
-// handlerResponse can be an empty slice
-func Erc20EventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	if len(calldata) < 84 {
-		err := errors.New("invalid calldata length: less than 84 bytes")
-		return nil, err
+func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
+	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, block, block)
+	if err != nil {
+		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
+	}
+	if len(refreshEvents) == 0 {
+		return nil
 	}
 
-	// @dev
-	// amount: first 32 bytes of calldata
-	amount := calldata[:32]
-
-	// lenRecipientAddress: second 32 bytes of calldata [32:64]
-	// does not need to be derived because it is being calculated
-	// within ERC20MessageHandler
-	// https://github.com/ChainSafe/chainbridge-core/blob/main/chains/evm/voter/message-handler.go#L108
-
-	// 32-64 is recipient address length
-	recipientAddressLength := big.NewInt(0).SetBytes(calldata[32:64])
-
-	// 64 - (64 + recipient address length) is recipient address
-	recipientAddress := calldata[64:(64 + recipientAddressLength.Int64())]
-
-	// if there is priority data, parse it and use it
-	payload := []interface{}{
-		amount,
-		recipientAddress,
-	}
-
-	// arbitrary metadata that will be most likely be used by the relayer
-	var metadata message.Metadata
-	if 64+recipientAddressLength.Int64() < int64(len(calldata)) {
-		priorityLength := big.NewInt(0).SetBytes(calldata[(64 + recipientAddressLength.Int64()):((64 + recipientAddressLength.Int64()) + 1)])
-
-		// (64 + recipient address length + 1) - ((64 + recipient address length + 1) + priority length) is priority data
-		priority := calldata[(64 + recipientAddressLength.Int64() + 1):((64 + recipientAddressLength.Int64()) + 1 + priorityLength.Int64())]
-		metadata.Priority = priority[0]
-	}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, metadata), nil
-}
-
-// GenericEventHandler converts data pulled from generic deposit event logs into message
-func GenericEventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	if len(calldata) < 32 {
-		err := errors.New("invalid calldata length: less than 32 bytes")
-		return nil, err
-	}
-
-	// first 32 bytes are metadata length
-	metadataLen := big.NewInt(0).SetBytes(calldata[:32])
-	metadata := calldata[32 : 32+metadataLen.Int64()]
-	payload := []interface{}{
-		metadata,
-	}
-
-	// generic handler has specific payload length and doesn't support arbitrary metadata
-	meta := message.Metadata{}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.GenericTransfer, payload, meta), nil
-}
-
-// Erc721EventHandler converts data pulled from ERC721 deposit event logs into message
-func Erc721EventHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	if len(calldata) < 64 {
-		err := errors.New("invalid calldata length: less than 84 bytes")
-		return nil, err
-	}
-
-	// first 32 bytes are tokenId
-	tokenId := calldata[:32]
-
-	// 32 - 64 is recipient address length
-	recipientAddressLength := big.NewInt(0).SetBytes(calldata[32:64])
-
-	// 64 - (64 + recipient address length) is recipient address
-	recipientAddress := calldata[64:(64 + recipientAddressLength.Int64())]
-
-	// (64 + recipient address length) - ((64 + recipient address length) + 32) is metadata length
-	metadataLength := big.NewInt(0).SetBytes(
-		calldata[(64 + recipientAddressLength.Int64()):((64 + recipientAddressLength.Int64()) + 32)],
-	)
-	// ((64 + recipient address length) + 32) - ((64 + recipient address length) + 32 + metadata length) is metadata
-	var metadata []byte
-	var metadataStart int64
-	if metadataLength.Cmp(big.NewInt(0)) == 1 {
-		metadataStart = (64 + recipientAddressLength.Int64()) + 32
-		metadata = calldata[metadataStart : metadataStart+metadataLength.Int64()]
-	}
-	// arbitrary metadata that will be most likely be used by the relayer
-	var meta message.Metadata
-
-	payload := []interface{}{
-		tokenId,
-		recipientAddress,
-		metadata,
-	}
-
-	if 64+recipientAddressLength.Int64()+32+metadataLength.Int64() < int64(len(calldata)) {
-		// (metadataStart + metadataLength) - (metadataStart + metadataLength + 1) is priority length
-		priorityLength := big.NewInt(0).SetBytes(calldata[(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64()):(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64() + 1)])
-		// (metadataStart + metadataLength + 1) - (metadataStart + metadataLength + 1) + priority length) is priority data
-		priority := calldata[(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64() + 1):(64 + recipientAddressLength.Int64() + 32 + metadataLength.Int64() + 1 + priorityLength.Int64())]
-		meta.Priority = priority[0]
-	}
-	return message.NewMessage(sourceID, destId, nonce, resourceID, message.NonFungibleTransfer, payload, meta), nil
+	return nil
 }

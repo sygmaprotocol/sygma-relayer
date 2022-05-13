@@ -106,6 +106,7 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 				Port:         2020,
 				KeysharePath: "./share.key",
 				KeystorePath: "./key.pk",
+				Threshold:    5,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
@@ -134,6 +135,7 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 				Port:         2020,
 				KeysharePath: "./share.key",
 				KeystorePath: "./key.pk",
+				Threshold:    5,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{

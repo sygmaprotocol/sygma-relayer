@@ -66,10 +66,12 @@ func NewSigning(
 // Params contains peer subset that leaders sends with start message.
 func (s *Signing) Start(
 	ctx context.Context,
+	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
 	params []string,
 ) {
+	s.Coordinator = coordinator
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
@@ -113,6 +115,7 @@ func (s *Signing) Start(
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (s *Signing) Stop() {
+	log.Info().Str("sessionID", s.SessionID()).Msgf("Stopping tss process.")
 	s.Communication.UnSubscribe(s.subscriptionID)
 	s.Cancel()
 }
@@ -154,7 +157,9 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 			{
 				s.Log.Info().Msg("Successfully generated signature")
 
-				s.resultChn <- sig
+				if s.Coordinator {
+					s.resultChn <- sig
+				}
 				s.ErrChn <- nil
 				return
 			}

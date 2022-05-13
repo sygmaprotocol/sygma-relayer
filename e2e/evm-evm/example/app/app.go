@@ -4,6 +4,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/rs/zerolog/log"
@@ -58,6 +60,7 @@ func Run() error {
 		panic(err)
 	}
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", configuration.RelayerConfig)
+	coordinator := tss.NewCoordinator(host, comm)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
@@ -75,29 +78,34 @@ func Run() error {
 					panic(err)
 				}
 
+				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
-				bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
+				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				eventHandler := listener.NewETHEventHandler(*bridgeContract)
-				eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
-				eventHandler.RegisterEventHandler(config.Erc721Handler, listener.Erc721EventHandler)
-				eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
+				depositHandler := listener.NewETHDepositHandler(*bridgeContract)
+				depositHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+				depositHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+				depositHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
 				eventListener := events.NewListener(client)
-				evmListener := listener.NewEVMListener(client, eventListener, eventHandler, common.HexToAddress(config.Bridge))
+				eventHandlers := make([]listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, bridgeAddress))
+				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := executor.NewEVMMessageHandler(*bridgeContract)
 				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
-				executor := executor.NewExecutor(host, comm, mh, bridgeContract, keyshareStore)
+				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
 				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
 
 				chains = append(chains, chain)
 			}
 		default:
-			panic(fmt.Errorf("Type '%s' not recognized", chainConfig["type"]))
+			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
 
@@ -107,8 +115,9 @@ func Run() error {
 	)
 
 	errChn := make(chan error)
-	stopChn := make(chan struct{})
-	go r.Start(stopChn, errChn)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go r.Start(ctx, errChn)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
@@ -120,7 +129,6 @@ func Run() error {
 	select {
 	case err := <-errChn:
 		log.Error().Err(err).Msg("failed to listen and serve")
-		close(stopChn)
 		return err
 	case sig := <-sysErr:
 		log.Info().Msgf("terminating got ` [%v] signal", sig)

@@ -108,6 +108,7 @@ func (s *CoordinatorTestSuite) SetupSuite() {
 func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -116,7 +117,8 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
 
@@ -125,8 +127,8 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, nil, status)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], nil, status)
 	}
 
 	for i := 0; i < s.partyNumber; i++ {
@@ -139,6 +141,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -147,7 +150,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
 
@@ -156,8 +160,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, nil, status)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], nil, status)
 	}
 
 	for i := 0; i < s.partyNumber; i++ {
@@ -170,6 +174,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -186,28 +191,29 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
 
 	statusChn := make(chan error, s.partyNumber)
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 
 	err := <-statusChn
 	s.Nil(err)
-	sig1 := <-resultChn
-	sig2 := <-resultChn
-	s.Equal(sig1, sig2)
+	sig := <-resultChn
+	s.NotNil(sig)
 	cancel()
 }
 
 func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -225,15 +231,16 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		signing.Timeout = time.Millisecond * 200
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
 
 	statusChn := make(chan error, s.partyNumber)
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 
 	err := <-statusChn
@@ -248,6 +255,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 func (s *CoordinatorTestSuite) Test_SigningContextCanceled() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -264,15 +272,16 @@ func (s *CoordinatorTestSuite) Test_SigningContextCanceled() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
 
 	statusChn := make(chan error, s.partyNumber)
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 	cancel()
 
@@ -301,7 +310,7 @@ func (s *CoordinatorTestSuite) Test_CoordinatorOffline_RetryProcessWithBully() {
 
 	coordinators := []*tss.Coordinator{}
 	for _, host := range s.hosts {
-		coordinator := tss.NewCoordinator(host, s.mockTssProcess, s.mockCommunication, s.mockBully)
+		coordinator := tss.NewCoordinator(host, s.mockCommunication, s.mockBully)
 		coordinator.CoordinatorTimeout = time.Millisecond * 30
 		coordinators = append(coordinators, coordinator)
 	}
@@ -310,7 +319,7 @@ func (s *CoordinatorTestSuite) Test_CoordinatorOffline_RetryProcessWithBully() {
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
 	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+		go coordinator.Execute(ctx, s.mockTssProcess, resultChn, statusChn)
 	}
 
 	err := <-statusChn
@@ -334,7 +343,7 @@ func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
 			}
 		}()
 	}).AnyTimes()
-	s.mockTssProcess.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string) {
+	s.mockTssProcess.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string) {
 		go func() {
 			for {
 				errChn <- tssLib.NewError(errors.New("error"), "signing", 1, common.CreatePartyID("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"), common.CreatePartyID("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"))
@@ -351,7 +360,7 @@ func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
 			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		coordinators = append(coordinators, tss.NewCoordinator(host, s.mockTssProcess, &communication, s.mockBully))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
 	}
 	setupCommunication(communicationMap)
 
@@ -359,7 +368,7 @@ func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
 	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+		go coordinator.Execute(ctx, s.mockTssProcess, resultChn, statusChn)
 	}
 
 	err := <-statusChn

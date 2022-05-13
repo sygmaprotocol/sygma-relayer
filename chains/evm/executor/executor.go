@@ -28,32 +28,35 @@ type MessageHandler interface {
 }
 
 type BridgeContract interface {
-	ProposalStatus(p *proposal.Proposal) (message.ProposalStatus, error)
-	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	IsProposalExecuted(p *proposal.Proposal) (bool, error)
+	ExecuteProposal(proposal *proposal.Proposal, signature []byte, revertOnFail bool, opts transactor.TransactOptions) (*common.Hash, error)
 	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
 }
 
 type Executor struct {
-	host    host.Host
-	comm    communication.Communication
-	fetcher signing.SaveDataFetcher
-	bridge  BridgeContract
-	mh      MessageHandler
+	coordinator *tss.Coordinator
+	host        host.Host
+	comm        communication.Communication
+	fetcher     signing.SaveDataFetcher
+	bridge      BridgeContract
+	mh          MessageHandler
 }
 
 func NewExecutor(
 	host host.Host,
 	comm communication.Communication,
+	coordinator *tss.Coordinator,
 	mh MessageHandler,
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
 ) *Executor {
 	return &Executor{
-		host:    host,
-		comm:    comm,
-		mh:      mh,
-		bridge:  bridgeContract,
-		fetcher: fetcher,
+		host:        host,
+		comm:        comm,
+		coordinator: coordinator,
+		mh:          mh,
+		bridge:      bridgeContract,
+		fetcher:     fetcher,
 	}
 }
 
@@ -64,11 +67,11 @@ func (e *Executor) Execute(m *message.Message) error {
 		return err
 	}
 
-	ps, err := e.bridge.ProposalStatus(prop)
+	isExecuted, err := e.bridge.IsProposalExecuted(prop)
 	if err != nil {
 		return err
 	}
-	if ps.Status == message.ProposalStatusExecuted {
+	if isExecuted {
 		return nil
 	}
 
@@ -88,15 +91,15 @@ func (e *Executor) Execute(m *message.Message) error {
 	if err != nil {
 		return err
 	}
-	coordinator := tss.NewCoordinator(e.host, signing, e.comm, nil)
+
 	sigChn := make(chan interface{})
 	statusChn := make(chan error, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
-	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go coordinator.Execute(ctx, sigChn, statusChn)
 	for {
 		select {
 		case sigResult := <-sigChn:
@@ -111,12 +114,8 @@ func (e *Executor) Execute(m *message.Message) error {
 			}
 		case <-ticker.C:
 			{
-				ps, err := e.bridge.ProposalStatus(prop)
-				if err != nil {
-					continue
-				}
-				if ps.Status != message.ProposalStatusExecuted {
-					log.Debug().Msgf("Proposal %v status: %s", prop, ps.Status)
+				isExecuted, err := e.bridge.IsProposalExecuted(prop)
+				if err != nil || !isExecuted {
 					continue
 				}
 
