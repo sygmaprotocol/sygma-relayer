@@ -85,7 +85,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					{
 						tssProcess.Stop()
 						retried = true
-						go c.retry(ctx, resultChn, errChn, []peer.ID{err.Coordinator})
+						go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{err.Coordinator})
 					}
 				case *tss.Error:
 					{
@@ -235,7 +235,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{
-				errChn <- &CoordinatorError{Coordinator: c.getCoordinator()}
+				errChn <- &CoordinatorError{Coordinator: c.getCoordinator(tssProcess.SessionID())}
 				return
 			}
 		case <-ctx.Done():

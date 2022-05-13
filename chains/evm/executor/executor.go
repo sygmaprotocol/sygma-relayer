@@ -105,7 +105,7 @@ func (e *Executor) Execute(m *message.Message) error {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				hash, err := e.executeProposal(prop, signatureData)
+				hash, err := e.executeProposal(prop, signatureData, m.RevertOnFail)
 				if err != nil {
 					return err
 				}
@@ -126,13 +126,15 @@ func (e *Executor) Execute(m *message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData, revertOnFail bool) (*common.Hash, error) {
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[64] += 27
 
-	hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{})
+	hash, err := e.bridge.ExecuteProposal(prop, sig, revertOnFail, transactor.TransactOptions{
+		Priority: prop.Metadata.Priority,
+	})
 	if err != nil {
 		return nil, err
 	}
