@@ -194,9 +194,8 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 
 	err := <-statusChn
 	s.Nil(err)
-	sig1 := <-resultChn
-	sig2 := <-resultChn
-	s.Equal(sig1, sig2)
+	sig := <-resultChn
+	s.NotNil(sig)
 	cancel()
 }
 
