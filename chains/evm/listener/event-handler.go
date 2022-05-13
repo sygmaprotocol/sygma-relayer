@@ -6,10 +6,14 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/tss"
+	"github.com/ChainSafe/chainbridge-core/tss/keygen"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
 )
 
@@ -62,7 +66,12 @@ func (eh *DepositEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 
 type KeygenEventHandler struct {
 	eventListener EventListener
+	coordinator   *tss.Coordinator
+	host          host.Host
+	communication communication.Communication
+	storer        keygen.SaveDataStorer
 	bridgeAddress common.Address
+	threshold     int
 }
 
 func NewKeygenEventHandler(eventListener EventListener, bridgeAddress common.Address) *KeygenEventHandler {
@@ -80,6 +89,9 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 	if len(keygenEvents) == 0 {
 		return nil
 	}
+
+	keygen := keygen.NewKeygen(block.String(), eh.threshold, eh.host, eh.communication, eh.storer)
+	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
 }
