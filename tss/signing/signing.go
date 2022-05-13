@@ -27,6 +27,7 @@ type SaveDataFetcher interface {
 
 type Signing struct {
 	common.BaseTss
+	coordinator    bool
 	key            store.Keyshare
 	msg            *big.Int
 	resultChn      chan interface{}
@@ -71,7 +72,7 @@ func (s *Signing) Start(
 	errChn chan error,
 	params []string,
 ) {
-	s.Coordinator = coordinator
+	s.coordinator = coordinator
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
@@ -157,7 +158,7 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 			{
 				s.Log.Info().Msg("Successfully generated signature")
 
-				if s.Coordinator {
+				if s.coordinator {
 					s.resultChn <- sig
 				}
 				s.ErrChn <- nil
