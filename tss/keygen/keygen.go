@@ -61,6 +61,7 @@ func NewKeygen(
 // Should be run only after all the participating parties are ready.
 func (k *Keygen) Start(
 	ctx context.Context,
+	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
 	params []string,

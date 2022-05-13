@@ -12,7 +12,7 @@ import (
 )
 
 type TssProcess interface {
-	Start(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string)
+	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []string)
 	Stop()
 	Ready(readyMap map[peer.ID]bool) bool
 	StartParams(readyMap map[peer.ID]bool) []string
@@ -103,7 +103,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 				}
 
 				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, tssProcess.SessionID(), nil)
-				go tssProcess.Start(ctx, resultChn, errChn, startParams)
+				go tssProcess.Start(ctx, true, resultChn, errChn, startParams)
 				return
 			}
 		case <-ticker.C:
@@ -148,7 +148,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 					return
 				}
 
-				go tssProcess.Start(ctx, resultChn, errChn, msg.Params)
+				go tssProcess.Start(ctx, false, resultChn, errChn, msg.Params)
 				return
 			}
 		case <-ctx.Done():

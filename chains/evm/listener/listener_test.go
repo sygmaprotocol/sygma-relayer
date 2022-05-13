@@ -9,10 +9,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 
-	mock_listener "github.com/ChainSafe/chainbridge-core/chains/evm/listener/mock"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,20 +18,11 @@ var errIncorrectCalldataLen = errors.New("invalid calldata length: less than 84 
 
 type ListenerTestSuite struct {
 	suite.Suite
-	mockDepositHandler *mock_listener.MockDepositHandler
 }
 
 func TestRunTestSuite(t *testing.T) {
 	suite.Run(t, new(ListenerTestSuite))
 }
-
-func (s *ListenerTestSuite) SetupSuite()    {}
-func (s *ListenerTestSuite) TearDownSuite() {}
-func (s *ListenerTestSuite) SetupTest() {
-	gomockController := gomock.NewController(s.T())
-	s.mockDepositHandler = mock_listener.NewMockDepositHandler(gomockController)
-}
-func (s *ListenerTestSuite) TearDownTest() {}
 
 func (s *ListenerTestSuite) TestErc20HandleEvent() {
 	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
