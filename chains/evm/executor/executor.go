@@ -79,8 +79,6 @@ func (e *Executor) Execute(m *message.Message) error {
 		return err
 	}
 
-	log.Info().Msgf("%+v", propHash)
-
 	msg := big.NewInt(0)
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(

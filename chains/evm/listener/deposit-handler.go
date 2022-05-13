@@ -46,7 +46,6 @@ func (e *ETHDepositHandler) HandleDeposit(sourceID, destID uint8, depositNonce u
 // matchAddressWithHandlerFunc matches a handler address with an associated handler function
 func (e *ETHDepositHandler) matchAddressWithHandlerFunc(handlerAddress common.Address) (DepositHandlerFunc, error) {
 	hf, ok := e.depositHandlers[handlerAddress]
-	log.Info().Msgf("%s ---- %+v", handlerAddress, e.depositHandlers)
 	if !ok {
 		return nil, errors.New("no corresponding deposit handler for this address exists")
 	}
@@ -59,7 +58,6 @@ func (e *ETHDepositHandler) RegisterDepositHandler(handlerAddress string, handle
 		return
 	}
 
-	log.Info().Msgf("%s ---- %+v", handlerAddress, e.depositHandlers)
 	log.Info().Msgf("Registered deposit handler for address %s", handlerAddress)
 	e.depositHandlers[common.HexToAddress(handlerAddress)] = handler
 }
