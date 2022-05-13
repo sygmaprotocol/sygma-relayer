@@ -165,6 +165,10 @@ func (c *BridgeContract) Erc20Deposit(
 
 	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
 		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
@@ -210,6 +214,10 @@ func (c *BridgeContract) Erc721Deposit(
 
 	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
 		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
@@ -246,6 +254,10 @@ func (c *BridgeContract) GenericDeposit(
 
 	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
 		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {

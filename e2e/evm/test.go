@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -99,9 +100,19 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+
+	ber := "1000.0"
+	ter := "1000.0"
+	destGasPrice := big.NewInt(1000000000)
+	expireTimestamp := time.Now().Unix() + 3600
+	fromDomainID := uint8(1)
+	destDomainID := uint8(2)
+	erc20TokenDecimals := int64(18)
+	etherDecimals := int64(18)
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
+		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{
+			Priority: uint8(2), // fast
+		})
 
 	if err != nil {
 		return
@@ -164,8 +175,17 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	_, err = erc721Contract2.Owner(tokenId)
 	s.Error(err)
 
+	ber := "1000.0"
+	ter := "1000.0"
+	destGasPrice := big.NewInt(1000000000)
+	expireTimestamp := time.Now().Unix() + 3600
+	fromDomainID := uint8(1)
+	destDomainID := uint8(2)
+	erc20TokenDecimals := int64(18)
+	etherDecimals := int64(18)
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.erc721RID, 2, transactor.TransactOptions{},
+		tokenId, metadata, dstAddr, s.erc721RID,
+		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{},
 	)
 	s.Nil(err)
 
@@ -199,9 +219,19 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, transactor.TransactOptions{
-		Priority: uint8(0), // slow
-	})
+	ber := "1000.0"
+	ter := "1000.0"
+	destGasPrice := big.NewInt(1000000000)
+	expireTimestamp := time.Now().Unix() + 3600
+	fromDomainID := uint8(1)
+	destDomainID := uint8(2)
+	erc20TokenDecimals := int64(18)
+	etherDecimals := int64(18)
+
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
+		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{
+			Priority: uint8(0), // slow
+		})
 	if err != nil {
 		return
 	}
