@@ -160,7 +160,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 		select {
 		case wMsg := <-readyChan:
 			{
-				log.Debug().Msgf("received ready message from %s for session %s", wMsg.From, tssProcess.SessionID())
+				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
 				if !slices.Contains(excludedPeers, wMsg.From) {
 					readyMap[wMsg.From] = true
 				}
@@ -215,15 +215,14 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 			{
 				coordinatorTimeoutTicker.Reset(coordinatorTimeout)
 
-				log.Debug().Msgf("sent ready message to %s for session %s", wMsg.From, tssProcess.SessionID())
+				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
 				go c.communication.Broadcast(
 					peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, tssProcess.SessionID(), nil,
 				)
 			}
 		case startMsg := <-startMsgChn:
 			{
-				log.Debug().Msgf("received start message from %s for session %s", startMsg.From, tssProcess.SessionID())
-
+				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received start message from %s", startMsg.From)
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
 					errChn <- err
