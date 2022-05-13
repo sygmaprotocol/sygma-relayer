@@ -23,6 +23,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 )
 
+var (
+	executionCheckPeriod = time.Second * 15
+)
+
 type MessageHandler interface {
 	HandleMessage(m *message.Message) (*proposal.Proposal, error)
 }
@@ -97,7 +101,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(executionCheckPeriod)
 	defer ticker.Stop()
 	defer cancel()
 	for {
@@ -130,7 +134,7 @@ func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSi
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-	sig[64] += 27
+	sig[64] += 27 // Transform V from 0/1 to 27/28
 
 	hash, err := e.bridge.ExecuteProposal(prop, sig, revertOnFail, transactor.TransactOptions{
 		Priority: prop.Metadata.Priority,
