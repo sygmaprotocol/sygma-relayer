@@ -84,7 +84,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		fmt.Sprintf("%d-%d", m.Destination, m.DepositNonce),
+		e.sessionID(m.Destination, m.DepositNonce),
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -140,4 +140,8 @@ func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSi
 	}
 
 	return hash, err
+}
+
+func (e *Executor) sessionID(destination uint8, depositNonce uint64) string {
+	return fmt.Sprintf("%d-%d", destination, depositNonce)
 }

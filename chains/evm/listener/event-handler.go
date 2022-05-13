@@ -103,10 +103,14 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 		return nil
 	}
 
-	keygen := keygen.NewKeygen(block.String(), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
+}
+
+func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
+	return fmt.Sprintf("keygen-%s", block.String())
 }
 
 type RefreshEventHandler struct {
