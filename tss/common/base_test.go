@@ -83,6 +83,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidWireBytes() {
 	baseTss := common.BaseTss{
 		ErrChn: errChn,
 	}
+	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{}, errors.New("error"))
 
 	go baseTss.ProcessOutboundMessages(context.Background(), outChn, communication.TssKeyGenMsg)
@@ -102,10 +103,12 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidBroadcastPeers() 
 		IsBroadcast: true,
 		From:        common.CreatePartyID("invalid"),
 	}, nil)
+	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().IsBroadcast().Return(false)
 	s.mockMessage.EXPECT().GetTo().Return([]*tss.PartyID{common.CreatePartyID("invalid")})
 
 	go baseTss.ProcessOutboundMessages(context.Background(), outChn, communication.TssKeyGenMsg)
+	time.Sleep(time.Millisecond * 50)
 	outChn <- s.mockMessage
 	err := <-errChn
 
@@ -122,6 +125,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		Communication: s.mockCommunication,
 		ErrChn:        errChn,
 	}
+	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
 		IsBroadcast: true,
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
@@ -130,6 +134,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), communication.TssKeyGenMsg, "keygen", gomock.Any())
 
 	go baseTss.ProcessOutboundMessages(context.Background(), outChn, communication.TssKeyGenMsg)
+	time.Sleep(time.Millisecond * 50)
 	outChn <- s.mockMessage
 	time.Sleep(time.Millisecond * 50)
 
@@ -153,6 +158,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 	go baseTss.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
 
 	cancel()
+	time.Sleep(time.Millisecond * 10)
 	outChn <- s.mockMessage
 
 	s.Equal(len(errChn), 0)
