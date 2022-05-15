@@ -12,9 +12,9 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter/proposal"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -33,18 +33,6 @@ func NewBridgeContract(
 	a, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	b := common.FromHex(consts.BridgeBin)
 	return &BridgeContract{contracts.NewContract(bridgeContractAddress, a, b, client, transactor)}
-}
-
-func (c *BridgeContract) AddRelayer(
-	relayerAddr common.Address,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Adding new relayer %s", relayerAddr.String())
-	return c.ExecuteTransaction(
-		"adminAddRelayer",
-		opts,
-		relayerAddr,
-	)
 }
 
 func (c *BridgeContract) AdminSetGenericResource(
@@ -88,18 +76,6 @@ func (c *BridgeContract) SetDepositNonce(
 		"adminSetDepositNonce",
 		opts,
 		domainId, depositNonce,
-	)
-}
-
-func (c *BridgeContract) SetThresholdInput(
-	threshold uint64,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting threshold %d", threshold)
-	return c.ExecuteTransaction(
-		"adminChangeRelayerThreshold",
-		opts,
-		big.NewInt(0).SetUint64(threshold),
 	)
 }
 
@@ -202,6 +178,8 @@ func (c *BridgeContract) GenericDeposit(
 
 func (c *BridgeContract) ExecuteProposal(
 	proposal *proposal.Proposal,
+	signature []byte,
+	revertOnFail bool,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -212,37 +190,43 @@ func (c *BridgeContract) ExecuteProposal(
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, true,
+		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature, revertOnFail,
 	)
 }
 
-func (c *BridgeContract) VoteProposal(
-	proposal *proposal.Proposal,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceId[:])).
-		Str("handler", proposal.HandlerAddress.String()).
-		Msgf("Vote proposal")
-	return c.ExecuteTransaction(
-		"voteProposal",
-		opts,
-		proposal.Source, proposal.DepositNonce, proposal.ResourceId, proposal.Data,
-	)
-}
+func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
+	domainType, _ := abi.NewType("uint8", "uint8", nil)
+	depositNonceType, _ := abi.NewType("uint64", "uint64", nil)
+	dataType, _ := abi.NewType("bytes", "bytes", nil)
+	resourceType, _ := abi.NewType("bytes32", "bytes32", nil)
 
-func (c *BridgeContract) SimulateVoteProposal(proposal *proposal.Proposal) error {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceId[:])).
-		Str("handler", proposal.HandlerAddress.String()).
-		Msgf("Simulate vote proposal")
-	_, err := c.CallContract(
-		"voteProposal",
-		proposal.Source, proposal.DepositNonce, proposal.ResourceId, proposal.Data,
+	arguments := abi.Arguments{
+		{
+			Type: domainType,
+		},
+		{
+			Type: depositNonceType,
+		},
+		{
+			Type: dataType,
+		},
+		{
+			Type: resourceType,
+		},
+	}
+
+	bytes, err := arguments.Pack(
+		proposal.Source,
+		proposal.DepositNonce,
+		proposal.Data,
+		proposal.ResourceId,
 	)
-	return err
+	if err != nil {
+		return []byte{}, err
+	}
+
+	hash := crypto.Keccak256Hash(bytes)
+	return hash.Bytes(), nil
 }
 
 func (c *BridgeContract) Pause(opts transactor.TransactOptions) (*common.Hash, error) {
@@ -258,6 +242,15 @@ func (c *BridgeContract) Unpause(opts transactor.TransactOptions) (*common.Hash,
 	return c.ExecuteTransaction(
 		"adminUnpauseTransfers",
 		opts,
+	)
+}
+
+func (c *BridgeContract) EndKeygen(mpcAddress common.Address, opts transactor.TransactOptions) (*common.Hash, error) {
+	log.Debug().Msg("Ending keygen process")
+	return c.ExecuteTransaction(
+		"endKeygen",
+		opts,
+		mpcAddress,
 	)
 }
 
@@ -280,47 +273,13 @@ func (c *BridgeContract) Withdraw(
 	return c.ExecuteTransaction("adminWithdraw", opts, handlerAddress, data.Bytes())
 }
 
-func (c *BridgeContract) GetThreshold() (uint8, error) {
-	log.Debug().Msg("Getting threshold")
-	res, err := c.CallContract("_relayerThreshold")
-	if err != nil {
-		return 0, err
-	}
-	out := *abi.ConvertType(res[0], new(uint8)).(*uint8)
-	return out, nil
-}
-
-func (c *BridgeContract) IsRelayer(relayerAddress common.Address) (bool, error) {
-	log.Debug().Msgf("Getting is %s a relayer", relayerAddress.String())
-	res, err := c.CallContract("isRelayer", relayerAddress)
-	if err != nil {
-		return false, err
-	}
-	out := abi.ConvertType(res[0], new(bool)).(*bool)
-	return *out, nil
-}
-
-func (c *BridgeContract) ProposalStatus(p *proposal.Proposal) (message.ProposalStatus, error) {
+func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
 		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
 		Str("handler", p.HandlerAddress.String()).
-		Msg("Getting proposal status")
-	res, err := c.CallContract("getProposal", p.Source, p.DepositNonce, p.GetDataHash())
-	if err != nil {
-		return message.ProposalStatus{}, err
-	}
-	out := *abi.ConvertType(res[0], new(message.ProposalStatus)).(*message.ProposalStatus)
-	return out, nil
-}
-
-func (c *BridgeContract) IsProposalVotedBy(by common.Address, p *proposal.Proposal) (bool, error) {
-	log.Debug().
-		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
-		Str("handler", p.HandlerAddress.String()).
-		Msgf("Getting is proposal voted by %s", by.String())
-	res, err := c.CallContract("_hasVotedOnProposal", idAndNonce(p.Source, p.DepositNonce), p.GetDataHash(), by)
+		Msg("Getting is proposal exectued")
+	res, err := c.CallContract("isProposalExecuted", p.Source, big.NewInt(int64(p.DepositNonce)))
 	if err != nil {
 		return false, err
 	}
@@ -338,11 +297,4 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	}
 	out := *abi.ConvertType(res[0], new(common.Address)).(*common.Address)
 	return out, nil
-}
-
-func idAndNonce(srcId uint8, nonce uint64) *big.Int {
-	var data []byte
-	data = append(data, big.NewInt(int64(nonce)).Bytes()...)
-	data = append(data, uint8(srcId))
-	return big.NewInt(0).SetBytes(data)
 }

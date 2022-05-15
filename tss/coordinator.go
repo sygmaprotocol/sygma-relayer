@@ -8,12 +8,11 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type TssProcess interface {
-	Start(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string)
+	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []string)
 	Stop()
 	Ready(readyMap map[peer.ID]bool) bool
 	StartParams(readyMap map[peer.ID]bool) []string
@@ -22,37 +21,33 @@ type TssProcess interface {
 
 type Coordinator struct {
 	host          host.Host
-	tssProcess    TssProcess
 	communication communication.Communication
-	log           zerolog.Logger
 }
 
 func NewCoordinator(
 	host host.Host,
-	tssProcess TssProcess,
 	communication communication.Communication,
 ) *Coordinator {
 	return &Coordinator{
 		host:          host,
-		tssProcess:    tssProcess,
 		communication: communication,
-		log:           log.With().Str("SessionID", string(tssProcess.SessionID())).Logger(),
 	}
 }
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
-func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, statusChn chan error) {
+func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
+	sessionID := tssProcess.SessionID()
 	errChn := make(chan error)
-	if c.isLeader() {
-		go c.initiate(ctx, resultChn, errChn)
+	defer tssProcess.Stop()
+	if c.isLeader(sessionID) {
+		go c.initiate(ctx, tssProcess, resultChn, errChn)
 	} else {
-		go c.waitForStart(ctx, resultChn, errChn)
+		go c.waitForStart(ctx, tssProcess, resultChn, errChn)
 	}
 
 	err := <-errChn
-	c.tssProcess.Stop()
 	if err != nil {
-		log.Err(err)
+		log.Err(err).Msgf("Error occurred during tss process")
 		statusChn <- err
 		return
 	}
@@ -62,24 +57,23 @@ func (c *Coordinator) Execute(ctx context.Context, resultChn chan interface{}, s
 
 // IsLeader returns if the peer is the leader for the current
 // tss process.
-func (c *Coordinator) isLeader() bool {
+func (c *Coordinator) isLeader(sessionID string) bool {
 	peers := c.host.Peerstore().Peers()
-	sessionID := c.tssProcess.SessionID()
 	return c.host.ID().Pretty() == common.SortPeersForSession(peers, sessionID)[0].ID.Pretty()
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
-func (c *Coordinator) broadcastInitiateMsg() {
-	c.log.Debug().Msgf("broadcasted initiate message")
+func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
+	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
 	go c.communication.Broadcast(
-		c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, c.tssProcess.SessionID(), nil,
+		c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, sessionID, nil,
 	)
 }
 
 // initiate sends initiate message to all peers and waits
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
-func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, errChn chan error) {
+func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error) {
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
@@ -87,35 +81,34 @@ func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, 
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
 
-	subID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssReadyMsg, readyChan)
+	subID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
-	c.broadcastInitiateMsg()
-
+	c.broadcastInitiateMsg(tssProcess.SessionID())
 	for {
 		select {
 		case wMsg := <-readyChan:
 			{
-				c.log.Debug().Msgf("received ready message from %s", wMsg.From)
+				log.Debug().Msgf("received ready message from %s for session %s", wMsg.From, tssProcess.SessionID())
 				readyMap[wMsg.From] = true
-				if !c.tssProcess.Ready(readyMap) {
+				if !tssProcess.Ready(readyMap) {
 					continue
 				}
 
-				startParams := c.tssProcess.StartParams(readyMap)
+				startParams := tssProcess.StartParams(readyMap)
 				startMsgBytes, err := common.MarshalStartMessage(startParams)
 				if err != nil {
 					errChn <- err
 					return
 				}
 
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, c.tssProcess.SessionID(), nil)
-				go c.tssProcess.Start(ctx, resultChn, errChn, startParams)
+				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, tssProcess.SessionID(), nil)
+				go tssProcess.Start(ctx, true, resultChn, errChn, startParams)
 				return
 			}
 		case <-ticker.C:
 			{
-				c.broadcastInitiateMsg()
+				c.broadcastInitiateMsg(tssProcess.SessionID())
 			}
 		case <-ctx.Done():
 			{
@@ -127,27 +120,27 @@ func (c *Coordinator) initiate(ctx context.Context, resultChn chan interface{}, 
 
 // waitForStart responds to initiate messages and starts the tss process
 // when it receives the start message.
-func (c *Coordinator) waitForStart(ctx context.Context, resultChn chan interface{}, errChn chan error) {
+func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error) {
 	msgChan := make(chan *communication.WrappedMessage)
 	startMsgChn := make(chan *communication.WrappedMessage)
 
-	initSubID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssInitiateMsg, msgChan)
+	initSubID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssInitiateMsg, msgChan)
 	defer c.communication.UnSubscribe(initSubID)
-	startSubID := c.communication.Subscribe(c.tssProcess.SessionID(), communication.TssStartMsg, startMsgChn)
+	startSubID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
 	for {
 		select {
 		case wMsg := <-msgChan:
 			{
-				c.log.Debug().Msgf("sent ready message to %s", wMsg.From)
+				log.Debug().Msgf("sent ready message to %s for session %s", wMsg.From, tssProcess.SessionID())
 				go c.communication.Broadcast(
-					peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, c.tssProcess.SessionID(), nil,
+					peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, tssProcess.SessionID(), nil,
 				)
 			}
 		case startMsg := <-startMsgChn:
 			{
-				c.log.Debug().Msgf("received start message from %s", startMsg.From)
+				log.Debug().Msgf("received start message from %s for session %s", startMsg.From, tssProcess.SessionID())
 
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
@@ -155,7 +148,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, resultChn chan interface
 					return
 				}
 
-				go c.tssProcess.Start(ctx, resultChn, errChn, msg.Params)
+				go tssProcess.Start(ctx, false, resultChn, errChn, msg.Params)
 				return
 			}
 		case <-ctx.Done():

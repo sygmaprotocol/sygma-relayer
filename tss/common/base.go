@@ -28,6 +28,7 @@ type BaseTss struct {
 	Peers         []peer.ID
 	Log           zerolog.Logger
 	Timeout       time.Duration
+	Coordinator   bool
 
 	ErrChn chan error
 	Cancel context.CancelFunc

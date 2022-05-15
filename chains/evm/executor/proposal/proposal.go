@@ -28,6 +28,7 @@ type Proposal struct {
 	Data           []byte
 	HandlerAddress common.Address
 	BridgeAddress  common.Address
+	RevertOnFail   bool
 }
 
 // GetDataHash constructs and returns proposal data hash
