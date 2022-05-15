@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog"
+	"time"
 )
 
 type RelayerConfig struct {
@@ -11,6 +12,7 @@ type RelayerConfig struct {
 	LogLevel                  zerolog.Level
 	LogFile                   string
 	MpcConfig                 MpcRelayerConfig
+	BullyConfig               BullyConfig
 }
 
 type MpcRelayerConfig struct {
@@ -18,11 +20,19 @@ type MpcRelayerConfig struct {
 	Port  uint16
 }
 
+type BullyConfig struct {
+	PingWaitTime     time.Duration
+	PingBackOff      time.Duration
+	PingInterval     time.Duration
+	ElectionWaitTime time.Duration
+}
+
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
 	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel"`
 	LogFile                   string              `mapstructure:"LogFile" json:"logFile"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
+	BullyConfig               RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
 
 type RawMpcRelayerConfig struct {
@@ -32,6 +42,13 @@ type RawMpcRelayerConfig struct {
 
 type RawPeer struct {
 	PeerAddress string `mapstructure:"PeerAddress" json:"peerAddress"`
+}
+
+type RawBullyConfig struct {
+	PingWaitTime     string `mapstructure:"PingWaitTime" json:"pingWaitTime"`
+	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff"`
+	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval"`
+	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime"`
 }
 
 func (c *RawRelayerConfig) Validate() error {
@@ -65,6 +82,33 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	}
 	config.MpcConfig.Peers = peers
 	config.MpcConfig.Port = rawConfig.MpcConfig.Port
+
+	electionWaitTime, err := time.ParseDuration(rawConfig.BullyConfig.ElectionWaitTime)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully election wait time: %w", err)
+	}
+
+	pingWaitTime, err := time.ParseDuration(rawConfig.BullyConfig.PingWaitTime)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully ping wait time: %w", err)
+	}
+
+	pingInterval, err := time.ParseDuration(rawConfig.BullyConfig.PingInterval)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully ping interval time: %w", err)
+	}
+
+	pingBackOff, err := time.ParseDuration(rawConfig.BullyConfig.PingBackOff)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully election wait time: %w", err)
+	}
+
+	config.BullyConfig = BullyConfig{
+		PingWaitTime:     pingWaitTime,
+		PingBackOff:      pingBackOff,
+		PingInterval:     pingInterval,
+		ElectionWaitTime: electionWaitTime,
+	}
 
 	return config, nil
 }

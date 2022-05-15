@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -36,6 +37,18 @@ func (s *GetConfigTestSuite) Test_MissingChainType() {
 		ChainConfigs: []map[string]interface{}{{
 			"name": "chain1",
 		}},
+		RelayerConfig: relayer.RawRelayerConfig{
+			OpenTelemetryCollectorURL: "",
+			LogLevel:                  "",
+			LogFile:                   "",
+			MpcConfig:                 relayer.RawMpcRelayerConfig{},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "1s",
+				PingBackOff:      "1s",
+				PingInterval:     "1s",
+				ElectionWaitTime: "1s",
+			},
+		},
 	}
 	file, _ := json.Marshal(data)
 	_ = ioutil.WriteFile("test.json", file, 0644)
@@ -91,6 +104,36 @@ func (s *GetConfigTestSuite) Test_InvalidPeerAddress() {
 	s.Equal(err.Error(), "invalid peer address /ip4/127.0.0.1/tcp/4000: invalid p2p multiaddr")
 }
 
+func (s *GetConfigTestSuite) Test_InvalidBullyConfig() {
+	data := config.RawConfig{
+		RelayerConfig: relayer.RawRelayerConfig{
+			LogLevel: "info",
+			MpcConfig: relayer.RawMpcRelayerConfig{
+				Peers: []relayer.RawPeer{
+					{PeerAddress: "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"},
+				},
+				Port: 2020,
+			},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "2z",
+				PingBackOff:      "",
+				PingInterval:     "",
+				ElectionWaitTime: "",
+			},
+		},
+		ChainConfigs: []map[string]interface{}{{
+			"name": "chain1",
+		}},
+	}
+	file, _ := json.Marshal(data)
+	_ = ioutil.WriteFile("test.json", file, 0644)
+
+	_, err := config.GetConfig("test.json")
+
+	_ = os.Remove("test.json")
+	s.NotNil(err)
+}
+
 func (s *GetConfigTestSuite) Test_ValidConfig() {
 	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
 	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
@@ -103,6 +146,12 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 					{PeerAddress: p2RawAddress},
 				},
 				Port: 2020,
+			},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "1s",
+				PingBackOff:      "1s",
+				PingInterval:     "1s",
+				ElectionWaitTime: "1s",
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
@@ -130,11 +179,16 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 				Peers: []*peer.AddrInfo{p1, p2},
 				Port:  2020,
 			},
+			BullyConfig: relayer.BullyConfig{
+				PingWaitTime:     time.Second,
+				PingBackOff:      time.Second,
+				PingInterval:     time.Second,
+				ElectionWaitTime: time.Second,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{{
 			"type": "evm",
 			"name": "evm1",
 		}},
 	})
-
 }

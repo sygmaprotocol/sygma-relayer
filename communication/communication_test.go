@@ -64,15 +64,16 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 	}
 
 	for i := 0; i < numberOfTestHosts; i++ {
+		allowedPeers := peer.IDSlice{}
+		for _, pInfo := range peersAdrInfos[i] {
+			allowedPeers = append(allowedPeers, pInfo.ID)
+		}
+
 		com := p2p.NewCommunication(
 			s.testHosts[i],
 			s.testProtocolID,
-			relayer.RelayerConfig{
-				MpcConfig: relayer.MpcRelayerConfig{
-					Peers: peersAdrInfos[i],
-					Port:  0,
-				},
-			})
+			allowedPeers,
+		)
 		s.testCommunications = append(s.testCommunications, com)
 	}
 }
