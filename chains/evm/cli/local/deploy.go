@@ -67,7 +67,7 @@ func PrepareLocalEVME2EEnv(
 
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
 	bridgeContractAddress, err := bridgeContract.DeployContract(
-		domainID, relayerAddresses, threshold, big.NewInt(0), big.NewInt(100),
+		domainID, relayerAddresses, threshold, big.NewInt(100),
 	)
 	if err != nil {
 		return EVME2EConfig{}, err
