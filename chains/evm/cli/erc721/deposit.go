@@ -52,17 +52,17 @@ var depositCmd = &cobra.Command{
 func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Recipient, "recipient", "", "Recipient address")
 	cmd.Flags().StringVar(&Bridge, "bridge", "", "Bridge contract address")
-	cmd.Flags().Uint8Var(&FromDomainID, "from-domain", 0, "Source domain ID")
+	cmd.Flags().Uint8Var(&FromDomainID, "from-domain", 0, "Source domain ID(required when fee handler with oracle is deployed)")
 	cmd.Flags().Uint8Var(&ToDomainID, "to-domain", 0, "Destination domain ID")
 	cmd.Flags().StringVar(&ResourceID, "resource", "", "Resource ID for transfer")
 	cmd.Flags().StringVar(&Token, "token", "", "ERC721 token ID")
 	cmd.Flags().StringVar(&Metadata, "metadata", "", "ERC721 token metadata")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed (default: medium)")
-	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals")
-	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price")
-	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate")
-	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp")
-	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix")
+	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals(required when fee handler with oracle is deployed)")
+	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price(required when fee handler with oracle is deployed)")
+	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate(required when fee handler with oracle is deployed)")
+	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp(required when fee handler with oracle is deployed)")
+	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "to-domain", "resource", "token")
 }
 

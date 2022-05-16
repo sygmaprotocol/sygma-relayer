@@ -33,7 +33,7 @@ var changeFeeHandlerCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return AdminChangeFeeHandlerCmd(cmd, args, bridge.NewBridgeContract(c, BridgeAddr, t))
+		return ChangeFeeHandlerCmd(cmd, args, bridge.NewBridgeContract(c, BridgeAddr, t))
 	},
 	Args: func(cmd *cobra.Command, args []string) error {
 		err := ValidateAdminChangeFeeHandlerFlags(cmd, args)
@@ -73,7 +73,7 @@ func ProcessAdminChangeFeeHandlerFlags(cmd *cobra.Command, args []string) error 
 	return nil
 }
 
-func AdminChangeFeeHandlerCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
+func ChangeFeeHandlerCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
 	h, err := contract.AdminChangeFeeHandler(
 		FeeHandlerAddr, transactor.TransactOptions{GasLimit: gasLimit},
 	)

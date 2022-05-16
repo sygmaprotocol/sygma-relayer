@@ -607,13 +607,21 @@ Usage:
    evm-cli erc20 deposit [flags]
 
 Flags:
-      --amount string      Amount to deposit
-      --bridge string      Address of bridge contract
-      --decimals uint      ERC20 token decimals
-      --domain uint        Destination domain ID
-  -h, --help               help for deposit
-      --recipient string   Address of recipient
-      --resource string    Resource ID for transfer
+      --amount string                     Amount to deposit
+      --ber string                        Base rate(required when fee handler with oracle is deployed)
+      --bridge string                     Address of bridge contract
+      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is deployed)
+      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is deployed)
+      --erc20-token-decimals uint         ERC20 token decimals
+      --expire-timestamp int              Rate expire timestamp(required when fee handler with oracle is deployed)
+      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)
+      --from-domain uint8                 Source domain ID(required when fee handler with oracle is deployed)
+  -h, --help                              help for deposit
+      --priority string                   Transaction priority speed (default "none")
+      --recipient string                  Address of recipient
+      --resource string                   Resource ID for transfer
+      --ter string                        Token rate(required when fee handler with oracle is deployed)
+      --to-domain uint8                   Destination domain ID
 ```
 
 #### `mint`
@@ -683,13 +691,20 @@ Usage:
    evm-cli erc721 deposit [flags]
 
 Flags:
-      --bridge string        Bridge contract address
-      --destination string   Destination domain ID
-  -h, --help                 help for deposit
-      --metadata string      ERC721 token metadata
-      --recipient string     Recipient address
-      --resource string      Resource ID for transfer
-      --token string         ERC721 token ID
+      --ber string                        Base rate(required when fee handler with oracle is deployed)
+      --bridge string                     Bridge contract address
+      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is deployed)
+      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is deployed)
+      --expire-timestamp int              Rate expire timestamp(required when fee handler with oracle is deployed)
+      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)
+      --from-domain uint8                 Source domain ID(required when fee handler with oracle is deployed)
+  -h, --help                              help for deposit
+      --metadata string                   ERC721 token metadata
+      --priority string                   Transaction priority speed (default: medium) (default "none")
+      --recipient string                  Recipient address
+      --resource string                   Resource ID for transfer
+      --to-domain uint8                   Destination domain ID
+      --token string                      ERC721 token ID
 ```
 
 #### `mint`
@@ -724,7 +739,6 @@ Flags:
 
 ### `Fee Handler`
 Fee handler related instructions.
-
 
 ```bash
 Usage:
