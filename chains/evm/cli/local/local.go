@@ -64,6 +64,7 @@ func prettyPrint(config, config2 EVME2EConfig) {
 
 - Chain 1 -
 Bridge: %s
+Fee Handler: %s (is basic fee handler: %t)
 ERC20: %s
 ERC20 Handler: %s
 ERC721: %s
@@ -71,11 +72,12 @@ ERC721 Handler: %s
 Generic Handler: %s
 Asset Store: %s
 ERC20 resourceId: %s
-ERC721 resourceId %s
-Generic resourceId %s
+ERC721 resourceId: %s
+Generic resourceId: %s
 
 - Chain 2 -
 Bridge: %s
+Fee Handler: %s (is basic fee handler: %t)
 ERC20: %s
 ERC20 Handler: %s
 ERC721: %s
@@ -83,13 +85,15 @@ ERC721 Handler: %s
 Generic Handler: %s
 Asset Store: %s
 ERC20 resourceId: %s
-ERC721 resourceId %s
-Generic resourceId %s
+ERC721 resourceId: %s
+Generic resourceId: %s
 
 ===============================================
 `,
 		// config
 		config.BridgeAddr,
+		config.FeeHandlerAddr,
+		config.IsBasicFeeHandler,
 		config.Erc20Addr,
 		config.Erc20HandlerAddr,
 		config.Erc721Addr,
@@ -101,6 +105,8 @@ Generic resourceId %s
 		config.ResourceIDGeneric,
 		// config2
 		config2.BridgeAddr,
+		config2.FeeHandlerAddr,
+		config2.IsBasicFeeHandler,
 		config2.Erc20Addr,
 		config2.Erc20HandlerAddr,
 		config.Erc721Addr,

@@ -25,6 +25,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	ber                = "1000.0"
+	ter                = "1000.0"
+	destGasPrice       = big.NewInt(1000000000)
+	expireTimestamp    = time.Now().Unix() + 3600
+	fromDomainID       = uint8(1)
+	destDomainID       = uint8(2)
+	erc20TokenDecimals = int64(18)
+	etherDecimals      = int64(18)
+)
+
 type TestClient interface {
 	local.E2EClient
 	LatestBlock() (*big.Int, error)
@@ -101,14 +112,6 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 
 	amountToDeposit := big.NewInt(1000000)
 
-	ber := "1000.0"
-	ter := "1000.0"
-	destGasPrice := big.NewInt(1000000000)
-	expireTimestamp := time.Now().Unix() + 3600
-	fromDomainID := uint8(1)
-	destDomainID := uint8(2)
-	erc20TokenDecimals := int64(18)
-	etherDecimals := int64(18)
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{
 			Priority: uint8(2), // fast
@@ -175,14 +178,6 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	_, err = erc721Contract2.Owner(tokenId)
 	s.Error(err)
 
-	ber := "1000.0"
-	ter := "1000.0"
-	destGasPrice := big.NewInt(1000000000)
-	expireTimestamp := time.Now().Unix() + 3600
-	fromDomainID := uint8(1)
-	destDomainID := uint8(2)
-	erc20TokenDecimals := int64(18)
-	etherDecimals := int64(18)
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
 		tokenId, metadata, dstAddr, s.erc721RID,
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{},
@@ -218,15 +213,6 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
-
-	ber := "1000.0"
-	ter := "1000.0"
-	destGasPrice := big.NewInt(1000000000)
-	expireTimestamp := time.Now().Unix() + 3600
-	fromDomainID := uint8(1)
-	destDomainID := uint8(2)
-	erc20TokenDecimals := int64(18)
-	etherDecimals := int64(18)
 
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
 		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{

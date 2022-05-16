@@ -4,6 +4,7 @@
 package local
 
 import (
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
@@ -12,7 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/generic"
-	evmgaspricer "github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/keystore"
@@ -38,6 +39,7 @@ var (
 
 type EVME2EConfig struct {
 	BridgeAddr         common.Address
+	FeeHandlerAddr     common.Address
 	Erc20Addr          common.Address
 	Erc20HandlerAddr   common.Address
 	AssetStoreAddr     common.Address
@@ -47,6 +49,7 @@ type EVME2EConfig struct {
 	ResourceIDERC20    string
 	ResourceIDERC721   string
 	ResourceIDGeneric  string
+	IsBasicFeeHandler  bool
 }
 
 type E2EClient interface {
@@ -69,6 +72,12 @@ func PrepareLocalEVME2EEnv(
 	bridgeContractAddress, err := bridgeContract.DeployContract(
 		domainID, relayerAddresses, threshold, big.NewInt(100),
 	)
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
+
+	basicFeeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
+	basicFeeHandlerAddress, err := basicFeeHandlerContract.DeployContract(bridgeContractAddress)
 	if err != nil {
 		return EVME2EConfig{}, err
 	}
@@ -100,7 +109,8 @@ func PrepareLocalEVME2EEnv(
 	resourceIDERC721 := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 
 	conf := EVME2EConfig{
-		BridgeAddr: bridgeContractAddress,
+		BridgeAddr:     bridgeContractAddress,
+		FeeHandlerAddr: basicFeeHandlerAddress,
 
 		Erc20Addr:        erc20ContractAddress,
 		Erc20HandlerAddr: erc20HandlerContractAddress,
@@ -113,6 +123,13 @@ func PrepareLocalEVME2EEnv(
 		ResourceIDERC20:   hexutil.Encode(resourceIDERC20[:]),
 		ResourceIDERC721:  hexutil.Encode(resourceIDERC721[:]),
 		ResourceIDGeneric: hexutil.Encode(resourceIDGenericHandler[:]),
+
+		IsBasicFeeHandler: true,
+	}
+
+	err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
+	if err != nil {
+		return EVME2EConfig{}, err
 	}
 
 	err = PrepareErc20EVME2EEnv(bridgeContract, erc20Contract, mintTo, conf, resourceIDERC20)
@@ -192,6 +209,14 @@ func deployErc721(
 		erc721ContractAddress, erc721HandlerContractAddress,
 	)
 	return erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, nil
+}
+
+func PrepareFeeEnv(bridgeContract *bridge.BridgeContract, feeHandlerAddr common.Address) error {
+	_, err := bridgeContract.AdminChangeFeeHandler(feeHandlerAddr, transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func PrepareErc20EVME2EEnv(

@@ -331,7 +331,7 @@ This CLI replaces `set-fee`
 
 ```bash
 Usage:
-   evm-cli bridge admin-change-fee-handler [flags]
+   evm-cli admin change-fee-handler [flags]
 
 Flags:
       --bridge string        Bridge contract address
