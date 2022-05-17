@@ -1,4 +1,4 @@
-package signing
+package refresh
 
 import (
 	"context"
@@ -10,11 +10,9 @@ import (
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
-	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -27,7 +25,7 @@ type SaveDataFetcher interface {
 	UnlockKeyshare()
 }
 
-type Signing struct {
+type Refresh struct {
 	common.BaseTss
 	coordinator    bool
 	key            store.Keyshare
@@ -36,22 +34,19 @@ type Signing struct {
 	subscriptionID communication.SubscriptionID
 }
 
-func NewSigning(
-	msg *big.Int,
+func NewRefresh(
 	sessionID string,
 	host host.Host,
 	comm communication.Communication,
 	fetcher SaveDataFetcher,
-) (*Signing, error) {
-	fetcher.LockKeyshare()
-	defer fetcher.UnlockKeyshare()
+) (*Refresh, error) {
 	key, err := fetcher.GetKeyshare()
 	if err != nil {
 		return nil, err
 	}
 
-	partyStore := make(map[string]*tss.PartyID)
-	return &Signing{
+	partyStore := make(map[string]*tsr.PartyID)
+	return &Refresh{
 		BaseTss: common.BaseTss{
 			PartyStore:    partyStore,
 			Host:          host,
@@ -67,85 +62,85 @@ func NewSigning(
 	}, nil
 }
 
-// Start initializes the signing party and starts the signing tss process.
+// Start initializes the signing party and starts the signing tss procesr.
 // Params contains peer subset that leaders sends with start message.
-func (s *Signing) Start(
+func (r *Refresh) Start(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
 	params []string,
 ) {
-	s.coordinator = coordinator
-	s.ErrChn = errChn
-	s.resultChn = resultChn
-	ctx, s.Cancel = context.WithCancel(ctx)
+	r.coordinator = coordinator
+	r.ErrChn = errChn
+	r.resultChn = resultChn
+	ctx, r.Cancel = context.WithCancel(ctx)
 
 	peerSubset, err := common.PeersFromIDS(params)
 	if err != nil {
-		s.ErrChn <- err
+		r.ErrChn <- err
 		return
 	}
 
-	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
-		s.Log.Info().Msgf("Party is not in signing subset")
-		s.ErrChn <- nil
+	if !common.IsParticipant(common.CreatePartyID(r.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
+		r.Log.Info().Msgf("Party is not in signing subset")
+		r.ErrChn <- nil
 		return
 	}
 
-	s.Peers = peerSubset
-	parties := common.PartiesFromPeers(s.Peers)
-	s.PopulatePartyStore(parties)
-	pCtx := tss.NewPeerContext(parties)
-	tssParams := tss.NewParameters(pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+	r.Peers = peerSubset
+	parties := common.PartiesFromPeers(r.Peers)
+	r.PopulatePartyStore(parties)
+	pCtx := tsr.NewPeerContext(parties)
+	tssParams := tsr.NewParameters(pCtx, r.PartyStore[r.Host.ID().Pretty()], len(parties), r.key.Threshold)
 
 	sigChn := make(chan *signing.SignatureData)
-	outChn := make(chan tss.Message)
+	outChn := make(chan tsr.Message)
 	msgChn := make(chan *communication.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), communication.TssKeySignMsg, msgChn)
-	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
-	go s.ProcessInboundMessages(ctx, msgChn)
-	go s.processEndMessage(ctx, sigChn)
+	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), communication.TssKeySignMsg, msgChn)
+	go r.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
+	go r.ProcessInboundMessages(ctx, msgChn)
+	go r.processEndMessage(ctx, sigChn)
 
-	s.Log.Info().Msgf("Started signing process")
+	r.Log.Info().Msgf("Started signing process")
 
-	s.Party = signing.NewLocalParty(s.msg, tssParams, s.key.Key, outChn, sigChn)
+	r.Party = signing.NewLocalParty(r.msg, tssParams, r.key.Key, outChn, sigChn)
 	go func() {
-		err := s.Party.Start()
+		err := r.Party.Start()
 		if err != nil {
-			s.ErrChn <- err
+			r.ErrChn <- err
 		}
 	}()
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
-func (s *Signing) Stop() {
-	log.Info().Str("sessionID", s.SessionID()).Msgf("Stopping tss process.")
-	s.Communication.UnSubscribe(s.subscriptionID)
-	s.Cancel()
+func (r *Refresh) Stop() {
+	log.Info().Str("sessionID", r.SessionID()).Msgf("Stopping tss procesr.")
+	r.Communication.UnSubscribe(r.subscriptionID)
+	r.Cancel()
 }
 
-// Ready returns true if threshold+1 parties are ready to start the signing process.
-func (s *Signing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
-	readyMap = s.readyParticipants(readyMap)
-	return len(readyMap) == s.key.Threshold+1, nil
+// Ready returns true if threshold+1 parties are ready to start the signing procesr.
+func (r *Refresh) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+	readyMap = r.readyParticipants(readyMap)
+	return len(readyMap) == r.key.Threshold+1, nil
 }
 
-// StartParams returns peer subset for this tss process. It is calculated
+// StartParams returns peer subset for this tss procesr. It is calculated
 // by sorting hashes of peer IDs and session ID and chosing ready peers alphabetically
 // until threshold is satisfied.
-func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
-	readyMap = s.readyParticipants(readyMap)
+func (r *Refresh) StartParams(readyMap map[peer.ID]bool) []string {
+	readyMap = r.readyParticipants(readyMap)
 	peers := []peer.ID{}
 	for peer := range readyMap {
 		peers = append(peers, peer)
 	}
 
-	sortedPeers := common.SortPeersForSession(peers, s.SessionID())
+	sortedPeers := common.SortPeersForSession(peers, r.SessionID())
 	params := []string{}
 	for _, peer := range sortedPeers {
 		params = append(params, peer.ID.Pretty())
-		if len(params) == s.key.Threshold+1 {
+		if len(params) == r.key.Threshold+1 {
 			break
 		}
 	}
@@ -154,23 +149,23 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 }
 
 // processEndMessage routes signature to result channel.
-func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
-	ticker := time.NewTicker(s.Timeout)
+func (r *Refresh) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
+	ticker := time.NewTicker(r.Timeout)
 	for {
 		select {
 		case sig := <-endChn:
 			{
-				s.Log.Info().Msg("Successfully generated signature")
+				r.Log.Info().Msg("Successfully generated signature")
 
-				if s.coordinator {
-					s.resultChn <- sig
+				if r.coordinator {
+					r.resultChn <- sig
 				}
-				s.ErrChn <- nil
+				r.ErrChn <- nil
 				return
 			}
 		case <-ticker.C:
 			{
-				s.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
+				r.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
 				return
 			}
 		case <-ctx.Done():
@@ -182,14 +177,14 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 }
 
 // readyParticipants returns all ready peers that contain a valid key share
-func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool {
+func (r *Refresh) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool {
 	readyParticipants := make(map[peer.ID]bool)
 	for peer, ready := range readyMap {
 		if !ready {
 			continue
 		}
 
-		if !slices.Contains(s.key.Peers, peer) {
+		if !slicer.Contains(r.key.Peers, peer) {
 			continue
 		}
 
