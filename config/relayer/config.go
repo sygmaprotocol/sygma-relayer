@@ -21,7 +21,7 @@ type MpcRelayerConfig struct {
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
 	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
-	LogFile                   string              `mapstructure:"LogFile" json:"logFile"`
+	LogFile                   string              `mapstructure:"LogFile" json:"logFile" default:"out.log"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 }
 

@@ -97,6 +97,7 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 	data := config.RawConfig{
 		RelayerConfig: relayer.RawRelayerConfig{
 			// LogLevel: use default value,
+			// LogFile: use default value
 			MpcConfig: relayer.RawMpcRelayerConfig{
 				Peers: []relayer.RawPeer{
 					{PeerAddress: p1RawAddress},
@@ -124,7 +125,7 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 	s.Equal(actualConfig, config.Config{
 		RelayerConfig: relayer.RelayerConfig{
 			LogLevel:                  1,
-			LogFile:                   "",
+			LogFile:                   "out.log",
 			OpenTelemetryCollectorURL: "",
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers: []*peer.AddrInfo{p1, p2},
@@ -143,7 +144,8 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
 	data := config.RawConfig{
 		RelayerConfig: relayer.RawRelayerConfig{
-			LogLevel: "info",
+			LogLevel: "debug",
+			LogFile:  "custom.log",
 			MpcConfig: relayer.RawMpcRelayerConfig{
 				Peers: []relayer.RawPeer{
 					{PeerAddress: p1RawAddress},
@@ -170,8 +172,8 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 	s.Nil(err)
 	s.Equal(actualConfig, config.Config{
 		RelayerConfig: relayer.RelayerConfig{
-			LogLevel:                  1,
-			LogFile:                   "",
+			LogLevel:                  0,
+			LogFile:                   "custom.log",
 			OpenTelemetryCollectorURL: "",
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers: []*peer.AddrInfo{p1, p2},
