@@ -1,9 +1,9 @@
-package communication_test
+package comm_test
 
 import (
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/communication"
-	"github.com/ChainSafe/chainbridge-core/communication/p2p"
+	"github.com/ChainSafe/chainbridge-core/comm"
+	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -20,7 +20,7 @@ type CommunicationIntegrationTestSuite struct {
 	suite.Suite
 	mockController     *gomock.Controller
 	testHosts          []host.Host
-	testCommunications []communication.Communication
+	testCommunications []comm.Communication
 	testProtocolID     protocol.ID
 	testSessionID      string
 }
@@ -80,23 +80,23 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 func (s *CommunicationIntegrationTestSuite) TearDownTest() {}
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_SubscribersGotMessage() {
-	firstSubChannel := make(chan *communication.WrappedMessage)
-	s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+	firstSubChannel := make(chan *comm.WrappedMessage)
+	s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)
 
 	go func() {
 		msg := <-firstSubChannel
 		s.Equal("1", msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
-	secondSubChannel := make(chan *communication.WrappedMessage)
-	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+	secondSubChannel := make(chan *comm.WrappedMessage)
+	s.testCommunications[1].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, secondSubChannel)
 
 	go func() {
 		msg := <-secondSubChannel
 		s.Equal(s.testSessionID, msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
@@ -105,7 +105,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
-		communication.CoordinatorPingMsg,
+		comm.CoordinatorPingMsg,
 		"1",
 		errChan,
 	)
@@ -120,23 +120,23 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 		Port:  uint16(4005),
 	})
 
-	firstSubChannel := make(chan *communication.WrappedMessage)
-	s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+	firstSubChannel := make(chan *comm.WrappedMessage)
+	s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)
 
-	secondSubChannel := make(chan *communication.WrappedMessage)
-	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+	secondSubChannel := make(chan *comm.WrappedMessage)
+	s.testCommunications[1].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, secondSubChannel)
 
 	go func() {
 		msg := <-firstSubChannel
 		s.Equal("1", msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
 	go func() {
 		msg := <-secondSubChannel
 		s.Equal("1", msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
@@ -145,7 +145,7 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), externalHost.ID(), s.testHosts[1].ID()},
 		nil,
-		communication.CoordinatorPingMsg,
+		comm.CoordinatorPingMsg,
 		"1",
 		errChan,
 	)
@@ -156,23 +156,23 @@ func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_Er
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {
 	/** Both subscribers got a message **/
 
-	firstSubChannel := make(chan *communication.WrappedMessage)
-	firstSubID := s.testCommunications[0].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, firstSubChannel)
+	firstSubChannel := make(chan *comm.WrappedMessage)
+	firstSubID := s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)
 
 	go func() {
 		msg := <-firstSubChannel
 		s.Equal("1", msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
-	secondSubChannel := make(chan *communication.WrappedMessage)
-	s.testCommunications[1].Subscribe(s.testSessionID, communication.CoordinatorPingMsg, secondSubChannel)
+	secondSubChannel := make(chan *comm.WrappedMessage)
+	s.testCommunications[1].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, secondSubChannel)
 
 	go func() {
 		msg := <-secondSubChannel
 		s.Equal(s.testSessionID, msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
@@ -181,7 +181,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
-		communication.CoordinatorPingMsg,
+		comm.CoordinatorPingMsg,
 		"1",
 		errChan,
 	)
@@ -195,7 +195,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
-		communication.CoordinatorPingMsg,
+		comm.CoordinatorPingMsg,
 		"1",
 		errChan,
 	)
@@ -217,7 +217,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	go func() {
 		msg := <-secondSubChannel
 		s.Equal(s.testSessionID, msg.SessionID)
-		s.Equal(communication.CoordinatorPingMsg, msg.MessageType)
+		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 }

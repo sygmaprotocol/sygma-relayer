@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
@@ -102,7 +102,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
@@ -134,7 +134,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
@@ -168,7 +168,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
@@ -207,7 +207,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))

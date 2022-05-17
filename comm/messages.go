@@ -1,4 +1,4 @@
-package communication
+package comm
 
 // ChainBridgeMessageType represents message type identificator
 type ChainBridgeMessageType uint8

@@ -29,6 +29,7 @@ type BullyConfig struct {
 	PingBackOff      time.Duration
 	PingInterval     time.Duration
 	ElectionWaitTime time.Duration
+	BullyWaitTime    time.Duration
 }
 
 type RawRelayerConfig struct {
@@ -56,6 +57,7 @@ type RawBullyConfig struct {
 	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff"`
 	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval"`
 	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime"`
+	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime"`
 }
 
 func (c *RawRelayerConfig) Validate() error {

@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
@@ -30,14 +30,14 @@ type Signing struct {
 	key            store.Keyshare
 	msg            *big.Int
 	resultChn      chan interface{}
-	subscriptionID communication.SubscriptionID
+	subscriptionID comm.SubscriptionID
 }
 
 func NewSigning(
 	msg *big.Int,
 	sessionID string,
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	fetcher SaveDataFetcher,
 ) (*Signing, error) {
 	key, err := fetcher.GetKeyshare()
@@ -95,9 +95,9 @@ func (s *Signing) Start(
 
 	sigChn := make(chan *signing.SignatureData)
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *communication.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), communication.TssKeySignMsg, msgChn)
-	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
+	msgChn := make(chan *comm.WrappedMessage)
+	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
+	go s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg)
 	go s.ProcessInboundMessages(ctx, msgChn)
 	go s.processEndMessage(ctx, sigChn)
 
