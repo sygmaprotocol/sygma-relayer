@@ -205,6 +205,9 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 			Type: domainType,
 		},
 		{
+			Type: domainType,
+		},
+		{
 			Type: depositNonceType,
 		},
 		{
@@ -217,6 +220,7 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 
 	bytes, err := arguments.Pack(
 		proposal.Source,
+		proposal.Destination,
 		proposal.DepositNonce,
 		proposal.Data,
 		proposal.ResourceId,
