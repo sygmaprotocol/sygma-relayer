@@ -27,7 +27,7 @@ type RawRelayerConfig struct {
 
 type RawMpcRelayerConfig struct {
 	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port  uint16    `mapstructure:"Port" json:"port"`
+	Port  uint16    `mapstructure:"Port" json:"port" default:"9000"`
 }
 
 type RawPeer struct {

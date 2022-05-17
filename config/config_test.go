@@ -103,7 +103,7 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 					{PeerAddress: p1RawAddress},
 					{PeerAddress: p2RawAddress},
 				},
-				Port: 2020,
+				// Port: use default value,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
@@ -129,7 +129,7 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 			OpenTelemetryCollectorURL: "",
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers: []*peer.AddrInfo{p1, p2},
-				Port:  2020,
+				Port:  9000,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
