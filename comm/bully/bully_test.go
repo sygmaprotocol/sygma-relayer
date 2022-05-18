@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
+	"github.com/ChainSafe/chainbridge-core/comm/static"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/golang/mock/gomock"
@@ -25,6 +26,7 @@ type BullyTestSuite struct {
 	testBullyCoordinators []*CommunicationCoordinator
 	testProtocolID        protocol.ID
 	testSessionID         string
+	allowedPeers          peer.IDSlice
 }
 
 const numberOfTestHosts = 3
@@ -36,10 +38,6 @@ func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 func (s *BullyTestSuite) SetupSuite() {
 	s.testProtocolID = "test/protocol"
 	s.testSessionID = "1"
-}
-func (s *BullyTestSuite) TearDownSuite() {}
-func (s *BullyTestSuite) SetupTest() {
-	s.mockController = gomock.NewController(s.T())
 
 	pirs := peer.IDSlice{}
 	// create test hosts
@@ -85,11 +83,19 @@ func (s *BullyTestSuite) SetupTest() {
 		for _, pInfo := range peersAdrInfos[i] {
 			allowedPeers = append(allowedPeers, pInfo.ID)
 		}
+		s.allowedPeers = allowedPeers
+	}
+}
+func (s *BullyTestSuite) TearDownSuite() {}
+func (s *BullyTestSuite) SetupTest() {
+	s.mockController = gomock.NewController(s.T())
+
+	for i := 0; i < numberOfTestHosts; i++ {
 
 		com := p2p.NewCommunication(
 			s.testHosts[i],
 			s.testProtocolID,
-			allowedPeers,
+			s.allowedPeers,
 		)
 		s.testCommunications = append(s.testCommunications, com)
 
@@ -98,69 +104,95 @@ func (s *BullyTestSuite) SetupTest() {
 			PingBackOff:      10 * time.Second,
 			PingInterval:     3 * time.Second,
 			ElectionWaitTime: 3 * time.Second,
+			BullyWaitTime:    10 * time.Second,
 		})
-		b := bcc.NewCommunicationCoordinator(nil, s.testSessionID)
-		s.testBullyCoordinators = append(s.testBullyCoordinators, &b)
+		b := bcc.NewCommunicationCoordinator(s.testSessionID)
+		s.testBullyCoordinators = append(s.testBullyCoordinators, b)
 	}
 }
 func (s *BullyTestSuite) TearDownTest() {}
 
-func (s *BullyTestSuite) TestCommunication_BroadcastMessage_SubscribersGotMessage() {
-	time.Sleep(2 * time.Second)
-	coordinatorChan1 := make(chan peer.ID)
-	errChan1 := make(chan error)
-	go s.testBullyCoordinators[0].StartBully(coordinatorChan1, errChan1)
+func (s *BullyTestSuite) TestBully_GetCoordinator_AllStartAtSameTime() {
+	time.Sleep(3 * time.Second)
 
-	coordinatorChan2 := make(chan peer.ID)
-	errChan2 := make(chan error)
-	go s.testBullyCoordinators[1].StartBully(coordinatorChan2, errChan2)
+	resultChan := make(chan peer.ID)
 
-	coordinatorChan3 := make(chan peer.ID)
-	errChan3 := make(chan error)
-	go s.testBullyCoordinators[2].StartBully(coordinatorChan3, errChan3)
+	cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
+	coordinator, _ := cc.GetCoordinator(s.testSessionID)
 
-	time.Sleep(10 * time.Second)
+	go func() {
+		c, err := s.testBullyCoordinators[0].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- c
+	}()
 
-	fmt.Printf("[1] for %s\n", s.testHosts[0].ID().Pretty())
-	fmt.Printf("[1] save %s\n", s.testBullyCoordinators[0].coordinator())
+	go func() {
+		c, err := s.testBullyCoordinators[1].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- c
+	}()
 
-	fmt.Printf("[2] for %s\n", s.testHosts[1].ID().Pretty())
-	fmt.Printf("[2] save %s\n", s.testBullyCoordinators[1].coordinator())
+	go func() {
+		c, err := s.testBullyCoordinators[2].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- c
+	}()
 
-	fmt.Printf("[3] for %s\n", s.testHosts[2].ID().Pretty())
-	fmt.Printf("[3] save %s\n", s.testBullyCoordinators[2].coordinator())
+	for i := 0; i < 3; i++ {
+		select {
+		case c := <-resultChan:
+			s.Equal(coordinator, c)
+		}
+	}
+}
 
-	//select {
-	//case c := <-coordinatorChan1:
-	//	fmt.Printf("[1] for %s\n", s.testHosts[0].ID().Pretty())
-	//	fmt.Println("-----------------------------------------")
-	//	fmt.Printf("[1] chan %s\n", c.Pretty())
-	//	fmt.Printf("[1] save %s\n", s.testBullyCoordinators[0].coordinator())
-	//	fmt.Println("-----------------------------------------")
-	//case err := <-errChan1:
-	//	fmt.Println(err)
-	//}
-	//
-	//select {
-	//case c := <-coordinatorChan2:
-	//	fmt.Printf("[2] for %s\n", s.testHosts[1].ID().Pretty())
-	//	fmt.Println("-----------------------------------------")
-	//	fmt.Printf("[2] chan %s\n", c.Pretty())
-	//	fmt.Printf("[2] save %s\n", s.testBullyCoordinators[1].coordinator())
-	//	fmt.Println("-----------------------------------------")
-	//case err := <-errChan2:
-	//	fmt.Println(err)
-	//}
-	//
-	//select {
-	//case c := <-coordinatorChan3:
-	//	fmt.Printf("[3] for %s\n", s.testHosts[2].ID().Pretty())
-	//	fmt.Println("-----------------------------------------")
-	//	fmt.Printf("[3] chan %s\n", c.Pretty())
-	//	fmt.Printf("[3] save %s\n", s.testBullyCoordinators[2].coordinator())
-	//	fmt.Println("-----------------------------------------")
-	//case err := <-errChan3:
-	//	fmt.Println(err)
-	//}
+type Tmp struct {
+	ID    peer.ID
+	rName string
+}
 
+func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
+	time.Sleep(3 * time.Second)
+
+	resultChan := make(chan Tmp)
+
+	cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
+	coordinator, _ := cc.GetCoordinator(s.testSessionID)
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		c, err := s.testBullyCoordinators[0].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- Tmp{
+			ID:    c,
+			rName: "R1",
+		}
+	}()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		c, err := s.testBullyCoordinators[1].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- Tmp{
+			ID:    c,
+			rName: "R2",
+		}
+	}()
+
+	go func() {
+		c, err := s.testBullyCoordinators[2].GetCoordinator(nil)
+		s.Nil(err)
+		resultChan <- Tmp{
+			ID:    c,
+			rName: "R3",
+		}
+	}()
+
+	for i := 0; i < 3; i++ {
+		select {
+		case c := <-resultChan:
+			fmt.Printf("[%s] %s\n", c.rName, c.ID.Pretty())
+			s.Equal(coordinator, c.ID)
+		}
+	}
 }

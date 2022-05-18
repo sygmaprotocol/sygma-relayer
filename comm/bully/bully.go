@@ -63,6 +63,7 @@ func (c CommunicationCoordinatorFactory) NewCommunicationCoordinator(
 		msgChan:      make(chan *comm.WrappedMessage),
 		pingChan:     make(chan *comm.WrappedMessage),
 		comm:         c.comm,
+		conf:         c.config,
 		hostID:       c.h.ID(),
 		mu:           &sync.RWMutex{},
 		coordinator:  c.h.ID(),
