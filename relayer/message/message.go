@@ -49,6 +49,7 @@ type Message struct {
 	Payload      []interface{} // data associated with event sequence
 	Metadata     Metadata      // Arbitrary data that will be most likely be used by the relayer
 	Type         TransferType
+	RevertOnFail bool
 }
 
 func NewMessage(
@@ -59,6 +60,7 @@ func NewMessage(
 	transferType TransferType,
 	payload []interface{},
 	metadata Metadata,
+	revertOnFail bool,
 ) *Message {
 	return &Message{
 		source,
@@ -68,6 +70,7 @@ func NewMessage(
 		payload,
 		metadata,
 		transferType,
+		revertOnFail,
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	comm "github.com/ChainSafe/chainbridge-core/communication"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p-core/host"
