@@ -15,8 +15,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
-	mock_keygen "github.com/ChainSafe/chainbridge-core/tss/keygen/mock"
 	mock_tss "github.com/ChainSafe/chainbridge-core/tss/mock"
+	"github.com/ChainSafe/chainbridge-core/tss/resharing"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
 	tssLib "github.com/binance-chain/tss-lib/tss"
@@ -68,7 +68,7 @@ func setupCommunication(commMap map[peer.ID]*tsstest.TestCommunication) {
 type CoordinatorTestSuite struct {
 	suite.Suite
 	gomockController  *gomock.Controller
-	mockStorer        *mock_keygen.MockSaveDataStorer
+	mockStorer        *mock_tss.MockSaveDataStorer
 	mockCommunication *mock_communication.MockCommunication
 	mockTssProcess    *mock_tss.MockTssProcess
 	mockBully         *mock_tss.MockBully
@@ -84,7 +84,7 @@ func TestRunCoordinatorTestSuite(t *testing.T) {
 
 func (s *CoordinatorTestSuite) SetupSuite() {
 	s.gomockController = gomock.NewController(s.T())
-	s.mockStorer = mock_keygen.NewMockSaveDataStorer(s.gomockController)
+	s.mockStorer = mock_tss.NewMockSaveDataStorer(s.gomockController)
 	s.mockCommunication = mock_communication.NewMockCommunication(s.gomockController)
 	s.mockTssProcess = mock_tss.NewMockTssProcess(s.gomockController)
 	s.mockBully = mock_tss.NewMockBully(s.gomockController)
@@ -377,5 +377,48 @@ func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
 	s.NotNil(err)
 	err = <-statusChn
 	s.NotNil(err)
+	cancel()
+}
+
+func (s *CoordinatorTestSuite) Test_ValidResharingProcess() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	for i, host := range s.hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		share, _ := storer.GetKeyshare()
+		s.mockStorer.EXPECT().LockKeyshare()
+		s.mockStorer.EXPECT().UnlockKeyshare()
+		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
+		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing, err := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
+		if err != nil {
+			panic(err)
+		}
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, resharing)
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+	}
+
+	err := <-statusChn
+	fmt.Println(err)
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
 	cancel()
 }

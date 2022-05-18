@@ -42,6 +42,7 @@ func NewResharing(
 	comm communication.Communication,
 	storer SaveDataStorer,
 ) (*Resharing, error) {
+	storer.LockKeyshare()
 	key, err := storer.GetKeyshare()
 	if err != nil {
 		return nil, err
@@ -111,7 +112,7 @@ func (r *Resharing) Start(
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (r *Resharing) Stop() {
-	log.Info().Str("sessionID", r.SessionID()).Msgf("Stopping tss procesr.")
+	log.Info().Str("sessionID", r.SessionID()).Msgf("Stopping tss process.")
 	r.Communication.UnSubscribe(r.subscriptionID)
 	r.storer.UnlockKeyshare()
 	r.Cancel()
@@ -127,13 +128,13 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 	ticker := time.NewTicker(r.Timeout)
 	for {
 		select {
-		case key <- endChn:
+		case key := <-endChn:
 			{
 				r.Log.Info().Msg("Successfully reshared key")
 
 				keyshare := store.NewKeyshare(key, r.newThreshold, r.Peers)
-				r.storer.StoreKeyshare()
-				r.ErrChn <- nil
+				err := r.storer.StoreKeyshare(keyshare)
+				r.ErrChn <- err
 				return
 			}
 		case <-ticker.C:
@@ -149,7 +150,7 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 	}
 }
 
-// sortParties assign new parties new indexes that are greater than old party indexes to prevent
+// sortParties assign new parties indexes that are greater than old party indexes to prevent
 // errors when assigning message to a party
 func (r *Resharing) sortParties(parties tss.SortedPartyIDs, oldParties tss.SortedPartyIDs) tss.SortedPartyIDs {
 	newParties := make(tss.SortedPartyIDs, len(parties))
