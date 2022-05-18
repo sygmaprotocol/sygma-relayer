@@ -381,10 +381,3 @@ func (c *BridgeContract) AdminChangeFeeHandler(
 		feeHandlerAddr,
 	)
 }
-
-func idAndNonce(srcId uint8, nonce uint64) *big.Int {
-	var data []byte
-	data = append(data, big.NewInt(int64(nonce)).Bytes()...)
-	data = append(data, uint8(srcId))
-	return big.NewInt(0).SetBytes(data)
-}
