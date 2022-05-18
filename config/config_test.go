@@ -2,10 +2,11 @@ package config_test
 
 import (
 	"encoding/json"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -151,7 +152,10 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 					{PeerAddress: p1RawAddress},
 					{PeerAddress: p2RawAddress},
 				},
-				Port: 2020,
+				Port:         2020,
+				KeysharePath: "./share.key",
+				KeystorePath: "./key.pk",
+				Threshold:    5,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
@@ -176,8 +180,11 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 			LogFile:                   "custom.log",
 			OpenTelemetryCollectorURL: "",
 			MpcConfig: relayer.MpcRelayerConfig{
-				Peers: []*peer.AddrInfo{p1, p2},
-				Port:  2020,
+				Peers:        []*peer.AddrInfo{p1, p2},
+				Port:         2020,
+				KeysharePath: "./share.key",
+				KeystorePath: "./key.pk",
+				Threshold:    5,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{

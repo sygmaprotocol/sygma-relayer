@@ -44,42 +44,38 @@ type TestClient interface {
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 }
 
-func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient, relayerAddresses1, relayerAddresses2 []common.Address) *IntegrationTestSuite {
+func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
-		fabric1:           fabric1,
-		fabric2:           fabric2,
-		client1:           client1,
-		client2:           client2,
-		relayerAddresses1: relayerAddresses1,
-		relayerAddresses2: relayerAddresses2,
+		fabric1: fabric1,
+		fabric2: fabric2,
+		client1: client1,
+		client2: client2,
 	}
 }
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	relayerAddresses1 []common.Address
-	relayerAddresses2 []common.Address
-	client1           TestClient
-	client2           TestClient
-	gasPricer1        calls.GasPricer
-	gasPricer2        calls.GasPricer
-	fabric1           calls.TxFabric
-	fabric2           calls.TxFabric
-	erc20RID          [32]byte
-	erc721RID         [32]byte
-	genericRID        [32]byte
-	config1           local.EVME2EConfig
-	config2           local.EVME2EConfig
+	client1    TestClient
+	client2    TestClient
+	gasPricer1 calls.GasPricer
+	gasPricer2 calls.GasPricer
+	fabric1    calls.TxFabric
+	fabric2    calls.TxFabric
+	erc20RID   [32]byte
+	erc721RID  [32]byte
+	genericRID [32]byte
+	config1    local.EVME2EConfig
+	config2    local.EVME2EConfig
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From(), s.relayerAddresses1)
+	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From())
 	if err != nil {
 		panic(err)
 	}
 	s.config1 = config1
 
-	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From(), s.relayerAddresses2)
+	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From())
 	if err != nil {
 		panic(err)
 	}
@@ -120,15 +116,13 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	if err != nil {
 		return
 	}
+
 	s.Nil(err)
 
-	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
-	s.Equal([]*big.Int{big.NewInt(140000000000)}, depositTx.GasPrice())
+	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -184,13 +178,10 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	)
 	s.Nil(err)
 
-	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
-	// check gas price of deposit tx - 80 gwei (default)
-	s.Equal([]*big.Int{big.NewInt(8000000000)}, depositTx.GasPrice())
+	// check gas price of deposit tx - 50 gwei (slow)
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -221,15 +212,13 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	if err != nil {
 		return
 	}
+
 	s.Nil(err)
 
-	depositTx, _, err := s.client2.TransactionByHash(context.Background(), *depositTxHash)
-	if err != nil {
-		return
-	}
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
-	s.Equal([]*big.Int{big.NewInt(50000000000)}, depositTx.GasPrice())
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)

@@ -24,13 +24,9 @@ var AdminCmd = &cobra.Command{
 
 func init() {
 	AdminCmd.AddCommand(addAdminCmd)
-	AdminCmd.AddCommand(addRelayerCmd)
-	AdminCmd.AddCommand(isRelayerCmd)
 	AdminCmd.AddCommand(pauseCmd)
 	AdminCmd.AddCommand(removeAdminCmd)
 	AdminCmd.AddCommand(removeRelayerCmd)
-	AdminCmd.AddCommand(setThresholdCmd)
-	AdminCmd.AddCommand(getThresholdCmd)
 	AdminCmd.AddCommand(unpauseCmd)
 	AdminCmd.AddCommand(withdrawCmd)
 	AdminCmd.AddCommand(setDepositNonceCmd)

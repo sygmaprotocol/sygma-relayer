@@ -97,6 +97,7 @@ func (s *CoordinatorTestSuite) SetupSuite() {
 func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -105,7 +106,8 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
+		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
 
@@ -114,8 +116,8 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, nil, status)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], nil, status)
 	}
 
 	for i := 0; i < s.partyNumber; i++ {
@@ -128,6 +130,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -136,7 +139,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
-		coordinators = append(coordinators, tss.NewCoordinator(host, keygen, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
+		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
 
@@ -145,8 +149,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, nil, status)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], nil, status)
 	}
 
 	for i := 0; i < s.partyNumber; i++ {
@@ -159,6 +163,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -175,28 +180,29 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
+		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
 
 	statusChn := make(chan error, s.partyNumber)
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 
 	err := <-statusChn
 	s.Nil(err)
-	sig1 := <-resultChn
-	sig2 := <-resultChn
-	s.Equal(sig1, sig2)
+	sig := <-resultChn
+	s.NotNil(sig)
 	cancel()
 }
 
 func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
 
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
@@ -214,15 +220,16 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		signing.Timeout = time.Millisecond * 200
-		coordinators = append(coordinators, tss.NewCoordinator(host, signing, &communication))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
+		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
 
 	statusChn := make(chan error, s.partyNumber)
 	resultChn := make(chan interface{})
 	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, resultChn, statusChn)
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 
 	err := <-statusChn

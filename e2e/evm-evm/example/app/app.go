@@ -4,18 +4,22 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/voter"
+	"github.com/ChainSafe/chainbridge-core/communication/p2p"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
@@ -24,7 +28,9 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -41,6 +47,22 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
+	privBytes, err := ioutil.ReadFile(configuration.RelayerConfig.MpcConfig.KeystorePath)
+	if err != nil {
+		panic(err)
+	}
+	priv, err := crypto.UnmarshalPrivateKey(privBytes)
+	if err != nil {
+		panic(err)
+	}
+	host, err := p2p.NewHost(priv, configuration.RelayerConfig.MpcConfig)
+	if err != nil {
+		panic(err)
+	}
+	comm := p2p.NewCommunication(host, "p2p/chainbridge", configuration.RelayerConfig)
+	coordinator := tss.NewCoordinator(host, comm)
+	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
@@ -56,39 +78,34 @@ func Run() error {
 					panic(err)
 				}
 
+				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
-				bridgeContract := bridge.NewBridgeContract(client, common.HexToAddress(config.Bridge), t)
+				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				_, err = bridgeContract.IsRelayer(common.HexToAddress(config.GeneralChainConfig.From))
-				if err != nil {
-					panic(err)
-				}
+				depositHandler := listener.NewETHDepositHandler(*bridgeContract)
+				depositHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
+				depositHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
+				depositHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
+				eventListener := events.NewListener(client)
+				eventHandlers := make([]listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, bridgeAddress))
+				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
-				eventHandler := listener.NewETHEventHandler(*bridgeContract)
-				eventHandler.RegisterEventHandler(config.Erc20Handler, listener.Erc20EventHandler)
-				eventHandler.RegisterEventHandler(config.Erc721Handler, listener.Erc721EventHandler)
-				eventHandler.RegisterEventHandler(config.GenericHandler, listener.GenericEventHandler)
-				evmListener := listener.NewEVMListener(client, eventHandler, common.HexToAddress(config.Bridge))
+				mh := executor.NewEVMMessageHandler(*bridgeContract)
+				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
+				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
+				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
+				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
-				mh := voter.NewEVMMessageHandler(*bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, voter.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, voter.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, voter.GenericMessageHandler)
-
-				var evmVoter *voter.EVMVoter
-				evmVoter, err = voter.NewVoterWithSubscription(mh, client, bridgeContract)
-				if err != nil {
-					log.Error().Msgf("failed creating voter with subscription: %s. Falling back to default voter.", err.Error())
-					evmVoter = voter.NewVoter(mh, client, bridgeContract)
-				}
-
-				chain := evm.NewEVMChain(evmListener, evmVoter, blockstore, config)
+				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
 
 				chains = append(chains, chain)
 			}
 		default:
-			panic(fmt.Errorf("Type '%s' not recognized", chainConfig["type"]))
+			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
 
@@ -98,8 +115,9 @@ func Run() error {
 	)
 
 	errChn := make(chan error)
-	stopChn := make(chan struct{})
-	go r.Start(stopChn, errChn)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go r.Start(ctx, errChn)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
@@ -111,7 +129,6 @@ func Run() error {
 	select {
 	case err := <-errChn:
 		log.Error().Err(err).Msg("failed to listen and serve")
-		close(stopChn)
 		return err
 	case sig := <-sysErr:
 		log.Info().Msgf("terminating got ` [%v] signal", sig)

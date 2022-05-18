@@ -33,8 +33,6 @@ func TestRunE2ETests(t *testing.T) {
 			evmtransaction.NewTransaction,
 			ethClient1,
 			ethClient2,
-			local.DefaultRelayerAddresses,
-			local.DefaultRelayerAddresses,
 		),
 	)
 }

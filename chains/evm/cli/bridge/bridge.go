@@ -28,5 +28,4 @@ func init() {
 	BridgeCmd.AddCommand(registerGenericResourceCmd)
 	BridgeCmd.AddCommand(registerResourceCmd)
 	BridgeCmd.AddCommand(setBurnCmd)
-	BridgeCmd.AddCommand(voteProposalCmd)
 }

@@ -58,98 +58,6 @@ func (s *AdminTestSuite) TestValidateAddAdminFlagsInvalidAddresses() {
 	s.NotNil(err)
 }
 
-func (s *AdminTestSuite) TestValidateAddRelayerFlags() {
-	cmd := new(cobra.Command)
-	BindAddRelayerFlags(cmd)
-
-	err := cmd.Flag("relayer").Value.Set(validAddr)
-	s.Nil(err)
-	err = cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateAddRelayerFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateAddRelayerFlagsInvalidAddresses() {
-	cmd := new(cobra.Command)
-	BindAddRelayerFlags(cmd)
-
-	err := cmd.Flag("relayer").Value.Set(invalidAddr)
-	s.Nil(err)
-	err = cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateAddRelayerFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
-func (s *AdminTestSuite) TestValidateGetThresholdFlags() {
-	cmd := new(cobra.Command)
-	BindGetThresholdFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateGetThresholdFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateGetThresholdFlagsInvalidAddress() {
-	cmd := new(cobra.Command)
-	BindGetThresholdFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateGetThresholdFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
-func (s *AdminTestSuite) TestValidateIsRelayerFlags() {
-	cmd := new(cobra.Command)
-	BindIsRelayerFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-	err = cmd.Flag("relayer").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateIsRelayerFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateIsRelayerInvalidAddresses() {
-	cmd := new(cobra.Command)
-	BindIsRelayerFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-	err = cmd.Flag("relayer").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateIsRelayerFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
 func (s *AdminTestSuite) TestValidatePauseFlags() {
 	cmd := new(cobra.Command)
 	BindPauseFlags(cmd)
@@ -264,34 +172,6 @@ func (s *AdminTestSuite) TestValidateSetDepositNonceInvalidAddress() {
 	s.Nil(err)
 
 	err = ValidateSetDepositNonceFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
-func (s *AdminTestSuite) TestValidateSetThresholdFlags() {
-	cmd := new(cobra.Command)
-	BindSetThresholdFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateSetThresholdFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateSetThresholdInvalidAddress() {
-	cmd := new(cobra.Command)
-	BindSetThresholdFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateSetThresholdFlags(
 		cmd,
 		[]string{},
 	)
