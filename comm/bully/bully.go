@@ -16,6 +16,7 @@ import (
 
 const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
 
+// CommunicationCoordinatorFactory todo
 type CommunicationCoordinatorFactory struct {
 	h          host.Host
 	comm       comm.Communication
@@ -23,6 +24,7 @@ type CommunicationCoordinatorFactory struct {
 	config     relayer.BullyConfig
 }
 
+// NewCommunicationCoordinatorFactory todo
 func NewCommunicationCoordinatorFactory(h host.Host, config relayer.BullyConfig) CommunicationCoordinatorFactory {
 	communication := p2p.NewCommunication(h, ProtocolID, h.Peerstore().Peers())
 
@@ -34,6 +36,7 @@ func NewCommunicationCoordinatorFactory(h host.Host, config relayer.BullyConfig)
 	}
 }
 
+// CommunicationCoordinator
 type CommunicationCoordinator struct {
 	sessionID    string
 	receiveChan  chan *comm.WrappedMessage
@@ -49,8 +52,7 @@ type CommunicationCoordinator struct {
 	allPeers     peer.IDSlice
 }
 
-// NewCommunicationCoordinator starts bully process to determine dynamic coordinator
-// When coordinator is determined it will be sent to coordinatorChan, if error occurs it will be sent to errChan
+// NewCommunicationCoordinator TODO
 func (c CommunicationCoordinatorFactory) NewCommunicationCoordinator(
 	sessionID string,
 ) *CommunicationCoordinator {
@@ -88,70 +90,7 @@ func (b *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice) (p
 	return b.getCoordinator(), nil
 }
 
-func (b *CommunicationCoordinator) getPeers(excludedPeers peer.IDSlice) peer.IDSlice {
-	peers := peer.IDSlice{}
-	for _, p := range b.allPeers {
-		if !slices.Contains(excludedPeers, p) {
-			peers = append(peers, p)
-		}
-	}
-	return peers
-}
-
-func (b *CommunicationCoordinator) isBefore(p1 peer.ID, p2 peer.ID) bool {
-	var i1, i2 int
-	for i := range b.sortedPeers {
-		if p1 == b.sortedPeers[i].ID {
-			i1 = i
-		}
-		if p2 == b.sortedPeers[i].ID {
-			i2 = i
-		}
-	}
-	return i1 < i2
-}
-
-func (b *CommunicationCoordinator) setCoordinator(ID peer.ID) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	b.coordinator = ID
-}
-
-func (b CommunicationCoordinator) getCoordinator() peer.ID {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	return b.coordinator
-}
-
-func (b *CommunicationCoordinator) pingLeader() {
-	for {
-		coordinator := b.getCoordinator()
-		// ping only if I am not leader
-		if ComparePeerIDs(coordinator, b.hostID) != 0 {
-			// b.Send([]peer.ID{coordinator}, p2p.Libp2pBullyMsgPing)
-			b.comm.Broadcast([]peer.ID{coordinator}, []byte{}, comm.CoordinatorPingMsg, b.sessionID, nil)
-			select {
-			// wait for ping response
-			case <-b.pingChan:
-				break
-			// end leader if not responding after PingWaitTime
-			case <-time.After(b.conf.PingWaitTime):
-				b.msgChan <- &comm.WrappedMessage{
-					MessageType: comm.CoordinatorLeaveMsg,
-					SessionID:   "1",
-					Payload:     nil,
-					From:        coordinator,
-				}
-				time.Sleep(b.conf.PingBackOff)
-				break
-			}
-		}
-		time.Sleep(b.conf.PingInterval)
-	}
-}
-
+// listen starts listening for coordinator relevant messages
 func (b *CommunicationCoordinator) listen() {
 	b.comm.Subscribe(b.sessionID, comm.CoordinatorPingMsg, b.msgChan)
 	b.comm.Subscribe(b.sessionID, comm.CoordinatorElectionMsg, b.msgChan)
@@ -203,7 +142,7 @@ func (b *CommunicationCoordinator) listen() {
 
 func (b *CommunicationCoordinator) elect(errChan chan error) {
 	for _, p := range b.sortedPeers {
-		if b.isBefore(p.ID, b.hostID) {
+		if b.isGreater(p.ID, b.hostID) {
 			b.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, b.sessionID, errChan)
 		}
 	}
@@ -212,7 +151,6 @@ func (b *CommunicationCoordinator) elect(errChan chan error) {
 	case <-b.electionChan:
 		return
 	case <-time.After(b.conf.ElectionWaitTime):
-		// coordinatorChan <- b.hostID
 		b.setCoordinator(b.hostID)
 		b.comm.Broadcast(b.sortedPeers.GetPeerIDs(), []byte{}, comm.CoordinatorSelectMsg, b.sessionID, errChan)
 		return
@@ -223,14 +161,75 @@ func (b *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
 	b.elect(errChan)
 	// go b.pingLeader()
 	for msg := range b.receiveChan {
-		// fmt.Printf("message %v", msg)
-		if msg.MessageType == comm.CoordinatorElectionMsg && !b.isBefore(msg.From, b.hostID) {
+		if msg.MessageType == comm.CoordinatorElectionMsg && !b.isGreater(msg.From, b.hostID) {
 			b.comm.Broadcast([]peer.ID{msg.From}, []byte{}, comm.CoordinatorAliveMsg, b.sessionID, errChan)
 			b.elect(errChan)
 		} else if msg.MessageType == comm.CoordinatorSelectMsg {
-			fmt.Printf("[%s] SET COORDINATOR:%s\n", b.hostID.Pretty(), msg.From.Pretty())
+			// fmt.Printf("[%s] SET COORDINATOR:%s\n", b.hostID.Pretty(), msg.From.Pretty())
 			b.setCoordinator(msg.From)
-			// coordinatorChan <- msg.From
 		}
+	}
+}
+
+// getPeers returns all peers that are not excluded
+func (b *CommunicationCoordinator) getPeers(excludedPeers peer.IDSlice) peer.IDSlice {
+	peers := peer.IDSlice{}
+	for _, p := range b.allPeers {
+		if !slices.Contains(excludedPeers, p) {
+			peers = append(peers, p)
+		}
+	}
+	return peers
+}
+
+// isGreater returns true if p1 > p2
+func (b *CommunicationCoordinator) isGreater(p1 peer.ID, p2 peer.ID) bool {
+	var i1, i2 int
+	for i := range b.sortedPeers {
+		if p1 == b.sortedPeers[i].ID {
+			i1 = i
+		}
+		if p2 == b.sortedPeers[i].ID {
+			i2 = i
+		}
+	}
+	return i1 < i2
+}
+
+func (b *CommunicationCoordinator) setCoordinator(ID peer.ID) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.coordinator = ID
+}
+
+func (b *CommunicationCoordinator) getCoordinator() peer.ID {
+	return b.coordinator
+}
+
+func (b *CommunicationCoordinator) pingLeader() {
+	for {
+		coordinator := b.getCoordinator()
+		// ping only if I am not leader
+		if coordinator != b.hostID {
+			// b.Send([]peer.ID{coordinator}, p2p.Libp2pBullyMsgPing)
+			b.comm.Broadcast([]peer.ID{coordinator}, []byte{}, comm.CoordinatorPingMsg, b.sessionID, nil)
+			select {
+			// wait for ping response
+			case <-b.pingChan:
+				break
+			// end leader if not responding after PingWaitTime
+			case <-time.After(b.conf.PingWaitTime):
+				b.msgChan <- &comm.WrappedMessage{
+					MessageType: comm.CoordinatorLeaveMsg,
+					SessionID:   "1",
+					Payload:     nil,
+					From:        coordinator,
+				}
+				time.Sleep(b.conf.PingBackOff)
+				break
+			}
+		}
+		time.Sleep(b.conf.PingInterval)
 	}
 }
