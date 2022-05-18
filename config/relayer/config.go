@@ -33,8 +33,8 @@ type RawMpcRelayerConfig struct {
 	KeysharePath string    `mapstructure:"KeysharePath" json:"keysharePath"`
 	KeystorePath string    `mapstructure:"KeystorePath" json:"keystorePath"`
 	Threshold    int       `mapstructure:"Threshold" json:"threshold"`
-	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port  uint16    `mapstructure:"Port" json:"port" default:"9000"`
+	Peers        []RawPeer `mapstructure:"Peers" json:"peers"`
+	Port         uint16    `mapstructure:"Port" json:"port" default:"9000"`
 }
 
 type RawPeer struct {
