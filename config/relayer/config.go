@@ -24,17 +24,17 @@ type MpcRelayerConfig struct {
 
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
-	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel"`
-	LogFile                   string              `mapstructure:"LogFile" json:"logFile"`
+	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
+	LogFile                   string              `mapstructure:"LogFile" json:"logFile" default:"out.log"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 }
 
 type RawMpcRelayerConfig struct {
-	Peers        []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port         uint16    `mapstructure:"Port" json:"port"`
 	KeysharePath string    `mapstructure:"KeysharePath" json:"keysharePath"`
 	KeystorePath string    `mapstructure:"KeystorePath" json:"keystorePath"`
 	Threshold    int       `mapstructure:"Threshold" json:"threshold"`
+	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
+	Port  uint16    `mapstructure:"Port" json:"port" default:"9000"`
 }
 
 type RawPeer struct {
