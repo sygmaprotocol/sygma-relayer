@@ -122,9 +122,9 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	}
 	setupCommunication(communicationMap)
 
-	s.mockStorer.EXPECT().LockKeyshare().Times(3)
-	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
-	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
+	s.mockStorer.EXPECT().LockKeyshare().Times(4)
+	s.mockStorer.EXPECT().UnlockKeyshare().Times(4)
+	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(4)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for i, coordinator := range coordinators {
@@ -380,7 +380,7 @@ func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_ValidResharingProcess() {
+func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -411,7 +411,57 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess() {
 	}
 
 	err := <-statusChn
-	fmt.Println(err)
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
+	cancel()
+}
+
+func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	newHost, err := newHost(s.partyNumber)
+	if err != nil {
+		panic(err)
+	}
+	oldAndNewHosts := append(s.hosts, newHost)
+	for _, host := range oldAndNewHosts {
+		host.Peerstore().AddAddr(newHost.ID(), newHost.Addrs()[0], peerstore.PermanentAddrTTL)
+		newHost.Peerstore().AddAddr(host.ID(), host.Addrs()[0], peerstore.PermanentAddrTTL)
+	}
+
+	for i, host := range oldAndNewHosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		share, _ := storer.GetKeyshare()
+		s.mockStorer.EXPECT().LockKeyshare()
+		s.mockStorer.EXPECT().UnlockKeyshare()
+		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
+		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		processes = append(processes, resharing)
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+	}
+
+	err = <-statusChn
+	s.Nil(err)
+	err = <-statusChn
 	s.Nil(err)
 	err = <-statusChn
 	s.Nil(err)
