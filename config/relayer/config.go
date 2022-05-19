@@ -53,11 +53,11 @@ type RawPeer struct {
 }
 
 type RawBullyConfig struct {
-	PingWaitTime     string `mapstructure:"PingWaitTime" json:"pingWaitTime"`
-	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff"`
-	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval"`
-	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime"`
-	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime"`
+	PingWaitTime     string `mapstructure:"PingWaitTime" json:"pingWaitTime" default:"2s"`
+	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff" default:"10s"`
+	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval" default:"3s"`
+	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime" default:"3s"`
+	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime" default:"10s"`
 }
 
 func (c *RawRelayerConfig) Validate() error {
@@ -112,7 +112,12 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 
 	pingBackOff, err := time.ParseDuration(rawConfig.BullyConfig.PingBackOff)
 	if err != nil {
-		return RelayerConfig{}, fmt.Errorf("unable to parse bully election wait time: %w", err)
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully ping back off time: %w", err)
+	}
+
+	bullyWaitTime, err := time.ParseDuration(rawConfig.BullyConfig.BullyWaitTime)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse bully wait time: %w", err)
 	}
 
 	config.BullyConfig = BullyConfig{
@@ -120,6 +125,7 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 		PingBackOff:      pingBackOff,
 		PingInterval:     pingInterval,
 		ElectionWaitTime: electionWaitTime,
+		BullyWaitTime:    bullyWaitTime,
 	}
 
 	return config, nil
