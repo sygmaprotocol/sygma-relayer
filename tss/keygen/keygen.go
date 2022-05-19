@@ -66,7 +66,7 @@ func (k *Keygen) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
 	k.ErrChn = errChn
 	ctx, k.Cancel = context.WithCancel(ctx)
@@ -115,6 +115,15 @@ func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool
 	}
 
 	return len(readyMap) == len(k.Host.Peerstore().Peers()), nil
+}
+
+// ValidCoordinators returns all peers in peerstore
+func (k *Keygen) ValidCoordinators() []peer.ID {
+	return k.Host.Peerstore().Peers()
+}
+
+func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
+	return []byte{}
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.

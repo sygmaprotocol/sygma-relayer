@@ -23,11 +23,12 @@ type Bully interface {
 }
 
 type TssProcess interface {
-	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []string)
+	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []byte)
 	Stop()
 	Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error)
-	StartParams(readyMap map[peer.ID]bool) []string
+	StartParams(readyMap map[peer.ID]bool) []byte
 	SessionID() string
+	ValidCoordinators() []peer.ID
 }
 
 type Coordinator struct {
@@ -54,7 +55,7 @@ func NewCoordinator(
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
 	errChn := make(chan error)
-	coordinator := c.getCoordinator(tssProcess.SessionID())
+	coordinator := c.getCoordinator(tssProcess)
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
 	retried := false
@@ -123,15 +124,19 @@ func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordina
 // an expected error ocurred during regular tss execution
 func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	coordinatorChn := make(chan peer.ID)
-	c.bully.Coordinator([]peer.ID{c.getCoordinator(tssProcess.SessionID())}, coordinatorChn, errChn)
+	c.bully.Coordinator([]peer.ID{c.getCoordinator(tssProcess)}, coordinatorChn, errChn)
 	coordinator := <-coordinatorChn
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
 }
 
 // getLeader returns the static leader for current session
-func (c *Coordinator) getCoordinator(sessionID string) peer.ID {
-	peers := c.host.Peerstore().Peers()
-	return common.SortPeersForSession(peers, sessionID)[0].ID
+func (c *Coordinator) getCoordinator(tssProcess TssProcess) peer.ID {
+	validCoordinators := tssProcess.ValidCoordinators()
+	if len(validCoordinators) == 0 {
+		return peer.ID("")
+	}
+
+	return common.SortPeersForSession(validCoordinators, tssProcess.SessionID())[0].ID
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
@@ -234,7 +239,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{
-				errChn <- &CoordinatorError{Coordinator: c.getCoordinator(tssProcess.SessionID())}
+				errChn <- &CoordinatorError{Coordinator: c.getCoordinator(tssProcess)}
 				return
 			}
 		case <-ctx.Done():

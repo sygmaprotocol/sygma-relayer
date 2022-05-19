@@ -2,6 +2,7 @@ package resharing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,6 +20,11 @@ import (
 var (
 	SigningTimeout = time.Minute * 15
 )
+
+type startParams struct {
+	OldThreshold int       `json:"oldThreshold"`
+	OldSubset    []peer.ID `json:"oldSubset"`
+}
 
 type SaveDataStorer interface {
 	GetKeyshare() (store.Keyshare, error)
@@ -41,11 +47,13 @@ func NewResharing(
 	host host.Host,
 	comm communication.Communication,
 	storer SaveDataStorer,
-) (*Resharing, error) {
+) *Resharing {
 	storer.LockKeyshare()
+	var key store.Keyshare
 	key, err := storer.GetKeyshare()
 	if err != nil {
-		return nil, err
+		// empty key for parties that don't have one
+		key = store.Keyshare{}
 	}
 
 	partyStore := make(map[string]*tss.PartyID)
@@ -63,7 +71,7 @@ func NewResharing(
 		key:          key,
 		storer:       storer,
 		newThreshold: threshold,
-	}, nil
+	}
 }
 
 // Start initializes the signing party and starts the signing tss procesr.
@@ -73,12 +81,18 @@ func (r *Resharing) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
 	r.ErrChn = errChn
 	ctx, r.Cancel = context.WithCancel(ctx)
 
-	oldParties := common.PartiesFromPeers(r.key.Peers)
+	startParams, err := r.unmarshallStartParams(params)
+	if err != nil {
+		r.ErrChn <- err
+		return
+	}
+
+	oldParties := common.PartiesFromPeers(startParams.OldSubset)
 	oldCtx := tss.NewPeerContext(oldParties)
 	newParties := r.sortParties(common.PartiesFromPeers(r.Host.Peerstore().Peers()), oldParties)
 	newCtx := tss.NewPeerContext(newParties)
@@ -88,7 +102,7 @@ func (r *Resharing) Start(
 		newCtx,
 		r.PartyStore[r.Host.ID().Pretty()],
 		len(oldParties),
-		r.key.Threshold,
+		startParams.OldThreshold,
 		len(newParties),
 		r.newThreshold,
 	)
@@ -121,6 +135,31 @@ func (r *Resharing) Stop() {
 // Ready returns true if all parties from peerstore are ready
 func (r *Resharing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
 	return len(readyMap) == len(r.Host.Peerstore().Peers()), nil
+}
+
+// ValidCoordinators returns only peers that have a valid keyshare from the previous resharing
+func (r *Resharing) ValidCoordinators() []peer.ID {
+	return r.key.Peers
+}
+
+// StartParams returns threshold and peer subset from the old key to share with new parties.
+func (r *Resharing) StartParams(readyMap map[peer.ID]bool) []byte {
+	startParams := &startParams{
+		OldThreshold: r.key.Threshold,
+		OldSubset:    r.key.Peers,
+	}
+	paramBytes, _ := json.Marshal(startParams)
+	return paramBytes
+}
+
+func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error) {
+	var startParams startParams
+	err := json.Unmarshal(paramBytes, &startParams)
+	if err != nil {
+		return startParams, err
+	}
+
+	return startParams, nil
 }
 
 // processEndMessage routes signature to result channel.

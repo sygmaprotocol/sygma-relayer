@@ -397,10 +397,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess() {
 		s.mockStorer.EXPECT().UnlockKeyshare()
 		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing, err := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
-		if err != nil {
-			panic(err)
-		}
+		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
 		processes = append(processes, resharing)
 	}

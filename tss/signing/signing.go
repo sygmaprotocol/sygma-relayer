@@ -2,6 +2,7 @@ package signing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -74,14 +75,14 @@ func (s *Signing) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
 	s.coordinator = coordinator
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
 
-	peerSubset, err := common.PeersFromIDS(params)
+	peerSubset, err := s.unmarshallStartParams(params)
 	if err != nil {
 		s.ErrChn <- err
 		return
@@ -131,10 +132,15 @@ func (s *Signing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (boo
 	return len(readyMap) == s.key.Threshold+1, nil
 }
 
+// ValidCoordinators returns only peers that have a valid keyshare
+func (s *Signing) ValidCoordinators() []peer.ID {
+	return s.key.Peers
+}
+
 // StartParams returns peer subset for this tss process. It is calculated
 // by sorting hashes of peer IDs and session ID and chosing ready peers alphabetically
 // until threshold is satisfied.
-func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
+func (s *Signing) StartParams(readyMap map[peer.ID]bool) []byte {
 	readyMap = s.readyParticipants(readyMap)
 	peers := []peer.ID{}
 	for peer := range readyMap {
@@ -142,15 +148,26 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 	}
 
 	sortedPeers := common.SortPeersForSession(peers, s.SessionID())
-	params := []string{}
+	peerSubset := []peer.ID{}
 	for _, peer := range sortedPeers {
-		params = append(params, peer.ID.Pretty())
-		if len(params) == s.key.Threshold+1 {
+		peerSubset = append(peerSubset, peer.ID)
+		if len(peerSubset) == s.key.Threshold+1 {
 			break
 		}
 	}
 
-	return params
+	paramBytes, _ := json.Marshal(peerSubset)
+	return paramBytes
+}
+
+func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
+	var peerSubset []peer.ID
+	err := json.Unmarshal(paramBytes, &peerSubset)
+	if err != nil {
+		return []peer.ID{}, err
+	}
+
+	return peerSubset, nil
 }
 
 // processEndMessage routes signature to result channel.
