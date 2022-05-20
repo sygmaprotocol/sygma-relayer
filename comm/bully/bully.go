@@ -1,6 +1,7 @@
 package bully
 
 import (
+	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -37,7 +38,7 @@ func NewCommunicationCoordinatorFactory(h host.Host, config relayer.BullyConfig)
 // NewCommunicationCoordinator creates CommunicationCoordinator for a specific session
 // It also starts listening for session specific bully coordination messages.
 func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(
-	sessionID string,
+	sessionID string, names map[peer.ID]string,
 ) *CommunicationCoordinator {
 	bully := &CommunicationCoordinator{
 		sessionID:    sessionID,
@@ -45,7 +46,7 @@ func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(
 		electionChan: make(chan *comm.WrappedMessage, 1),
 		msgChan:      make(chan *comm.WrappedMessage),
 		pingChan:     make(chan *comm.WrappedMessage),
-		comm:         c.comm,
+		comm:         p2p.NewCommunication(c.h, ProtocolID, c.h.Peerstore().Peers()),
 		conf:         c.config,
 		hostID:       c.h.ID(),
 		mu:           &sync.RWMutex{},
@@ -53,7 +54,7 @@ func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(
 		allPeers:     c.h.Peerstore().Peers(),
 	}
 
-	go bully.listen()
+	go bully.listen(names)
 
 	return bully
 }
@@ -75,11 +76,11 @@ type CommunicationCoordinator struct {
 }
 
 // GetCoordinator starts coordinator discovery using bully algorithm and returns current leader
-func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice) (peer.ID, error) {
+func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice, names map[peer.ID]string) (peer.ID, error) {
 	cc.sortedPeers = common.SortPeersForSession(cc.getPeers(excludedPeers), cc.sessionID)
 
 	errChan := make(chan error)
-	go cc.startBullyCoordination(errChan)
+	go cc.startBullyCoordination(errChan, names)
 
 	select {
 	case err := <-errChan:
@@ -92,7 +93,7 @@ func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice) (
 }
 
 // listen starts listening for coordinator relevant messages
-func (cc *CommunicationCoordinator) listen() {
+func (cc *CommunicationCoordinator) listen(names map[peer.ID]string) {
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorPingMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorElectionMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorAliveMsg, cc.msgChan)
@@ -108,7 +109,8 @@ func (cc *CommunicationCoordinator) listen() {
 				select {
 				case cc.electionChan <- msg:
 					break
-				case <-time.After(200 * time.Millisecond):
+				case <-time.After(500 * time.Millisecond):
+					fmt.Printf("%s THIS IS HAPPENING!!\n", names[cc.hostID])
 					break
 				}
 				break
@@ -133,30 +135,34 @@ func (cc *CommunicationCoordinator) listen() {
 	}
 }
 
-func (cc *CommunicationCoordinator) elect(errChan chan error) {
+func (cc *CommunicationCoordinator) elect(errChan chan error, names map[peer.ID]string) {
 	for _, p := range cc.sortedPeers {
-		if cc.isPeerIDBeforeHostID(p.ID) {
+		if cc.isPeerIDHigher(p.ID, cc.hostID) {
 			cc.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, cc.sessionID, errChan)
 		}
 	}
 
 	select {
-	case <-cc.electionChan:
+	case msg := <-cc.electionChan:
+		fmt.Printf("%s -> %s LUCKILY HE IS ALIVE\n", names[msg.From], names[cc.hostID])
 		return
 	case <-time.After(cc.conf.ElectionWaitTime):
+		fmt.Printf("%s I SET MYSELF AS COORDINATOR!?\n", names[cc.hostID])
 		cc.setCoordinator(cc.hostID)
 		cc.comm.Broadcast(cc.sortedPeers.GetPeerIDs(), []byte{}, comm.CoordinatorSelectMsg, cc.sessionID, errChan)
 		return
 	}
 }
 
-func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
-	cc.elect(errChan)
+func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error, names map[peer.ID]string) {
+	cc.elect(errChan, names)
 	for msg := range cc.receiveChan {
-		if msg.MessageType == comm.CoordinatorElectionMsg && !cc.isPeerIDBeforeHostID(msg.From) {
+		if msg.MessageType == comm.CoordinatorElectionMsg && !cc.isPeerIDHigher(msg.From, cc.hostID) {
+			fmt.Printf("%s -> %s CHECKS IF IS ALIVE?\n", names[msg.From], names[cc.hostID])
 			cc.comm.Broadcast([]peer.ID{msg.From}, []byte{}, comm.CoordinatorAliveMsg, cc.sessionID, errChan)
-			cc.elect(errChan)
+			cc.elect(errChan, names)
 		} else if msg.MessageType == comm.CoordinatorSelectMsg {
+			fmt.Printf("%s -> %s TOLD ME THAT HE IS COORDINATOR!\n", names[msg.From], names[cc.hostID])
 			cc.setCoordinator(msg.From)
 		}
 	}
@@ -173,13 +179,13 @@ func (cc *CommunicationCoordinator) getPeers(excludedPeers peer.IDSlice) peer.ID
 	return peers
 }
 
-func (cc *CommunicationCoordinator) isPeerIDBeforeHostID(p peer.ID) bool {
+func (cc *CommunicationCoordinator) isPeerIDHigher(p1 peer.ID, p2 peer.ID) bool {
 	var i1, i2 int
 	for i := range cc.sortedPeers {
-		if p == cc.sortedPeers[i].ID {
+		if p1 == cc.sortedPeers[i].ID {
 			i1 = i
 		}
-		if cc.hostID == cc.sortedPeers[i].ID {
+		if p2 == cc.sortedPeers[i].ID {
 			i2 = i
 		}
 	}
@@ -190,7 +196,9 @@ func (cc *CommunicationCoordinator) setCoordinator(ID peer.ID) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
-	cc.coordinator = ID
+	if cc.isPeerIDHigher(ID, cc.coordinator) || ID == cc.hostID {
+		cc.coordinator = ID
+	}
 }
 
 func (cc *CommunicationCoordinator) getCoordinator() peer.ID {

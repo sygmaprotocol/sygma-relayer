@@ -6,7 +6,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/comm/static"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -26,10 +25,19 @@ type BullyTestSuite struct {
 	testBullyCoordinators []*CommunicationCoordinator
 	testProtocolID        protocol.ID
 	testSessionID         string
-	allowedPeers          peer.IDSlice
 }
 
-const numberOfTestHosts = 3
+type RelayerTestDescriber struct {
+	name         string
+	index        int
+	isActive     bool
+	initialDelay time.Duration
+}
+
+type BullyTestCase struct {
+	name         string
+	testRelayers []RelayerTestDescriber
+}
 
 func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(BullyTestSuite))
@@ -38,8 +46,19 @@ func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 func (s *BullyTestSuite) SetupSuite() {
 	s.testProtocolID = "test/protocol"
 	s.testSessionID = "1"
+}
+func (s *BullyTestSuite) TearDownSuite() {}
+func (s *BullyTestSuite) SetupTest()     {}
 
-	pirs := peer.IDSlice{}
+func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) map[peer.ID]string {
+	s.mockController = gomock.NewController(s.T())
+	s.testHosts = []host.Host{}
+	s.testCommunications = []comm.Communication{}
+	s.testBullyCoordinators = []*CommunicationCoordinator{}
+
+	numberOfTestHosts := len(c.testRelayers)
+
+	allowedPeers := peer.IDSlice{}
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
@@ -48,24 +67,10 @@ func (s *BullyTestSuite) SetupSuite() {
 			Port:  uint16(4000 + i),
 		})
 		s.testHosts = append(s.testHosts, newHost)
-		fmt.Printf("[%d] %s\n", i, newHost.ID().Pretty())
-		pirs = append(pirs, newHost.ID())
+		allowedPeers = append(allowedPeers, newHost.ID())
 	}
-
-	sortPeersForSession := common.SortPeersForSession(pirs, s.testSessionID)
-	fmt.Println("---- SORTED ----")
-	for i := range sortPeersForSession {
-		fmt.Print(sortPeersForSession[i].ID.Pretty())
-		if i == 0 {
-			fmt.Print(" L\n")
-		} else {
-			fmt.Print("\n")
-		}
-	}
-	fmt.Println("---- SORTED ----")
 
 	// populate peerstores
-	peersAdrInfos := map[int][]*peer.AddrInfo{}
 	for i := 0; i < numberOfTestHosts; i++ {
 		for j := 0; j < numberOfTestHosts; j++ {
 			if i != j {
@@ -73,126 +78,127 @@ func (s *BullyTestSuite) SetupSuite() {
 					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, s.testHosts[j].ID().Pretty(),
 				))
 				s.testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
-				peersAdrInfos[i] = append(peersAdrInfos[i], adrInfoForHost)
 			}
 		}
 	}
 
+	names := map[peer.ID]string{}
 	for i := 0; i < numberOfTestHosts; i++ {
-		allowedPeers := peer.IDSlice{}
-		for _, pInfo := range peersAdrInfos[i] {
-			allowedPeers = append(allowedPeers, pInfo.ID)
+		names[s.testHosts[i].ID()] = fmt.Sprintf("R%d", i)
+
+		if c.testRelayers[i].isActive {
+			com := p2p.NewCommunication(
+				s.testHosts[i],
+				s.testProtocolID,
+				allowedPeers,
+			)
+			s.testCommunications = append(s.testCommunications, com)
+
+			bcc := NewCommunicationCoordinatorFactory(s.testHosts[i], relayer.BullyConfig{
+				PingWaitTime:     1 * time.Second,
+				PingBackOff:      1 * time.Second,
+				PingInterval:     1 * time.Second,
+				ElectionWaitTime: 2 * time.Second,
+				BullyWaitTime:    10 * time.Second,
+			})
+
+			b := bcc.NewCommunicationCoordinator(s.testSessionID, names)
+			s.testBullyCoordinators = append(s.testBullyCoordinators, b)
 		}
-		s.allowedPeers = allowedPeers
 	}
-}
-func (s *BullyTestSuite) TearDownSuite() {}
-func (s *BullyTestSuite) SetupTest() {
-	s.mockController = gomock.NewController(s.T())
-
-	for i := 0; i < numberOfTestHosts; i++ {
-
-		com := p2p.NewCommunication(
-			s.testHosts[i],
-			s.testProtocolID,
-			s.allowedPeers,
-		)
-		s.testCommunications = append(s.testCommunications, com)
-
-		bcc := NewCommunicationCoordinatorFactory(s.testHosts[i], relayer.BullyConfig{
-			PingWaitTime:     2 * time.Second,
-			PingBackOff:      10 * time.Second,
-			PingInterval:     3 * time.Second,
-			ElectionWaitTime: 3 * time.Second,
-			BullyWaitTime:    10 * time.Second,
-		})
-		b := bcc.NewCommunicationCoordinator(s.testSessionID)
-		s.testBullyCoordinators = append(s.testBullyCoordinators, b)
-	}
+	return names
 }
 func (s *BullyTestSuite) TearDownTest() {}
 
-func (s *BullyTestSuite) TestBully_GetCoordinator_AllStartAtSameTime() {
-	time.Sleep(3 * time.Second)
-
-	resultChan := make(chan peer.ID)
-
-	cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
-	coordinator, _ := cc.GetCoordinator(s.testSessionID)
-
-	go func() {
-		c, err := s.testBullyCoordinators[0].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- c
-	}()
-
-	go func() {
-		c, err := s.testBullyCoordinators[1].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- c
-	}()
-
-	go func() {
-		c, err := s.testBullyCoordinators[2].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- c
-	}()
-
-	for i := 0; i < 3; i++ {
-		select {
-		case c := <-resultChan:
-			s.Equal(coordinator, c)
-		}
-	}
-}
-
-type Tmp struct {
-	ID    peer.ID
-	rName string
-}
-
 func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
-	time.Sleep(3 * time.Second)
 
-	resultChan := make(chan Tmp)
+	testCases := []BullyTestCase{
+		//{
+		//	name: "basic test",
+		//	testRelayers: []RelayerTestDescriber{
+		//		{
+		//			name:         "R1",
+		//			index:        0,
+		//			isActive:     true,
+		//			initialDelay: 0,
+		//		},
+		//		{
+		//			name:         "R2",
+		//			index:        1,
+		//			isActive:     true,
+		//			initialDelay: 0,
+		//		},
+		//		{
+		//			name:         "R3",
+		//			index:        2,
+		//			isActive:     true,
+		//			initialDelay: 0,
+		//		},
+		//		{
+		//			name:         "R4",
+		//			index:        3,
+		//			isActive:     true,
+		//			initialDelay: 0,
+		//		},
+		//	},
+		//},
+		{
+			name: "basic test 2",
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					isActive:     true,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					isActive:     true,
+					initialDelay: 0,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					isActive:     true,
+					initialDelay: 0,
+				},
+			},
+		},
+	}
 
-	cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
-	coordinator, _ := cc.GetCoordinator(s.testSessionID)
+	for _, t := range testCases {
+		names := s.SetupIndividualTest(t)
+		time.Sleep(3 * time.Second)
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		c, err := s.testBullyCoordinators[0].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- Tmp{
-			ID:    c,
-			rName: "R1",
-		}
-	}()
+		cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
+		coordinator, _ := cc.GetCoordinator(s.testSessionID)
 
-	go func() {
-		time.Sleep(2 * time.Second)
-		c, err := s.testBullyCoordinators[1].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- Tmp{
-			ID:    c,
-			rName: "R2",
-		}
-	}()
+		s.Run(t.name, func() {
+			resultChan := make(chan peer.ID)
 
-	go func() {
-		c, err := s.testBullyCoordinators[2].GetCoordinator(nil)
-		s.Nil(err)
-		resultChan <- Tmp{
-			ID:    c,
-			rName: "R3",
-		}
-	}()
+			for _, r := range t.testRelayers {
+				rDescriber := r
+				if rDescriber.isActive {
+					go func() {
+						if rDescriber.initialDelay > 0 {
+							time.Sleep(rDescriber.initialDelay)
+						}
+						c, err := s.testBullyCoordinators[rDescriber.index].GetCoordinator(nil, names)
+						s.Nil(err)
+						resultChan <- c
+					}()
+				}
+			}
 
-	for i := 0; i < 3; i++ {
-		select {
-		case c := <-resultChan:
-			fmt.Printf("[%s] %s\n", c.rName, c.ID.Pretty())
-			s.Equal(coordinator, c.ID)
-		}
+			for i := 0; i < len(t.testRelayers); i++ {
+				select {
+				case c := <-resultChan:
+					fmt.Printf("%s\n", names[c])
+					s.Equal(coordinator, c)
+				}
+			}
+		})
+		// s.TearDownTest()
 	}
 }

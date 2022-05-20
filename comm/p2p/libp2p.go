@@ -61,9 +61,9 @@ func (c Libp2pCommunication) Broadcast(
 		c.logger.Error().Err(err).Str("SessionID", sessionID).Msg("unable to marshal message")
 		return
 	}
-	c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
-		"broadcasting message",
-	)
+	//c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
+	//	"broadcasting message",
+	//)
 	for _, peerID := range peers {
 		if hostID == peerID {
 			continue // don't send message to itself
