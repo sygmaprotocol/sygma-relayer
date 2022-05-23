@@ -20,8 +20,9 @@ type TssProcess interface {
 }
 
 type Coordinator struct {
-	host          host.Host
-	communication communication.Communication
+	host             host.Host
+	communication    communication.Communication
+	pendingProcesses map[string]bool
 }
 
 func NewCoordinator(
@@ -29,14 +30,24 @@ func NewCoordinator(
 	communication communication.Communication,
 ) *Coordinator {
 	return &Coordinator{
-		host:          host,
-		communication: communication,
+		host:             host,
+		communication:    communication,
+		pendingProcesses: make(map[string]bool),
 	}
 }
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
 	sessionID := tssProcess.SessionID()
+	value, ok := c.pendingProcesses[sessionID]
+	if ok && value {
+		log.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
+		statusChn <- nil
+		return
+	}
+
+	c.pendingProcesses[sessionID] = true
+	defer func() { c.pendingProcesses[sessionID] = false }()
 	errChn := make(chan error)
 	defer tssProcess.Stop()
 	if c.isLeader(sessionID) {
