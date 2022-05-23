@@ -1,7 +1,6 @@
 package bully
 
 import (
-	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -37,9 +36,7 @@ func NewCommunicationCoordinatorFactory(h host.Host, config relayer.BullyConfig)
 
 // NewCommunicationCoordinator creates CommunicationCoordinator for a specific session
 // It also starts listening for session specific bully coordination messages.
-func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(
-	sessionID string, names map[peer.ID]string,
-) *CommunicationCoordinator {
+func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(sessionID string) *CommunicationCoordinator {
 	bully := &CommunicationCoordinator{
 		sessionID:    sessionID,
 		receiveChan:  make(chan *comm.WrappedMessage),
@@ -54,7 +51,7 @@ func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(
 		allPeers:     c.h.Peerstore().Peers(),
 	}
 
-	go bully.listen(names)
+	go bully.listen()
 
 	return bully
 }
@@ -76,11 +73,11 @@ type CommunicationCoordinator struct {
 }
 
 // GetCoordinator starts coordinator discovery using bully algorithm and returns current leader
-func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice, names map[peer.ID]string) (peer.ID, error) {
+func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice) (peer.ID, error) {
 	cc.sortedPeers = common.SortPeersForSession(cc.getPeers(excludedPeers), cc.sessionID)
 
 	errChan := make(chan error)
-	go cc.startBullyCoordination(errChan, names)
+	go cc.startBullyCoordination(errChan)
 
 	select {
 	case err := <-errChan:
@@ -93,7 +90,7 @@ func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice, n
 }
 
 // listen starts listening for coordinator relevant messages
-func (cc *CommunicationCoordinator) listen(names map[peer.ID]string) {
+func (cc *CommunicationCoordinator) listen() {
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorPingMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorElectionMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorAliveMsg, cc.msgChan)
@@ -110,7 +107,6 @@ func (cc *CommunicationCoordinator) listen(names map[peer.ID]string) {
 				case cc.electionChan <- msg:
 					break
 				case <-time.After(500 * time.Millisecond):
-					fmt.Printf("%s THIS IS HAPPENING!!\n", names[cc.hostID])
 					break
 				}
 				break
@@ -135,7 +131,7 @@ func (cc *CommunicationCoordinator) listen(names map[peer.ID]string) {
 	}
 }
 
-func (cc *CommunicationCoordinator) elect(errChan chan error, names map[peer.ID]string) {
+func (cc *CommunicationCoordinator) elect(errChan chan error) {
 	for _, p := range cc.sortedPeers {
 		if cc.isPeerIDHigher(p.ID, cc.hostID) {
 			cc.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, cc.sessionID, errChan)
@@ -143,26 +139,22 @@ func (cc *CommunicationCoordinator) elect(errChan chan error, names map[peer.ID]
 	}
 
 	select {
-	case msg := <-cc.electionChan:
-		fmt.Printf("%s -> %s LUCKILY HE IS ALIVE\n", names[msg.From], names[cc.hostID])
+	case <-cc.electionChan:
 		return
 	case <-time.After(cc.conf.ElectionWaitTime):
-		fmt.Printf("%s I SET MYSELF AS COORDINATOR!?\n", names[cc.hostID])
 		cc.setCoordinator(cc.hostID)
 		cc.comm.Broadcast(cc.sortedPeers.GetPeerIDs(), []byte{}, comm.CoordinatorSelectMsg, cc.sessionID, errChan)
 		return
 	}
 }
 
-func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error, names map[peer.ID]string) {
-	cc.elect(errChan, names)
+func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
+	cc.elect(errChan)
 	for msg := range cc.receiveChan {
 		if msg.MessageType == comm.CoordinatorElectionMsg && !cc.isPeerIDHigher(msg.From, cc.hostID) {
-			fmt.Printf("%s -> %s CHECKS IF IS ALIVE?\n", names[msg.From], names[cc.hostID])
 			cc.comm.Broadcast([]peer.ID{msg.From}, []byte{}, comm.CoordinatorAliveMsg, cc.sessionID, errChan)
-			cc.elect(errChan, names)
+			cc.elect(errChan)
 		} else if msg.MessageType == comm.CoordinatorSelectMsg {
-			fmt.Printf("%s -> %s TOLD ME THAT HE IS COORDINATOR!\n", names[msg.From], names[cc.hostID])
 			cc.setCoordinator(msg.From)
 		}
 	}

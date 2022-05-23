@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/comm/static"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -19,24 +19,22 @@ import (
 
 type BullyTestSuite struct {
 	suite.Suite
-	mockController        *gomock.Controller
-	testHosts             []host.Host
-	testCommunications    []comm.Communication
-	testBullyCoordinators []*CommunicationCoordinator
-	testProtocolID        protocol.ID
-	testSessionID         string
+	mockController *gomock.Controller
+	testProtocolID protocol.ID
+	testSessionID  string
+	portOffset     int
 }
 
 type RelayerTestDescriber struct {
 	name         string
 	index        int
-	isActive     bool
 	initialDelay time.Duration
 }
 
 type BullyTestCase struct {
-	name         string
-	testRelayers []RelayerTestDescriber
+	name           string
+	isLeaderActive bool
+	testRelayers   []RelayerTestDescriber
 }
 
 func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
@@ -44,17 +42,18 @@ func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 }
 
 func (s *BullyTestSuite) SetupSuite() {
-	s.testProtocolID = "test/protocol"
+	s.testProtocolID = "/chainbridge/coordinator/1.0.0"
 	s.testSessionID = "1"
+	s.portOffset = 0
 }
 func (s *BullyTestSuite) TearDownSuite() {}
 func (s *BullyTestSuite) SetupTest()     {}
 
-func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) map[peer.ID]string {
+func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CommunicationCoordinator, peer.ID, peer.ID, []host.Host, []comm.Communication) {
 	s.mockController = gomock.NewController(s.T())
-	s.testHosts = []host.Host{}
-	s.testCommunications = []comm.Communication{}
-	s.testBullyCoordinators = []*CommunicationCoordinator{}
+	var testHosts []host.Host
+	var testCommunications []comm.Communication
+	var testBullyCoordinators []*CommunicationCoordinator
 
 	numberOfTestHosts := len(c.testRelayers)
 
@@ -64,9 +63,9 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) map[peer.ID]string
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
 		newHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
 			Peers: []*peer.AddrInfo{},
-			Port:  uint16(4000 + i),
+			Port:  uint16(4000 + s.portOffset + i),
 		})
-		s.testHosts = append(s.testHosts, newHost)
+		testHosts = append(testHosts, newHost)
 		allowedPeers = append(allowedPeers, newHost.ID())
 	}
 
@@ -75,92 +74,229 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) map[peer.ID]string
 		for j := 0; j < numberOfTestHosts; j++ {
 			if i != j {
 				adrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
-					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, s.testHosts[j].ID().Pretty(),
+					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+s.portOffset+j, testHosts[j].ID().Pretty(),
 				))
-				s.testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
+				testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
 			}
 		}
 	}
 
-	names := map[peer.ID]string{}
+	sortedPeers := common.SortPeersForSession(allowedPeers, s.testSessionID)
+	initialCoordinator := sortedPeers[0].ID
+
+	var finalCoordinator peer.ID
+	if !c.isLeaderActive {
+		finalCoordinator = sortedPeers[1].ID
+	} else {
+		finalCoordinator = initialCoordinator
+	}
+
+	s.portOffset += numberOfTestHosts
+
 	for i := 0; i < numberOfTestHosts; i++ {
-		names[s.testHosts[i].ID()] = fmt.Sprintf("R%d", i)
 
-		if c.testRelayers[i].isActive {
-			com := p2p.NewCommunication(
-				s.testHosts[i],
-				s.testProtocolID,
-				allowedPeers,
-			)
-			s.testCommunications = append(s.testCommunications, com)
+		com := p2p.NewCommunication(
+			testHosts[i],
+			s.testProtocolID,
+			allowedPeers,
+		)
+		testCommunications = append(testCommunications, com)
 
-			bcc := NewCommunicationCoordinatorFactory(s.testHosts[i], relayer.BullyConfig{
+		if !c.isLeaderActive && testHosts[i].ID() == initialCoordinator {
+			testBullyCoordinators = append(testBullyCoordinators, nil)
+		} else {
+			bcc := NewCommunicationCoordinatorFactory(testHosts[i], relayer.BullyConfig{
 				PingWaitTime:     1 * time.Second,
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
 				ElectionWaitTime: 2 * time.Second,
-				BullyWaitTime:    10 * time.Second,
+				BullyWaitTime:    25 * time.Second,
 			})
 
-			b := bcc.NewCommunicationCoordinator(s.testSessionID, names)
-			s.testBullyCoordinators = append(s.testBullyCoordinators, b)
+			b := bcc.NewCommunicationCoordinator(s.testSessionID)
+			testBullyCoordinators = append(testBullyCoordinators, b)
 		}
 	}
-	return names
+
+	return testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, testCommunications
 }
 func (s *BullyTestSuite) TearDownTest() {}
 
 func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
-
 	testCases := []BullyTestCase{
-		//{
-		//	name: "basic test",
-		//	testRelayers: []RelayerTestDescriber{
-		//		{
-		//			name:         "R1",
-		//			index:        0,
-		//			isActive:     true,
-		//			initialDelay: 0,
-		//		},
-		//		{
-		//			name:         "R2",
-		//			index:        1,
-		//			isActive:     true,
-		//			initialDelay: 0,
-		//		},
-		//		{
-		//			name:         "R3",
-		//			index:        2,
-		//			isActive:     true,
-		//			initialDelay: 0,
-		//		},
-		//		{
-		//			name:         "R4",
-		//			index:        3,
-		//			isActive:     true,
-		//			initialDelay: 0,
-		//		},
-		//	},
-		//},
 		{
-			name: "basic test 2",
+			name:           "three relayers bully coordination - all relayers starting at the same time",
+			isLeaderActive: true,
 			testRelayers: []RelayerTestDescriber{
 				{
 					name:         "R1",
 					index:        0,
-					isActive:     true,
 					initialDelay: 0,
 				},
 				{
 					name:         "R2",
 					index:        1,
-					isActive:     true,
 					initialDelay: 0,
 				},
 				{
 					name:         "R3",
 					index:        2,
-					isActive:     true,
+					initialDelay: 0,
+				},
+			},
+		},
+		{
+			name:           "three relayers bully coordination - one relayer lags",
+			isLeaderActive: true,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 0,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 2 * time.Second,
+				},
+			},
+		},
+		{
+			name:           "three relayers bully coordination - two relayer lags for same amount",
+			isLeaderActive: true,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 2 * time.Second,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 2 * time.Second,
+				},
+			},
+		},
+		{
+			name:           "three relayers bully coordination - two relayer lag for different amount",
+			isLeaderActive: true,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 2 * time.Second,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 3 * time.Second,
+				},
+			},
+		},
+		{
+			name:           "five relayers bully coordination - all relayers starting at the same time",
+			isLeaderActive: true,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 0,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 0,
+				},
+				{
+					name:         "R4",
+					index:        3,
+					initialDelay: 0,
+				},
+				{
+					name:         "R5",
+					index:        4,
+					initialDelay: 0,
+				},
+			},
+		},
+		{
+			name:           "five relayers bully coordination - multiple lags on relayers",
+			isLeaderActive: true,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 1 * time.Second,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 2 * time.Second,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 3 * time.Second,
+				},
+				{
+					name:         "R4",
+					index:        3,
+					initialDelay: 2 * time.Second,
+				},
+				{
+					name:         "R5",
+					index:        4,
+					initialDelay: 0,
+				},
+			},
+		},
+		{
+			name:           "five relayers bully coordination - leader not active",
+			isLeaderActive: false,
+			testRelayers: []RelayerTestDescriber{
+				{
+					name:         "R1",
+					index:        0,
+					initialDelay: 0,
+				},
+				{
+					name:         "R2",
+					index:        1,
+					initialDelay: 0,
+				},
+				{
+					name:         "R3",
+					index:        2,
+					initialDelay: 0,
+				},
+				{
+					name:         "R4",
+					index:        3,
+					initialDelay: 0,
+				},
+				{
+					name:         "R5",
+					index:        4,
 					initialDelay: 0,
 				},
 			},
@@ -168,37 +304,36 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 	}
 
 	for _, t := range testCases {
-		names := s.SetupIndividualTest(t)
-		time.Sleep(3 * time.Second)
-
-		cc := static.NewStaticCommunicationCoordinator(s.testHosts[0])
-		coordinator, _ := cc.GetCoordinator(s.testSessionID)
+		testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, _ := s.SetupIndividualTest(t)
 
 		s.Run(t.name, func() {
 			resultChan := make(chan peer.ID)
-
 			for _, r := range t.testRelayers {
 				rDescriber := r
-				if rDescriber.isActive {
+				if !t.isLeaderActive && testHosts[rDescriber.index].ID() == initialCoordinator {
+					// in case leader is not active
+				} else {
 					go func() {
 						if rDescriber.initialDelay > 0 {
 							time.Sleep(rDescriber.initialDelay)
 						}
-						c, err := s.testBullyCoordinators[rDescriber.index].GetCoordinator(nil, names)
+						c, err := testBullyCoordinators[rDescriber.index].GetCoordinator(nil)
 						s.Nil(err)
 						resultChan <- c
 					}()
 				}
 			}
 
-			for i := 0; i < len(t.testRelayers); i++ {
+			numberOfResults := len(t.testRelayers)
+			if !t.isLeaderActive {
+				numberOfResults -= 1
+			}
+			for i := 0; i < numberOfResults; i++ {
 				select {
 				case c := <-resultChan:
-					fmt.Printf("%s\n", names[c])
-					s.Equal(coordinator, c)
+					s.Equal(finalCoordinator, c)
 				}
 			}
 		})
-		// s.TearDownTest()
 	}
 }
