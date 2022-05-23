@@ -2,7 +2,6 @@ package tss
 
 import (
 	"context"
-	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm/bully"
 	"github.com/ChainSafe/chainbridge-core/comm/static"
 	"time"
@@ -43,7 +42,6 @@ func NewCoordinator(
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
 	sessionID := tssProcess.SessionID()
-	bullyCoordinator := c.bully.NewCommunicationCoordinator(sessionID)
 	errChn := make(chan error)
 	defer tssProcess.Stop()
 	coordinator, _ := c.static.GetCoordinator(sessionID)
@@ -57,13 +55,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	if err != nil {
 		log.Err(err).Msgf("Error occurred during tss process")
 		statusChn <- err
-
-		oldCoordinator := coordinator
-		newCoordinator, err := bullyCoordinator.GetCoordinator(peer.IDSlice{oldCoordinator})
-		if err != nil {
-			return
-		}
-		fmt.Println(newCoordinator)
 		return
 	}
 
