@@ -1,0 +1,55 @@
+{
+  "containerDefinitions": [ 
+     { 
+        "essential": true,
+        "image": "852551629426.dkr.ecr.us-east-2.amazonaws.com/relayer-stage:STAGE",
+        "logConfiguration": { 
+           "logDriver": "awslogs",
+           "options": { 
+              "awslogs-group": "/ecs/relayer-STAGE",
+              "awslogs-region": "us-east-2",
+              "awslogs-stream-prefix": "ecs"
+           }
+        },
+        "command": [
+          "run --config /cfg/config_evm-evm_2.json --testkey bob --fresh"
+        ],      
+        "name": "relayer-container-STAGE",
+        "portMappings": [ 
+           { 
+              "containerPort": 9000,
+              "hostPort": 9000,
+              "protocol": "tcp"
+           },
+           { 
+            "containerPort": 80,
+            "hostPort": 80,
+            "protocol": "tcp"
+         }
+        ],
+        "environment": [
+         {
+            "name": "ENV_EXAMPLE",
+            "value": "example"
+         }
+        ],
+        "secrets": [ 
+           { 
+              "name": "SECRET_EXAMPLE",
+              "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/example"
+           }
+        ]
+     }
+  ],
+  "cpu": "256",
+  "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-ecsTaskExecutionRole",
+  "family": "relayer-container-STAGE",
+  "memory": "512",
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+       "operatingSystemFamily": "LINUX"
+   },
+  "requiresCompatibilities": [ 
+      "FARGATE" 
+   ]
+}
