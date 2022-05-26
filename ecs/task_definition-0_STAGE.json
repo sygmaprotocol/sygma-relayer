@@ -12,7 +12,7 @@
            }
         },
         "command": [
-          "run --config /cfg/config_evm-evm_2.json --testkey bob --fresh"
+          "run --config /cfg/config_evm-evm_1.json --testkey alice --fresh"
         ],      
         "name": "relayer-container-STAGE",
         "portMappings": [ 

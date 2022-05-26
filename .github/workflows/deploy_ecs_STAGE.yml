@@ -51,15 +51,23 @@ jobs:
       - name: Deploy to Amazon ECS - Relayer 1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ecs/task_definition-1_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}
+          task-definition: ecs/task_definition-0_${{ env.ENVIRONMENT }}.json
+          service: relayer-service-${{ env.ENVIRONMENT }}-0
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
       - name: Deploy to Amazon ECS - Relayer 2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
+          task-definition: ecs/task_definition-1_${{ env.ENVIRONMENT }}.json
+          service: relayer-service-${{ env.ENVIRONMENT }}-1
+          cluster: relayer-${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
+          
+      - name: Deploy to Amazon ECS - Relayer 2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
           task-definition: ecs/task_definition-2_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}
+          service: relayer-service-${{ env.ENVIRONMENT }}-2
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
