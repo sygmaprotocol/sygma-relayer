@@ -249,7 +249,7 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 	for _, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
