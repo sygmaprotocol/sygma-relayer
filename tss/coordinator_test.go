@@ -240,3 +240,35 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	s.NotNil(err)
 	cancel()
 }
+
+func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	for _, host := range s.hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication))
+		processes = append(processes, keygen)
+	}
+	setupCommunication(communicationMap)
+
+	status := make(chan error, s.partyNumber)
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], nil, nil)
+		time.Sleep(time.Millisecond * 50)
+		go coordinator.Execute(ctx, processes[i], nil, status)
+	}
+
+	for i := 0; i < s.partyNumber; i++ {
+		err := <-status
+		s.Nil(err)
+	}
+	cancel()
+}
