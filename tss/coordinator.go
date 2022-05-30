@@ -22,10 +22,10 @@ type TssProcess interface {
 }
 
 type Coordinator struct {
-	host          host.Host
-	communication comm.Communication
-	static        static.CommunicationCoordinator
-	bully         bully.CommunicationCoordinatorFactory
+	host             host.Host
+	communication    comm.Communication
+	static           static.CommunicationCoordinator
+	bully            bully.CommunicationCoordinatorFactory
 	pendingProcesses map[string]bool
 }
 
@@ -34,9 +34,9 @@ func NewCoordinator(
 	communication comm.Communication,
 ) *Coordinator {
 	return &Coordinator{
-		host:          host,
-		communication: communication,
-		static:        static.NewStaticCommunicationCoordinator(host),
+		host:             host,
+		communication:    communication,
+		static:           static.NewStaticCommunicationCoordinator(host),
 		pendingProcesses: make(map[string]bool),
 	}
 }
@@ -50,6 +50,8 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		statusChn <- nil
 		return
 	}
+
+	// c.bully.NewCommunicationCoordinator(sessionID)
 
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
