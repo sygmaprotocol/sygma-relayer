@@ -176,11 +176,11 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 				Port:  9000,
 			},
 			BullyConfig: relayer.BullyConfig{
-				PingWaitTime:     2 * time.Second,
-				PingBackOff:      10 * time.Second,
-				PingInterval:     3 * time.Second,
-				ElectionWaitTime: 3 * time.Second,
-				BullyWaitTime:    10 * time.Second,
+				PingWaitTime:     1 * time.Second,
+				PingBackOff:      1 * time.Second,
+				PingInterval:     1 * time.Second,
+				ElectionWaitTime: 2 * time.Second,
+				BullyWaitTime:    25 * time.Second,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
