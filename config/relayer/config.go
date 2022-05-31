@@ -11,6 +11,7 @@ type RelayerConfig struct {
 	OpenTelemetryCollectorURL string
 	LogLevel                  zerolog.Level
 	LogFile                   string
+	HealthPort                uint16
 	MpcConfig                 MpcRelayerConfig
 }
 
@@ -26,6 +27,7 @@ type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
 	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
 	LogFile                   string              `mapstructure:"LogFile" json:"logFile" default:"out.log"`
+	HealthPort                uint16              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 }
 
@@ -61,6 +63,7 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 
 	config.LogFile = rawConfig.LogFile
 	config.OpenTelemetryCollectorURL = rawConfig.OpenTelemetryCollectorURL
+	config.HealthPort = rawConfig.HealthPort
 
 	var peers []*peer.AddrInfo
 	for _, p := range rawConfig.MpcConfig.Peers {

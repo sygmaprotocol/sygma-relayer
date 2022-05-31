@@ -128,6 +128,7 @@ func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
 			LogLevel:                  1,
 			LogFile:                   "out.log",
 			OpenTelemetryCollectorURL: "",
+			HealthPort:                9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers: []*peer.AddrInfo{p1, p2},
 				Port:  9000,
@@ -145,8 +146,9 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
 	data := config.RawConfig{
 		RelayerConfig: relayer.RawRelayerConfig{
-			LogLevel: "debug",
-			LogFile:  "custom.log",
+			LogLevel:   "debug",
+			LogFile:    "custom.log",
+			HealthPort: 9005,
 			MpcConfig: relayer.RawMpcRelayerConfig{
 				Peers: []relayer.RawPeer{
 					{PeerAddress: p1RawAddress},
@@ -179,6 +181,7 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 			LogLevel:                  0,
 			LogFile:                   "custom.log",
 			OpenTelemetryCollectorURL: "",
+			HealthPort:                9005,
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers:        []*peer.AddrInfo{p1, p2},
 				Port:         2020,
