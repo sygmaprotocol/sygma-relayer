@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-type CommunicationCoordinatorTestSuite struct {
+type CoordinatorElectorTestSuite struct {
 	suite.Suite
 	mockController *gomock.Controller
 	testHosts      []host.Host
@@ -23,12 +23,12 @@ type CommunicationCoordinatorTestSuite struct {
 const numberOfTestHosts = 3
 
 func TestRunStaticCommunicationCoordinatorTestSuite(t *testing.T) {
-	suite.Run(t, new(CommunicationCoordinatorTestSuite))
+	suite.Run(t, new(CoordinatorElectorTestSuite))
 }
 
-func (s *CommunicationCoordinatorTestSuite) SetupSuite()    {}
-func (s *CommunicationCoordinatorTestSuite) TearDownSuite() {}
-func (s *CommunicationCoordinatorTestSuite) SetupTest() {
+func (s *CoordinatorElectorTestSuite) SetupSuite()    {}
+func (s *CoordinatorElectorTestSuite) TearDownSuite() {}
+func (s *CoordinatorElectorTestSuite) SetupTest() {
 	s.mockController = gomock.NewController(s.T())
 
 	peers := peer.IDSlice{}
@@ -60,9 +60,9 @@ func (s *CommunicationCoordinatorTestSuite) SetupTest() {
 		}
 	}
 }
-func (s *CommunicationCoordinatorTestSuite) TearDownTest() {}
+func (s *CoordinatorElectorTestSuite) TearDownTest() {}
 
-func (s *CommunicationCoordinatorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
+func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
 	staticCommunicationCoordinator := NewStaticCommunicationCoordinator(s.testHosts[0])
 
 	coordinator1, err := staticCommunicationCoordinator.Coordinator("1")

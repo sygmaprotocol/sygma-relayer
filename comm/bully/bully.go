@@ -14,29 +14,29 @@ import (
 
 const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
 
-// CommunicationCoordinatorFactory is used to create multiple instances of CommunicationCoordinator
+// CoordinatorElectorFactory is used to create multiple instances of CoordinatorElector
 // that are using same communication stream
-type CommunicationCoordinatorFactory struct {
+type CoordinatorElectorFactory struct {
 	h      host.Host
 	comm   comm.Communication
 	config relayer.BullyConfig
 }
 
-// NewCommunicationCoordinatorFactory creates new CommunicationCoordinatorFactory
-func NewCommunicationCoordinatorFactory(h host.Host, config relayer.BullyConfig) *CommunicationCoordinatorFactory {
+// NewCoordinatorElectorFactory creates new CoordinatorElectorFactory
+func NewCoordinatorElectorFactory(h host.Host, config relayer.BullyConfig) *CoordinatorElectorFactory {
 	communication := p2p.NewCommunication(h, ProtocolID, h.Peerstore().Peers())
 
-	return &CommunicationCoordinatorFactory{
+	return &CoordinatorElectorFactory{
 		h:      h,
 		comm:   communication,
 		config: config,
 	}
 }
 
-// NewCommunicationCoordinator creates CommunicationCoordinator for a specific session
+// NewCoordinatorElector creates CoordinatorElector for a specific session
 // It also starts listening for session specific bully coordination messages.
-func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(sessionID string) *CommunicationCoordinator {
-	bully := &CommunicationCoordinator{
+func (c *CoordinatorElectorFactory) NewCoordinatorElector(sessionID string) *CoordinatorElector {
+	bully := &CoordinatorElector{
 		sessionID:    sessionID,
 		receiveChan:  make(chan *comm.WrappedMessage),
 		electionChan: make(chan *comm.WrappedMessage, 1),
@@ -54,8 +54,8 @@ func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(sessionID 
 	return bully
 }
 
-// CommunicationCoordinator is used to execute bully coordinator discovery
-type CommunicationCoordinator struct {
+// CoordinatorElector is used to execute bully coordinator discovery
+type CoordinatorElector struct {
 	sessionID    string
 	receiveChan  chan *comm.WrappedMessage
 	electionChan chan *comm.WrappedMessage
@@ -71,7 +71,7 @@ type CommunicationCoordinator struct {
 
 // Coordinator starts coordinator discovery using bully algorithm and returns current leader
 // Bully coordination is executed on provided peers
-func (cc *CommunicationCoordinator) Coordinator(peers peer.IDSlice) (peer.ID, error) {
+func (cc *CoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, error) {
 	cc.sortedPeers = common.SortPeersForSession(peers, cc.sessionID)
 
 	errChan := make(chan error)
@@ -88,7 +88,7 @@ func (cc *CommunicationCoordinator) Coordinator(peers peer.IDSlice) (peer.ID, er
 }
 
 // listen starts listening for coordinator relevant messages
-func (cc *CommunicationCoordinator) listen() {
+func (cc *CoordinatorElector) listen() {
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorPingMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorElectionMsg, cc.msgChan)
 	cc.comm.Subscribe(cc.sessionID, comm.CoordinatorAliveMsg, cc.msgChan)
@@ -130,7 +130,7 @@ func (cc *CommunicationCoordinator) listen() {
 	}
 }
 
-func (cc *CommunicationCoordinator) elect(errChan chan error) {
+func (cc *CoordinatorElector) elect(errChan chan error) {
 	for _, p := range cc.sortedPeers {
 		if cc.isPeerIDHigher(p.ID, cc.hostID) {
 			cc.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, cc.sessionID, errChan)
@@ -147,7 +147,7 @@ func (cc *CommunicationCoordinator) elect(errChan chan error) {
 	}
 }
 
-func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
+func (cc *CoordinatorElector) startBullyCoordination(errChan chan error) {
 	cc.elect(errChan)
 	for msg := range cc.receiveChan {
 		if msg.MessageType == comm.CoordinatorElectionMsg && !cc.isPeerIDHigher(msg.From, cc.hostID) {
@@ -159,7 +159,7 @@ func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
 	}
 }
 
-func (cc *CommunicationCoordinator) isPeerIDHigher(p1 peer.ID, p2 peer.ID) bool {
+func (cc *CoordinatorElector) isPeerIDHigher(p1 peer.ID, p2 peer.ID) bool {
 	var i1, i2 int
 	for i := range cc.sortedPeers {
 		if p1 == cc.sortedPeers[i].ID {
@@ -172,7 +172,7 @@ func (cc *CommunicationCoordinator) isPeerIDHigher(p1 peer.ID, p2 peer.ID) bool 
 	return i1 < i2
 }
 
-func (cc *CommunicationCoordinator) setCoordinator(ID peer.ID) {
+func (cc *CoordinatorElector) setCoordinator(ID peer.ID) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 
@@ -181,6 +181,6 @@ func (cc *CommunicationCoordinator) setCoordinator(ID peer.ID) {
 	}
 }
 
-func (cc *CommunicationCoordinator) getCoordinator() peer.ID {
+func (cc *CoordinatorElector) getCoordinator() peer.ID {
 	return cc.coordinator
 }

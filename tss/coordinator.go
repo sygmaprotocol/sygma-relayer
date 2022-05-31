@@ -24,8 +24,8 @@ type TssProcess interface {
 type Coordinator struct {
 	host             host.Host
 	communication    comm.Communication
-	static           static.CommunicationCoordinator
-	bully            bully.CommunicationCoordinatorFactory
+	static           static.CoordinatorElector
+	bully            bully.CoordinatorElectorFactory
 	pendingProcesses map[string]bool
 }
 

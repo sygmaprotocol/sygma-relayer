@@ -6,15 +6,15 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
-type CommunicationCoordinator struct {
+type CoordinatorElector struct {
 	host host.Host
 }
 
-func NewStaticCommunicationCoordinator(h host.Host) CommunicationCoordinator {
-	return CommunicationCoordinator{host: h}
+func NewStaticCommunicationCoordinator(h host.Host) CoordinatorElector {
+	return CoordinatorElector{host: h}
 }
 
-func (s *CommunicationCoordinator) Coordinator(sessionID string) (peer.ID, error) {
+func (s *CoordinatorElector) Coordinator(sessionID string) (peer.ID, error) {
 	peers := s.host.Peerstore().Peers()
 	return common.SortPeersForSession(peers, sessionID)[0].ID, nil
 }
