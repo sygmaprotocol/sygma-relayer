@@ -102,6 +102,7 @@ func (cc *CommunicationCoordinator) listen() {
 			switch msg.MessageType {
 			case comm.CoordinatorAliveMsg:
 				select {
+				// waits for confirmation that elector is alive
 				case cc.electionChan <- msg:
 					break
 				case <-time.After(500 * time.Millisecond):

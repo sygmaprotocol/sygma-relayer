@@ -53,11 +53,11 @@ type RawPeer struct {
 }
 
 type RawBullyConfig struct {
-	PingWaitTime     string `mapstructure:"PingWaitTime" json:"pingWaitTime" default:"2s"`
-	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff" default:"10s"`
-	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval" default:"3s"`
-	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime" default:"3s"`
-	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime" default:"10s"`
+	PingWaitTime     string `mapstructure:"PingWaitTime" json:"pingWaitTime" default:"1s"`
+	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff" default:"1s"`
+	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval" default:"1s"`
+	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime" default:"2s"`
+	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime" default:"25s"`
 }
 
 func (c *RawRelayerConfig) Validate() error {
