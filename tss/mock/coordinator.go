@@ -12,41 +12,6 @@ import (
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )
 
-// MockBully is a mock of Bully interface.
-type MockBully struct {
-	ctrl     *gomock.Controller
-	recorder *MockBullyMockRecorder
-}
-
-// MockBullyMockRecorder is the mock recorder for MockBully.
-type MockBullyMockRecorder struct {
-	mock *MockBully
-}
-
-// NewMockBully creates a new mock instance.
-func NewMockBully(ctrl *gomock.Controller) *MockBully {
-	mock := &MockBully{ctrl: ctrl}
-	mock.recorder = &MockBullyMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockBully) EXPECT() *MockBullyMockRecorder {
-	return m.recorder
-}
-
-// Coordinator mocks base method.
-func (m *MockBully) Coordinator(excludedPeers peer.IDSlice, coordinatorChan chan peer.ID, errChan chan error) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Coordinator", excludedPeers, coordinatorChan, errChan)
-}
-
-// Coordinator indicates an expected call of Coordinator.
-func (mr *MockBullyMockRecorder) Coordinator(excludedPeers, coordinatorChan, errChan interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Coordinator", reflect.TypeOf((*MockBully)(nil).Coordinator), excludedPeers, coordinatorChan, errChan)
-}
-
 // MockTssProcess is a mock of TssProcess interface.
 type MockTssProcess struct {
 	ctrl     *gomock.Controller
