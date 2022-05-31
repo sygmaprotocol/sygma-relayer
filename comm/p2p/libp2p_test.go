@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/ChainSafe/chainbridge-core/communication"
-	mock_host "github.com/ChainSafe/chainbridge-core/communication/p2p/mock/host"
-	mock_network "github.com/ChainSafe/chainbridge-core/communication/p2p/mock/stream"
+	"github.com/ChainSafe/chainbridge-core/comm"
+	mock_host "github.com/ChainSafe/chainbridge-core/comm/p2p/mock/host"
+	mock_network "github.com/ChainSafe/chainbridge-core/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -49,8 +49,8 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 		allowedPeers:               s.allowedPeers,
 	}
 
-	testWrappedMsg := communication.WrappedMessage{
-		MessageType: communication.CoordinatorPingMsg,
+	testWrappedMsg := comm.WrappedMessage{
+		MessageType: comm.CoordinatorPingMsg,
 		SessionID:   "1",
 		Payload:     nil,
 	}
@@ -151,8 +151,8 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 		allowedPeers:               s.allowedPeers,
 	}
 
-	testWrappedMsg := communication.WrappedMessage{
-		MessageType: communication.CoordinatorPingMsg,
+	testWrappedMsg := comm.WrappedMessage{
+		MessageType: comm.CoordinatorPingMsg,
 		SessionID:   "1",
 		Payload:     nil,
 	}
@@ -183,11 +183,11 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 	})
 	gomock.InOrder(firstCall, secondCall)
 
-	testSubChannelFirst := make(chan *communication.WrappedMessage)
-	c.Subscribe("1", communication.CoordinatorPingMsg, testSubChannelFirst)
+	testSubChannelFirst := make(chan *comm.WrappedMessage)
+	c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelFirst)
 
-	testSubChannelSecond := make(chan *communication.WrappedMessage)
-	c.Subscribe("1", communication.CoordinatorPingMsg, testSubChannelSecond)
+	testSubChannelSecond := make(chan *comm.WrappedMessage)
+	c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelSecond)
 
 	go c.streamHandlerFunc(mockStream)
 
