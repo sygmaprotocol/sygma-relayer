@@ -65,12 +65,12 @@ func (s *CommunicationCoordinatorTestSuite) TearDownTest() {}
 func (s *CommunicationCoordinatorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
 	staticCommunicationCoordinator := NewStaticCommunicationCoordinator(s.testHosts[0])
 
-	coordinator1, err := staticCommunicationCoordinator.GetCoordinator("1")
+	coordinator1, err := staticCommunicationCoordinator.Coordinator("1")
 	s.Nil(err)
 	s.NotNil(coordinator1)
 	s.Contains(s.testPeers, coordinator1)
 
-	coordinator2, err := staticCommunicationCoordinator.GetCoordinator("2")
+	coordinator2, err := staticCommunicationCoordinator.Coordinator("2")
 	s.Nil(err)
 	s.NotNil(coordinator2)
 	s.Contains(s.testPeers, coordinator2)

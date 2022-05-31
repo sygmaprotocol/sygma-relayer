@@ -55,7 +55,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	errChn := make(chan error)
 	defer tssProcess.Stop()
-	coordinator, _ := c.static.GetCoordinator(sessionID)
+	coordinator, _ := c.static.Coordinator(sessionID)
 	if c.host.ID() == coordinator {
 		go c.initiate(ctx, tssProcess, resultChn, errChn)
 	} else {

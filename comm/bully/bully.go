@@ -69,9 +69,9 @@ type CommunicationCoordinator struct {
 	sortedPeers  common.SortablePeerSlice
 }
 
-// GetCoordinator starts coordinator discovery using bully algorithm and returns current leader
+// Coordinator starts coordinator discovery using bully algorithm and returns current leader
 // Bully coordination is executed on provided peers
-func (cc *CommunicationCoordinator) GetCoordinator(peers peer.IDSlice) (peer.ID, error) {
+func (cc *CommunicationCoordinator) Coordinator(peers peer.IDSlice) (peer.ID, error) {
 	cc.sortedPeers = common.SortPeersForSession(peers, cc.sessionID)
 
 	errChan := make(chan error)

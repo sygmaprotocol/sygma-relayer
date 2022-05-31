@@ -49,7 +49,7 @@ func (s *BullyTestSuite) SetupSuite() {
 func (s *BullyTestSuite) TearDownSuite() {}
 func (s *BullyTestSuite) SetupTest()     {}
 
-func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CommunicationCoordinator, peer.ID, peer.ID, []host.Host, []comm.Communication) {
+func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CommunicationCoordinator, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
 	s.mockController = gomock.NewController(s.T())
 	var testHosts []host.Host
 	var testCommunications []comm.Communication
@@ -118,7 +118,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CommunicationC
 		}
 	}
 
-	return testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, testCommunications
+	return testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, allowedPeers
 }
 func (s *BullyTestSuite) TearDownTest() {}
 
@@ -304,7 +304,7 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 	}
 
 	for _, t := range testCases {
-		testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, _ := s.SetupIndividualTest(t)
+		testBullyCoordinators, initialCoordinator, finalCoordinator, testHosts, allowedPeers := s.SetupIndividualTest(t)
 
 		s.Run(t.name, func() {
 			resultChan := make(chan peer.ID)
@@ -317,7 +317,7 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 						if rDescriber.initialDelay > 0 {
 							time.Sleep(rDescriber.initialDelay)
 						}
-						c, err := testBullyCoordinators[rDescriber.index].GetCoordinator(nil)
+						c, err := testBullyCoordinators[rDescriber.index].Coordinator(allowedPeers)
 						s.Nil(err)
 						resultChan <- c
 					}()
