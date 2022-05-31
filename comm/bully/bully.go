@@ -8,7 +8,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"golang.org/x/exp/slices"
 	"sync"
 	"time"
 )
@@ -48,7 +47,6 @@ func (c *CommunicationCoordinatorFactory) NewCommunicationCoordinator(sessionID 
 		hostID:       c.h.ID(),
 		mu:           &sync.RWMutex{},
 		coordinator:  c.h.ID(),
-		allPeers:     c.h.Peerstore().Peers(),
 	}
 
 	go bully.listen()
@@ -69,12 +67,12 @@ type CommunicationCoordinator struct {
 	mu           *sync.RWMutex
 	coordinator  peer.ID
 	sortedPeers  common.SortablePeerSlice
-	allPeers     peer.IDSlice
 }
 
 // GetCoordinator starts coordinator discovery using bully algorithm and returns current leader
-func (cc *CommunicationCoordinator) GetCoordinator(excludedPeers peer.IDSlice) (peer.ID, error) {
-	cc.sortedPeers = common.SortPeersForSession(cc.getPeers(excludedPeers), cc.sessionID)
+// Bully coordination is executed on provided peers
+func (cc *CommunicationCoordinator) GetCoordinator(peers peer.IDSlice) (peer.ID, error) {
+	cc.sortedPeers = common.SortPeersForSession(peers, cc.sessionID)
 
 	errChan := make(chan error)
 	go cc.startBullyCoordination(errChan)
@@ -158,17 +156,6 @@ func (cc *CommunicationCoordinator) startBullyCoordination(errChan chan error) {
 			cc.setCoordinator(msg.From)
 		}
 	}
-}
-
-// getPeers returns all peers that are not excluded
-func (cc *CommunicationCoordinator) getPeers(excludedPeers peer.IDSlice) peer.IDSlice {
-	peers := peer.IDSlice{}
-	for _, p := range cc.allPeers {
-		if !slices.Contains(excludedPeers, p) {
-			peers = append(peers, p)
-		}
-	}
-	return peers
 }
 
 func (cc *CommunicationCoordinator) isPeerIDHigher(p1 peer.ID, p2 peer.ID) bool {

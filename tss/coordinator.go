@@ -51,8 +51,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		return
 	}
 
-	// c.bully.NewCommunicationCoordinator(sessionID)
-
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	errChn := make(chan error)
