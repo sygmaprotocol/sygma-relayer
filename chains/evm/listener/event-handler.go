@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
@@ -68,7 +68,7 @@ type KeygenEventHandler struct {
 	eventListener EventListener
 	coordinator   *tss.Coordinator
 	host          host.Host
-	communication communication.Communication
+	communication comm.Communication
 	storer        keygen.SaveDataStorer
 	bridgeAddress common.Address
 	threshold     int
@@ -78,7 +78,7 @@ func NewKeygenEventHandler(
 	eventListener EventListener,
 	coordinator *tss.Coordinator,
 	host host.Host,
-	communication communication.Communication,
+	communication comm.Communication,
 	storer keygen.SaveDataStorer,
 	bridgeAddress common.Address,
 	threshold int,

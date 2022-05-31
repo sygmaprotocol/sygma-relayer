@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/communication"
+	comm "github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

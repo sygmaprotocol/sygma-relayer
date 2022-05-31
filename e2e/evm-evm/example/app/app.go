@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -19,7 +21,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/communication/p2p"
+	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
@@ -41,6 +43,11 @@ func Run() error {
 		panic(err)
 	}
 
+	var allowedPeers peer.IDSlice
+	for _, pAdrInfo := range configuration.RelayerConfig.MpcConfig.Peers {
+		allowedPeers = append(allowedPeers, pAdrInfo.ID)
+	}
+
 	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 	if err != nil {
 		panic(err)
@@ -59,7 +66,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	comm := p2p.NewCommunication(host, "p2p/chainbridge", configuration.RelayerConfig)
+	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
 	coordinator := tss.NewCoordinator(host, comm, nil)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
