@@ -2,8 +2,8 @@ package tss
 
 import (
 	"context"
-	"github.com/ChainSafe/chainbridge-core/comm/bully"
-	"github.com/ChainSafe/chainbridge-core/comm/static"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/comm"
@@ -24,19 +24,19 @@ type TssProcess interface {
 type Coordinator struct {
 	host             host.Host
 	communication    comm.Communication
-	static           static.CoordinatorElector
-	bully            bully.CoordinatorElectorFactory
+	electorFactory   *elector.CoordinatorElectorFactory
 	pendingProcesses map[string]bool
 }
 
 func NewCoordinator(
 	host host.Host,
 	communication comm.Communication,
+	config relayer.BullyConfig,
 ) *Coordinator {
 	return &Coordinator{
 		host:             host,
 		communication:    communication,
-		static:           static.NewStaticCommunicationCoordinator(host),
+		electorFactory:   elector.NewCoordinatorElectorFactory(host, config),
 		pendingProcesses: make(map[string]bool),
 	}
 }
@@ -55,7 +55,8 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	errChn := make(chan error)
 	defer tssProcess.Stop()
-	coordinator, _ := c.static.Coordinator(sessionID)
+	coordinatorElector := c.electorFactory.NewCoordinatorElector(sessionID, elector.Static)
+	coordinator, _ := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
 	if c.host.ID() == coordinator {
 		go c.initiate(ctx, tssProcess, resultChn, errChn)
 	} else {

@@ -105,15 +105,14 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CoordinatorEle
 		if !c.isLeaderActive && testHosts[i].ID() == initialCoordinator {
 			testBullyCoordinators = append(testBullyCoordinators, nil)
 		} else {
-			bcc := NewCoordinatorElectorFactory(testHosts[i], relayer.BullyConfig{
+
+			b := NewCoordinatorElector(s.testSessionID, testHosts[i], relayer.BullyConfig{
 				PingWaitTime:     1 * time.Second,
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    25 * time.Second,
-			})
-
-			b := bcc.NewCoordinatorElector(s.testSessionID)
+			}, com)
 			testBullyCoordinators = append(testBullyCoordinators, b)
 		}
 	}

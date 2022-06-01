@@ -2,57 +2,13 @@ package bully
 
 import (
 	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
 	"sync"
 	"time"
 )
-
-const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
-
-// CoordinatorElectorFactory is used to create multiple instances of CoordinatorElector
-// that are using same communication stream
-type CoordinatorElectorFactory struct {
-	h      host.Host
-	comm   comm.Communication
-	config relayer.BullyConfig
-}
-
-// NewCoordinatorElectorFactory creates new CoordinatorElectorFactory
-func NewCoordinatorElectorFactory(h host.Host, config relayer.BullyConfig) *CoordinatorElectorFactory {
-	communication := p2p.NewCommunication(h, ProtocolID, h.Peerstore().Peers())
-
-	return &CoordinatorElectorFactory{
-		h:      h,
-		comm:   communication,
-		config: config,
-	}
-}
-
-// NewCoordinatorElector creates CoordinatorElector for a specific session
-// It also starts listening for session specific bully coordination messages.
-func (c *CoordinatorElectorFactory) NewCoordinatorElector(sessionID string) *CoordinatorElector {
-	bully := &CoordinatorElector{
-		sessionID:    sessionID,
-		receiveChan:  make(chan *comm.WrappedMessage),
-		electionChan: make(chan *comm.WrappedMessage, 1),
-		msgChan:      make(chan *comm.WrappedMessage),
-		pingChan:     make(chan *comm.WrappedMessage),
-		comm:         p2p.NewCommunication(c.h, ProtocolID, c.h.Peerstore().Peers()),
-		conf:         c.config,
-		hostID:       c.h.ID(),
-		mu:           &sync.RWMutex{},
-		coordinator:  c.h.ID(),
-	}
-
-	go bully.listen()
-
-	return bully
-}
 
 // CoordinatorElector is used to execute bully coordinator discovery
 type CoordinatorElector struct {
@@ -67,6 +23,27 @@ type CoordinatorElector struct {
 	mu           *sync.RWMutex
 	coordinator  peer.ID
 	sortedPeers  common.SortablePeerSlice
+}
+
+func NewCoordinatorElector(
+	sessionID string, host host.Host, config relayer.BullyConfig, communication comm.Communication,
+) *CoordinatorElector {
+	bully := &CoordinatorElector{
+		sessionID:    sessionID,
+		receiveChan:  make(chan *comm.WrappedMessage),
+		electionChan: make(chan *comm.WrappedMessage, 1),
+		msgChan:      make(chan *comm.WrappedMessage),
+		pingChan:     make(chan *comm.WrappedMessage),
+		comm:         communication,
+		conf:         config,
+		hostID:       host.ID(),
+		mu:           &sync.RWMutex{},
+		coordinator:  host.ID(),
+	}
+
+	go bully.listen()
+
+	return bully
 }
 
 // Coordinator starts coordinator discovery using bully algorithm and returns current leader

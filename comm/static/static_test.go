@@ -63,7 +63,7 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 func (s *CoordinatorElectorTestSuite) TearDownTest() {}
 
 func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
-	staticCommunicationCoordinator := NewStaticCommunicationCoordinator(s.testHosts[0])
+	staticCommunicationCoordinator := NewCoordinatorElector(s.testHosts[0])
 
 	coordinator1, err := staticCommunicationCoordinator.Coordinator("1")
 	s.Nil(err)
