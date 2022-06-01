@@ -33,9 +33,6 @@ genmocks:
 	mockgen -source=chains/evm/calls/transactor/transact.go -destination=chains/evm/calls/transactor/mock/transact.go
 	mockgen -destination=./chains/evm/calls/transactor/itx/mock/itx.go -source=./chains/evm/calls/transactor/itx/itx.go
 	mockgen -destination=./chains/evm/calls/transactor/itx//mock/minimalForwarder.go -source=./chains/evm/calls/transactor/itx/minimalForwarder.go
-	mockgen -destination=./communication/p2p/mock/stream/stream.go github.com/libp2p/go-libp2p-core/network Stream
-	mockgen -destination=./communication/p2p/mock/host/host.go github.com/libp2p/go-libp2p-core/host Host
-	mockgen -destination=./communication/p2p/mock/conn/conn.go github.com/libp2p/go-libp2p-core/network Conn
 	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
 	mockgen -destination=./tss/common/mock/communication.go -source=./tss/common/base.go -package mock_tss
 	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go

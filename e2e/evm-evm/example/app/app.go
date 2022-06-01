@@ -21,6 +21,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
@@ -67,7 +68,8 @@ func Run() error {
 		panic(err)
 	}
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
-	coordinator := tss.NewCoordinator(host, comm, nil)
+	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
+	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}

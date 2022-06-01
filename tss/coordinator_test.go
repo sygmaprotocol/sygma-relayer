@@ -11,6 +11,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 
 	"github.com/ChainSafe/chainbridge-core/comm"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
 	mock_comm "github.com/ChainSafe/chainbridge-core/comm/mock"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss"
@@ -74,6 +75,7 @@ type CoordinatorTestSuite struct {
 	hosts       []host.Host
 	threshold   int
 	partyNumber int
+	bullyConfig relayer.BullyConfig
 }
 
 func TestRunCoordinatorTestSuite(t *testing.T) {
@@ -100,6 +102,13 @@ func (s *CoordinatorTestSuite) SetupSuite() {
 		}
 	}
 	s.hosts = hosts
+	s.bullyConfig = relayer.BullyConfig{
+		PingWaitTime:     1 * time.Second,
+		PingBackOff:      1 * time.Second,
+		PingInterval:     1 * time.Second,
+		ElectionWaitTime: 2 * time.Second,
+		BullyWaitTime:    25 * time.Second,
+	}
 }
 
 func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
@@ -114,13 +123,8 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
-			PingWaitTime:     1 * time.Second,
-			PingBackOff:      1 * time.Second,
-			PingInterval:     1 * time.Second,
-			ElectionWaitTime: 2 * time.Second,
-			BullyWaitTime:    25 * time.Second,
-		}))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -153,13 +157,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
-			PingWaitTime:     1 * time.Second,
-			PingBackOff:      1 * time.Second,
-			PingInterval:     1 * time.Second,
-			ElectionWaitTime: 2 * time.Second,
-			BullyWaitTime:    25 * time.Second,
-		}))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -200,13 +199,8 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
-			PingWaitTime:     1 * time.Second,
-			PingBackOff:      1 * time.Second,
-			PingInterval:     1 * time.Second,
-			ElectionWaitTime: 2 * time.Second,
-			BullyWaitTime:    25 * time.Second,
-		}))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -246,13 +240,8 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		signing.Timeout = time.Millisecond * 200
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
-			PingWaitTime:     1 * time.Second,
-			PingBackOff:      1 * time.Second,
-			PingInterval:     1 * time.Second,
-			ElectionWaitTime: 2 * time.Second,
-			BullyWaitTime:    25 * time.Second,
-		}))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -273,95 +262,6 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	cancel()
 }
 
-/*
-func (s *CoordinatorTestSuite) Test_CoordinatorOffline_RetryProcessWithBully() {
-	s.mockTssProcess.EXPECT().SessionID().Return("sessionID").AnyTimes()
-	s.mockTssProcess.EXPECT().Stop().Return().AnyTimes()
-	s.mockCommunication.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Return(comm.NewSubscriptionID("sessionID", comm.TssReadyMsg)).AnyTimes()
-	s.mockCommunication.EXPECT().UnSubscribe(gomock.Any()).Return().AnyTimes()
-	s.mockCommunication.EXPECT().Broadcast(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), nil).Return().AnyTimes()
-	nil.EXPECT().Coordinator(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(excludedPeers peer.IDSlice, coordinatorChan chan peer.ID, errChan chan error) {
-		go func() {
-			for {
-				coordinatorChan <- peer.ID("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX")
-				break
-			}
-		}()
-	}).Times(2)
-
-	coordinators := []*tss.Coordinator{}
-	for _, host := range s.hosts {
-		coordinator := tss.NewCoordinator(host, s.mockCommunication, nil)
-		coordinator.CoordinatorTimeout = time.Millisecond * 30
-		coordinators = append(coordinators, coordinator)
-	}
-
-	statusChn := make(chan error, s.partyNumber)
-	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, s.mockTssProcess, resultChn, statusChn)
-	}
-
-	err := <-statusChn
-	s.NotNil(err)
-	err = <-statusChn
-	s.NotNil(err)
-	cancel()
-}
-
-func (s *CoordinatorTestSuite) Test_TssError_RetryProcessWithBully() {
-	s.mockTssProcess.EXPECT().SessionID().Return("sessionID").AnyTimes()
-	s.mockTssProcess.EXPECT().Stop().Return().AnyTimes()
-	s.mockTssProcess.EXPECT().Ready(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes()
-	s.mockTssProcess.EXPECT().StartParams(gomock.Any()).Return([]string{}).AnyTimes()
-
-	nil.EXPECT().Coordinator(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(excludedPeers peer.IDSlice, coordinatorChan chan peer.ID, errChan chan error) {
-		go func() {
-			for {
-				coordinatorChan <- s.hosts[0].ID()
-				break
-			}
-		}()
-	}).AnyTimes()
-	s.mockTssProcess.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, resultChn chan interface{}, errChn chan error, params []string) {
-		go func() {
-			for {
-				errChn <- tssLib.NewError(errors.New("error"), "signing", 1, common.CreatePartyID("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"), common.CreatePartyID("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"))
-				break
-			}
-		}()
-	}).AnyTimes()
-
-	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
-	coordinators := []*tss.Coordinator{}
-	for _, host := range s.hosts {
-		communication := tsstest.TestCommunication{
-			Host:          host,
-			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
-		}
-		communicationMap[host.ID()] = &communication
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
-	}
-	setupCommunication(communicationMap)
-
-	statusChn := make(chan error, s.partyNumber)
-	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
-	for _, coordinator := range coordinators {
-		go coordinator.Execute(ctx, s.mockTssProcess, resultChn, statusChn)
-	}
-
-	err := <-statusChn
-	s.NotNil(err)
-	err = <-statusChn
-	s.NotNil(err)
-	err = <-statusChn
-	s.NotNil(err)
-	cancel()
-}
-*/
-
 func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
@@ -373,13 +273,8 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
-			PingWaitTime:     1 * time.Second,
-			PingBackOff:      1 * time.Second,
-			PingInterval:     1 * time.Second,
-			ElectionWaitTime: 2 * time.Second,
-			BullyWaitTime:    25 * time.Second,
-		}))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
