@@ -66,7 +66,7 @@ func Run() error {
 		panic(err)
 	}
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
-	coordinator := tss.NewCoordinator(host, comm)
+	coordinator := tss.NewCoordinator(host, comm, configuration.RelayerConfig.BullyConfig)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
