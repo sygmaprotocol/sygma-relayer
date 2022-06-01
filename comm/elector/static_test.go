@@ -1,4 +1,4 @@
-package static
+package elector
 
 import (
 	"fmt"
@@ -63,15 +63,10 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 func (s *CoordinatorElectorTestSuite) TearDownTest() {}
 
 func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
-	staticCommunicationCoordinator := NewCoordinatorElector(s.testHosts[0])
+	staticCommunicationCoordinator := NewCoordinatorElector("1")
 
-	coordinator1, err := staticCommunicationCoordinator.Coordinator("1")
+	coordinator1, err := staticCommunicationCoordinator.Coordinator(s.testPeers)
 	s.Nil(err)
 	s.NotNil(coordinator1)
 	s.Contains(s.testPeers, coordinator1)
-
-	coordinator2, err := staticCommunicationCoordinator.Coordinator("2")
-	s.Nil(err)
-	s.NotNil(coordinator2)
-	s.Contains(s.testPeers, coordinator2)
 }

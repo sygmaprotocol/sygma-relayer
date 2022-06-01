@@ -2,9 +2,7 @@ package elector
 
 import (
 	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/comm/bully"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/comm/static"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -50,9 +48,9 @@ func (c *CoordinatorElectorFactory) NewCoordinatorElector(
 ) CoordinatorElector {
 	switch electorType {
 	case Static:
-		return static.NewCoordinatorElector(sessionID)
+		return NewCoordinatorElector(sessionID)
 	case Bully:
-		return bully.NewCoordinatorElector(sessionID, c.h, c.config, c.comm)
+		return NewBullyCoordinatorElector(sessionID, c.h, c.config, c.comm)
 	default:
 		return nil
 	}

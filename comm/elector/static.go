@@ -1,18 +1,18 @@
-package static
+package elector
 
 import (
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
-type CoordinatorElector struct {
+type staticCoordinatorElector struct {
 	sessionID string
 }
 
 func NewCoordinatorElector(sessionID string) CoordinatorElector {
-	return CoordinatorElector{sessionID: sessionID}
+	return &staticCoordinatorElector{sessionID: sessionID}
 }
 
-func (s CoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, error) {
+func (s *staticCoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, error) {
 	return common.SortPeersForSession(peers, s.sessionID)[0].ID, nil
 }
