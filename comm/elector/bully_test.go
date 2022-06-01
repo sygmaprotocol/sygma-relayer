@@ -1,4 +1,4 @@
-package bully
+package elector
 
 import (
 	"fmt"
@@ -49,11 +49,11 @@ func (s *BullyTestSuite) SetupSuite() {
 func (s *BullyTestSuite) TearDownSuite() {}
 func (s *BullyTestSuite) SetupTest()     {}
 
-func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CoordinatorElector, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
+func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElector, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
 	s.mockController = gomock.NewController(s.T())
 	var testHosts []host.Host
 	var testCommunications []comm.Communication
-	var testBullyCoordinators []*CoordinatorElector
+	var testBullyCoordinators []CoordinatorElector
 
 	numberOfTestHosts := len(c.testRelayers)
 
@@ -105,15 +105,14 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]*CoordinatorEle
 		if !c.isLeaderActive && testHosts[i].ID() == initialCoordinator {
 			testBullyCoordinators = append(testBullyCoordinators, nil)
 		} else {
-			bcc := NewCoordinatorElectorFactory(testHosts[i], relayer.BullyConfig{
+
+			b := NewBullyCoordinatorElector(s.testSessionID, testHosts[i], relayer.BullyConfig{
 				PingWaitTime:     1 * time.Second,
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    25 * time.Second,
-			})
-
-			b := bcc.NewCoordinatorElector(s.testSessionID)
+			}, com)
 			testBullyCoordinators = append(testBullyCoordinators, b)
 		}
 	}

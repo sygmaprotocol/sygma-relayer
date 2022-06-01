@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
+
 	"github.com/ChainSafe/chainbridge-core/comm"
 	mock_comm "github.com/ChainSafe/chainbridge-core/comm/mock"
 	"github.com/ChainSafe/chainbridge-core/store"
@@ -112,7 +114,13 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
+			PingWaitTime:     1 * time.Second,
+			PingBackOff:      1 * time.Second,
+			PingInterval:     1 * time.Second,
+			ElectionWaitTime: 2 * time.Second,
+			BullyWaitTime:    25 * time.Second,
+		}))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -145,7 +153,13 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
+			PingWaitTime:     1 * time.Second,
+			PingBackOff:      1 * time.Second,
+			PingInterval:     1 * time.Second,
+			ElectionWaitTime: 2 * time.Second,
+			BullyWaitTime:    25 * time.Second,
+		}))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -186,7 +200,13 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		if err != nil {
 			panic(err)
 		}
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
+			PingWaitTime:     1 * time.Second,
+			PingBackOff:      1 * time.Second,
+			PingInterval:     1 * time.Second,
+			ElectionWaitTime: 2 * time.Second,
+			BullyWaitTime:    25 * time.Second,
+		}))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -226,7 +246,13 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		signing.Timeout = time.Millisecond * 200
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
+			PingWaitTime:     1 * time.Second,
+			PingBackOff:      1 * time.Second,
+			PingInterval:     1 * time.Second,
+			ElectionWaitTime: 2 * time.Second,
+			BullyWaitTime:    25 * time.Second,
+		}))
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -347,7 +373,13 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, nil))
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, relayer.BullyConfig{
+			PingWaitTime:     1 * time.Second,
+			PingBackOff:      1 * time.Second,
+			PingInterval:     1 * time.Second,
+			ElectionWaitTime: 2 * time.Second,
+			BullyWaitTime:    25 * time.Second,
+		}))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)

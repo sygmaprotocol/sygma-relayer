@@ -4,8 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm/bully"
-	"github.com/ChainSafe/chainbridge-core/comm/static"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
 
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
@@ -32,8 +31,7 @@ type TssProcess interface {
 type Coordinator struct {
 	host             host.Host
 	communication    comm.Communication
-	static           static.CoordinatorElector
-	bully            *bully.CoordinatorElectorFactory
+	electorFactory   *elector.CoordinatorElectorFactory
 	pendingProcesses map[string]bool
 
 	CoordinatorTimeout time.Duration
@@ -42,13 +40,12 @@ type Coordinator struct {
 func NewCoordinator(
 	host host.Host,
 	communication comm.Communication,
-	bully *bully.CoordinatorElectorFactory,
+	electorFactory elector.CoordinatorElectorFactory,
 ) *Coordinator {
 	return &Coordinator{
 		host:               host,
 		communication:      communication,
-		static:             static.NewStaticCommunicationCoordinator(host),
-		bully:              bully,
+		electorFactory:     &electorFactory,
 		pendingProcesses:   make(map[string]bool),
 		CoordinatorTimeout: coordinatorTimeout,
 	}
@@ -67,8 +64,14 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	errChn := make(chan error)
-	coordinator := c.getCoordinator(tssProcess.SessionID())
-	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
+	defer tssProcess.Stop()
+	coordinatorElector := c.electorFactory.NewCoordinatorElector(sessionID, elector.Static)
+	coordinator, _ := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
+	if c.host.ID() == coordinator {
+		go c.initiate(ctx, tssProcess, resultChn, errChn)
+	} else {
+		go c.waitForStart(ctx, tssProcess, resultChn, errChn)
+	}
 
 	retried := false
 	defer tssProcess.Stop()
