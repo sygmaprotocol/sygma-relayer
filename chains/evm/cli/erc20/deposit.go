@@ -7,15 +7,14 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
-	"github.com/ChainSafe/chainbridge-core/util"
-	"math/big"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/chainbridge-core/util"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"math/big"
 )
 
 var depositCmd = &cobra.Command{
@@ -70,7 +69,7 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price(required when fee handler with oracle is deployed)")
 	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate(required when fee handler with oracle is deployed)")
 	cmd.Flags().StringVar(&TokenRate, "ter", "", "Token rate(required when fee handler with oracle is deployed)")
-	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp(required when fee handler with oracle is deployed)")
+	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is deployed)")
 	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "to-domain", "resource", "erc20-token-decimals")
 }

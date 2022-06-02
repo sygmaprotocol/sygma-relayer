@@ -61,7 +61,7 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals(required when fee handler with oracle is deployed)")
 	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price(required when fee handler with oracle is deployed)")
 	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate(required when fee handler with oracle is deployed)")
-	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp(required when fee handler with oracle is deployed)")
+	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is deployed)")
 	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "to-domain", "resource", "token")
 }
