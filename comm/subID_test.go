@@ -1,4 +1,4 @@
-package communication
+package comm
 
 import (
 	"github.com/stretchr/testify/suite"

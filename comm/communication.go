@@ -1,4 +1,4 @@
-package communication
+package comm
 
 import (
 	"github.com/libp2p/go-libp2p-core/peer"

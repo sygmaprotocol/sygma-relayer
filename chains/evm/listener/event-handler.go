@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
@@ -68,7 +68,7 @@ type KeygenEventHandler struct {
 	eventListener EventListener
 	coordinator   *tss.Coordinator
 	host          host.Host
-	communication communication.Communication
+	communication comm.Communication
 	storer        keygen.SaveDataStorer
 	bridgeAddress common.Address
 	threshold     int
@@ -78,7 +78,7 @@ func NewKeygenEventHandler(
 	eventListener EventListener,
 	coordinator *tss.Coordinator,
 	host host.Host,
-	communication communication.Communication,
+	communication comm.Communication,
 	storer keygen.SaveDataStorer,
 	bridgeAddress common.Address,
 	threshold int,
@@ -103,10 +103,14 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 		return nil
 	}
 
-	keygen := keygen.NewKeygen(block.String(), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
+}
+
+func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
+	return fmt.Sprintf("keygen-%s", block.String())
 }
 
 type RefreshEventHandler struct {
