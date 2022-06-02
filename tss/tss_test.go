@@ -299,7 +299,9 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
 
-	for i, host := range s.hosts {
+	var hosts []host.Host
+	copy(hosts, s.hosts)
+	for i, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
@@ -339,17 +341,18 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
 
-	newHost, err := newHost(s.partyNumber)
-	if err != nil {
-		panic(err)
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber+1; i++ {
+		host, _ := newHost(i)
+		hosts = append(hosts, host)
 	}
-	oldAndNewHosts := append(s.hosts, newHost)
-	for _, host := range oldAndNewHosts {
-		host.Peerstore().AddAddr(newHost.ID(), newHost.Addrs()[0], peerstore.PermanentAddrTTL)
-		newHost.Peerstore().AddAddr(host.ID(), host.Addrs()[0], peerstore.PermanentAddrTTL)
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
 	}
 
-	for i, host := range oldAndNewHosts {
+	for i, host := range hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
@@ -375,7 +378,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
 	}
 
-	err = <-statusChn
+	err := <-statusChn
 	s.Nil(err)
 	err = <-statusChn
 	s.Nil(err)
