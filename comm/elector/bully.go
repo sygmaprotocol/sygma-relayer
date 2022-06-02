@@ -1,13 +1,14 @@
 package elector
 
 import (
+	"sync"
+	"time"
+
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"sync"
-	"time"
 )
 
 // bullyCoordinatorElector is used to execute bully coordinator discovery
@@ -73,36 +74,27 @@ func (bc *bullyCoordinatorElector) listen() {
 	bc.comm.Subscribe(bc.sessionID, comm.CoordinatorSelectMsg, bc.msgChan)
 	bc.comm.Subscribe(bc.sessionID, comm.CoordinatorLeaveMsg, bc.msgChan)
 
-	for {
-		select {
-		case msg := <-bc.msgChan:
-			switch msg.MessageType {
-			case comm.CoordinatorAliveMsg:
-				select {
-				// waits for confirmation that elector is alive
-				case bc.electionChan <- msg:
-					break
-				case <-time.After(500 * time.Millisecond):
-					break
-				}
+	for msg := range bc.msgChan {
+		switch msg.MessageType {
+		case comm.CoordinatorAliveMsg:
+			select {
+			// waits for confirmation that elector is alive
+			case bc.electionChan <- msg:
 				break
-			case comm.CoordinatorSelectMsg:
-				bc.receiveChan <- msg
-				break
-			case comm.CoordinatorElectionMsg:
-				bc.receiveChan <- msg
-				break
-			case comm.CoordinatorPingResponseMsg:
-				bc.pingChan <- msg
-				break
-			case comm.CoordinatorPingMsg:
-				bc.comm.Broadcast(
-					[]peer.ID{msg.From}, nil, comm.CoordinatorPingResponseMsg, bc.sessionID, nil,
-				)
-				break
-			default:
+			case <-time.After(500 * time.Millisecond):
 				break
 			}
+		case comm.CoordinatorSelectMsg:
+			bc.receiveChan <- msg
+		case comm.CoordinatorElectionMsg:
+			bc.receiveChan <- msg
+		case comm.CoordinatorPingResponseMsg:
+			bc.pingChan <- msg
+		case comm.CoordinatorPingMsg:
+			bc.comm.Broadcast(
+				[]peer.ID{msg.From}, nil, comm.CoordinatorPingResponseMsg, bc.sessionID, nil,
+			)
+		default:
 		}
 	}
 }

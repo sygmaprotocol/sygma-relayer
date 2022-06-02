@@ -14,5 +14,9 @@ func NewCoordinatorElector(sessionID string) CoordinatorElector {
 }
 
 func (s *staticCoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, error) {
+	sortedPeers := common.SortPeersForSession(peers, s.sessionID)
+	if len(sortedPeers) == 0 {
+		return peer.ID(""), nil
+	}
 	return common.SortPeersForSession(peers, s.sessionID)[0].ID, nil
 }
