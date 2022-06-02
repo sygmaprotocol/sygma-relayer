@@ -156,3 +156,23 @@ func (s *PartiesFromPeersTestSuite) Test_ValidPeers() {
 
 	s.Equal(sortedParties, tss.SortedPartyIDs{party2, party1})
 }
+
+type ExcludedPeersTestSuite struct {
+	suite.Suite
+}
+
+func TestRunExcludedPeersTestSuite(t *testing.T) {
+	suite.Run(t, new(PartiesFromPeersTestSuite))
+}
+
+func (s *PartiesFromPeersTestSuite) Test_ExcludePeers_Excluded() {
+	peerID1, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
+	peerID2, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
+	peerID3, _ := peer.Decode("QmYayosTHxL2xa4jyrQ2PmbhGbrkSxsGM1kzXLTT8SsLVy")
+	peers := []peer.ID{peerID1, peerID2, peerID3}
+	excludedPeers := []peer.ID{peerID3, peerID2}
+
+	includedPeers := common.ExcludePeers(peers, excludedPeers)
+
+	s.Equal(includedPeers, peer.IDSlice{peerID1})
+}
