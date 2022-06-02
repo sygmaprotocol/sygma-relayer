@@ -48,7 +48,7 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENVIRONMENT }} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENVIRONMENT }}
 
-      - name: Deploy to Amazon ECS - Relayer 1
+      - name: Deploy to Amazon ECS - Relayer 0
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-0_${{ env.ENVIRONMENT }}.json
@@ -56,7 +56,7 @@ jobs:
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
-      - name: Deploy to Amazon ECS - Relayer 2
+      - name: Deploy to Amazon ECS - Relayer 1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-1_${{ env.ENVIRONMENT }}.json
@@ -64,10 +64,26 @@ jobs:
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
           
-      - name: Deploy to Amazon ECS - Relayer 2
+      - name: Deploy to Amazon ECS - Relayer 3
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-2_${{ env.ENVIRONMENT }}.json
           service: relayer-service-${{ env.ENVIRONMENT }}-2
+          cluster: relayer-${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
+
+      - name: Deploy to Amazon ECS - Relayer 3
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ecs/task_definition-2_${{ env.ENVIRONMENT }}.json
+          service: relayer-service-${{ env.ENVIRONMENT }}-3
+          cluster: relayer-${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
+
+      - name: Deploy to Amazon ECS - Relayer 4
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ecs/task_definition-2_${{ env.ENVIRONMENT }}.json
+          service: relayer-service-${{ env.ENVIRONMENT }}-4
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
