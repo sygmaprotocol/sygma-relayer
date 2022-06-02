@@ -83,7 +83,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					statusChn <- nil
 					return
 				}
-				log.Err(err).Msgf("Tss process failed with error: %v", err)
+				log.Err(err).Msgf("Tss process failed")
 
 				if retried {
 					statusChn <- err
