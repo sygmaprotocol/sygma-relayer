@@ -608,19 +608,20 @@ Usage:
 
 Flags:
       --amount string                     Amount to deposit
-      --ber string                        Base rate(required when fee handler with oracle is deployed)
+      --ber string                        Base rate(required when fee handler with oracle is in use)
       --bridge string                     Address of bridge contract
-      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is deployed)
-      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is deployed)
+      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is in use)
+      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
       --erc20-token-decimals uint         ERC20 token decimals
-      --expire-timestamp int              Rate expire timestamp(required when fee handler with oracle is deployed)
-      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)
-      --from-domain uint8                 Source domain ID(required when fee handler with oracle is deployed)
+      --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
+      --fee-handler-with-oracle           Indicator if fee with oracle is in use
+      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
+      --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
   -h, --help                              help for deposit
       --priority string                   Transaction priority speed (default "none")
       --recipient string                  Address of recipient
       --resource string                   Resource ID for transfer
-      --ter string                        Token rate(required when fee handler with oracle is deployed)
+      --ter string                        Token rate(required when fee handler with oracle is in use)
       --to-domain uint8                   Destination domain ID
 ```
 
@@ -691,13 +692,14 @@ Usage:
    evm-cli erc721 deposit [flags]
 
 Flags:
-      --ber string                        Base rate(required when fee handler with oracle is deployed)
+      --ber string                        Base rate(required when fee handler with oracle is in use)
       --bridge string                     Bridge contract address
-      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is deployed)
-      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is deployed)
-      --expire-timestamp int              Rate expire timestamp(required when fee handler with oracle is deployed)
-      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is deployed)
-      --from-domain uint8                 Source domain ID(required when fee handler with oracle is deployed)
+      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is in use)
+      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
+      --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
+      --fee-handler-with-oracle           Indicator if fee handler with oracle is in use
+      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
+      --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
   -h, --help                              help for deposit
       --metadata string                   ERC721 token metadata
       --priority string                   Transaction priority speed (default: medium) (default "none")
@@ -780,7 +782,7 @@ Flags:
       --fee-handler string           Fee handler contract address
       --fee-handler-with-oracle      Using Fee handler with oracle. Default is basic fee handler
   -h, --help                         help for distribute-fee
-      --resource-id string           ResourceID to be used when making deposits
+      --resource string              ResourceID to be used when making deposits
 ```
 
 #### `set-fee-oracle`

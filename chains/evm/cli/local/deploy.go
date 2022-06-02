@@ -62,9 +62,7 @@ func PrepareLocalEVME2EEnv(
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
-	bridgeContractAddress, err := bridgeContract.DeployContract(
-		domainID, threshold, big.NewInt(100),
-	)
+	bridgeContractAddress, err := bridgeContract.DeployContract(domainID)
 	if err != nil {
 		return EVME2EConfig{}, err
 	}

@@ -109,7 +109,8 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	amountToDeposit := big.NewInt(1000000)
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
-		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{
+		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
+		nil, true, transactor.TransactOptions{
 			Priority: uint8(2), // fast
 		})
 
@@ -174,7 +175,8 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
 		tokenId, metadata, dstAddr, s.erc721RID,
-		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{},
+		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
+		nil, true, transactor.TransactOptions{},
 	)
 	s.Nil(err)
 

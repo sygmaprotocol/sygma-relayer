@@ -162,7 +162,7 @@ func (f *FeeHandlerTestSuite) TestValidateDistributeFeeValidFlagsFeeHandlerWithF
 	f.Nil(err)
 	err = cmd.Flag("fee-handler-with-oracle").Value.Set("true")
 	f.Nil(err)
-	err = cmd.Flag("resource-id").Value.Set(validAddr)
+	err = cmd.Flag("resource").Value.Set(validAddr)
 	f.Nil(err)
 	err = cmd.Flag("decimals").Value.Set("18")
 	f.Nil(err)

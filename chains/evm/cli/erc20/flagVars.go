@@ -31,6 +31,7 @@ var (
 	TokenRate               string
 	ExpirationTimestamp     int64
 	FeeOracleSignature      string
+	FeeHandlerWithOracle    bool
 )
 
 //processed flag vars

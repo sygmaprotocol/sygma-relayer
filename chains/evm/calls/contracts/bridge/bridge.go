@@ -116,6 +116,7 @@ func (c *BridgeContract) Erc20Deposit(
 	fromDomainID, destDomainID uint8,
 	tokenDecimal, baseCurrencyDecimal int64,
 	feeOracleSignature []byte,
+	feeHandlerWithOracle bool,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -139,11 +140,15 @@ func (c *BridgeContract) Erc20Deposit(
 		data = deposit.ConstructErc20DepositDataWithPriority(recipient.Bytes(), amount, opts.Priority)
 	}
 
-	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
+	var feeData []byte
+	if feeHandlerWithOracle {
+		var err error
+		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
+		if err != nil {
+			log.Error().Err(err)
+			return nil, err
+		}
 	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
@@ -165,6 +170,7 @@ func (c *BridgeContract) Erc721Deposit(
 	fromDomainID, destDomainID uint8,
 	tokenDecimal, baseCurrencyDecimal int64,
 	feeOracleSignature []byte,
+	feeHandlerWithOracle bool,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -188,11 +194,15 @@ func (c *BridgeContract) Erc721Deposit(
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
 
-	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
+	var feeData []byte
+	if feeHandlerWithOracle {
+		var err error
+		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+		if err != nil {
+			log.Error().Err(err)
+			return nil, err
+		}
 	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)

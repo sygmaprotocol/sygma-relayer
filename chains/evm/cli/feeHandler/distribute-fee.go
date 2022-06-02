@@ -52,8 +52,7 @@ var distributeFeeCmd = &cobra.Command{
 func BindDistributeFeeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
 	cmd.Flags().StringSliceVar(&DistributionArray, "distribution-array", []string{}, "Array of fee distribution, follow the format of \"--distribution-array address,amount,...\" where address,amount must be paired")
-
-	cmd.Flags().StringVar(&ResourceID, "resource-id", "", "ResourceID to be used when making deposits")
+	cmd.Flags().StringVar(&ResourceID, "resource", "", "ResourceID to be used when making deposits")
 	cmd.Flags().Uint64Var(&Decimals, "decimals", 0, "Resource token decimals")
 	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Using Fee handler with oracle. Default is basic fee handler")
 	flags.MarkFlagsAsRequired(cmd, "fee-handler", "distribution-array")
@@ -75,7 +74,7 @@ func ValidateDistributeFeeFlags(cmd *cobra.Command, args []string) error {
 	decimals := big.NewInt(18)
 	if FeeHandlerWithOracle {
 		if len(ResourceID) == 0 || Decimals == 0 {
-			return fmt.Errorf("invalid resource-id or resource token decimals: %s, %d. Must provide valid resource-id with decimals if providing fee-handler-with-oracle flag", ResourceID, Decimals)
+			return fmt.Errorf("invalid resource or resource token decimals: %s, %d. Must provide valid resource with decimals if providing fee-handler-with-oracle flag", ResourceID, Decimals)
 		}
 		decimals = big.NewInt(int64(Decimals))
 	}

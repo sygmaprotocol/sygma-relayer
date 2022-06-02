@@ -4,13 +4,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
-	"math/big"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/generic"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
@@ -191,12 +189,7 @@ func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPr
 		case "bridge":
 			log.Debug().Msgf("deploying bridge..")
 			bc := bridge.NewBridgeContract(ethClient, common.Address{}, t)
-			BridgeAddr, err = bc.DeployContract(
-				DomainId,
-				RelayerAddresses,
-				big.NewInt(0).SetUint64(RelayerThreshold),
-				big.NewInt(TwoDaysTermInBlocks), // _expiry is set to 48 hours by default
-			)
+			BridgeAddr, err = bc.DeployContract(DomainId)
 			if err != nil {
 				log.Error().Err(fmt.Errorf("bridge deploy failed: %w", err))
 				return err
