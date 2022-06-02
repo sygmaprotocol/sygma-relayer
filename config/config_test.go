@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
@@ -37,6 +38,18 @@ func (s *GetConfigTestSuite) Test_MissingChainType() {
 		ChainConfigs: []map[string]interface{}{{
 			"name": "chain1",
 		}},
+		RelayerConfig: relayer.RawRelayerConfig{
+			OpenTelemetryCollectorURL: "",
+			LogLevel:                  "",
+			LogFile:                   "",
+			MpcConfig:                 relayer.RawMpcRelayerConfig{},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "1s",
+				PingBackOff:      "1s",
+				PingInterval:     "1s",
+				ElectionWaitTime: "1s",
+			},
+		},
 	}
 	file, _ := json.Marshal(data)
 	_ = ioutil.WriteFile("test.json", file, 0644)
@@ -92,21 +105,49 @@ func (s *GetConfigTestSuite) Test_InvalidPeerAddress() {
 	s.Equal(err.Error(), "invalid peer address /ip4/127.0.0.1/tcp/4000: invalid p2p multiaddr")
 }
 
-func (s *GetConfigTestSuite) Test_ValidConfig() {
-	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
-	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
+func (s *GetConfigTestSuite) Test_InvalidBullyConfig() {
 	data := config.RawConfig{
 		RelayerConfig: relayer.RawRelayerConfig{
 			LogLevel: "info",
 			MpcConfig: relayer.RawMpcRelayerConfig{
 				Peers: []relayer.RawPeer{
+					{PeerAddress: "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"},
+				},
+				Port: 2020,
+			},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "2z",
+				PingBackOff:      "",
+				PingInterval:     "",
+				ElectionWaitTime: "",
+			},
+		},
+		ChainConfigs: []map[string]interface{}{{
+			"name": "chain1",
+		}},
+	}
+	file, _ := json.Marshal(data)
+	_ = ioutil.WriteFile("test.json", file, 0644)
+
+	_, err := config.GetConfig("test.json")
+
+	_ = os.Remove("test.json")
+	s.NotNil(err)
+}
+
+func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
+	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
+	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
+	data := config.RawConfig{
+		RelayerConfig: relayer.RawRelayerConfig{
+			// LogLevel: use default value,
+			// LogFile: use default value
+			MpcConfig: relayer.RawMpcRelayerConfig{
+				Peers: []relayer.RawPeer{
 					{PeerAddress: p1RawAddress},
 					{PeerAddress: p2RawAddress},
 				},
-				Port:         2020,
-				KeysharePath: "./share.key",
-				KeystorePath: "./key.pk",
-				Threshold:    5,
+				// Port: use default value,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{{
@@ -128,7 +169,72 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 	s.Equal(actualConfig, config.Config{
 		RelayerConfig: relayer.RelayerConfig{
 			LogLevel:                  1,
-			LogFile:                   "",
+			LogFile:                   "out.log",
+			OpenTelemetryCollectorURL: "",
+			MpcConfig: relayer.MpcRelayerConfig{
+				Peers: []*peer.AddrInfo{p1, p2},
+				Port:  9000,
+			},
+			BullyConfig: relayer.BullyConfig{
+				PingWaitTime:     1 * time.Second,
+				PingBackOff:      1 * time.Second,
+				PingInterval:     1 * time.Second,
+				ElectionWaitTime: 2 * time.Second,
+				BullyWaitTime:    25 * time.Second,
+			},
+		},
+		ChainConfigs: []map[string]interface{}{{
+			"type": "evm",
+			"name": "evm1",
+		}},
+	})
+}
+
+func (s *GetConfigTestSuite) Test_ValidConfig() {
+	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
+	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
+	data := config.RawConfig{
+		RelayerConfig: relayer.RawRelayerConfig{
+			LogLevel: "debug",
+			LogFile:  "custom.log",
+			MpcConfig: relayer.RawMpcRelayerConfig{
+				Peers: []relayer.RawPeer{
+					{PeerAddress: p1RawAddress},
+					{PeerAddress: p2RawAddress},
+				},
+				Port:         2020,
+				KeysharePath: "./share.key",
+				KeystorePath: "./key.pk",
+				Threshold:    5,
+			},
+			BullyConfig: relayer.RawBullyConfig{
+				PingWaitTime:     "1s",
+				PingBackOff:      "1s",
+				PingInterval:     "1s",
+				ElectionWaitTime: "1s",
+				BullyWaitTime:    "1s",
+			},
+		},
+		ChainConfigs: []map[string]interface{}{{
+			"type": "evm",
+			"name": "evm1",
+		}},
+	}
+	file, _ := json.Marshal(data)
+	_ = ioutil.WriteFile("test.json", file, 0644)
+
+	actualConfig, err := config.GetConfig("test.json")
+
+	_ = os.Remove("test.json")
+
+	p1, _ := peer.AddrInfoFromString(p1RawAddress)
+	p2, _ := peer.AddrInfoFromString(p2RawAddress)
+
+	s.Nil(err)
+	s.Equal(actualConfig, config.Config{
+		RelayerConfig: relayer.RelayerConfig{
+			LogLevel:                  0,
+			LogFile:                   "custom.log",
 			OpenTelemetryCollectorURL: "",
 			MpcConfig: relayer.MpcRelayerConfig{
 				Peers:        []*peer.AddrInfo{p1, p2},
@@ -137,11 +243,17 @@ func (s *GetConfigTestSuite) Test_ValidConfig() {
 				KeystorePath: "./key.pk",
 				Threshold:    5,
 			},
+			BullyConfig: relayer.BullyConfig{
+				PingWaitTime:     time.Second,
+				PingBackOff:      time.Second,
+				PingInterval:     time.Second,
+				ElectionWaitTime: time.Second,
+				BullyWaitTime:    time.Second,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{{
 			"type": "evm",
 			"name": "evm1",
 		}},
 	})
-
 }

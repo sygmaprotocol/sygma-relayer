@@ -11,7 +11,6 @@ import (
 func CreatePartyID(peerID string) *tss.PartyID {
 	key := big.NewInt(0).SetBytes([]byte(peerID))
 	return tss.NewPartyID(peerID, peerID, key)
-
 }
 
 func IsParticipant(party *tss.PartyID, parties tss.SortedPartyIDs) bool {

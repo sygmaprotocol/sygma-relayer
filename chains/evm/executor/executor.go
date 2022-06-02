@@ -11,7 +11,7 @@ import (
 
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	"github.com/ethereum/go-ethereum/common"
@@ -40,7 +40,7 @@ type BridgeContract interface {
 type Executor struct {
 	coordinator *tss.Coordinator
 	host        host.Host
-	comm        communication.Communication
+	comm        comm.Communication
 	fetcher     signing.SaveDataFetcher
 	bridge      BridgeContract
 	mh          MessageHandler
@@ -48,7 +48,7 @@ type Executor struct {
 
 func NewExecutor(
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	coordinator *tss.Coordinator,
 	mh MessageHandler,
 	bridgeContract BridgeContract,

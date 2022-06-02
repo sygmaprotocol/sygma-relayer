@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	comm "github.com/ChainSafe/chainbridge-core/communication"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	comm "github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -24,13 +23,8 @@ type Libp2pCommunication struct {
 	allowedPeers  peer.IDSlice
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID, config relayer.RelayerConfig) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
-
-	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range config.MpcConfig.Peers {
-		allowedPeers = append(allowedPeers, pAdrInfo.ID)
-	}
 
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),

@@ -190,7 +190,7 @@ func (c *BridgeContract) ExecuteProposal(
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature, revertOnFail,
+		proposal.Source, proposal.Destination, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature, revertOnFail,
 	)
 }
 
@@ -201,6 +201,9 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 	resourceType, _ := abi.NewType("bytes32", "bytes32", nil)
 
 	arguments := abi.Arguments{
+		{
+			Type: domainType,
+		},
 		{
 			Type: domainType,
 		},
@@ -217,6 +220,7 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 
 	bytes, err := arguments.Pack(
 		proposal.Source,
+		proposal.Destination,
 		proposal.DepositNonce,
 		proposal.Data,
 		proposal.ResourceId,

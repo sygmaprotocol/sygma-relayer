@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
+
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -18,10 +20,6 @@ var (
 	coordinatorTimeout = 15 * time.Minute
 )
 
-type Bully interface {
-	Coordinator(excludedPeers peer.IDSlice, coordinatorChan chan peer.ID, errChan chan error)
-}
-
 type TssProcess interface {
 	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []byte)
 	Stop()
@@ -32,31 +30,44 @@ type TssProcess interface {
 }
 
 type Coordinator struct {
-	host          host.Host
-	communication communication.Communication
-	bully         Bully
+	host             host.Host
+	communication    comm.Communication
+	electorFactory   *elector.CoordinatorElectorFactory
+	pendingProcesses map[string]bool
 
 	CoordinatorTimeout time.Duration
 }
 
 func NewCoordinator(
 	host host.Host,
-	communication communication.Communication,
-	bully Bully,
+	communication comm.Communication,
+	electorFactory *elector.CoordinatorElectorFactory,
 ) *Coordinator {
 	return &Coordinator{
 		host:               host,
-		bully:              bully,
 		communication:      communication,
+		electorFactory:     electorFactory,
+		pendingProcesses:   make(map[string]bool),
 		CoordinatorTimeout: coordinatorTimeout,
 	}
 }
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
+	sessionID := tssProcess.SessionID()
+	value, ok := c.pendingProcesses[sessionID]
+	if ok && value {
+		log.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
+		statusChn <- nil
+		return
+	}
+
+	c.pendingProcesses[sessionID] = true
+	defer func() { c.pendingProcesses[sessionID] = false }()
+	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
+	coordinator, _ := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
 	errChn := make(chan error)
-	coordinator := c.getCoordinator(tssProcess)
-	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
+	c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
 	retried := false
 	defer tssProcess.Stop()
@@ -73,8 +84,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					statusChn <- nil
 					return
 				}
-
-				log.Err(err).Msgf("Tss process failed with error: %v", err)
+				log.Err(err).Msgf("Tss process failed")
 
 				if retried {
 					statusChn <- err
@@ -116,34 +126,27 @@ func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordina
 	if coordinator.Pretty() == c.host.ID().Pretty() {
 		c.initiate(ctx, tssProcess, resultChn, errChn, excludedPeers)
 	} else {
-		c.waitForStart(ctx, tssProcess, resultChn, errChn)
+		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator)
 	}
 }
 
 // retry initiates full bully process to calculate coordinator and starts a new tss process after
 // an expected error ocurred during regular tss execution
 func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
-	coordinatorChn := make(chan peer.ID)
-	c.bully.Coordinator([]peer.ID{c.getCoordinator(tssProcess)}, coordinatorChn, errChn)
-	coordinator := <-coordinatorChn
-	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
-}
-
-// getLeader returns the static leader for current session
-func (c *Coordinator) getCoordinator(tssProcess TssProcess) peer.ID {
-	validCoordinators := tssProcess.ValidCoordinators()
-	if len(validCoordinators) == 0 {
-		return peer.ID("")
+	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcess.SessionID(), elector.Bully)
+	coordinator, err := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
+	if err != nil {
+		errChn <- err
+		return
 	}
-
-	return common.SortPeersForSession(validCoordinators, tssProcess.SessionID())[0].ID
+	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
 	go c.communication.Broadcast(
-		c.host.Peerstore().Peers(), []byte{}, communication.TssInitiateMsg, sessionID, nil,
+		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID, nil,
 	)
 }
 
@@ -151,11 +154,11 @@ func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
-	readyChan := make(chan *communication.WrappedMessage)
+	readyChan := make(chan *comm.WrappedMessage)
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
 
-	subID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssReadyMsg, readyChan)
+	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
 	ticker := time.NewTicker(initiatePeriod)
@@ -185,7 +188,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 					return
 				}
 
-				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, communication.TssStartMsg, tssProcess.SessionID(), nil)
+				go c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID(), nil)
 				go tssProcess.Start(ctx, true, resultChn, errChn, startParams)
 				return
 			}
@@ -203,13 +206,19 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 
 // waitForStart responds to initiate messages and starts the tss process
 // when it receives the start message.
-func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error) {
-	msgChan := make(chan *communication.WrappedMessage)
-	startMsgChn := make(chan *communication.WrappedMessage)
+func (c *Coordinator) waitForStart(
+	ctx context.Context,
+	tssProcess TssProcess,
+	resultChn chan interface{},
+	errChn chan error,
+	coordinator peer.ID,
+) {
+	msgChan := make(chan *comm.WrappedMessage)
+	startMsgChn := make(chan *comm.WrappedMessage)
 
-	initSubID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssInitiateMsg, msgChan)
+	initSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssInitiateMsg, msgChan)
 	defer c.communication.UnSubscribe(initSubID)
-	startSubID := c.communication.Subscribe(tssProcess.SessionID(), communication.TssStartMsg, startMsgChn)
+	startSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
 	coordinatorTimeoutTicker := time.NewTicker(c.CoordinatorTimeout)
@@ -222,7 +231,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
 				go c.communication.Broadcast(
-					peer.IDSlice{wMsg.From}, []byte{}, communication.TssReadyMsg, tssProcess.SessionID(), nil,
+					peer.IDSlice{wMsg.From}, []byte{}, comm.TssReadyMsg, tssProcess.SessionID(), nil,
 				)
 			}
 		case startMsg := <-startMsgChn:
@@ -239,7 +248,7 @@ func (c *Coordinator) waitForStart(ctx context.Context, tssProcess TssProcess, r
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{
-				errChn <- &CoordinatorError{Coordinator: c.getCoordinator(tssProcess)}
+				errChn <- &CoordinatorError{Coordinator: coordinator}
 				return
 			}
 		case <-ctx.Done():
