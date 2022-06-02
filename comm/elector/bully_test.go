@@ -1,6 +1,7 @@
 package elector
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -93,6 +94,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElec
 	s.portOffset += numberOfTestHosts
 
 	for i := 0; i < numberOfTestHosts; i++ {
+
 		com := p2p.NewCommunication(
 			testHosts[i],
 			s.testProtocolID,
@@ -313,7 +315,7 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 						if rDescriber.initialDelay > 0 {
 							time.Sleep(rDescriber.initialDelay)
 						}
-						c, err := testBullyCoordinators[rDescriber.index].Coordinator(allowedPeers)
+						c, err := testBullyCoordinators[rDescriber.index].Coordinator(context.Background(), allowedPeers)
 						s.Nil(err)
 						resultChan <- c
 					}()
@@ -327,6 +329,7 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 			for i := 0; i < numberOfResults; i++ {
 				c := <-resultChan
 				s.Equal(finalCoordinator, c)
+
 			}
 		})
 	}
