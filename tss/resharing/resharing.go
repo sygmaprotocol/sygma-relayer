@@ -134,10 +134,6 @@ func (r *Resharing) Stop() {
 
 // Ready returns true if all parties from peerstore are ready
 func (r *Resharing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
-	log.Info().Msgf("%+v \n", readyMap)
-	log.Info().Msgf("%+v \n", r.Host.Peerstore().Peers())
-	log.Info().Msgf("%d \n", len(r.Host.Peerstore().Peers()))
-	log.Info().Msgf("%d \n", len(readyMap))
 	return len(readyMap) == len(r.Host.Peerstore().Peers()), nil
 }
 
