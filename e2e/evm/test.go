@@ -208,7 +208,7 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
-		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, transactor.TransactOptions{
+		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, false, transactor.TransactOptions{
 			Priority: uint8(0), // slow
 		})
 	if err != nil {

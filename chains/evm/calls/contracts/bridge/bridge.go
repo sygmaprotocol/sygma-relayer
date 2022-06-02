@@ -132,6 +132,7 @@ func (c *BridgeContract) Erc20Deposit(
 		Int64("tokenDecimal", tokenDecimal).
 		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
 		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
+		Bool("feeHandlerWithOracle", feeHandlerWithOracle).
 		Msgf("ERC20 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -186,6 +187,7 @@ func (c *BridgeContract) Erc721Deposit(
 		Int64("tokenDecimal", tokenDecimal).
 		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
 		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
+		Bool("feeHandlerWithOracle", feeHandlerWithOracle).
 		Msgf("ERC721 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -222,6 +224,7 @@ func (c *BridgeContract) GenericDeposit(
 	fromDomainID, destDomainID uint8,
 	tokenDecimal, baseCurrencyDecimal int64,
 	feeOracleSignature []byte,
+	feeHandlerWithOracle bool,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
@@ -235,14 +238,19 @@ func (c *BridgeContract) GenericDeposit(
 		Int64("tokenDecimal", tokenDecimal).
 		Int64("baseCurrencyDecimal", baseCurrencyDecimal).
 		Str("feeOracleSignature", hexutil.Encode(feeOracleSignature)).
+		Bool("feeHandlerWithOracle", feeHandlerWithOracle).
 		Msgf("Generic deposit")
 	data := deposit.ConstructGenericDepositData(metadata)
 
-	feeData, err := deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
+	var feeData []byte
+	if feeHandlerWithOracle {
+		var err error
+		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+		if err != nil {
+			log.Error().Err(err)
+			return nil, err
+		}
 	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
