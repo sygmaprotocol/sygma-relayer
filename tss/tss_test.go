@@ -302,7 +302,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
 	for i, host := range s.hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
@@ -312,7 +312,8 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
 		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
 		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
 	}
 	setupCommunication(communicationMap)
@@ -351,7 +352,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	for i, host := range oldAndNewHosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
-			Subscriptions: make(map[communication.SubscriptionID]chan *communication.WrappedMessage),
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
 		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
@@ -361,7 +362,8 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
 		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, s.mockBully))
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
 	}
 	setupCommunication(communicationMap)
