@@ -41,9 +41,8 @@ func NewCoordinatorElectorFactory(h host.Host, config relayer.BullyConfig) *Coor
 	}
 }
 
-// NewCoordinatorElector creates CoordinatorElector for a specific session
-// It also starts listening for session specific bully coordination messages.
-func (c *CoordinatorElectorFactory) NewCoordinatorElector(
+// CoordinatorElector creates CoordinatorElector for a specific session
+func (c *CoordinatorElectorFactory) CoordinatorElector(
 	sessionID string, electorType CoordinatorElectorType,
 ) CoordinatorElector {
 	switch electorType {
