@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
@@ -36,7 +36,7 @@ type SaveDataStorer interface {
 type Resharing struct {
 	common.BaseTss
 	key            store.Keyshare
-	subscriptionID communication.SubscriptionID
+	subscriptionID comm.SubscriptionID
 	storer         SaveDataStorer
 	newThreshold   int
 }
@@ -45,7 +45,7 @@ func NewResharing(
 	sessionID string,
 	threshold int,
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	storer SaveDataStorer,
 ) *Resharing {
 	storer.LockKeyshare()
@@ -108,9 +108,9 @@ func (r *Resharing) Start(
 	)
 	endChn := make(chan keygen.LocalPartySaveData)
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *communication.WrappedMessage)
-	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), communication.TssReshareMsg, msgChn)
-	go r.ProcessOutboundMessages(ctx, outChn, communication.TssReshareMsg)
+	msgChn := make(chan *comm.WrappedMessage)
+	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), comm.TssReshareMsg, msgChn)
+	go r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg)
 	go r.ProcessInboundMessages(ctx, msgChn)
 	go r.processEndMessage(ctx, endChn)
 
