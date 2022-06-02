@@ -6,7 +6,7 @@
         "logConfiguration": { 
            "logDriver": "awslogs",
            "options": { 
-              "awslogs-group": "/ecs/relayer-STAGE",
+              "awslogs-group": "/ecs/relayer-STAGE-3",
               "awslogs-region": "us-east-2",
               "awslogs-stream-prefix": "ecs"
            }
