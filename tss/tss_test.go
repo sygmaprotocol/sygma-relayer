@@ -155,7 +155,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
+		keygen := keygen.NewKeygen("keygen2", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
@@ -195,7 +195,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -235,7 +235,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -272,7 +272,7 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
+		keygen := keygen.NewKeygen("keygen3", s.threshold, host, &communication, s.mockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
@@ -311,7 +311,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
 		s.mockStorer.EXPECT().UnlockKeyshare()
 		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
+		resharing := resharing.NewResharing("resharing1", 1, host, &communication, s.mockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
@@ -361,7 +361,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		s.mockStorer.EXPECT().UnlockKeyshare()
 		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing", 1, host, &communication, s.mockStorer)
+		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.mockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
