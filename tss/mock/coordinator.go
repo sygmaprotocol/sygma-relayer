@@ -65,7 +65,7 @@ func (mr *MockTssProcessMockRecorder) SessionID() *gomock.Call {
 }
 
 // Start mocks base method.
-func (m *MockTssProcess) Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []string) {
+func (m *MockTssProcess) Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []byte) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Start", ctx, coordinator, resultChn, errChn, params)
 }
@@ -77,10 +77,10 @@ func (mr *MockTssProcessMockRecorder) Start(ctx, coordinator, resultChn, errChn,
 }
 
 // StartParams mocks base method.
-func (m *MockTssProcess) StartParams(readyMap map[peer.ID]bool) []string {
+func (m *MockTssProcess) StartParams(readyMap map[peer.ID]bool) []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartParams", readyMap)
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].([]byte)
 	return ret0
 }
 
@@ -100,4 +100,18 @@ func (m *MockTssProcess) Stop() {
 func (mr *MockTssProcessMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockTssProcess)(nil).Stop))
+}
+
+// ValidCoordinators mocks base method.
+func (m *MockTssProcess) ValidCoordinators() []peer.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidCoordinators")
+	ret0, _ := ret[0].([]peer.ID)
+	return ret0
+}
+
+// ValidCoordinators indicates an expected call of ValidCoordinators.
+func (mr *MockTssProcessMockRecorder) ValidCoordinators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidCoordinators", reflect.TypeOf((*MockTssProcess)(nil).ValidCoordinators))
 }

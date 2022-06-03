@@ -21,11 +21,12 @@ var (
 )
 
 type TssProcess interface {
-	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []string)
+	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []byte)
 	Stop()
 	Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error)
-	StartParams(readyMap map[peer.ID]bool) []string
+	StartParams(readyMap map[peer.ID]bool) []byte
 	SessionID() string
+	ValidCoordinators() []peer.ID
 }
 
 type Coordinator struct {
@@ -64,7 +65,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
-	coordinator, _ := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
+	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
 	errChn := make(chan error)
 	c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
@@ -133,7 +134,7 @@ func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordina
 // an expected error ocurred during regular tss execution
 func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcess.SessionID(), elector.Bully)
-	coordinator, err := coordinatorElector.Coordinator(c.host.Peerstore().Peers())
+	coordinator, err := coordinatorElector.Coordinator(ctx, common.ExcludePeers(tssProcess.ValidCoordinators(), excludedPeers))
 	if err != nil {
 		errChn <- err
 		return

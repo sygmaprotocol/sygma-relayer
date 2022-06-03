@@ -40,7 +40,7 @@ func TestRunStartMessageTestSuite(t *testing.T) {
 
 func (s *StartMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 	originalMsg := &common.StartMessage{
-		Params: []string{"test"},
+		Params: []byte("test"),
 	}
 	msgBytes, err := common.MarshalStartMessage(originalMsg.Params)
 	s.Nil(err)

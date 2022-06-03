@@ -16,8 +16,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
-	mock_keygen "github.com/ChainSafe/chainbridge-core/tss/keygen/mock"
 	mock_tss "github.com/ChainSafe/chainbridge-core/tss/mock"
+	"github.com/ChainSafe/chainbridge-core/tss/resharing"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
 	"github.com/golang/mock/gomock"
@@ -68,7 +68,7 @@ func setupCommunication(commMap map[peer.ID]*tsstest.TestCommunication) {
 type CoordinatorTestSuite struct {
 	suite.Suite
 	gomockController  *gomock.Controller
-	mockStorer        *mock_keygen.MockSaveDataStorer
+	mockStorer        *mock_tss.MockSaveDataStorer
 	mockCommunication *mock_comm.MockCommunication
 	mockTssProcess    *mock_tss.MockTssProcess
 
@@ -82,12 +82,11 @@ func TestRunCoordinatorTestSuite(t *testing.T) {
 	suite.Run(t, new(CoordinatorTestSuite))
 }
 
-func (s *CoordinatorTestSuite) SetupSuite() {
+func (s *CoordinatorTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
-	s.mockStorer = mock_keygen.NewMockSaveDataStorer(s.gomockController)
+	s.mockStorer = mock_tss.NewMockSaveDataStorer(s.gomockController)
 	s.mockCommunication = mock_comm.NewMockCommunication(s.gomockController)
 	s.mockTssProcess = mock_tss.NewMockTssProcess(s.gomockController)
-
 	s.partyNumber = 3
 	s.threshold = 1
 
@@ -155,7 +154,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
+		keygen := keygen.NewKeygen("keygen2", s.threshold, host, &communication, s.mockStorer)
 		keygen.Timeout = time.Second * 5
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
@@ -195,7 +194,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -235,7 +234,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -272,13 +271,14 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.threshold, host, &communication, s.mockStorer)
+		keygen := keygen.NewKeygen("keygen3", s.threshold, host, &communication, s.mockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
 
+	s.mockStorer.EXPECT().LockKeyshare().Times(3)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for i, coordinator := range coordinators {
@@ -291,5 +291,58 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 		err := <-status
 		s.Nil(err)
 	}
+	cancel()
+}
+
+func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber+1; i++ {
+		host, _ := newHost(i)
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+
+	for i, host := range hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		share, _ := storer.GetKeyshare()
+		s.mockStorer.EXPECT().LockKeyshare()
+		s.mockStorer.EXPECT().UnlockKeyshare()
+		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
+		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.mockStorer)
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		processes = append(processes, resharing)
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+	}
+
+	err := <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
+	err = <-statusChn
+	s.Nil(err)
 	cancel()
 }

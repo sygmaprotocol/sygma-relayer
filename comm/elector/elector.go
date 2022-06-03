@@ -1,6 +1,8 @@
 package elector
 
 import (
+	"context"
+
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -19,7 +21,7 @@ const (
 const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
 
 type CoordinatorElector interface {
-	Coordinator(peers peer.IDSlice) (peer.ID, error)
+	Coordinator(ctx context.Context, peers peer.IDSlice) (peer.ID, error)
 }
 
 // CoordinatorElectorFactory is used to create multiple instances of CoordinatorElector
