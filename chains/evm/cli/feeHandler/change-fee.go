@@ -49,7 +49,7 @@ var changeFeeCmd = &cobra.Command{
 
 func BindChangeFeeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&FeeHandler, "fee-handler", "", "Fee handler contract address")
-	cmd.Flags().Uint64Var(&Fee, "fee", 0, "Fee to be taken when making a deposit (in ETH, decimals are allowed)")
+	cmd.Flags().Uint64Var(&Fee, "fee", 0, "Fee to be taken when making a deposit (in wei)")
 	flags.MarkFlagsAsRequired(cmd, "fee-handler", "fee")
 }
 

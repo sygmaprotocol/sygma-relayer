@@ -141,16 +141,14 @@ func (c *BridgeContract) Erc20Deposit(
 		data = deposit.ConstructErc20DepositDataWithPriority(recipient.Bytes(), amount, opts.Priority)
 	}
 
-	var feeData []byte
-	if feeHandlerWithOracle {
-		var err error
-		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
-		if err != nil {
-			log.Error().Err(err)
-			return nil, err
-		}
+	feeData, err := deposit.ConstructFeeData(feeHandlerWithOracle, baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, amount)
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
 	}
+
+	log.Debug().Hex("calldata", data).Hex("feedata", feeData).Msg("ERC20 deposit")
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
@@ -196,16 +194,14 @@ func (c *BridgeContract) Erc721Deposit(
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
 
-	var feeData []byte
-	if feeHandlerWithOracle {
-		var err error
-		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
-		if err != nil {
-			log.Error().Err(err)
-			return nil, err
-		}
+	feeData, err := deposit.ConstructFeeData(feeHandlerWithOracle, baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
 	}
+
+	log.Debug().Hex("calldata", data).Hex("feedata", feeData).Msg("ERC721 deposit")
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
@@ -242,16 +238,14 @@ func (c *BridgeContract) GenericDeposit(
 		Msgf("Generic deposit")
 	data := deposit.ConstructGenericDepositData(metadata)
 
-	var feeData []byte
-	if feeHandlerWithOracle {
-		var err error
-		feeData, err = deposit.ConstructFeeData(baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
-			destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
-		if err != nil {
-			log.Error().Err(err)
-			return nil, err
-		}
+	feeData, err := deposit.ConstructFeeData(feeHandlerWithOracle, baseRate, tokenRate, destGasPrice, expirationTimestamp, fromDomainID,
+		destDomainID, resourceID, tokenDecimal, baseCurrencyDecimal, feeOracleSignature, big.NewInt(0))
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
 	}
+
+	log.Debug().Hex("calldata", data).Hex("feedata", feeData).Msg("Generic deposit")
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {

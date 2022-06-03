@@ -116,11 +116,6 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 			Priority: uint8(2), // fast
 			Value:    s.basicFee,
 		})
-
-	if err != nil {
-		return
-	}
-
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
@@ -217,10 +212,6 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 			Priority: uint8(0), // slow
 			Value:    s.basicFee,
 		})
-	if err != nil {
-		return
-	}
-
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)

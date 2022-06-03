@@ -764,7 +764,7 @@ Usage:
    evm-cli fee-handler change-fee [flags]
 
 Flags:
-      --fee uint             Fee to be taken when making a deposit (in ETH, decimals are allowed)
+      --fee uint             Fee to be taken when making a deposit (in wei)
       --fee-handler string   Fee handler contract address
   -h, --help                 help for change-fee
 ```

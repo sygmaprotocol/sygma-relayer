@@ -18,8 +18,11 @@ func constructMainDepositData(tokenStats *big.Int, destRecipient []byte) []byte 
 	return data
 }
 
-func ConstructFeeData(baseRate, tokenRate string, destGasPrice *big.Int, expirationTimestamp int64, fromDomainId, toDomainId uint8,
+func ConstructFeeData(feeHandlerWithOracle bool, baseRate, tokenRate string, destGasPrice *big.Int, expirationTimestamp int64, fromDomainId, toDomainId uint8,
 	resourceID types.ResourceID, tokenDecimal int64, baseCurrencyDecimal int64, feeOracleSignature []byte, amount *big.Int) ([]byte, error) {
+	if !feeHandlerWithOracle {
+		return nil, nil
+	}
 
 	ber, err := calls.UserAmountToWei(baseRate, big.NewInt(baseCurrencyDecimal))
 	if err != nil {
