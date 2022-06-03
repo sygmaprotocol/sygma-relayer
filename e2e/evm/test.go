@@ -107,7 +107,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
-	amountToDeposit := big.NewInt(1000)
+	amountToDeposit := big.NewInt(1000000)
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,

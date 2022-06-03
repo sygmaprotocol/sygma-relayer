@@ -71,18 +71,6 @@ func PrepareLocalEVME2EEnv(
 		return EVME2EConfig{}, err
 	}
 
-	basicFeeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
-	basicFeeHandlerAddress, err := basicFeeHandlerContract.DeployContract(bridgeContractAddress)
-	if err != nil {
-		return EVME2EConfig{}, err
-	}
-
-	basicFee := big.NewInt(100000000000)
-	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
-	if err != nil {
-		return EVME2EConfig{}, err
-	}
-
 	erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, err := deployErc721(
 		ethClient, t, bridgeContractAddress,
 	)
@@ -108,6 +96,18 @@ func PrepareLocalEVME2EEnv(
 	resourceIDGenericHandler := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
 
 	resourceIDERC721 := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
+
+	basicFeeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
+	basicFeeHandlerAddress, err := basicFeeHandlerContract.DeployContract(bridgeContractAddress)
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
+
+	basicFee := big.NewInt(100000000000)
+	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
 
 	conf := EVME2EConfig{
 		BridgeAddr:     bridgeContractAddress,
