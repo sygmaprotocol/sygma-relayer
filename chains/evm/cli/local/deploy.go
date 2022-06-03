@@ -55,7 +55,6 @@ func PrepareLocalEVME2EEnv(
 	ethClient E2EClient,
 	fabric calls.TxFabric,
 	domainID uint8,
-	threshold *big.Int,
 	mintTo common.Address,
 ) (EVME2EConfig, error) {
 	staticGasPricer := evmgaspricer.NewStaticGasPriceDeterminant(ethClient, nil)
@@ -73,6 +72,12 @@ func PrepareLocalEVME2EEnv(
 
 	basicFeeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
 	basicFeeHandlerAddress, err := basicFeeHandlerContract.DeployContract(bridgeContractAddress)
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
+
+	basicFee := big.NewInt(1000000000)
+	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
 	if err != nil {
 		return EVME2EConfig{}, err
 	}

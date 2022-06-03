@@ -46,10 +46,11 @@ type TestClient interface {
 
 func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
-		fabric1: fabric1,
-		fabric2: fabric2,
-		client1: client1,
-		client2: client2,
+		fabric1:  fabric1,
+		fabric2:  fabric2,
+		client1:  client1,
+		client2:  client2,
+		basicFee: big.NewInt(1000000000),
 	}
 }
 
@@ -66,16 +67,17 @@ type IntegrationTestSuite struct {
 	genericRID [32]byte
 	config1    local.EVME2EConfig
 	config2    local.EVME2EConfig
+	basicFee   *big.Int
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From())
+	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, s.client1.From())
 	if err != nil {
 		panic(err)
 	}
 	s.config1 = config1
 
-	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From())
+	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, s.client2.From())
 	if err != nil {
 		panic(err)
 	}
@@ -112,6 +114,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
 		nil, false, transactor.TransactOptions{
 			Priority: uint8(2), // fast
+			Value:    s.basicFee,
 		})
 
 	if err != nil {
@@ -176,7 +179,9 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
 		tokenId, metadata, dstAddr, s.erc721RID,
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
-		nil, false, transactor.TransactOptions{},
+		nil, false, transactor.TransactOptions{
+			Value: s.basicFee,
+		},
 	)
 	s.Nil(err)
 
@@ -210,6 +215,7 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
 		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, false, transactor.TransactOptions{
 			Priority: uint8(0), // slow
+			Value:    s.basicFee,
 		})
 	if err != nil {
 		return
