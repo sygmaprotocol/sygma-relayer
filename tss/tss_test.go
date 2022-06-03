@@ -82,12 +82,11 @@ func TestRunCoordinatorTestSuite(t *testing.T) {
 	suite.Run(t, new(CoordinatorTestSuite))
 }
 
-func (s *CoordinatorTestSuite) SetupSuite() {
+func (s *CoordinatorTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
 	s.mockStorer = mock_tss.NewMockSaveDataStorer(s.gomockController)
 	s.mockCommunication = mock_comm.NewMockCommunication(s.gomockController)
 	s.mockTssProcess = mock_tss.NewMockTssProcess(s.gomockController)
-
 	s.partyNumber = 3
 	s.threshold = 1
 
@@ -279,6 +278,7 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 	}
 	setupCommunication(communicationMap)
 
+	s.mockStorer.EXPECT().LockKeyshare().Times(3)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for i, coordinator := range coordinators {
@@ -291,48 +291,6 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 		err := <-status
 		s.Nil(err)
 	}
-	cancel()
-}
-
-func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldSubset() {
-	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
-	coordinators := []*tss.Coordinator{}
-	processes := []tss.TssProcess{}
-
-	var hosts []host.Host
-	copy(hosts, s.hosts)
-	for i, host := range hosts {
-		communication := tsstest.TestCommunication{
-			Host:          host,
-			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
-		}
-		communicationMap[host.ID()] = &communication
-		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
-		share, _ := storer.GetKeyshare()
-		s.mockStorer.EXPECT().LockKeyshare()
-		s.mockStorer.EXPECT().UnlockKeyshare()
-		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
-		s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing1", 1, host, &communication, s.mockStorer)
-		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
-		processes = append(processes, resharing)
-	}
-	setupCommunication(communicationMap)
-
-	statusChn := make(chan error, s.partyNumber)
-	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
-	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
-	}
-
-	err := <-statusChn
-	s.Nil(err)
-	err = <-statusChn
-	s.Nil(err)
-	err = <-statusChn
-	s.Nil(err)
 	cancel()
 }
 
