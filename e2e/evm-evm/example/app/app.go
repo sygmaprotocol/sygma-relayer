@@ -6,11 +6,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
@@ -20,6 +21,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/comm/elector"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
@@ -66,7 +68,8 @@ func Run() error {
 		panic(err)
 	}
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
-	coordinator := tss.NewCoordinator(host, comm)
+	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
+	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}

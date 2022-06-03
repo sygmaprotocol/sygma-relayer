@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
+	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/golang/mock v1.6.0
 	github.com/imdario/mergo v0.3.12
@@ -33,7 +34,6 @@ require (
 	github.com/cheekybits/genny v1.0.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20201119153540-4cbc285b3327 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
-	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elastic/gosigar v0.12.0 // indirect
