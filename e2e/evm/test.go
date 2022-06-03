@@ -2,7 +2,9 @@ package evm
 
 import (
 	"context"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"math/big"
 	"time"
 
@@ -105,7 +107,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
-	amountToDeposit := big.NewInt(1000000)
+	amountToDeposit := big.NewInt(1000)
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
@@ -195,31 +197,31 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Equal(dstAddr.String(), owner.String())
 }
 
-//func (s *IntegrationTestSuite) TestGenericDeposit() {
-//	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-//	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-//
-//	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-//	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
-//
-//	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
-//
-//	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
-//		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, false, transactor.TransactOptions{
-//			Priority: uint8(0), // slow
-//			Value:    s.basicFee,
-//		})
-//	s.Nil(err)
-//
-//	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-//	s.Nil(err)
-//	// check gas price of deposit tx - 140 gwei
-//	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
-//
-//	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-//	s.Nil(err)
-//	// Asset hash sent is stored in centrifuge asset store contract
-//	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-//	s.Nil(err)
-//	s.Equal(true, exists)
-//}
+func (s *IntegrationTestSuite) TestGenericDeposit() {
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
+
+	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
+
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
+		fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals, nil, false, transactor.TransactOptions{
+			Priority: uint8(0), // slow
+			Value:    s.basicFee,
+		})
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 140 gwei
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
+
+	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+	// Asset hash sent is stored in centrifuge asset store contract
+	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
+	s.Nil(err)
+	s.Equal(true, exists)
+}
