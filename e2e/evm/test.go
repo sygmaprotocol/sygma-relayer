@@ -27,7 +27,7 @@ import (
 var (
 	ber                = "1000.0"
 	ter                = "1000.0"
-	destGasPrice       = big.NewInt(1000000000)
+	destGasPrice       = big.NewInt(140000000000)
 	expireTimestamp    = time.Now().Unix() + 3600
 	fromDomainID       = uint8(1)
 	destDomainID       = uint8(2)
@@ -113,6 +113,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 		ber, ter, destGasPrice, expireTimestamp, fromDomainID, destDomainID, erc20TokenDecimals, etherDecimals,
 		nil, false, transactor.TransactOptions{
 			Priority: uint8(2), // fast
+			Value:    s.basicFee,
 		})
 	s.Nil(err)
 

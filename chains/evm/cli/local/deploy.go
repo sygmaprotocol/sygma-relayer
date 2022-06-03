@@ -129,10 +129,10 @@ func PrepareLocalEVME2EEnv(
 		Fee:               basicFee,
 	}
 
-	err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
-	if err != nil {
-		return EVME2EConfig{}, err
-	}
+	//err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
+	//if err != nil {
+	//	return EVME2EConfig{}, err
+	//}
 
 	err = PrepareErc20EVME2EEnv(bridgeContract, erc20Contract, mintTo, conf, resourceIDERC20)
 	if err != nil {

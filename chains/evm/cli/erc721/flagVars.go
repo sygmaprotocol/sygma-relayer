@@ -27,6 +27,7 @@ var (
 	ExpirationTimestamp     int64
 	FeeOracleSignature      string
 	FeeHandlerWithOracle    bool
+	BasicFee                uint64
 )
 
 // processed flag vars

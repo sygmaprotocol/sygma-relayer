@@ -72,6 +72,7 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)")
 	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)")
 	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Indicator if fee handler with oracle is in use")
+	cmd.Flags().Uint64Var(&BasicFee, "fee", 0, "Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "to-domain", "resource", "erc20-token-decimals")
 }
 
@@ -111,7 +112,8 @@ func DepositCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContra
 	hash, err := contract.Erc20Deposit(
 		RecipientAddress, RealAmount, ResourceIdBytesArr, BaseRate, TokenRate, big.NewInt(int64(DestGasPrice)),
 		ExpirationTimestamp, FromDomainID, ToDomainID, int64(Decimals), int64(DestNativeTokenDecimals),
-		ValidFeeOracleSignature, FeeHandlerWithOracle, transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority]},
+		ValidFeeOracleSignature, FeeHandlerWithOracle, transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority],
+			Value: big.NewInt(0).SetUint64(BasicFee)},
 	)
 	if err != nil {
 		log.Error().Err(fmt.Errorf("erc20 deposit error: %v", err))

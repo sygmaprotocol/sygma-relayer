@@ -614,6 +614,7 @@ Flags:
       --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
       --erc20-token-decimals uint         ERC20 token decimals
       --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
+      --fee uint                          Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
       --fee-handler-with-oracle           Indicator if fee with oracle is in use
       --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
       --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
@@ -697,6 +698,7 @@ Flags:
       --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is in use)
       --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
       --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
+      --fee uint                          Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
       --fee-handler-with-oracle           Indicator if fee handler with oracle is in use
       --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
       --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
