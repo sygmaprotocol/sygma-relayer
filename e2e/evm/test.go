@@ -46,11 +46,10 @@ type TestClient interface {
 
 func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
-		fabric1:  fabric1,
-		fabric2:  fabric2,
-		client1:  client1,
-		client2:  client2,
-		basicFee: big.NewInt(1000000000),
+		fabric1: fabric1,
+		fabric2: fabric2,
+		client1: client1,
+		client2: client2,
 	}
 }
 
@@ -88,6 +87,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.erc721RID = calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 	s.gasPricer1 = dummy.NewStaticGasPriceDeterminant(s.client1, nil)
 	s.gasPricer2 = dummy.NewStaticGasPriceDeterminant(s.client2, nil)
+	s.basicFee = config1.Fee
 }
 func (s *IntegrationTestSuite) TearDownSuite() {}
 func (s *IntegrationTestSuite) SetupTest()     {}

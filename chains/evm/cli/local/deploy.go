@@ -44,6 +44,7 @@ type EVME2EConfig struct {
 	ResourceIDERC721   string
 	ResourceIDGeneric  string
 	IsBasicFeeHandler  bool
+	Fee                *big.Int
 }
 
 type E2EClient interface {
@@ -76,7 +77,7 @@ func PrepareLocalEVME2EEnv(
 		return EVME2EConfig{}, err
 	}
 
-	basicFee := big.NewInt(1000000000)
+	basicFee := big.NewInt(1000)
 	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
 	if err != nil {
 		return EVME2EConfig{}, err
@@ -125,6 +126,7 @@ func PrepareLocalEVME2EEnv(
 		ResourceIDGeneric: hexutil.Encode(resourceIDGenericHandler[:]),
 
 		IsBasicFeeHandler: true,
+		Fee:               basicFee,
 	}
 
 	err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
