@@ -77,11 +77,11 @@ func PrepareLocalEVME2EEnv(
 		return EVME2EConfig{}, err
 	}
 
-	basicFee := big.NewInt(0)
-	//_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
-	//if err != nil {
-	//	return EVME2EConfig{}, err
-	//}
+	basicFee := big.NewInt(1000)
+	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
 
 	erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, err := deployErc721(
 		ethClient, t, bridgeContractAddress,
@@ -129,10 +129,10 @@ func PrepareLocalEVME2EEnv(
 		Fee:               basicFee,
 	}
 
-	//err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
-	//if err != nil {
-	//	return EVME2EConfig{}, err
-	//}
+	err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
+	if err != nil {
+		return EVME2EConfig{}, err
+	}
 
 	err = PrepareErc20EVME2EEnv(bridgeContract, erc20Contract, mintTo, conf, resourceIDERC20)
 	if err != nil {
