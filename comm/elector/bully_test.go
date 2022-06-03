@@ -1,8 +1,11 @@
 package elector
 
 import (
+	"context"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/comm"
+	"testing"
+	"time"
+
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
@@ -13,8 +16,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
 )
 
 type BullyTestSuite struct {
@@ -52,7 +53,6 @@ func (s *BullyTestSuite) SetupTest()     {}
 func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElector, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
 	s.mockController = gomock.NewController(s.T())
 	var testHosts []host.Host
-	var testCommunications []comm.Communication
 	var testBullyCoordinators []CoordinatorElector
 
 	numberOfTestHosts := len(c.testRelayers)
@@ -100,7 +100,6 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElec
 			s.testProtocolID,
 			allowedPeers,
 		)
-		testCommunications = append(testCommunications, com)
 
 		if !c.isLeaderActive && testHosts[i].ID() == initialCoordinator {
 			testBullyCoordinators = append(testBullyCoordinators, nil)
@@ -316,7 +315,7 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 						if rDescriber.initialDelay > 0 {
 							time.Sleep(rDescriber.initialDelay)
 						}
-						c, err := testBullyCoordinators[rDescriber.index].Coordinator(allowedPeers)
+						c, err := testBullyCoordinators[rDescriber.index].Coordinator(context.Background(), allowedPeers)
 						s.Nil(err)
 						resultChan <- c
 					}()
@@ -328,10 +327,9 @@ func (s *BullyTestSuite) TestBully_GetCoordinator_OneDelay() {
 				numberOfResults -= 1
 			}
 			for i := 0; i < numberOfResults; i++ {
-				select {
-				case c := <-resultChan:
-					s.Equal(finalCoordinator, c)
-				}
+				c := <-resultChan
+				s.Equal(finalCoordinator, c)
+
 			}
 		})
 	}

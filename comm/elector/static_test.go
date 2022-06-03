@@ -1,7 +1,10 @@
 package elector
 
 import (
+	"context"
 	"fmt"
+	"testing"
+
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/golang/mock/gomock"
@@ -10,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type CoordinatorElectorTestSuite struct {
@@ -65,7 +67,7 @@ func (s *CoordinatorElectorTestSuite) TearDownTest() {}
 func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
 	staticCommunicationCoordinator := NewCoordinatorElector("1")
 
-	coordinator1, err := staticCommunicationCoordinator.Coordinator(s.testPeers)
+	coordinator1, err := staticCommunicationCoordinator.Coordinator(context.Background(), s.testPeers)
 	s.Nil(err)
 	s.NotNil(coordinator1)
 	s.Contains(s.testPeers, coordinator1)

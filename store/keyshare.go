@@ -70,9 +70,6 @@ func (ks *KeyshareStore) StoreKeyshare(keyshare Keyshare) error {
 // GetKeyshare fetches current keyshare from file.
 // Can be a blocking call if keygen or resharing are pending.
 func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
-	ks.LockKeyshare()
-	defer ks.UnlockKeyshare()
-
 	k := Keyshare{}
 
 	kb, err := ioutil.ReadFile(ks.path)

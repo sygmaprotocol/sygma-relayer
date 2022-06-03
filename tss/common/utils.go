@@ -6,6 +6,7 @@ import (
 
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"golang.org/x/exp/slices"
 )
 
 func CreatePartyID(peerID string) *tss.PartyID {
@@ -73,4 +74,16 @@ func SortPeersForSession(peers []peer.ID, sessionID string) SortablePeerSlice {
 	}
 	sort.Sort(sortedPeers)
 	return sortedPeers
+}
+
+func ExcludePeers(peers peer.IDSlice, excludedPeers peer.IDSlice) peer.IDSlice {
+	includedPeers := make(peer.IDSlice, 0)
+	for _, peer := range peers {
+		if slices.Contains(excludedPeers, peer) {
+			continue
+		}
+
+		includedPeers = append(includedPeers, peer)
+	}
+	return includedPeers
 }

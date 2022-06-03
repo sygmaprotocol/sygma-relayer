@@ -1,13 +1,15 @@
 package elector
 
 import (
+	"context"
+	"sync"
+	"time"
+
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"sync"
-	"time"
 )
 
 // bullyCoordinatorElector is used to execute bully coordinator discovery
@@ -41,16 +43,17 @@ func NewBullyCoordinatorElector(
 		coordinator:  host.ID(),
 	}
 
-	go bully.listen()
-
 	return bully
 }
 
 // Coordinator starts coordinator discovery using bully algorithm and returns current leader
 // Bully coordination is executed on provided peers
-func (bc *bullyCoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, error) {
-	bc.sortedPeers = common.SortPeersForSession(peers, bc.sessionID)
+func (bc *bullyCoordinatorElector) Coordinator(ctx context.Context, peers peer.IDSlice) (peer.ID, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	go bc.listen(ctx)
+	defer cancel()
 
+	bc.sortedPeers = common.SortPeersForSession(peers, bc.sessionID)
 	errChan := make(chan error)
 	go bc.startBullyCoordination(errChan)
 
@@ -65,7 +68,7 @@ func (bc *bullyCoordinatorElector) Coordinator(peers peer.IDSlice) (peer.ID, err
 }
 
 // listen starts listening for coordinator relevant messages
-func (bc *bullyCoordinatorElector) listen() {
+func (bc *bullyCoordinatorElector) listen(ctx context.Context) {
 	bc.comm.Subscribe(bc.sessionID, comm.CoordinatorPingMsg, bc.msgChan)
 	bc.comm.Subscribe(bc.sessionID, comm.CoordinatorElectionMsg, bc.msgChan)
 	bc.comm.Subscribe(bc.sessionID, comm.CoordinatorAliveMsg, bc.msgChan)
@@ -75,6 +78,8 @@ func (bc *bullyCoordinatorElector) listen() {
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case msg := <-bc.msgChan:
 			switch msg.MessageType {
 			case comm.CoordinatorAliveMsg:
@@ -85,21 +90,16 @@ func (bc *bullyCoordinatorElector) listen() {
 				case <-time.After(500 * time.Millisecond):
 					break
 				}
-				break
 			case comm.CoordinatorSelectMsg:
 				bc.receiveChan <- msg
-				break
 			case comm.CoordinatorElectionMsg:
 				bc.receiveChan <- msg
-				break
 			case comm.CoordinatorPingResponseMsg:
 				bc.pingChan <- msg
-				break
 			case comm.CoordinatorPingMsg:
 				bc.comm.Broadcast(
 					[]peer.ID{msg.From}, nil, comm.CoordinatorPingResponseMsg, bc.sessionID, nil,
 				)
-				break
 			default:
 				break
 			}
