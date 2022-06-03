@@ -77,7 +77,7 @@ func PrepareLocalEVME2EEnv(
 		return EVME2EConfig{}, err
 	}
 
-	basicFee := big.NewInt(1000)
+	basicFee := big.NewInt(100000000000000000)
 	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
 	if err != nil {
 		return EVME2EConfig{}, err
