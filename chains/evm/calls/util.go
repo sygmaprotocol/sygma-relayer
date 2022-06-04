@@ -1,7 +1,6 @@
 package calls
 
 import (
-	"bytes"
 	"errors"
 	"math"
 	gomath "math"
@@ -32,17 +31,6 @@ func Bytes32ToSlice(in [32]byte) []byte {
 		res = append(res, b)
 	}
 	return res
-}
-
-func PaddingZero(data []byte, length int) []byte {
-	b := bytes.Buffer{}
-
-	for i := 0; i < length-len(data); i++ {
-		b.WriteByte(0)
-	}
-	b.Write(data)
-
-	return b.Bytes()
 }
 
 // ToCallArg is the function that converts ethereum.CallMsg into more abstract map

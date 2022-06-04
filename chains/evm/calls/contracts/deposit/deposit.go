@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/types"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"strconv"
 
@@ -28,17 +29,17 @@ func ConstructFeeData(feeHandlerWithOracle bool, baseRate, tokenRate string, des
 	if err != nil {
 		return nil, err
 	}
-	finalBaseEffectiveRate := calls.PaddingZero(ber.Bytes(), 32)
+	finalBaseEffectiveRate := common.LeftPadBytes(ber.Bytes(), 32)
 	ter, err := calls.UserAmountToWei(tokenRate, big.NewInt(tokenDecimal))
 	if err != nil {
 		return nil, err
 	}
-	finalTokenEffectiveRate := calls.PaddingZero(ter.Bytes(), 32)
+	finalTokenEffectiveRate := common.LeftPadBytes(ter.Bytes(), 32)
 
-	finalGasPrice := calls.PaddingZero(destGasPrice.Bytes(), 32)
-	finalTimestamp := calls.PaddingZero([]byte(strconv.FormatInt(expirationTimestamp, 16)), 32)
-	finalFromDomainId := calls.PaddingZero([]byte{fromDomainId}, 32)
-	finalToDomainId := calls.PaddingZero([]byte{toDomainId}, 32)
+	finalGasPrice := common.LeftPadBytes(destGasPrice.Bytes(), 32)
+	finalTimestamp := common.LeftPadBytes([]byte(strconv.FormatInt(expirationTimestamp, 16)), 32)
+	finalFromDomainId := common.LeftPadBytes([]byte{fromDomainId}, 32)
+	finalToDomainId := common.LeftPadBytes([]byte{toDomainId}, 32)
 
 	feeDataMessageByte := bytes.Buffer{}
 	feeDataMessageByte.Write(finalBaseEffectiveRate)
@@ -50,7 +51,7 @@ func ConstructFeeData(feeHandlerWithOracle bool, baseRate, tokenRate string, des
 	feeDataMessageByte.Write(calls.Bytes32ToSlice(resourceID))
 	finalFeeDataMessage := feeDataMessageByte.Bytes()
 
-	finalAmount := calls.PaddingZero(amount.Bytes(), 32)
+	finalAmount := common.LeftPadBytes(amount.Bytes(), 32)
 
 	feeData := bytes.Buffer{}
 	feeData.Write(finalFeeDataMessage)
