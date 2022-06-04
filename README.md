@@ -722,8 +722,6 @@ Flags:
       --token string      ERC721 token ID
 ```
 
-&nbsp;
-
 ### `Utils`
 Set of utility commands.
 
