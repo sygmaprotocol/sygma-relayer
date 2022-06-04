@@ -30,5 +30,4 @@ func init() {
 	AdminCmd.AddCommand(unpauseCmd)
 	AdminCmd.AddCommand(withdrawCmd)
 	AdminCmd.AddCommand(setDepositNonceCmd)
-	AdminCmd.AddCommand(changeFeeHandlerCmd)
 }

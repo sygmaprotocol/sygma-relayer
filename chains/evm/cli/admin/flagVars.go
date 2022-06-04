@@ -10,30 +10,26 @@ import (
 
 //flag vars
 var (
-	Admin            string
-	Relayer          string
-	DepositNonce     uint64
-	DomainID         uint8
-	RelayerThreshold uint64
-	Amount           string
-	TokenID          string
-	Handler          string
-	Token            string
-	Decimals         uint64
-	Recipient        string
-	Bridge           string
-	FeeHandler       string
+	Admin        string
+	Relayer      string
+	DepositNonce uint64
+	DomainID     uint8
+	Amount       string
+	TokenID      string
+	Handler      string
+	Token        string
+	Decimals     uint64
+	Recipient    string
+	Bridge       string
 )
 
 //processed flag vars
 var (
-	BridgeAddr     common.Address
-	HandlerAddr    common.Address
-	RelayerAddr    common.Address
-	RecipientAddr  common.Address
-	TokenAddr      common.Address
-	FeeHandlerAddr common.Address
-	RealAmount     *big.Int
+	BridgeAddr    common.Address
+	HandlerAddr   common.Address
+	RecipientAddr common.Address
+	TokenAddr     common.Address
+	RealAmount    *big.Int
 )
 
 // global flags
