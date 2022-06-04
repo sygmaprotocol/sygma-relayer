@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var TestTimeout = time.Second * 60
+var TestTimeout = time.Second * 600
 
 func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
 	startBlock, _ := client.LatestBlock()
