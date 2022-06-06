@@ -121,7 +121,7 @@ type IntegrationTestSuite struct {
 func (its *IntegrationTestSuite) SetupSuite() {
 	for {
 		code, err := its.client2.CodeAt(context.Background(), its.config2.GenericHandlerAddr, nil)
-		if err == nil && len(code) == 0 {
+		if err == nil && len(code) != 0 {
 			break
 		}
 
