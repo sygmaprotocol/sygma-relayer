@@ -195,7 +195,7 @@ require (
 
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
-	github.com/binance-chain/tss-lib => github.com/ChainSafe/tss-lib v1.3.3-0.20220323212139-19dd656add02
+	github.com/binance-chain/tss-lib => github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	google.golang.org/protobuf => google.golang.org/protobuf v1.25.0
 )
