@@ -36,6 +36,20 @@ services:
       - MINE=true
     entrypoint: "/root/entrypoint.sh"
 
+  setup:
+    container_name: setup
+    build:
+      context: ../../.
+      dockerfile: Dockerfile
+    command: local-setup
+    depends_on:
+      - evm1-1
+      - evm2-1
+    networks:
+      - evm1
+      - evm2
+    restart: none
+
   relayer1:
     container_name: relayer1
     build:

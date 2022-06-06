@@ -19,8 +19,8 @@ var LocalSetupCmd = &cobra.Command{
 
 // configuration
 var (
-	ethEndpoint1 = "http://localhost:8545"
-	ethEndpoint2 = "http://localhost:8547"
+	ethEndpoint1 = "ws://localhost:8546"
+	ethEndpoint2 = "ws://localhost:8548"
 	fabric1      = evmtransaction.NewTransaction
 	fabric2      = evmtransaction.NewTransaction
 )
