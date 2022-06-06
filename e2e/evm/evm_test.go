@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
@@ -31,6 +32,7 @@ import (
 type TestClient interface {
 	local.EVMClient
 	LatestBlock() (*big.Int, error)
+	CodeAt(ctx context.Context, contractAddress common.Address, block *big.Int) ([]byte, error)
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
@@ -113,6 +115,18 @@ type IntegrationTestSuite struct {
 
 	config1 local.BridgeConfig
 	config2 local.BridgeConfig
+}
+
+// SetupSuite waits until all contracts are deployed
+func (its *IntegrationTestSuite) SetupSuite() {
+	for {
+		_, err := its.client2.CodeAt(context.Background(), its.config2.GenericHandlerAddr, nil)
+		if err != nil {
+			break
+		}
+
+		time.Sleep(time.Second * 10)
+	}
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
