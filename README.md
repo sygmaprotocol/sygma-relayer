@@ -593,11 +593,10 @@ Flags:
       --amount string      Amount to deposit
       --bridge string      Address of bridge contract
       --decimals uint      ERC20 token decimals
-      --domain uint8       Destination domain ID
+      --domain uint       Destination domain ID
       --fee uint           Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
       --fee-data string    Fee data. Only provide this flag if fee handler with oracle is in use
   -h, --help               help for deposit
-      --priority string    Transaction priority speed (default "none")
       --recipient string   Address of recipient
       --resource string    Resource ID for transfer
 ```
@@ -674,7 +673,6 @@ Flags:
       --fee uint             Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
   -h, --help                 help for deposit
       --metadata string      ERC721 token metadata
-      --priority string      Transaction priority speed (default: medium) (default "none")
       --recipient string     Recipient address
       --resource string      Resource ID for transfer
       --token string         ERC721 token ID

@@ -25,14 +25,6 @@ func SliceTo32Bytes(in []byte) [32]byte {
 	return res
 }
 
-func Bytes32ToSlice(in [32]byte) []byte {
-	var res []byte
-	for _, b := range in {
-		res = append(res, b)
-	}
-	return res
-}
-
 // ToCallArg is the function that converts ethereum.CallMsg into more abstract map
 // This is done for matter of  making EVMClient more abstract since some go-ethereum forks uses different messages types
 func ToCallArg(msg ethereum.CallMsg) map[string]interface{} {
