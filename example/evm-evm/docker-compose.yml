@@ -8,6 +8,8 @@ services:
       context: ./geth-build
       dockerfile: Dockerfile
     container_name: evm1-1
+    logging:
+      driver: none
     networks:
       - evm1
     ports:
@@ -25,6 +27,8 @@ services:
       context: ./geth-build
       dockerfile: Dockerfile
     container_name: evm2-1
+    logging:
+      driver: none
     networks:
       - evm2
     ports:
