@@ -47,7 +47,7 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 				return err
 			}
 		case <-timeout:
-			return errors.New("test timed out waiting for ProposalCreated event")
+			return errors.New("test timed out waiting for proposal execution event")
 		}
 	}
 }
