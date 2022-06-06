@@ -11,39 +11,32 @@ import (
 
 //flag vars
 var (
-	Amount                  string
-	DestNativeTokenDecimals uint64
-	Decimals                uint64
-	DstAddress              string
-	Erc20Address            string
-	Recipient               string
-	Bridge                  string
-	FromDomainID            uint8
-	ToDomainID              uint8
-	ResourceID              string
-	AccountAddress          string
-	OwnerAddress            string
-	SpenderAddress          string
-	Minter                  string
-	Priority                string
-	DestGasPrice            uint64
-	BaseRate                string
-	TokenRate               string
-	ExpirationTimestamp     int64
-	FeeOracleSignature      string
-	FeeHandlerWithOracle    bool
-	BasicFee                uint64
+	Amount         string
+	Decimals       uint64
+	DstAddress     string
+	Erc20Address   string
+	Recipient      string
+	Bridge         string
+	DomainID       uint8
+	ResourceID     string
+	AccountAddress string
+	OwnerAddress   string
+	SpenderAddress string
+	Minter         string
+	Priority       string
+	FeeData        string
+	BasicFee       uint64
 )
 
 //processed flag vars
 var (
-	RecipientAddress        common.Address
-	RealAmount              *big.Int
-	Erc20Addr               common.Address
-	MinterAddr              common.Address
-	BridgeAddr              common.Address
-	ResourceIdBytesArr      types.ResourceID
-	ValidFeeOracleSignature []byte
+	RecipientAddress   common.Address
+	RealAmount         *big.Int
+	Erc20Addr          common.Address
+	MinterAddr         common.Address
+	BridgeAddr         common.Address
+	ResourceIdBytesArr types.ResourceID
+	FeeDataBytes       []byte
 )
 
 // global flags

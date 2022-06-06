@@ -2,17 +2,15 @@ package evm
 
 import (
 	"context"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
-	"math/big"
-	"time"
-
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
@@ -22,15 +20,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
-)
-
-var (
-	ber                = "1000.0"
-	ter                = "1000.0"
-	destGasPrice       = big.NewInt(140000000000)
-	expireTimestamp    = time.Now().Unix() + 3600
-	erc20TokenDecimals = int64(18)
-	etherDecimals      = int64(18)
 )
 
 type TestClient interface {
@@ -107,9 +96,8 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 
 	amountToDeposit := big.NewInt(1000000)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID,
-		ber, ter, destGasPrice, expireTimestamp, 1, 2, erc20TokenDecimals, etherDecimals,
-		nil, false, transactor.TransactOptions{
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, nil,
+		transactor.TransactOptions{
 			Priority: uint8(2), // fast
 			Value:    s.basicFee,
 		})
@@ -169,9 +157,7 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Error(err)
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.erc721RID,
-		ber, ter, destGasPrice, expireTimestamp, 1, 2, erc20TokenDecimals, etherDecimals,
-		nil, false, transactor.TransactOptions{
+		tokenId, metadata, dstAddr, s.erc721RID, 2, nil, transactor.TransactOptions{
 			Value: s.basicFee,
 		},
 	)
@@ -204,11 +190,10 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, ber, ter, destGasPrice, expireTimestamp,
-		1, 2, erc20TokenDecimals, etherDecimals, nil, false, transactor.TransactOptions{
-			Priority: uint8(0), // slow
-			Value:    s.basicFee,
-		})
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, nil, transactor.TransactOptions{
+		Priority: uint8(0), // slow
+		Value:    s.basicFee,
+	})
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)

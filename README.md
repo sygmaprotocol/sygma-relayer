@@ -590,23 +590,16 @@ Usage:
    evm-cli erc20 deposit [flags]
 
 Flags:
-      --amount string                     Amount to deposit
-      --ber string                        Base rate(required when fee handler with oracle is in use)
-      --bridge string                     Address of bridge contract
-      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is in use)
-      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
-      --erc20-token-decimals uint         ERC20 token decimals
-      --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
-      --fee uint                          Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
-      --fee-handler-with-oracle           Indicator if fee with oracle is in use
-      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
-      --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
-  -h, --help                              help for deposit
-      --priority string                   Transaction priority speed (default "none")
-      --recipient string                  Address of recipient
-      --resource string                   Resource ID for transfer
-      --ter string                        Token rate(required when fee handler with oracle is in use)
-      --to-domain uint8                   Destination domain ID
+      --amount string      Amount to deposit
+      --bridge string      Address of bridge contract
+      --decimals uint      ERC20 token decimals
+      --domain uint8       Destination domain ID
+      --fee uint           Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
+      --fee-data string    Fee data. Only provide this flag if fee handler with oracle is in use
+  -h, --help               help for deposit
+      --priority string    Transaction priority speed (default "none")
+      --recipient string   Address of recipient
+      --resource string    Resource ID for transfer
 ```
 
 #### `mint`
@@ -676,22 +669,15 @@ Usage:
    evm-cli erc721 deposit [flags]
 
 Flags:
-      --ber string                        Base rate(required when fee handler with oracle is in use)
-      --bridge string                     Bridge contract address
-      --dest-gas-price uint               Destination domain gas price(required when fee handler with oracle is in use)
-      --dest-native-token-decimals uint   Destination domain native token decimals(required when fee handler with oracle is in use)
-      --expire-timestamp int              Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)
-      --fee uint                          Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
-      --fee-handler-with-oracle           Indicator if fee handler with oracle is in use
-      --fee-oracle-signature string       Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)
-      --from-domain uint8                 Source domain ID(required when fee handler with oracle is in use)
-  -h, --help                              help for deposit
-      --metadata string                   ERC721 token metadata
-      --priority string                   Transaction priority speed (default: medium) (default "none")
-      --recipient string                  Recipient address
-      --resource string                   Resource ID for transfer
-      --to-domain uint8                   Destination domain ID
-      --token string                      ERC721 token ID
+      --bridge string        Bridge contract address
+      --destination string   Destination domain ID
+      --fee uint             Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
+  -h, --help                 help for deposit
+      --metadata string      ERC721 token metadata
+      --priority string      Transaction priority speed (default: medium) (default "none")
+      --recipient string     Recipient address
+      --resource string      Resource ID for transfer
+      --token string         ERC721 token ID
 ```
 
 #### `mint`

@@ -60,20 +60,13 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Recipient, "recipient", "", "Address of recipient")
 	cmd.Flags().StringVar(&Bridge, "bridge", "", "Address of bridge contract")
 	cmd.Flags().StringVar(&Amount, "amount", "", "Amount to deposit")
-	cmd.Flags().Uint8Var(&FromDomainID, "from-domain", 0, "Source domain ID(required when fee handler with oracle is in use)")
-	cmd.Flags().Uint8Var(&ToDomainID, "to-domain", 0, "Destination domain ID")
+	cmd.Flags().Uint8Var(&DomainID, "domain", 0, "Destination domain ID")
 	cmd.Flags().StringVar(&ResourceID, "resource", "", "Resource ID for transfer")
-	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals(required when fee handler with oracle is in use)")
-	cmd.Flags().Uint64Var(&Decimals, "erc20-token-decimals", 0, "ERC20 token decimals")
+	cmd.Flags().Uint64Var(&Decimals, "decimals", 0, "ERC20 token decimals")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed")
-	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price(required when fee handler with oracle is in use)")
-	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate(required when fee handler with oracle is in use)")
-	cmd.Flags().StringVar(&TokenRate, "ter", "", "Token rate(required when fee handler with oracle is in use)")
-	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)")
-	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)")
-	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Indicator if fee handler with oracle is in use")
+	cmd.Flags().StringVar(&FeeData, "fee-data", "", "Fee data. Only provide this flag if fee handler with oracle is in use")
 	cmd.Flags().Uint64Var(&BasicFee, "fee", 0, "Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei")
-	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "to-domain", "resource", "erc20-token-decimals")
+	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "domain", "resource", "decimals")
 }
 
 func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
@@ -83,6 +76,18 @@ func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
 	if !common.IsHexAddress(Bridge) {
 		return fmt.Errorf("invalid bridge address %s", Bridge)
 	}
+
+	var err error
+	if FeeData != "" {
+		FeeDataBytes, err = hex.DecodeString(FeeData)
+		if err != nil {
+			return fmt.Errorf("decode fee data failed, invalid fee data %s", FeeData)
+		}
+		if len(FeeDataBytes) != 321 {
+			return fmt.Errorf("invalid fee data length: %d", len(FeeData))
+		}
+	}
+
 	switch Priority {
 	case "none", "slow", "medium", "fast":
 		return nil
@@ -95,24 +100,20 @@ func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 	var err error
 
 	RecipientAddress = common.HexToAddress(Recipient)
-	tokenDecimals := big.NewInt(int64(Decimals))
+	decimals := big.NewInt(int64(Decimals))
 	BridgeAddr = common.HexToAddress(Bridge)
-	RealAmount, err = callsUtil.UserAmountToWei(Amount, tokenDecimals)
+	RealAmount, err = callsUtil.UserAmountToWei(Amount, decimals)
 	if err != nil {
 		return err
 	}
 	ResourceIdBytesArr, err = flags.ProcessResourceID(ResourceID)
-	if FeeOracleSignature != "" {
-		ValidFeeOracleSignature, err = hex.DecodeString(FeeOracleSignature)
-	}
 	return err
 }
 
 func DepositCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
 	hash, err := contract.Erc20Deposit(
-		RecipientAddress, RealAmount, ResourceIdBytesArr, BaseRate, TokenRate, big.NewInt(int64(DestGasPrice)),
-		ExpirationTimestamp, FromDomainID, ToDomainID, int64(Decimals), int64(DestNativeTokenDecimals),
-		ValidFeeOracleSignature, FeeHandlerWithOracle, transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority],
+		RecipientAddress, RealAmount, ResourceIdBytesArr, uint8(DomainID), FeeDataBytes,
+		transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority],
 			Value: big.NewInt(0).SetUint64(BasicFee)},
 	)
 	if err != nil {

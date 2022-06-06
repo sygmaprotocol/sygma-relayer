@@ -1,7 +1,6 @@
 package erc721
 
 import (
-	"encoding/hex"
 	"fmt"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
@@ -9,6 +8,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/util"
 	"math/big"
+	"strconv"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
@@ -52,20 +52,13 @@ var depositCmd = &cobra.Command{
 func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Recipient, "recipient", "", "Recipient address")
 	cmd.Flags().StringVar(&Bridge, "bridge", "", "Bridge contract address")
-	cmd.Flags().Uint8Var(&FromDomainID, "from-domain", 0, "Source domain ID(required when fee handler with oracle is in use)")
-	cmd.Flags().Uint8Var(&ToDomainID, "to-domain", 0, "Destination domain ID")
+	cmd.Flags().StringVar(&DestionationID, "destination", "", "Destination domain ID")
 	cmd.Flags().StringVar(&ResourceID, "resource", "", "Resource ID for transfer")
 	cmd.Flags().StringVar(&Token, "token", "", "ERC721 token ID")
 	cmd.Flags().StringVar(&Metadata, "metadata", "", "ERC721 token metadata")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed (default: medium)")
-	cmd.Flags().Uint64Var(&DestNativeTokenDecimals, "dest-native-token-decimals", 0, "Destination domain native token decimals(required when fee handler with oracle is in use)")
-	cmd.Flags().Uint64Var(&DestGasPrice, "dest-gas-price", 0, "Destination domain gas price(required when fee handler with oracle is in use)")
-	cmd.Flags().StringVar(&BaseRate, "ber", "", "Base rate(required when fee handler with oracle is in use)")
-	cmd.Flags().Int64Var(&ExpirationTimestamp, "expire-timestamp", 0, "Rate expire timestamp in unix time, the number of seconds elapsed since January 1, 1970 UTC(required when fee handler with oracle is in use)")
-	cmd.Flags().StringVar(&FeeOracleSignature, "fee-oracle-signature", "", "Signature of the fee oracle in hex string without prefix(required when fee handler with oracle is in use)")
-	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Indicator if fee handler with oracle is in use")
 	cmd.Flags().Uint64Var(&BasicFee, "fee", 0, "Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei")
-	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "to-domain", "resource", "token")
+	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "destination", "resource", "token")
 }
 
 func init() {
@@ -90,7 +83,11 @@ func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
 func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 	RecipientAddr = common.HexToAddress(Recipient)
 	BridgeAddr = common.HexToAddress(Bridge)
-
+	DestinationID, err = strconv.Atoi(DestionationID)
+	if err != nil {
+		log.Error().Err(fmt.Errorf("destination ID conversion error: %v", err))
+		return err
+	}
 	var ok bool
 	TokenId, ok = big.NewInt(0).SetString(Token, 10)
 	if !ok {
@@ -98,18 +95,12 @@ func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 	}
 
 	ResourceId, err = flags.ProcessResourceID(ResourceID)
-	if FeeOracleSignature != "" {
-		ValidFeeOracleSignature, err = hex.DecodeString(FeeOracleSignature)
-	}
 	return err
 }
 
 func DepositCmd(cmd *cobra.Command, args []string, bridgeContract *bridge.BridgeContract) error {
 	txHash, err := bridgeContract.Erc721Deposit(
-		TokenId, Metadata, RecipientAddr, ResourceId,
-		BaseRate, BaseRate, big.NewInt(int64(DestGasPrice)),
-		ExpirationTimestamp, FromDomainID, ToDomainID, int64(DestNativeTokenDecimals), int64(DestNativeTokenDecimals),
-		ValidFeeOracleSignature, FeeHandlerWithOracle,
+		TokenId, Metadata, RecipientAddr, ResourceId, uint8(DestinationID), FeeDataBytes,
 		transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority], Value: big.NewInt(0).SetUint64(BasicFee)},
 	)
 	if err != nil {
