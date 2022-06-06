@@ -120,8 +120,8 @@ type IntegrationTestSuite struct {
 // SetupSuite waits until all contracts are deployed
 func (its *IntegrationTestSuite) SetupSuite() {
 	for {
-		_, err := its.client2.CodeAt(context.Background(), its.config2.GenericHandlerAddr, nil)
-		if err == nil {
+		code, err := its.client2.CodeAt(context.Background(), its.config2.GenericHandlerAddr, nil)
+		if err == nil && len(code) == 0 {
 			break
 		}
 
