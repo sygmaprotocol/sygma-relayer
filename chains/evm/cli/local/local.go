@@ -25,6 +25,15 @@ var (
 	fabric2      = evmtransaction.NewTransaction
 )
 
+func BindLocalSetupFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ethEndpoint1, "endpoint1", "", "RPC endpoint of the first network")
+	cmd.Flags().StringVar(&ethEndpoint2, "endpoint2", "", "RPC endpoint of the second network")
+}
+
+func init() {
+	BindLocalSetupFlags(LocalSetupCmd)
+}
+
 func localSetup(cmd *cobra.Command, args []string) error {
 	// init client1
 	ethClient, err := evmclient.NewEVMClientFromParams(ethEndpoint1, EveKp.PrivateKey())
