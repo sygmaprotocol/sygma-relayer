@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"bytes"
+	"encoding/binary"
 	"math/big"
 	"strconv"
 	"strings"
@@ -274,41 +275,19 @@ func (c *BridgeContract) ExecuteProposal(
 }
 
 func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
-	domainType, _ := abi.NewType("uint8", "uint8", nil)
-	depositNonceType, _ := abi.NewType("uint64", "uint64", nil)
-	dataType, _ := abi.NewType("bytes", "bytes", nil)
-	resourceType, _ := abi.NewType("bytes32", "bytes32", nil)
-
-	arguments := abi.Arguments{
-		{
-			Type: domainType,
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, proposal.DepositNonce)
+	proposalBytes := bytes.Join(
+		[][]byte{
+			{proposal.Source},
+			{proposal.Destination},
+			nonceBytes,
+			proposal.Data,
+			proposal.ResourceId[:],
 		},
-		{
-			Type: domainType,
-		},
-		{
-			Type: depositNonceType,
-		},
-		{
-			Type: dataType,
-		},
-		{
-			Type: resourceType,
-		},
-	}
-
-	bytes, err := arguments.Pack(
-		proposal.Source,
-		proposal.Destination,
-		proposal.DepositNonce,
-		proposal.Data,
-		proposal.ResourceId,
+		nil,
 	)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	hash := crypto.Keccak256Hash(bytes)
+	hash := crypto.Keccak256Hash(proposalBytes)
 	return hash.Bytes(), nil
 }
 
