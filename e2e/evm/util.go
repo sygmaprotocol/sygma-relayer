@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"errors"
+	"math/big"
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -14,7 +15,12 @@ import (
 
 var TestTimeout = time.Second * 600
 
-func WaitForProposalExecuted(client TestClient, bridge common.Address) error {
+type Client interface {
+	LatestBlock() (*big.Int, error)
+	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
+}
+
+func WaitForProposalExecuted(client Client, bridge common.Address) error {
 	startBlock, _ := client.LatestBlock()
 
 	query := ethereum.FilterQuery{

@@ -40,14 +40,14 @@ func localSetup(cmd *cobra.Command, args []string) error {
 
 	// chain 1
 	// domainsId: 0
-	config, err := PrepareLocalEVME2EEnv(ethClient, fabric1, 1, big.NewInt(1), EveKp.CommonAddress())
+	config, err := SetupEVMBridge(ethClient, fabric1, 1, big.NewInt(1), EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := PrepareLocalEVME2EEnv(ethClient2, fabric2, 2, big.NewInt(1), EveKp.CommonAddress())
+	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, big.NewInt(1), EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func localSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func prettyPrint(config, config2 EVME2EConfig) {
+func prettyPrint(config, config2 BridgeConfig) {
 	fmt.Printf(`
 ===============================================
 🎉🎉🎉 ChainBridge Successfully Deployed 🎉🎉🎉
@@ -96,9 +96,9 @@ Generic resourceId %s
 		config.Erc721HandlerAddr,
 		config.GenericHandlerAddr,
 		config.AssetStoreAddr,
-		config.ResourceIDERC20,
-		config.ResourceIDERC721,
-		config.ResourceIDGeneric,
+		config.Erc20ResourceID,
+		config.Erc721ResourceID,
+		config.GenericResourceID,
 		// config2
 		config2.BridgeAddr,
 		config2.Erc20Addr,
@@ -107,8 +107,8 @@ Generic resourceId %s
 		config.Erc721HandlerAddr,
 		config2.GenericHandlerAddr,
 		config2.AssetStoreAddr,
-		config2.ResourceIDERC20,
-		config2.ResourceIDERC721,
-		config2.ResourceIDGeneric,
+		config2.Erc20ResourceID,
+		config2.Erc721ResourceID,
+		config2.GenericResourceID,
 	)
 }

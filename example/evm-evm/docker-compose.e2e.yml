@@ -5,7 +5,7 @@ version: '3'
 services:
   evm1-1:
     build:
-      context: ../geth-build
+      context: ./geth-build
       dockerfile: Dockerfile
     container_name: evm1-1
     networks:
@@ -22,7 +22,7 @@ services:
   # SECOND CHAIN
   evm2-1:
     build:
-      context: ../geth-build
+      context: ./geth-build
       dockerfile: Dockerfile
     container_name: evm2-1
     networks:

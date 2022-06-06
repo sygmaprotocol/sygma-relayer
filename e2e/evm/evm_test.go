@@ -1,13 +1,17 @@
-package evm
+package evm_test
 
 import (
 	"context"
 	"math/big"
+	"testing"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
+	"github.com/ChainSafe/chainbridge-core/e2e/evm"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
 
@@ -25,19 +29,76 @@ import (
 )
 
 type TestClient interface {
-	local.E2EClient
+	local.EVMClient
 	LatestBlock() (*big.Int, error)
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 }
 
-func SetupEVM2EVMTestSuite(fabric1, fabric2 calls.TxFabric, client1, client2 TestClient) *IntegrationTestSuite {
+const ETHEndpoint1 = "ws://localhost:8546"
+const ETHEndpoint2 = "ws://localhost:8548"
+
+// Alice key is used by the relayer, Eve key is used as admin and depositter
+func Test(t *testing.T) {
+	config := local.BridgeConfig{
+		BridgeAddr: common.HexToAddress("0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66"),
+
+		Erc20Addr:        common.HexToAddress("0xb83065680e6AEc805774d8545516dF4e936F0dC0"),
+		Erc20HandlerAddr: common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
+		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+
+		Erc721HandlerAddr: common.HexToAddress("0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b"),
+		Erc721Addr:        common.HexToAddress("0x05C5AFACf64A6082D4933752FfB447AED63581b1"),
+		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+
+		GenericHandlerAddr: common.HexToAddress("0xe1588E2c6a002AE93AeD325A910Ed30961874109"),
+		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
+		AssetStoreAddr:     common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
+	}
+
+	ethClient1, err := evmclient.NewEVMClientFromParams(ETHEndpoint1, local.EveKp.PrivateKey())
+	if err != nil {
+		panic(err)
+	}
+	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
+
+	ethClient2, err := evmclient.NewEVMClientFromParams(ETHEndpoint2, local.EveKp.PrivateKey())
+	if err != nil {
+		panic(err)
+	}
+	gasPricer2 := dummy.NewStaticGasPriceDeterminant(ethClient2, nil)
+
+	suite.Run(
+		t,
+		NewEVM2EVMTestSuite(
+			evmtransaction.NewTransaction,
+			evmtransaction.NewTransaction,
+			ethClient1,
+			ethClient2,
+			gasPricer1,
+			gasPricer2,
+			config,
+			config,
+		),
+	)
+}
+
+func NewEVM2EVMTestSuite(
+	fabric1, fabric2 calls.TxFabric,
+	client1, client2 TestClient,
+	gasPricer1, gasPricer2 calls.GasPricer,
+	config1, config2 local.BridgeConfig,
+) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
-		fabric1: fabric1,
-		fabric2: fabric2,
-		client1: client1,
-		client2: client2,
+		fabric1:    fabric1,
+		fabric2:    fabric2,
+		client1:    client1,
+		client2:    client2,
+		gasPricer1: gasPricer1,
+		gasPricer2: gasPricer2,
+		config1:    config1,
+		config2:    config2,
 	}
 }
 
@@ -49,37 +110,12 @@ type IntegrationTestSuite struct {
 	gasPricer2 calls.GasPricer
 	fabric1    calls.TxFabric
 	fabric2    calls.TxFabric
-	erc20RID   [32]byte
-	erc721RID  [32]byte
-	genericRID [32]byte
-	config1    local.EVME2EConfig
-	config2    local.EVME2EConfig
+
+	config1 local.BridgeConfig
+	config2 local.BridgeConfig
 }
 
-func (s *IntegrationTestSuite) SetupSuite() {
-	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From())
-	if err != nil {
-		panic(err)
-	}
-	s.config1 = config1
-
-	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From())
-	if err != nil {
-		panic(err)
-	}
-	s.config2 = config2
-
-	s.erc20RID = calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
-	s.genericRID = calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
-	s.erc721RID = calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
-	s.gasPricer1 = dummy.NewStaticGasPriceDeterminant(s.client1, nil)
-	s.gasPricer2 = dummy.NewStaticGasPriceDeterminant(s.client2, nil)
-}
-func (s *IntegrationTestSuite) TearDownSuite() {}
-func (s *IntegrationTestSuite) SetupTest()     {}
-func (s *IntegrationTestSuite) TearDownTest()  {}
-
-func (s *IntegrationTestSuite) TestErc20Deposit() {
+func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
@@ -95,7 +131,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, transactor.TransactOptions{
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, transactor.TransactOptions{
 		Priority: uint8(2), // fast
 	})
 	s.Nil(err)
@@ -105,7 +141,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
-	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
 	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
@@ -118,7 +154,7 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
 
-func (s *IntegrationTestSuite) TestErc721Deposit() {
+func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	tokenId := big.NewInt(1)
 	metadata := "metadata.url"
 
@@ -154,7 +190,7 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Error(err)
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.erc721RID, 2, transactor.TransactOptions{},
+		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, transactor.TransactOptions{},
 	)
 	s.Nil(err)
 
@@ -163,7 +199,7 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	// check gas price of deposit tx - 50 gwei (slow)
 	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
-	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
 	// Check on evm1 that token is burned
@@ -176,7 +212,7 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Equal(dstAddr.String(), owner.String())
 }
 
-func (s *IntegrationTestSuite) TestGenericDeposit() {
+func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 
@@ -185,7 +221,7 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, transactor.TransactOptions{
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, transactor.TransactOptions{
 		Priority: uint8(0), // slow
 	})
 	s.Nil(err)
@@ -195,7 +231,7 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
-	err = WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 	// Asset hash sent is stored in centrifuge asset store contract
 	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
