@@ -39,7 +39,7 @@ services:
   setup:
     container_name: setup
     build:
-      context: ../../.
+      context: .
       dockerfile: Dockerfile
     command: local-setup
     depends_on:
@@ -53,7 +53,7 @@ services:
   relayer1:
     container_name: relayer1
     build:
-      context: ../../.
+      context: .
       dockerfile: Dockerfile
     command: run --config /cfg/config_evm-evm_1.json --testkey alice --fresh
     depends_on:
@@ -69,7 +69,7 @@ services:
   relayer2:
     container_name: relayer2
     build:
-      context: ../../.
+      context: .
       dockerfile: Dockerfile
     command: run --config /cfg/config_evm-evm_2.json --testkey bob --fresh
     depends_on:
