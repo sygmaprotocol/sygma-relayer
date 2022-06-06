@@ -52,7 +52,7 @@ func Test(t *testing.T) {
 
 		Erc721HandlerAddr: common.HexToAddress("0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b"),
 		Erc721Addr:        common.HexToAddress("0x05C5AFACf64A6082D4933752FfB447AED63581b1"),
-		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
 		GenericHandlerAddr: common.HexToAddress("0xe1588E2c6a002AE93AeD325A910Ed30961874109"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
