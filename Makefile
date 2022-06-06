@@ -40,11 +40,8 @@ genmocks:
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 
-e2e-setup:
-	docker-compose --file=./e2e/evm-evm/docker-compose.e2e.yml up
-
 e2e-test:
 	./scripts/e2e_tests.sh
 
-local-setup:
-	./scripts/local_setup.sh
+example:
+	docker-compose --file=./example/evm-evm/docker-compose.yml up
