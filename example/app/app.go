@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -44,8 +45,16 @@ func Run() error {
 		panic(err)
 	}
 
+	networkTopology, _ := topology.ProcessRawTopology(&topology.RawTopology{
+		Peers: []topology.RawPeer{
+			{PeerAddress: "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"},
+			{PeerAddress: "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
+			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
+		},
+	})
+
 	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range configuration.RelayerConfig.MpcConfig.Peers {
+	for _, pAdrInfo := range networkTopology.Peers {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
@@ -63,7 +72,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	host, err := p2p.NewHost(priv, configuration.RelayerConfig.MpcConfig)
+	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	if err != nil {
 		panic(err)
 	}

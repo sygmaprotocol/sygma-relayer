@@ -8,6 +8,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -61,10 +62,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElec
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
-			Peers: []*peer.AddrInfo{},
-			Port:  uint16(4000 + s.portOffset + i),
-		})
+		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{}, uint16(4000+s.portOffset+i))
 		testHosts = append(testHosts, newHost)
 		allowedPeers = append(allowedPeers, newHost.ID())
 	}

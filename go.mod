@@ -9,6 +9,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/golang/mock v1.6.0
 	github.com/imdario/mergo v0.3.12
+	github.com/minio/minio-go/v7 v7.0.27
 	github.com/multiformats/go-multiaddr-dns v0.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.25.0
@@ -35,6 +36,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/elastic/gosigar v0.12.0 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
@@ -43,7 +45,9 @@ require (
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/koron/go-ssdp v0.0.2 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
@@ -82,6 +86,10 @@ require (
 	github.com/miekg/dns v1.1.43 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
+	github.com/minio/md5-simd v1.1.0 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multistream v0.2.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
@@ -94,6 +102,8 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/raulk/clock v1.1.0 // indirect
 	github.com/raulk/go-watchdog v1.2.0 // indirect
+	github.com/rs/xid v1.3.0 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/status-im/keycard-go v0.0.0-20211004132608-c32310e39b86 // indirect
 	github.com/whyrusleeping/multiaddr-filter v0.0.0-20160516205228-e903e4adabd7 // indirect
 	go.opentelemetry.io/otel/internal/metric v0.24.0 // indirect

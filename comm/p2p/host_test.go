@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -38,12 +38,11 @@ func (s *HostTestSuite) TestHost_NewHost_Success() {
 	p1, _ := peer.AddrInfoFromString(p1RawAddress)
 	p2, _ := peer.AddrInfoFromString(p2RawAddress)
 
-	host, err := NewHost(privKey, relayer.MpcRelayerConfig{
+	host, err := NewHost(privKey, topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{
 			p1, p2,
 		},
-		Port: 2020,
-	})
+	}, 2020)
 	s.Nil(err)
 	s.NotNil(host)
 	// 2 peers + host
@@ -51,10 +50,9 @@ func (s *HostTestSuite) TestHost_NewHost_Success() {
 }
 
 func (s *HostTestSuite) TestHost_NewHost_InvalidPrivKey() {
-	host, err := NewHost(nil, relayer.MpcRelayerConfig{
+	host, err := NewHost(nil, topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
-		Port:  2020,
-	})
+	}, 2020)
 	s.Nil(host)
 	s.NotNil(err)
 }

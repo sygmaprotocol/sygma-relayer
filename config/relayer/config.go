@@ -1,9 +1,8 @@
 package relayer
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog"
 	"time"
 )
@@ -17,11 +16,11 @@ type RelayerConfig struct {
 }
 
 type MpcRelayerConfig struct {
-	Peers        []*peer.AddrInfo
-	Port         uint16
-	KeysharePath string
-	KeystorePath string
-	Threshold    int
+	TopologyConfiguration TopologyConfiguration
+	Port                  uint16
+	KeysharePath          string
+	KeystorePath          string
+	Threshold             int
 }
 
 type BullyConfig struct {
@@ -30,6 +29,15 @@ type BullyConfig struct {
 	PingInterval     time.Duration
 	ElectionWaitTime time.Duration
 	BullyWaitTime    time.Duration
+}
+
+type TopologyConfiguration struct {
+	AccessKey      string `mapstructure:"AccessKey" json:"accessKey"`
+	SecKey         string `mapstructure:"SecKey" json:"secKey"`
+	DocumentName   string `mapstructure:"DocumentName" default:"topology.json" json:"documentName"`
+	BucketRegion   string `mapstructure:"BucketRegion" default:"us-east-1" json:"bucketRegion"`
+	BucketName     string `mapstructure:"BucketName" default:"mpc-topology" json:"bucketName"`
+	ServiceAddress string `mapstructure:"ServiceAddress" default:"buckets.chainsafe.io" json:"serviceAddress"`
 }
 
 type RawRelayerConfig struct {
@@ -41,15 +49,11 @@ type RawRelayerConfig struct {
 }
 
 type RawMpcRelayerConfig struct {
-	KeysharePath string    `mapstructure:"KeysharePath" json:"keysharePath"`
-	KeystorePath string    `mapstructure:"KeystorePath" json:"keystorePath"`
-	Threshold    int       `mapstructure:"Threshold" json:"threshold"`
-	Peers        []RawPeer `mapstructure:"Peers" json:"peers"`
-	Port         uint16    `mapstructure:"Port" json:"port" default:"9000"`
-}
-
-type RawPeer struct {
-	PeerAddress string `mapstructure:"PeerAddress" json:"peerAddress"`
+	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
+	KeystorePath          string                `mapstructure:"KeystorePath" json:"keystorePath"`
+	Threshold             int                   `mapstructure:"Threshold" json:"threshold"`
+	Port                  uint16                `mapstructure:"Port" json:"port" default:"9000"`
+	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
 }
 
 type RawBullyConfig struct {
@@ -61,6 +65,13 @@ type RawBullyConfig struct {
 }
 
 func (c *RawRelayerConfig) Validate() error {
+	if c.MpcConfig.TopologyConfiguration.AccessKey == "" {
+		return errors.New("topology configuration access key not provided")
+	}
+
+	if c.MpcConfig.TopologyConfiguration.SecKey == "" {
+		return errors.New("topology configuration secret key not provided")
+	}
 	return nil
 }
 
@@ -98,16 +109,8 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 
 func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 	var mpcConfig MpcRelayerConfig
-	var peers []*peer.AddrInfo
-	for _, p := range rawConfig.MpcConfig.Peers {
-		addrInfo, err := peer.AddrInfoFromString(p.PeerAddress)
-		if err != nil {
-			return mpcConfig, fmt.Errorf("invalid peer address %s: %w", p.PeerAddress, err)
-		}
-		peers = append(peers, addrInfo)
-	}
 
-	mpcConfig.Peers = peers
+	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
 	mpcConfig.Port = rawConfig.MpcConfig.Port
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
 	mpcConfig.KeystorePath = rawConfig.MpcConfig.KeystorePath
