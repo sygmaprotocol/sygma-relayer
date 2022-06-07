@@ -121,6 +121,7 @@ func SetupEVMBridge(
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
+		FeeHandlerAddr:    *feeHandlerContract.ContractAddress(),
 	}
 
 	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
