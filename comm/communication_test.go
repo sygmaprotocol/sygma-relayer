@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -42,10 +42,9 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
+		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
-			Port:  uint16(4000 + i),
-		})
+		}, uint16(4000+i))
 		s.testHosts = append(s.testHosts, newHost)
 	}
 
@@ -115,10 +114,9 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
 	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-	externalHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
+	externalHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
-		Port:  uint16(4005),
-	})
+	}, uint16(4005))
 
 	firstSubChannel := make(chan *comm.WrappedMessage)
 	s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)

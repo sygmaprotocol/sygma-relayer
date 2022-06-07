@@ -3,7 +3,7 @@ package static
 import (
 	"fmt"
 	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -35,10 +35,9 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, relayer.MpcRelayerConfig{
+		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
-			Port:  uint16(4000 + i),
-		})
+		}, uint16(4000+i))
 		s.testHosts = append(s.testHosts, newHost)
 		peers = append(peers, newHost.ID())
 	}

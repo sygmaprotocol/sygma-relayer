@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/topology"
 
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -16,13 +16,13 @@ import (
 )
 
 // NewHost creates new host.Host from private key and relayer configuration
-func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host, error) {
+func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, port uint16) (host.Host, error) {
 	if privKey == nil {
 		return nil, errors.New("unable to create libp2p host: private key not defined")
 	}
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", rconf.Port)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port)),
 		libp2p.Identity(privKey),
 		libp2p.DisableRelay(),
 		libp2p.Security(noise.ID, noise.New),
@@ -41,7 +41,7 @@ func NewHost(privKey crypto.PrivKey, rconf relayer.MpcRelayerConfig) (host.Host,
 	if err != nil {
 		return nil, err
 	}
-	for _, p := range rconf.Peers {
+	for _, p := range networkTopology.Peers {
 		addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
 		if err != nil {
 			return nil, err
