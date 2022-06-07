@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	SigningTimeout = time.Minute * 15
+	SigningTimeout = time.Minute * 30
 )
 
 type startParams struct {

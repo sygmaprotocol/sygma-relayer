@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 
@@ -17,11 +18,20 @@ var LocalSetupCmd = &cobra.Command{
 
 // configuration
 var (
-	ethEndpoint1 = "http://localhost:8545"
-	ethEndpoint2 = "http://localhost:8547"
+	ethEndpoint1 = "ws://localhost:8546"
+	ethEndpoint2 = "ws://localhost:8548"
 	fabric1      = evmtransaction.NewTransaction
 	fabric2      = evmtransaction.NewTransaction
 )
+
+func BindLocalSetupFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ethEndpoint1, "endpoint1", "", "RPC endpoint of the first network")
+	cmd.Flags().StringVar(&ethEndpoint2, "endpoint2", "", "RPC endpoint of the second network")
+}
+
+func init() {
+	BindLocalSetupFlags(LocalSetupCmd)
+}
 
 func localSetup(cmd *cobra.Command, args []string) error {
 	// init client1
@@ -38,14 +48,14 @@ func localSetup(cmd *cobra.Command, args []string) error {
 
 	// chain 1
 	// domainsId: 0
-	config, err := PrepareLocalEVME2EEnv(ethClient, fabric1, 1, EveKp.CommonAddress())
+	config, err := SetupEVMBridge(ethClient, fabric1, 1, EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := PrepareLocalEVME2EEnv(ethClient2, fabric2, 2, EveKp.CommonAddress())
+	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
@@ -55,7 +65,7 @@ func localSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func prettyPrint(config, config2 EVME2EConfig) {
+func prettyPrint(config, config2 BridgeConfig) {
 	fmt.Printf(`
 ===============================================
 🎉🎉🎉 ChainBridge Successfully Deployed 🎉🎉🎉
@@ -99,9 +109,9 @@ Generic resourceId: %s
 		config.Erc721HandlerAddr,
 		config.GenericHandlerAddr,
 		config.AssetStoreAddr,
-		config.ResourceIDERC20,
-		config.ResourceIDERC721,
-		config.ResourceIDGeneric,
+		config.Erc20ResourceID,
+		config.Erc721ResourceID,
+		config.GenericResourceID,
 		// config2
 		config2.BridgeAddr,
 		config2.FeeHandlerAddr,
@@ -113,8 +123,8 @@ Generic resourceId: %s
 		config.Erc721HandlerAddr,
 		config2.GenericHandlerAddr,
 		config2.AssetStoreAddr,
-		config2.ResourceIDERC20,
-		config2.ResourceIDERC721,
-		config2.ResourceIDGeneric,
+		config2.Erc20ResourceID,
+		config2.Erc721ResourceID,
+		config2.GenericResourceID,
 	)
 }

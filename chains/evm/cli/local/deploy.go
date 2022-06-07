@@ -4,8 +4,9 @@
 package local
 
 import (
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
 	"math/big"
+
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
@@ -19,7 +20,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/keystore"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -31,51 +31,55 @@ var (
 	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")
 )
 
-type EVME2EConfig struct {
-	BridgeAddr         common.Address
-	FeeHandlerAddr     common.Address
-	Erc20Addr          common.Address
-	Erc20HandlerAddr   common.Address
-	AssetStoreAddr     common.Address
+type BridgeConfig struct {
+	BridgeAddr common.Address
+
+	Erc20Addr        common.Address
+	Erc20HandlerAddr common.Address
+	Erc20ResourceID  types.ResourceID
+
 	GenericHandlerAddr common.Address
-	Erc721Addr         common.Address
-	Erc721HandlerAddr  common.Address
-	ResourceIDERC20    string
-	ResourceIDERC721   string
-	ResourceIDGeneric  string
-	IsBasicFeeHandler  bool
-	Fee                *big.Int
+	AssetStoreAddr     common.Address
+	GenericResourceID  types.ResourceID
+
+	Erc721Addr        common.Address
+	Erc721HandlerAddr common.Address
+	Erc721ResourceID  types.ResourceID
+
+	FeeHandlerAddr    common.Address
+	IsBasicFeeHandler bool
+	Fee               *big.Int
 }
 
-type E2EClient interface {
+type EVMClient interface {
 	calls.ContractCallerDispatcher
 	evmgaspricer.GasPriceClient
 }
 
-func PrepareLocalEVME2EEnv(
-	ethClient E2EClient,
+func SetupEVMBridge(
+	ethClient EVMClient,
 	fabric calls.TxFabric,
 	domainID uint8,
 	mintTo common.Address,
-) (EVME2EConfig, error) {
+) (BridgeConfig, error) {
 	staticGasPricer := evmgaspricer.NewStaticGasPriceDeterminant(ethClient, nil)
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
 	bridgeContractAddress, err := bridgeContract.DeployContract(domainID)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 	_, err = bridgeContract.EndKeygen(MpcAddress, transactor.TransactOptions{})
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
 	erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, err := deployErc721(
 		ethClient, t, bridgeContractAddress,
 	)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
 	erc20Contract, erc20ContractAddress, erc20HandlerContractAddress, err := deployErc20(
@@ -83,70 +87,61 @@ func PrepareLocalEVME2EEnv(
 	)
 
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
 	genericHandlerAddress, assetStoreAddress, err := deployGeneric(ethClient, t, bridgeContractAddress)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
-	resourceIDERC20 := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
-
-	resourceIDGenericHandler := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
-
-	resourceIDERC721 := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
-
-	basicFeeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
-	basicFeeHandlerAddress, err := basicFeeHandlerContract.DeployContract(bridgeContractAddress)
+	feeHandlerContract, err := deployFeeHandler(ethClient, t, bridgeContractAddress)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
-	basicFee := big.NewInt(100000000000)
-	_, err = basicFeeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
-	if err != nil {
-		return EVME2EConfig{}, err
-	}
+	erc20ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
+	genericResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
+	erc721ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 
-	conf := EVME2EConfig{
-		BridgeAddr:     bridgeContractAddress,
-		FeeHandlerAddr: basicFeeHandlerAddress,
+	conf := BridgeConfig{
+		BridgeAddr: bridgeContractAddress,
 
 		Erc20Addr:        erc20ContractAddress,
 		Erc20HandlerAddr: erc20HandlerContractAddress,
+		Erc20ResourceID:  erc20ResourceID,
 
 		GenericHandlerAddr: genericHandlerAddress,
 		AssetStoreAddr:     assetStoreAddress,
+		GenericResourceID:  genericResourceID,
 
 		Erc721Addr:        erc721ContractAddress,
 		Erc721HandlerAddr: erc721HandlerContractAddress,
-		ResourceIDERC20:   hexutil.Encode(resourceIDERC20[:]),
-		ResourceIDERC721:  hexutil.Encode(resourceIDERC721[:]),
-		ResourceIDGeneric: hexutil.Encode(resourceIDGenericHandler[:]),
+		Erc721ResourceID:  erc721ResourceID,
 
 		IsBasicFeeHandler: true,
-		Fee:               basicFee,
+		Fee:               big.NewInt(100000000000),
+		FeeHandlerAddr:    *feeHandlerContract.ContractAddress(),
 	}
 
-	err = PrepareFeeEnv(bridgeContract, basicFeeHandlerAddress)
+	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
-	err = PrepareErc20EVME2EEnv(bridgeContract, erc20Contract, mintTo, conf, resourceIDERC20)
+	err = SetupERC721Handler(bridgeContract, erc721Contract, conf)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
-	err = PrepareErc721EVME2EEnv(bridgeContract, erc721Contract, conf, resourceIDERC721)
+	err = SetupGenericHandler(bridgeContract, conf)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
-	err = PrepareGenericEVME2EEnv(bridgeContract, conf, resourceIDGenericHandler)
+	err = SetupFeeHandler(bridgeContract, feeHandlerContract)
 	if err != nil {
-		return EVME2EConfig{}, err
+		return BridgeConfig{}, err
 	}
 
 	log.Debug().Msgf("All deployments and preparations are done")
@@ -154,7 +149,7 @@ func PrepareLocalEVME2EEnv(
 }
 
 func deployGeneric(
-	ethClient E2EClient, t transactor.Transactor, bridgeContractAddress common.Address,
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
 ) (common.Address, common.Address, error) {
 	assetStoreContract := centrifuge.NewAssetStoreContract(ethClient, common.Address{}, t)
 	assetStoreAddress, err := assetStoreContract.DeployContract()
@@ -174,7 +169,7 @@ func deployGeneric(
 }
 
 func deployErc20(
-	ethClient E2EClient, t transactor.Transactor, bridgeContractAddress common.Address,
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
 ) (*erc20.ERC20Contract, common.Address, common.Address, error) {
 	erc20Contract := erc20.NewERC20Contract(ethClient, common.Address{}, t)
 	erc20ContractAddress, err := erc20Contract.DeployContract("Test", "TST")
@@ -194,7 +189,7 @@ func deployErc20(
 }
 
 func deployErc721(
-	ethClient E2EClient, t transactor.Transactor, bridgeContractAddress common.Address,
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
 ) (*erc721.ERC721Contract, common.Address, common.Address, error) {
 	erc721Contract := erc721.NewErc721Contract(ethClient, common.Address{}, t)
 	erc721ContractAddress, err := erc721Contract.DeployContract("TestERC721", "TST721", "")
@@ -213,19 +208,38 @@ func deployErc721(
 	return erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, nil
 }
 
-func PrepareFeeEnv(bridgeContract *bridge.BridgeContract, feeHandlerAddr common.Address) error {
-	_, err := bridgeContract.AdminChangeFeeHandler(feeHandlerAddr, transactor.TransactOptions{GasLimit: 2000000})
+func deployFeeHandler(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
+) (*feeHandler.BasicFeeHandlerContract, error) {
+	feeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
+	_, err := feeHandlerContract.DeployContract(bridgeContractAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return feeHandlerContract, nil
+}
+
+func SetupFeeHandler(bridgeContract *bridge.BridgeContract, feeHandlerContract *feeHandler.BasicFeeHandlerContract) error {
+	_, err := bridgeContract.AdminChangeFeeHandler(*feeHandlerContract.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return err
 	}
+
+	basicFee := big.NewInt(100000000000)
+	_, err = feeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func PrepareErc20EVME2EEnv(
-	bridgeContract *bridge.BridgeContract, erc20Contract *erc20.ERC20Contract, mintTo common.Address, conf EVME2EConfig, resourceID types.ResourceID,
+func SetupERC20Handler(
+	bridgeContract *bridge.BridgeContract, erc20Contract *erc20.ERC20Contract, mintTo common.Address, conf BridgeConfig,
 ) error {
 	_, err := bridgeContract.AdminSetResource(
-		conf.Erc20HandlerAddr, resourceID, conf.Erc20Addr, transactor.TransactOptions{GasLimit: 2000000},
+		conf.Erc20HandlerAddr, conf.Erc20ResourceID, conf.Erc20Addr, transactor.TransactOptions{GasLimit: 2000000},
 	)
 	if err != nil {
 		return err
@@ -254,10 +268,10 @@ func PrepareErc20EVME2EEnv(
 	return nil
 }
 
-func PrepareGenericEVME2EEnv(bridgeContract *bridge.BridgeContract, conf EVME2EConfig, resourceID types.ResourceID) error {
+func SetupGenericHandler(bridgeContract *bridge.BridgeContract, conf BridgeConfig) error {
 	_, err := bridgeContract.AdminSetGenericResource(
 		conf.GenericHandlerAddr,
-		resourceID,
+		conf.GenericResourceID,
 		conf.AssetStoreAddr,
 		[4]byte{0x65, 0x4c, 0xf8, 0x8c},
 		big.NewInt(0),
@@ -270,8 +284,8 @@ func PrepareGenericEVME2EEnv(bridgeContract *bridge.BridgeContract, conf EVME2EC
 	return nil
 }
 
-func PrepareErc721EVME2EEnv(bridgeContract *bridge.BridgeContract, erc721Contract *erc721.ERC721Contract, conf EVME2EConfig, resourceID types.ResourceID) error {
-	_, err := bridgeContract.AdminSetResource(conf.Erc721HandlerAddr, resourceID, conf.Erc721Addr, transactor.TransactOptions{GasLimit: 2000000})
+func SetupERC721Handler(bridgeContract *bridge.BridgeContract, erc721Contract *erc721.ERC721Contract, conf BridgeConfig) error {
+	_, err := bridgeContract.AdminSetResource(conf.Erc721HandlerAddr, conf.Erc721ResourceID, conf.Erc721Addr, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return err
 	}
