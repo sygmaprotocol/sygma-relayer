@@ -2,14 +2,13 @@ package erc721
 
 import (
 	"fmt"
-	"math/big"
-	"strconv"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/util"
+	"math/big"
+	"strconv"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
@@ -58,6 +57,7 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&Token, "token", "", "ERC721 token ID")
 	cmd.Flags().StringVar(&Metadata, "metadata", "", "ERC721 token metadata")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed (default: medium)")
+	cmd.Flags().Uint64Var(&BasicFee, "fee", 0, "Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "destination", "resource", "token")
 }
 
@@ -83,13 +83,11 @@ func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
 func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 	RecipientAddr = common.HexToAddress(Recipient)
 	BridgeAddr = common.HexToAddress(Bridge)
-
 	DestinationID, err = strconv.Atoi(DestionationID)
 	if err != nil {
 		log.Error().Err(fmt.Errorf("destination ID conversion error: %v", err))
 		return err
 	}
-
 	var ok bool
 	TokenId, ok = big.NewInt(0).SetString(Token, 10)
 	if !ok {
@@ -102,7 +100,8 @@ func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 
 func DepositCmd(cmd *cobra.Command, args []string, bridgeContract *bridge.BridgeContract) error {
 	txHash, err := bridgeContract.Erc721Deposit(
-		TokenId, Metadata, RecipientAddr, ResourceId, uint8(DestinationID), transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority]},
+		TokenId, Metadata, RecipientAddr, ResourceId, uint8(DestinationID), FeeDataBytes,
+		transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority], Value: big.NewInt(0).SetUint64(BasicFee)},
 	)
 	if err != nil {
 		return err

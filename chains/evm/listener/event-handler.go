@@ -10,6 +10,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/keygen"
+	"github.com/ChainSafe/chainbridge-core/tss/resharing"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -103,21 +104,43 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 		return nil
 	}
 
-	keygen := keygen.NewKeygen(block.String(), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
 }
 
+func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
+	return fmt.Sprintf("keygen-%s", block.String())
+}
+
 type RefreshEventHandler struct {
 	eventListener EventListener
 	bridgeAddress common.Address
+	coordinator   *tss.Coordinator
+	host          host.Host
+	communication comm.Communication
+	storer        resharing.SaveDataStorer
+	threshold     int
 }
 
-func NewRefreshEventHandler(eventListener EventListener, bridgeAddress common.Address) *RefreshEventHandler {
+func NewRefreshEventHandler(
+	eventListener EventListener,
+	coordinator *tss.Coordinator,
+	host host.Host,
+	communication comm.Communication,
+	storer resharing.SaveDataStorer,
+	bridgeAddress common.Address,
+	threshold int,
+) *RefreshEventHandler {
 	return &RefreshEventHandler{
 		eventListener: eventListener,
+		coordinator:   coordinator,
+		host:          host,
+		communication: communication,
+		storer:        storer,
 		bridgeAddress: bridgeAddress,
+		threshold:     threshold,
 	}
 }
 
@@ -130,5 +153,12 @@ func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 		return nil
 	}
 
+	resharing := resharing.NewResharing(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
+	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
+
 	return nil
+}
+
+func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
+	return fmt.Sprintf("resharing-%s", block.String())
 }

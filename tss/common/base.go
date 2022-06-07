@@ -28,7 +28,6 @@ type BaseTss struct {
 	Peers         []peer.ID
 	Log           zerolog.Logger
 	Timeout       time.Duration
-	Coordinator   bool
 
 	ErrChn chan error
 	Cancel context.CancelFunc
@@ -118,12 +117,6 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 			}
 		}
 	}
-}
-
-// StartParams returns params necessary to start the tss process which
-// are sent in the start message.
-func (b *BaseTss) StartParams(readyMap map[peer.ID]bool) []string {
-	return []string{}
 }
 
 // BroccastPeers returns peers that should receive the tss message

@@ -1,9 +1,8 @@
 package deposit
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common/math"
+	"math/big"
 )
 
 func constructMainDepositData(tokenStats *big.Int, destRecipient []byte) []byte {

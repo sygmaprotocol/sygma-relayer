@@ -2,6 +2,7 @@ package keygen
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -50,6 +51,7 @@ func NewKeygen(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
 			Timeout:       KeygenTimeout,
+			Cancel:        func() {},
 		},
 		storer:    storer,
 		threshold: threshold,
@@ -64,7 +66,7 @@ func (k *Keygen) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
 	k.ErrChn = errChn
 	ctx, k.Cancel = context.WithCancel(ctx)
@@ -105,8 +107,23 @@ func (k *Keygen) Stop() {
 }
 
 // Ready returns true if all parties from the peerstore are ready.
-func (k *Keygen) Ready(readyMap map[peer.ID]bool) bool {
-	return len(readyMap) == len(k.Host.Peerstore().Peers())
+// Error is returned if excluded peers exist as we need all peers to participate
+// in keygen process.
+func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+	if len(excludedPeers) > 0 {
+		return false, errors.New("error")
+	}
+
+	return len(readyMap) == len(k.Host.Peerstore().Peers()), nil
+}
+
+// ValidCoordinators returns all peers in peerstore
+func (k *Keygen) ValidCoordinators() []peer.ID {
+	return k.Host.Peerstore().Peers()
+}
+
+func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
+	return []byte{}
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.

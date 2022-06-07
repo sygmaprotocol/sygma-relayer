@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"time"
 
+	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+
 	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ChainSafe/chainbridge-core/tss/signing"
@@ -19,7 +21,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+)
+
+var (
+	executionCheckPeriod = time.Second * 15
 )
 
 type MessageHandler interface {
@@ -83,7 +88,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		fmt.Sprintf("%d-%d", m.Destination, m.DepositNonce),
+		e.sessionID(m.Destination, m.DepositNonce),
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -96,21 +101,16 @@ func (e *Executor) Execute(m *message.Message) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(executionCheckPeriod)
 	defer ticker.Stop()
+	defer cancel()
 	for {
 		select {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				sig := signatureData.Signature.R
-				sig = append(sig[:], signatureData.Signature.S[:]...)
-				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-				sig[64] += 27
-
-				hash, err := e.bridge.ExecuteProposal(prop, sig, m.RevertOnFail, transactor.TransactOptions{})
+				hash, err := e.executeProposal(prop, signatureData, m.RevertOnFail)
 				if err != nil {
-					cancel()
 					return err
 				}
 
@@ -124,9 +124,28 @@ func (e *Executor) Execute(m *message.Message) error {
 				}
 
 				log.Info().Msgf("Successfully executed proposal %v", prop)
-				cancel()
 				return nil
 			}
 		}
 	}
+}
+
+func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData, revertOnFail bool) (*common.Hash, error) {
+	sig := signatureData.Signature.R
+	sig = append(sig[:], signatureData.Signature.S[:]...)
+	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+	sig[64] += 27 // Transform V from 0/1 to 27/28
+
+	hash, err := e.bridge.ExecuteProposal(prop, sig, revertOnFail, transactor.TransactOptions{
+		Priority: prop.Metadata.Priority,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, err
+}
+
+func (e *Executor) sessionID(destination uint8, depositNonce uint64) string {
+	return fmt.Sprintf("%d-%d", destination, depositNonce)
 }
