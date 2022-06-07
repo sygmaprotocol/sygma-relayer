@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -44,8 +45,18 @@ func Run() error {
 		panic(err)
 	}
 
+	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	if err != nil {
+		return err
+	}
+
+	networkTopology, err := topologyProvider.NetworkTopology()
+	if err != nil {
+		return err
+	}
+
 	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range configuration.RelayerConfig.MpcConfig.Peers {
+	for _, pAdrInfo := range networkTopology.Peers {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
@@ -63,7 +74,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	host, err := p2p.NewHost(priv, configuration.RelayerConfig.MpcConfig)
+	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	if err != nil {
 		panic(err)
 	}
