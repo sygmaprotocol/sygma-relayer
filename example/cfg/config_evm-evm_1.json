@@ -3,15 +3,7 @@
     "mpcConfig": {
       "port": "9000",
       "keysharePath": "/cfg/keyshares/0.keyshare",
-      "keystorePath": "/cfg/pks/0.pk",
-      "peers": [
-        {
-          "peerAddress": "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"
-        },
-        {
-          "peerAddress": "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"
-        }
-      ]
+      "keystorePath": "/cfg/pks/0.pk"
     }
   },
   "chains": [

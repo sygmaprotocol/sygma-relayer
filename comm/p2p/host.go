@@ -42,12 +42,14 @@ func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, p
 		return nil, err
 	}
 	for _, p := range networkTopology.Peers {
-		addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
-		if err != nil {
-			return nil, err
-		}
+		if p.ID != h.ID() {
+			addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
+			if err != nil {
+				return nil, err
+			}
 
-		h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
+			h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
+		}
 	}
 
 	return h, nil

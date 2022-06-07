@@ -45,15 +45,13 @@ func Run() error {
 		panic(err)
 	}
 
-	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
-	if err != nil {
-		return err
-	}
-
-	networkTopology, err := topologyProvider.NetworkTopology()
-	if err != nil {
-		return err
-	}
+	networkTopology, _ := topology.ProcessRawTopology(&topology.RawTopology{
+		Peers: []topology.RawPeer{
+			{PeerAddress: "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"},
+			{PeerAddress: "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
+			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
+		},
+	})
 
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {

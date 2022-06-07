@@ -79,6 +79,10 @@ func (t topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		return NetworkTopology{}, err
 	}
 
+	return ProcessRawTopology(rawTopology)
+}
+
+func ProcessRawTopology(rawTopology *RawTopology) (NetworkTopology, error) {
 	var peers []*peer.AddrInfo
 	for _, p := range rawTopology.Peers {
 		addrInfo, err := peer.AddrInfoFromString(p.PeerAddress)
@@ -87,8 +91,5 @@ func (t topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		}
 		peers = append(peers, addrInfo)
 	}
-
-	return NetworkTopology{
-		Peers: peers,
-	}, nil
+	return NetworkTopology{Peers: peers}, nil
 }
