@@ -2,20 +2,18 @@ package evm
 
 import (
 	"context"
-	"math/big"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
 	"github.com/ethereum/go-ethereum"
@@ -54,16 +52,17 @@ type IntegrationTestSuite struct {
 	genericRID [32]byte
 	config1    local.EVME2EConfig
 	config2    local.EVME2EConfig
+	basicFee   *big.Int
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
-	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, big.NewInt(2), s.client1.From())
+	config1, err := local.PrepareLocalEVME2EEnv(s.client1, s.fabric1, 1, s.client1.From())
 	if err != nil {
 		panic(err)
 	}
 	s.config1 = config1
 
-	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, big.NewInt(2), s.client2.From())
+	config2, err := local.PrepareLocalEVME2EEnv(s.client2, s.fabric2, 2, s.client2.From())
 	if err != nil {
 		panic(err)
 	}
@@ -74,6 +73,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.erc721RID = calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 	s.gasPricer1 = dummy.NewStaticGasPriceDeterminant(s.client1, nil)
 	s.gasPricer2 = dummy.NewStaticGasPriceDeterminant(s.client2, nil)
+	s.basicFee = config1.Fee
 }
 func (s *IntegrationTestSuite) TearDownSuite() {}
 func (s *IntegrationTestSuite) SetupTest()     {}
@@ -95,9 +95,12 @@ func (s *IntegrationTestSuite) TestErc20Deposit() {
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.erc20RID, 2, nil,
+		transactor.TransactOptions{
+			Priority: uint8(2), // fast
+			Value:    s.basicFee,
+		})
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
@@ -154,7 +157,9 @@ func (s *IntegrationTestSuite) TestErc721Deposit() {
 	s.Error(err)
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.erc721RID, 2, transactor.TransactOptions{},
+		tokenId, metadata, dstAddr, s.erc721RID, 2, nil, transactor.TransactOptions{
+			Value: s.basicFee,
+		},
 	)
 	s.Nil(err)
 
@@ -185,8 +190,9 @@ func (s *IntegrationTestSuite) TestGenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, transactor.TransactOptions{
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.genericRID, 2, nil, transactor.TransactOptions{
 		Priority: uint8(0), // slow
+		Value:    s.basicFee,
 	})
 	s.Nil(err)
 

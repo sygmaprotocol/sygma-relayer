@@ -20,6 +20,7 @@ var (
 	ResourceID     string
 	Minter         string
 	Priority       string
+	BasicFee       uint64
 )
 
 // processed flag vars
@@ -32,6 +33,7 @@ var (
 	DestinationID int
 	ResourceId    types.ResourceID
 	MinterAddr    common.Address
+	FeeDataBytes  []byte
 )
 
 // global flags

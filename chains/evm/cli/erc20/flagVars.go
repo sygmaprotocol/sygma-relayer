@@ -24,6 +24,8 @@ var (
 	SpenderAddress string
 	Minter         string
 	Priority       string
+	FeeData        string
+	BasicFee       uint64
 )
 
 //processed flag vars
@@ -34,6 +36,7 @@ var (
 	MinterAddr         common.Address
 	BridgeAddr         common.Address
 	ResourceIdBytesArr types.ResourceID
+	FeeDataBytes       []byte
 )
 
 // global flags

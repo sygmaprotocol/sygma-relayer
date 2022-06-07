@@ -13,7 +13,6 @@ var (
 	Bridge          string
 	DataHash        string
 	DomainID        uint8
-	Data            string
 	DepositNonce    uint64
 	Handler         string
 	ResourceID      string
@@ -34,7 +33,6 @@ var (
 	TokenContractAddr  common.Address
 	DepositSigBytes    [4]byte
 	ExecuteSigBytes    [4]byte
-	DataBytes          []byte
 )
 
 // global flags

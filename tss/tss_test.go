@@ -278,7 +278,7 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 	}
 	setupCommunication(communicationMap)
 
-	s.mockStorer.EXPECT().LockKeyshare().Times(3)
+	s.mockStorer.EXPECT().LockKeyshare().AnyTimes()
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
 	for i, coordinator := range coordinators {
