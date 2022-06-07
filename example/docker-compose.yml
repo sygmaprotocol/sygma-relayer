@@ -67,7 +67,7 @@ services:
       - evm1
       - evm2
     volumes:
-      - ./example/cfg:/cfg
+      - ./cfg:/cfg
     restart: always
 
   relayer2:
@@ -83,7 +83,7 @@ services:
       - evm1
       - evm2
     volumes:
-      - ./example/cfg:/cfg
+      - ./cfg:/cfg
     restart: always
 
   relayer3:
@@ -99,7 +99,7 @@ services:
       - evm1
       - evm2
     volumes:
-      - ./example/cfg:/cfg
+      - ./cfg:/cfg
     restart: always
 
 networks:
