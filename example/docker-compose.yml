@@ -44,7 +44,7 @@ services:
     container_name: setup
     build:
       context: ../../.
-      dockerfile: ./example/evm-evm/Dockerfile
+      dockerfile: ./example/Dockerfile
     command: local-setup --endpoint1 ws://evm1-1:8546 --endpoint2 ws://evm2-1:8546
     depends_on:
       - evm1-1
@@ -58,7 +58,7 @@ services:
     container_name: relayer1
     build:
       context: ../../.
-      dockerfile: ./example/evm-evm/Dockerfile
+      dockerfile: ./example/Dockerfile
     command: run --config /cfg/config_evm-evm_1.json --testkey alice --fresh
     depends_on:
       - evm1-1
@@ -74,7 +74,7 @@ services:
     container_name: relayer2
     build:
       context: ../../.
-      dockerfile: ./example/evm-evm/Dockerfile
+      dockerfile: ./example/Dockerfile
     command: run --config /cfg/config_evm-evm_2.json --testkey bob --fresh
     depends_on:
       - evm1-1
@@ -90,7 +90,7 @@ services:
     container_name: relayer3
     build:
       context: ../../.
-      dockerfile: ./example/evm-evm/Dockerfile
+      dockerfile: ./example/Dockerfile
     command: run --config /cfg/config_evm-evm_3.json --testkey charlie --fresh
     depends_on:
       - evm1-1

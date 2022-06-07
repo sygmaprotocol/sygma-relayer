@@ -6,7 +6,7 @@ ADD . /src
 WORKDIR /src
 RUN cd /src && echo $(ls -1 /src)
 RUN go mod download
-RUN go build -o /bridge ./example/evm-evm/example/
+RUN go build -o /bridge main.go
 
 # final stage
 FROM debian:stretch-slim
