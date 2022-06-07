@@ -55,6 +55,10 @@ func Test_EVM2EVM(t *testing.T) {
 		GenericHandlerAddr: common.HexToAddress("0xe1588E2c6a002AE93AeD325A910Ed30961874109"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
+
+		IsBasicFeeHandler: true,
+		Fee:               big.NewInt(100000000000),
+		FeeHandlerAddr:    common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
 	}
 
 	ethClient1, err := evmclient.NewEVMClientFromParams(ETHEndpoint1, local.EveKp.PrivateKey())
