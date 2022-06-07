@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
@@ -116,15 +115,8 @@ type IntegrationTestSuite struct {
 }
 
 // SetupSuite waits until all contracts are deployed
-func (its *IntegrationTestSuite) SetupSuite() {
-	for {
-		code, err := its.client2.CodeAt(context.Background(), its.config2.GenericHandlerAddr, nil)
-		if err == nil && len(code) != 0 {
-			break
-		}
-
-		time.Sleep(time.Second * 10)
-	}
+func (s *IntegrationTestSuite) SetupSuite() {
+	evm.WaitUntilBridgeReady(s.client2, s.config2.BridgeAddr)
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {

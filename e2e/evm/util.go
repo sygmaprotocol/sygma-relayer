@@ -51,3 +51,31 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 		}
 	}
 }
+
+func WaitUntilBridgeReady(client Client, bridge common.Address) error {
+	startBlock, _ := client.LatestBlock()
+	query := ethereum.FilterQuery{
+		FromBlock: startBlock,
+		Addresses: []common.Address{bridge},
+		Topics: [][]common.Hash{
+			{events.FeeHandlerChangedSig.GetTopic()},
+		},
+	}
+
+	ch := make(chan types.Log)
+	sub, err := client.SubscribeFilterLogs(context.Background(), query, ch)
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+	for {
+		select {
+		case <-ch:
+			return nil
+		case err := <-sub.Err():
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
