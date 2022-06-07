@@ -116,7 +116,10 @@ type IntegrationTestSuite struct {
 
 // SetupSuite waits until all contracts are deployed
 func (s *IntegrationTestSuite) SetupSuite() {
-	evm.WaitUntilBridgeReady(s.client2, s.config2.BridgeAddr)
+	err := evm.WaitUntilBridgeReady(s.client2, s.config2.BridgeAddr)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
