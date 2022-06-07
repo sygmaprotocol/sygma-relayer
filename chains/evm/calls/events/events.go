@@ -17,7 +17,7 @@ const (
 	StartKeygenSig       EventSig = "StartKeygen()"
 	KeyRefreshSig        EventSig = "KeyRefresh()"
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32)"
-	FeeHandlerChangedSig EventSig = "FeeHandlerChanged(address)"
+	FeeChangedSig        EventSig = "FeeChanged(uint256)"
 )
 
 // Deposit struct holds event data with all necessary parameters and a handler response

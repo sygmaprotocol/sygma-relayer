@@ -18,7 +18,7 @@ var TestTimeout = time.Second * 600
 type Client interface {
 	LatestBlock() (*big.Int, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
-	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 }
 
 func WaitForProposalExecuted(client Client, bridge common.Address) error {
@@ -55,7 +55,7 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 
 func WaitUntilBridgeReady(client Client, bridge common.Address) error {
 	startBlock, _ := client.LatestBlock()
-	logs, err := client.FetchEventLogs(context.Background(), bridge, string(events.FeeHandlerChangedSig), big.NewInt(1), startBlock)
+	logs, err := client.FetchEventLogs(context.Background(), bridge, string(events.FeeChangedSig), big.NewInt(1), startBlock)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func WaitUntilBridgeReady(client Client, bridge common.Address) error {
 		FromBlock: startBlock,
 		Addresses: []common.Address{bridge},
 		Topics: [][]common.Hash{
-			{events.FeeHandlerChangedSig.GetTopic()},
+			{events.FeeChangedSig.GetTopic()},
 		},
 	}
 	ch := make(chan types.Log)
