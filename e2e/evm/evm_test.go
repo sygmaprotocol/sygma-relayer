@@ -20,7 +20,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
 	"github.com/ethereum/go-ethereum"
@@ -42,7 +41,7 @@ const ETHEndpoint1 = "ws://localhost:8546"
 const ETHEndpoint2 = "ws://localhost:8548"
 
 // Alice key is used by the relayer, Eve key is used as admin and depositter
-func Test(t *testing.T) {
+func Test_EVM2EVM(t *testing.T) {
 	config := local.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66"),
 
@@ -112,9 +111,8 @@ type IntegrationTestSuite struct {
 	gasPricer2 calls.GasPricer
 	fabric1    calls.TxFabric
 	fabric2    calls.TxFabric
-
-	config1 local.BridgeConfig
-	config2 local.BridgeConfig
+	config1    local.BridgeConfig
+	config2    local.BridgeConfig
 }
 
 // SetupSuite waits until all contracts are deployed
@@ -145,9 +143,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
+		transactor.TransactOptions{
+			Priority: uint8(2), // fast
+			Value:    s.config1.Fee,
+		})
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
@@ -204,7 +205,9 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	s.Error(err)
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, transactor.TransactOptions{},
+		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
+			Value: s.config1.Fee,
+		},
 	)
 	s.Nil(err)
 
@@ -235,8 +238,9 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, transactor.TransactOptions{
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
 		Priority: uint8(0), // slow
+		Value:    s.config1.Fee,
 	})
 	s.Nil(err)
 

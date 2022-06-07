@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
@@ -49,14 +48,14 @@ func localSetup(cmd *cobra.Command, args []string) error {
 
 	// chain 1
 	// domainsId: 0
-	config, err := SetupEVMBridge(ethClient, fabric1, 1, big.NewInt(1), EveKp.CommonAddress())
+	config, err := SetupEVMBridge(ethClient, fabric1, 1, EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, big.NewInt(1), EveKp.CommonAddress())
+	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, EveKp.CommonAddress())
 	if err != nil {
 		return err
 	}
@@ -73,6 +72,7 @@ func prettyPrint(config, config2 BridgeConfig) {
 
 - Chain 1 -
 Bridge: %s
+Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
 ERC20: %s
 ERC20 Handler: %s
 ERC721: %s
@@ -80,11 +80,12 @@ ERC721 Handler: %s
 Generic Handler: %s
 Asset Store: %s
 ERC20 resourceId: %s
-ERC721 resourceId %s
-Generic resourceId %s
+ERC721 resourceId: %s
+Generic resourceId: %s
 
 - Chain 2 -
 Bridge: %s
+Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
 ERC20: %s
 ERC20 Handler: %s
 ERC721: %s
@@ -92,13 +93,16 @@ ERC721 Handler: %s
 Generic Handler: %s
 Asset Store: %s
 ERC20 resourceId: %s
-ERC721 resourceId %s
-Generic resourceId %s
+ERC721 resourceId: %s
+Generic resourceId: %s
 
 ===============================================
 `,
 		// config
 		config.BridgeAddr,
+		config.FeeHandlerAddr,
+		config.IsBasicFeeHandler,
+		config.Fee,
 		config.Erc20Addr,
 		config.Erc20HandlerAddr,
 		config.Erc721Addr,
@@ -110,6 +114,9 @@ Generic resourceId %s
 		config.GenericResourceID,
 		// config2
 		config2.BridgeAddr,
+		config2.FeeHandlerAddr,
+		config2.IsBasicFeeHandler,
+		config.Fee,
 		config2.Erc20Addr,
 		config2.Erc20HandlerAddr,
 		config.Erc721Addr,

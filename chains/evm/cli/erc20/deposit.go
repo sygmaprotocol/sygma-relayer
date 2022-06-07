@@ -1,21 +1,20 @@
 package erc20
 
 import (
+	"encoding/hex"
 	"fmt"
-	"math/big"
-
 	callsUtil "github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
-	"github.com/ChainSafe/chainbridge-core/util"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/initialize"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/chainbridge-core/util"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"math/big"
 )
 
 var depositCmd = &cobra.Command{
@@ -65,6 +64,8 @@ func BindDepositFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ResourceID, "resource", "", "Resource ID for transfer")
 	cmd.Flags().Uint64Var(&Decimals, "decimals", 0, "ERC20 token decimals")
 	cmd.Flags().StringVar(&Priority, "priority", "none", "Transaction priority speed")
+	cmd.Flags().StringVar(&FeeData, "fee-data", "", "Fee data. Only provide this flag if fee handler with oracle is in use")
+	cmd.Flags().Uint64Var(&BasicFee, "fee", 0, "Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei")
 	flags.MarkFlagsAsRequired(cmd, "recipient", "bridge", "amount", "domain", "resource", "decimals")
 }
 
@@ -75,6 +76,18 @@ func ValidateDepositFlags(cmd *cobra.Command, args []string) error {
 	if !common.IsHexAddress(Bridge) {
 		return fmt.Errorf("invalid bridge address %s", Bridge)
 	}
+
+	var err error
+	if FeeData != "" {
+		FeeDataBytes, err = hex.DecodeString(FeeData)
+		if err != nil {
+			return fmt.Errorf("decode fee data failed, invalid fee data %s", FeeData)
+		}
+		if len(FeeDataBytes) != 321 {
+			return fmt.Errorf("invalid fee data length: %d", len(FeeData))
+		}
+	}
+
 	switch Priority {
 	case "none", "slow", "medium", "fast":
 		return nil
@@ -99,8 +112,9 @@ func ProcessDepositFlags(cmd *cobra.Command, args []string) error {
 
 func DepositCmd(cmd *cobra.Command, args []string, contract *bridge.BridgeContract) error {
 	hash, err := contract.Erc20Deposit(
-		RecipientAddress, RealAmount, ResourceIdBytesArr,
-		uint8(DomainID), transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority]},
+		RecipientAddress, RealAmount, ResourceIdBytesArr, uint8(DomainID), FeeDataBytes,
+		transactor.TransactOptions{GasLimit: gasLimit, Priority: transactor.TxPriorities[Priority],
+			Value: big.NewInt(0).SetUint64(BasicFee)},
 	)
 	if err != nil {
 		log.Error().Err(fmt.Errorf("erc20 deposit error: %v", err))
