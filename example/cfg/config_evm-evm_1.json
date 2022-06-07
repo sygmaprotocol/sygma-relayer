@@ -3,7 +3,11 @@
     "mpcConfig": {
       "port": "9000",
       "keysharePath": "/cfg/keyshares/0.keyshare",
-      "keystorePath": "/cfg/pks/0.pk"
+      "keystorePath": "/cfg/pks/0.pk",
+      "topologyConfiguration": {
+        "accessKey": "test-access-key",
+        "secKey": "test-sec-key"
+      }
     }
   },
   "chains": [
