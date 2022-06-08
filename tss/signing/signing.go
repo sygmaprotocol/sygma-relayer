@@ -2,11 +2,12 @@ package signing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
@@ -23,23 +24,28 @@ var (
 
 type SaveDataFetcher interface {
 	GetKeyshare() (store.Keyshare, error)
+	LockKeyshare()
+	UnlockKeyshare()
 }
 
 type Signing struct {
 	common.BaseTss
+	coordinator    bool
 	key            store.Keyshare
 	msg            *big.Int
 	resultChn      chan interface{}
-	subscriptionID communication.SubscriptionID
+	subscriptionID comm.SubscriptionID
 }
 
 func NewSigning(
 	msg *big.Int,
 	sessionID string,
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	fetcher SaveDataFetcher,
 ) (*Signing, error) {
+	fetcher.LockKeyshare()
+	defer fetcher.UnlockKeyshare()
 	key, err := fetcher.GetKeyshare()
 	if err != nil {
 		return nil, err
@@ -55,6 +61,7 @@ func NewSigning(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
 			Timeout:       SigningTimeout,
+			Cancel:        func() {},
 		},
 		key: key,
 		msg: msg,
@@ -68,14 +75,14 @@ func (s *Signing) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
-	s.Coordinator = coordinator
+	s.coordinator = coordinator
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
 
-	peerSubset, err := common.PeersFromIDS(params)
+	peerSubset, err := s.unmarshallStartParams(params)
 	if err != nil {
 		s.ErrChn <- err
 		return
@@ -95,9 +102,9 @@ func (s *Signing) Start(
 
 	sigChn := make(chan *signing.SignatureData)
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *communication.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), communication.TssKeySignMsg, msgChn)
-	go s.ProcessOutboundMessages(ctx, outChn, communication.TssKeySignMsg)
+	msgChn := make(chan *comm.WrappedMessage)
+	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
+	go s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg)
 	go s.ProcessInboundMessages(ctx, msgChn)
 	go s.processEndMessage(ctx, sigChn)
 
@@ -112,7 +119,7 @@ func (s *Signing) Start(
 	}()
 }
 
-// Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
+// Stop ends all subscriptions created when starting the tss process.
 func (s *Signing) Stop() {
 	log.Info().Str("sessionID", s.SessionID()).Msgf("Stopping tss process.")
 	s.Communication.UnSubscribe(s.subscriptionID)
@@ -120,15 +127,20 @@ func (s *Signing) Stop() {
 }
 
 // Ready returns true if threshold+1 parties are ready to start the signing process.
-func (s *Signing) Ready(readyMap map[peer.ID]bool) bool {
+func (s *Signing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
 	readyMap = s.readyParticipants(readyMap)
-	return len(readyMap) == s.key.Threshold+1
+	return len(readyMap) == s.key.Threshold+1, nil
+}
+
+// ValidCoordinators returns only peers that have a valid keyshare
+func (s *Signing) ValidCoordinators() []peer.ID {
+	return s.key.Peers
 }
 
 // StartParams returns peer subset for this tss process. It is calculated
 // by sorting hashes of peer IDs and session ID and chosing ready peers alphabetically
 // until threshold is satisfied.
-func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
+func (s *Signing) StartParams(readyMap map[peer.ID]bool) []byte {
 	readyMap = s.readyParticipants(readyMap)
 	peers := []peer.ID{}
 	for peer := range readyMap {
@@ -136,15 +148,26 @@ func (s *Signing) StartParams(readyMap map[peer.ID]bool) []string {
 	}
 
 	sortedPeers := common.SortPeersForSession(peers, s.SessionID())
-	params := []string{}
+	peerSubset := []peer.ID{}
 	for _, peer := range sortedPeers {
-		params = append(params, peer.ID.Pretty())
-		if len(params) == s.key.Threshold+1 {
+		peerSubset = append(peerSubset, peer.ID)
+		if len(peerSubset) == s.key.Threshold+1 {
 			break
 		}
 	}
 
-	return params
+	paramBytes, _ := json.Marshal(peerSubset)
+	return paramBytes
+}
+
+func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
+	var peerSubset []peer.ID
+	err := json.Unmarshal(paramBytes, &peerSubset)
+	if err != nil {
+		return []peer.ID{}, err
+	}
+
+	return peerSubset, nil
 }
 
 // processEndMessage routes signature to result channel.
@@ -156,7 +179,7 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 			{
 				s.Log.Info().Msg("Successfully generated signature")
 
-				if s.Coordinator {
+				if s.coordinator {
 					s.resultChn <- sig
 				}
 				s.ErrChn <- nil

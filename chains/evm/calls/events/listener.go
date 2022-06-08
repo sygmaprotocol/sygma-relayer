@@ -18,11 +18,14 @@ type ChainClient interface {
 
 type Listener struct {
 	client ChainClient
+	abi    abi.ABI
 }
 
 func NewListener(client ChainClient) *Listener {
+	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &Listener{
 		client: client,
+		abi:    abi,
 	}
 }
 
@@ -33,13 +36,8 @@ func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Add
 	}
 	deposits := make([]*Deposit, 0)
 
-	abi, err := abi.JSON(strings.NewReader(consts.BridgeABI))
-	if err != nil {
-		return nil, err
-	}
-
 	for _, dl := range logs {
-		d, err := l.UnpackDeposit(abi, dl.Data)
+		d, err := l.UnpackDeposit(l.abi, dl.Data)
 		if err != nil {
 			log.Error().Msgf("failed unpacking deposit event log: %v", err)
 			continue

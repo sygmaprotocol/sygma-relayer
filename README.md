@@ -187,18 +187,17 @@ Usage:
    evm-cli admin [command]
 
 Available Commands:
-  add-admin         Add a new admin
-  add-relayer       Add a new relayer
-  get-threshold     Get the relayer vote threshold
-  is-relayer        Check if an address is registered as a relayer
-  pause             Pause deposits and proposals
-  remove-admin      Remove an existing admin
-  remove-relayer    Remove an existing relayer
-  set-deposit-nonce Set the deposit nonce
-  set-fee           Set a new fee for deposits
-  set-threshold     Set a new relayer vote threshold
-  unpause           Unpause deposits and proposals
-  withdraw          Withdraw tokens from a handler contract
+  add-admin          Add a new admin
+  add-relayer        Add a new relayer
+  get-threshold      Get the relayer vote threshold
+  is-relayer         Check if an address is registered as a relayer
+  pause              Pause deposits and proposals
+  remove-admin       Remove an existing admin
+  remove-relayer     Remove an existing relayer
+  set-deposit-nonce  Set the deposit nonce
+  set-threshold      Set a new relayer vote threshold
+  unpause            Unpause deposits and proposals
+  withdraw           Withdraw tokens from a handler contract
 
 Flags:
   -h, --help   help for admin
@@ -308,7 +307,9 @@ Flags:
   -h, --help            help for set-fee
 ```
 
-#### `set-fee`
+#### ~~`set-fee`~~  
+**This subcommand has been removed.**  
+
 The set-fee subcommand sets a new fee for deposits.
 
 ```bash
@@ -498,7 +499,7 @@ Flags:
       --erc721-handler           Deploy ERC721 handler
       --erc721-name string       ERC721 contract name
       --erc721-symbol string     ERC721 contract symbol
-      --fee uint                 Fee to be taken when making a deposit (in ETH, decimals are allowed)
+      --fee-handler-with-oracle  Deploy fee handler with fee oracle. The basic fee handler will be deployed by default
       --generic-handler          Deploy generic handler
   -h, --help                     help for deploy
       --relayer-threshold uint   Number of votes required for a proposal to pass (default 1)
@@ -592,7 +593,9 @@ Flags:
       --amount string      Amount to deposit
       --bridge string      Address of bridge contract
       --decimals uint      ERC20 token decimals
-      --domain uint        Destination domain ID
+      --domain uint       Destination domain ID
+      --fee uint           Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
+      --fee-data string    Fee data. Only provide this flag if fee handler with oracle is in use
   -h, --help               help for deposit
       --recipient string   Address of recipient
       --resource string    Resource ID for transfer
@@ -667,6 +670,7 @@ Usage:
 Flags:
       --bridge string        Bridge contract address
       --destination string   Destination domain ID
+      --fee uint             Fee to be taken when making a deposit. Only provide this flag if basic fee handler is in use, fee is in wei
   -h, --help                 help for deposit
       --metadata string      ERC721 token metadata
       --recipient string     Recipient address

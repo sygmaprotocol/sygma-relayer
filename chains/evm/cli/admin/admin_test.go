@@ -178,34 +178,6 @@ func (s *AdminTestSuite) TestValidateSetDepositNonceInvalidAddress() {
 	s.NotNil(err)
 }
 
-func (s *AdminTestSuite) TestValidateSetFeeFlags() {
-	cmd := new(cobra.Command)
-	BindSetFeeFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(validAddr)
-	s.Nil(err)
-
-	err = ValidateSetFeeFlags(
-		cmd,
-		[]string{},
-	)
-	s.Nil(err)
-}
-
-func (s *AdminTestSuite) TestValidateSetFeeInvalidAddress() {
-	cmd := new(cobra.Command)
-	BindSetFeeFlags(cmd)
-
-	err := cmd.Flag("bridge").Value.Set(invalidAddr)
-	s.Nil(err)
-
-	err = ValidateSetFeeFlags(
-		cmd,
-		[]string{},
-	)
-	s.NotNil(err)
-}
-
 func (s *AdminTestSuite) TestValidateUnpauseFlags() {
 	cmd := new(cobra.Command)
 	BindUnpauseFlags(cmd)

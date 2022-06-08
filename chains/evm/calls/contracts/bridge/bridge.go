@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"bytes"
+	"encoding/binary"
 	"math/big"
 	"strconv"
 	"strings"
@@ -96,12 +97,13 @@ func (c *BridgeContract) deposit(
 	resourceID types.ResourceID,
 	destDomainID uint8,
 	data []byte,
+	feeData []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	return c.ExecuteTransaction(
 		"deposit",
 		opts,
-		destDomainID, resourceID, data,
+		destDomainID, resourceID, data, feeData,
 	)
 }
 
@@ -110,12 +112,15 @@ func (c *BridgeContract) Erc20Deposit(
 	amount *big.Int,
 	resourceID types.ResourceID,
 	destDomainID uint8,
+	feeData []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("recipient", recipient.String()).
 		Str("resourceID", hexutil.Encode(resourceID[:])).
 		Str("amount", amount.String()).
+		Uint8("destDomainID", destDomainID).
+		Hex("feeData", feeData).
 		Msgf("ERC20 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -123,7 +128,8 @@ func (c *BridgeContract) Erc20Deposit(
 	} else {
 		data = deposit.ConstructErc20DepositDataWithPriority(recipient.Bytes(), amount, opts.Priority)
 	}
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -137,12 +143,15 @@ func (c *BridgeContract) Erc721Deposit(
 	recipient common.Address,
 	resourceID types.ResourceID,
 	destDomainID uint8,
+	feeData []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("recipient", recipient.String()).
 		Str("resourceID", hexutil.Encode(resourceID[:])).
 		Str("tokenID", tokenId.String()).
+		Uint8("destDomainID", destDomainID).
+		Hex("feeData", feeData).
 		Msgf("ERC721 deposit")
 	var data []byte
 	if opts.Priority == 0 {
@@ -150,7 +159,8 @@ func (c *BridgeContract) Erc721Deposit(
 	} else {
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -162,13 +172,17 @@ func (c *BridgeContract) GenericDeposit(
 	metadata []byte,
 	resourceID types.ResourceID,
 	destDomainID uint8,
+	feeData []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("resourceID", hexutil.Encode(resourceID[:])).
+		Uint8("destDomainID", destDomainID).
+		Hex("feeData", feeData).
 		Msgf("Generic deposit")
 	data := deposit.ConstructGenericDepositData(metadata)
-	txHash, err := c.deposit(resourceID, destDomainID, data, opts)
+
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -190,46 +204,24 @@ func (c *BridgeContract) ExecuteProposal(
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.Destination, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature, revertOnFail,
+		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature,
 	)
 }
 
 func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
-	domainType, _ := abi.NewType("uint8", "uint8", nil)
-	depositNonceType, _ := abi.NewType("uint64", "uint64", nil)
-	dataType, _ := abi.NewType("bytes", "bytes", nil)
-	resourceType, _ := abi.NewType("bytes32", "bytes32", nil)
-
-	arguments := abi.Arguments{
-		{
-			Type: domainType,
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, proposal.DepositNonce)
+	proposalBytes := bytes.Join(
+		[][]byte{
+			{proposal.Source},
+			{proposal.Destination},
+			nonceBytes,
+			proposal.Data,
+			proposal.ResourceId[:],
 		},
-		{
-			Type: domainType,
-		},
-		{
-			Type: depositNonceType,
-		},
-		{
-			Type: dataType,
-		},
-		{
-			Type: resourceType,
-		},
-	}
-
-	bytes, err := arguments.Pack(
-		proposal.Source,
-		proposal.Destination,
-		proposal.DepositNonce,
-		proposal.Data,
-		proposal.ResourceId,
+		nil,
 	)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	hash := crypto.Keccak256Hash(bytes)
+	hash := crypto.Keccak256Hash(proposalBytes)
 	return hash.Bytes(), nil
 }
 
@@ -301,4 +293,16 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	}
 	out := *abi.ConvertType(res[0], new(common.Address)).(*common.Address)
 	return out, nil
+}
+
+func (c *BridgeContract) AdminChangeFeeHandler(
+	feeHandlerAddr common.Address,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Setting fee handler %s", feeHandlerAddr.String())
+	return c.ExecuteTransaction(
+		"adminChangeFeeHandler",
+		opts,
+		feeHandlerAddr,
+	)
 }

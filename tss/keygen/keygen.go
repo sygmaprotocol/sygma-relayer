@@ -2,10 +2,11 @@ package keygen
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/chainbridge-core/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
@@ -30,14 +31,14 @@ type Keygen struct {
 	common.BaseTss
 	storer         SaveDataStorer
 	threshold      int
-	subscriptionID communication.SubscriptionID
+	subscriptionID comm.SubscriptionID
 }
 
 func NewKeygen(
 	sessionID string,
 	threshold int,
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	storer SaveDataStorer,
 ) *Keygen {
 	partyStore := make(map[string]*tss.PartyID)
@@ -50,6 +51,7 @@ func NewKeygen(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
 			Timeout:       KeygenTimeout,
+			Cancel:        func() {},
 		},
 		storer:    storer,
 		threshold: threshold,
@@ -64,7 +66,7 @@ func (k *Keygen) Start(
 	coordinator bool,
 	resultChn chan interface{},
 	errChn chan error,
-	params []string,
+	params []byte,
 ) {
 	k.ErrChn = errChn
 	ctx, k.Cancel = context.WithCancel(ctx)
@@ -77,12 +79,12 @@ func (k *Keygen) Start(
 	tssParams := tss.NewParameters(pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
 
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *communication.WrappedMessage)
+	msgChn := make(chan *comm.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
 
-	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), communication.TssKeyGenMsg, msgChn)
+	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
 
-	go k.ProcessOutboundMessages(ctx, outChn, communication.TssKeyGenMsg)
+	go k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
 	go k.ProcessInboundMessages(ctx, msgChn)
 	go k.processEndMessage(ctx, endChn)
 
@@ -105,8 +107,23 @@ func (k *Keygen) Stop() {
 }
 
 // Ready returns true if all parties from the peerstore are ready.
-func (k *Keygen) Ready(readyMap map[peer.ID]bool) bool {
-	return len(readyMap) == len(k.Host.Peerstore().Peers())
+// Error is returned if excluded peers exist as we need all peers to participate
+// in keygen process.
+func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+	if len(excludedPeers) > 0 {
+		return false, errors.New("error")
+	}
+
+	return len(readyMap) == len(k.Host.Peerstore().Peers()), nil
+}
+
+// ValidCoordinators returns all peers in peerstore
+func (k *Keygen) ValidCoordinators() []peer.ID {
+	return k.Host.Peerstore().Peers()
+}
+
+func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
+	return []byte{}
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.

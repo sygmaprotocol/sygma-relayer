@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
+	"github.com/ChainSafe/chainbridge-core/comm"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -24,11 +24,10 @@ type BaseTss struct {
 	SID           string
 	Party         Party
 	PartyStore    map[string]*tss.PartyID
-	Communication communication.Communication
+	Communication comm.Communication
 	Peers         []peer.ID
 	Log           zerolog.Logger
 	Timeout       time.Duration
-	Coordinator   bool
 
 	ErrChn chan error
 	Cancel context.CancelFunc
@@ -43,7 +42,7 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *communication.WrappedMessage) {
+func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) {
 	for {
 		select {
 		case wMsg := <-msgChan:
@@ -85,7 +84,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType communication.ChainBridgeMessageType) {
+func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.ChainBridgeMessageType) {
 	for {
 		select {
 		case msg := <-outChn:
@@ -118,12 +117,6 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 			}
 		}
 	}
-}
-
-// StartParams returns params necessary to start the tss process which
-// are sent in the start message.
-func (b *BaseTss) StartParams(readyMap map[peer.ID]bool) []string {
-	return []string{}
 }
 
 // BroccastPeers returns peers that should receive the tss message

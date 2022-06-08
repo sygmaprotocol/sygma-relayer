@@ -5,8 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/libp2p/go-libp2p-core/peer"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/config"
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
@@ -32,167 +31,249 @@ func (s *GetConfigTestSuite) Test_InvalidPath() {
 	s.NotNil(err)
 }
 
-func (s *GetConfigTestSuite) Test_MissingChainType() {
-	data := config.RawConfig{
-		ChainConfigs: []map[string]interface{}{{
-			"name": "chain1",
-		}},
-	}
-	file, _ := json.Marshal(data)
-	_ = ioutil.WriteFile("test.json", file, 0644)
-
-	_, err := config.GetConfig("test.json")
-
-	_ = os.Remove("test.json")
-	s.NotNil(err)
-	s.Equal(err.Error(), "chain 'type' must be provided for every configured chain")
+type ConfigTestCase struct {
+	name       string
+	inConfig   config.RawConfig
+	shouldFail bool
+	errorMsg   string
+	outConfig  config.Config
 }
 
-func (s *GetConfigTestSuite) Test_InvalidRelayerConfig() {
-	data := config.RawConfig{
-		RelayerConfig: relayer.RawRelayerConfig{
-			LogLevel: "invalid",
-		},
-		ChainConfigs: []map[string]interface{}{{
-			"name": "chain1",
-		}},
-	}
-	file, _ := json.Marshal(data)
-	_ = ioutil.WriteFile("test.json", file, 0644)
-
-	_, err := config.GetConfig("test.json")
-
-	_ = os.Remove("test.json")
-	s.NotNil(err)
-	s.Equal(err.Error(), "unknown log level: invalid")
-}
-
-func (s *GetConfigTestSuite) Test_InvalidPeerAddress() {
-	data := config.RawConfig{
-		RelayerConfig: relayer.RawRelayerConfig{
-			LogLevel: "info",
-			MpcConfig: relayer.RawMpcRelayerConfig{
-				Peers: []relayer.RawPeer{
-					{PeerAddress: "/ip4/127.0.0.1/tcp/4000"},
+func (s *GetConfigTestSuite) TestConfigurationProcessing() {
+	testCases := []ConfigTestCase{
+		{
+			name: "missing chain type",
+			inConfig: config.RawConfig{
+				ChainConfigs: []map[string]interface{}{{
+					"name": "chain1",
+				}},
+				RelayerConfig: relayer.RawRelayerConfig{
+					OpenTelemetryCollectorURL: "",
+					LogLevel:                  "",
+					LogFile:                   "",
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey: "access-key",
+							SecKey:    "sec-key",
+						},
+					},
+					BullyConfig: relayer.RawBullyConfig{
+						PingWaitTime:     "1s",
+						PingBackOff:      "1s",
+						PingInterval:     "1s",
+						ElectionWaitTime: "1s",
+					},
 				},
-				Port: 2020,
 			},
+			shouldFail: true,
+			errorMsg:   "chain 'type' must be provided for every configured chain",
+			outConfig:  config.Config{},
 		},
-		ChainConfigs: []map[string]interface{}{{
-			"name": "chain1",
-		}},
-	}
-	file, _ := json.Marshal(data)
-	_ = ioutil.WriteFile("test.json", file, 0644)
-
-	_, err := config.GetConfig("test.json")
-
-	_ = os.Remove("test.json")
-	s.NotNil(err)
-	s.Equal(err.Error(), "invalid peer address /ip4/127.0.0.1/tcp/4000: invalid p2p multiaddr")
-}
-
-func (s *GetConfigTestSuite) Test_DefaultValuesInConfig() {
-	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
-	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
-	data := config.RawConfig{
-		RelayerConfig: relayer.RawRelayerConfig{
-			// LogLevel: use default value,
-			// LogFile: use default value
-			MpcConfig: relayer.RawMpcRelayerConfig{
-				Peers: []relayer.RawPeer{
-					{PeerAddress: p1RawAddress},
-					{PeerAddress: p2RawAddress},
+		{
+			name: "invalid relayer type",
+			inConfig: config.RawConfig{
+				RelayerConfig: relayer.RawRelayerConfig{
+					LogLevel: "invalid",
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey: "access-key",
+							SecKey:    "sec-key",
+						},
+					},
 				},
-				// Port: use default value,
+				ChainConfigs: []map[string]interface{}{{
+					"name": "chain1",
+				}},
 			},
+			shouldFail: true,
+			errorMsg:   "unknown log level: invalid",
+			outConfig:  config.Config{},
 		},
-		ChainConfigs: []map[string]interface{}{{
-			"type": "evm",
-			"name": "evm1",
-		}},
-	}
-	file, _ := json.Marshal(data)
-	_ = ioutil.WriteFile("test.json", file, 0644)
-
-	actualConfig, err := config.GetConfig("test.json")
-
-	_ = os.Remove("test.json")
-
-	p1, _ := peer.AddrInfoFromString(p1RawAddress)
-	p2, _ := peer.AddrInfoFromString(p2RawAddress)
-
-	s.Nil(err)
-	s.Equal(actualConfig, config.Config{
-		RelayerConfig: relayer.RelayerConfig{
-			LogLevel:                  1,
-			LogFile:                   "out.log",
-			OpenTelemetryCollectorURL: "",
-			HealthPort:                9001,
-			MpcConfig: relayer.MpcRelayerConfig{
-				Peers: []*peer.AddrInfo{p1, p2},
-				Port:  9000,
-			},
-		},
-		ChainConfigs: []map[string]interface{}{{
-			"type": "evm",
-			"name": "evm1",
-		}},
-	})
-}
-
-func (s *GetConfigTestSuite) Test_ValidConfig() {
-	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
-	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
-	data := config.RawConfig{
-		RelayerConfig: relayer.RawRelayerConfig{
-			LogLevel:   "debug",
-			LogFile:    "custom.log",
-			HealthPort: 9005,
-			MpcConfig: relayer.RawMpcRelayerConfig{
-				Peers: []relayer.RawPeer{
-					{PeerAddress: p1RawAddress},
-					{PeerAddress: p2RawAddress},
+		{
+			name: "invalid bully config",
+			inConfig: config.RawConfig{
+				RelayerConfig: relayer.RawRelayerConfig{
+					LogLevel: "info",
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey: "access-key",
+							SecKey:    "sec-key",
+						},
+						Port: 2020,
+					},
+					BullyConfig: relayer.RawBullyConfig{
+						PingWaitTime:     "2z",
+						PingBackOff:      "",
+						PingInterval:     "",
+						ElectionWaitTime: "",
+					},
 				},
-				Port:         2020,
-				KeysharePath: "./share.key",
-				KeystorePath: "./key.pk",
-				Threshold:    5,
+				ChainConfigs: []map[string]interface{}{{
+					"name": "chain1",
+				}},
+			},
+			shouldFail: true,
+			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
+			outConfig:  config.Config{},
+		},
+		{
+			name: "invalid topology config",
+			inConfig: config.RawConfig{
+				RelayerConfig: relayer.RawRelayerConfig{
+					LogLevel: "info",
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey: "access-key",
+							SecKey:    "",
+						},
+						Port: 2020,
+					},
+				},
+				ChainConfigs: []map[string]interface{}{{
+					"name": "chain1",
+				}},
+			},
+			shouldFail: true,
+			errorMsg:   "topology configuration secret key not provided",
+			outConfig:  config.Config{},
+		},
+		{
+			name: "set default values in config",
+			inConfig: config.RawConfig{
+				RelayerConfig: relayer.RawRelayerConfig{
+					// LogLevel: use default value,
+					// LogFile: use default value
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey: "access-key",
+							SecKey:    "sec-key",
+						},
+						// Port: use default value,
+					},
+				},
+				ChainConfigs: []map[string]interface{}{{
+					"type": "evm",
+					"name": "evm1",
+				}},
+			},
+			shouldFail: false,
+			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
+			outConfig: config.Config{
+				RelayerConfig: relayer.RelayerConfig{
+					HealthPort:                9001,
+					LogLevel:                  1,
+					LogFile:                   "out.log",
+					OpenTelemetryCollectorURL: "",
+					MpcConfig: relayer.MpcRelayerConfig{
+						Port: 9000,
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey:      "access-key",
+							SecKey:         "sec-key",
+							DocumentName:   "topology.json",
+							BucketRegion:   "us-east-1",
+							BucketName:     "mpc-topology",
+							ServiceAddress: "buckets.chainsafe.io",
+						},
+					},
+					BullyConfig: relayer.BullyConfig{
+						PingWaitTime:     1 * time.Second,
+						PingBackOff:      1 * time.Second,
+						PingInterval:     1 * time.Second,
+						ElectionWaitTime: 2 * time.Second,
+						BullyWaitTime:    25 * time.Second,
+					},
+				},
+				ChainConfigs: []map[string]interface{}{{
+					"type": "evm",
+					"name": "evm1",
+				}},
 			},
 		},
-		ChainConfigs: []map[string]interface{}{{
-			"type": "evm",
-			"name": "evm1",
-		}},
+		{
+			name: "valid config",
+			inConfig: config.RawConfig{
+				RelayerConfig: relayer.RawRelayerConfig{
+					LogLevel:   "debug",
+					LogFile:    "custom.log",
+					HealthPort: 9002,
+					MpcConfig: relayer.RawMpcRelayerConfig{
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey:  "access-key",
+							SecKey:     "sec-key",
+							BucketName: "test-mpc-bucket",
+						},
+						Port:         2020,
+						KeysharePath: "./share.key",
+						KeystorePath: "./key.pk",
+						Threshold:    5,
+					},
+					BullyConfig: relayer.RawBullyConfig{
+						PingWaitTime:     "1s",
+						PingBackOff:      "1s",
+						PingInterval:     "1s",
+						ElectionWaitTime: "1s",
+						BullyWaitTime:    "1s",
+					},
+				},
+				ChainConfigs: []map[string]interface{}{{
+					"type": "evm",
+					"name": "evm1",
+				}},
+			},
+			shouldFail: false,
+			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
+			outConfig: config.Config{
+				RelayerConfig: relayer.RelayerConfig{
+					LogLevel:                  0,
+					LogFile:                   "custom.log",
+					HealthPort:                9002,
+					OpenTelemetryCollectorURL: "",
+					MpcConfig: relayer.MpcRelayerConfig{
+						Port:         2020,
+						KeysharePath: "./share.key",
+						KeystorePath: "./key.pk",
+						Threshold:    5,
+						TopologyConfiguration: relayer.TopologyConfiguration{
+							AccessKey:      "access-key",
+							SecKey:         "sec-key",
+							DocumentName:   "topology.json",
+							BucketRegion:   "us-east-1",
+							BucketName:     "test-mpc-bucket",
+							ServiceAddress: "buckets.chainsafe.io",
+						},
+					},
+					BullyConfig: relayer.BullyConfig{
+						PingWaitTime:     time.Second,
+						PingBackOff:      time.Second,
+						PingInterval:     time.Second,
+						ElectionWaitTime: time.Second,
+						BullyWaitTime:    time.Second,
+					},
+				},
+				ChainConfigs: []map[string]interface{}{{
+					"type": "evm",
+					"name": "evm1",
+				}},
+			},
+		},
 	}
-	file, _ := json.Marshal(data)
-	_ = ioutil.WriteFile("test.json", file, 0644)
 
-	actualConfig, err := config.GetConfig("test.json")
+	for _, t := range testCases {
+		s.Run(t.name, func() {
+			file, _ := json.Marshal(t.inConfig)
+			_ = ioutil.WriteFile("test.json", file, 0644)
 
-	_ = os.Remove("test.json")
+			conf, err := config.GetConfig("test.json")
 
-	p1, _ := peer.AddrInfoFromString(p1RawAddress)
-	p2, _ := peer.AddrInfoFromString(p2RawAddress)
+			_ = os.Remove("test.json")
 
-	s.Nil(err)
-	s.Equal(actualConfig, config.Config{
-		RelayerConfig: relayer.RelayerConfig{
-			LogLevel:                  0,
-			LogFile:                   "custom.log",
-			OpenTelemetryCollectorURL: "",
-			HealthPort:                9005,
-			MpcConfig: relayer.MpcRelayerConfig{
-				Peers:        []*peer.AddrInfo{p1, p2},
-				Port:         2020,
-				KeysharePath: "./share.key",
-				KeystorePath: "./key.pk",
-				Threshold:    5,
-			},
-		},
-		ChainConfigs: []map[string]interface{}{{
-			"type": "evm",
-			"name": "evm1",
-		}},
-	})
+			if t.shouldFail {
+				s.NotNil(err)
+				s.Equal(t.errorMsg, err.Error())
+			} else {
+				s.Nil(err)
+				s.Equal(t.outConfig, conf)
+			}
+		})
+	}
 }
