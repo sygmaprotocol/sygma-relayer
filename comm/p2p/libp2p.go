@@ -117,6 +117,10 @@ func (c Libp2pCommunication) sendMessage(
 	if err != nil {
 		return err
 	}
+	if len(pi.Addrs) == 0 {
+		return fmt.Errorf("peer %s has no defined addresses", to)
+	}
+
 	addr, err := resolver.Resolve(context.Background(), pi.Addrs[0])
 	if err != nil {
 		return err
