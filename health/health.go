@@ -13,5 +13,5 @@ func StartHealthEndpoint(port uint16) {
 		_, _ = w.Write([]byte("ok"))
 	})
 	_ = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	log.Info().Msgf("started /health endpoint on port %s", port)
+	log.Info().Msgf("started /health endpoint on port %d", port)
 }
