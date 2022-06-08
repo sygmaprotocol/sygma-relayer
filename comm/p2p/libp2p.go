@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -111,6 +112,23 @@ func (c Libp2pCommunication) sendMessage(
 	msgType comm.ChainBridgeMessageType,
 	sessionID string,
 ) error {
+	pi := c.h.Peerstore().PeerInfo(to)
+	resolver, err := madns.NewResolver()
+	if err != nil {
+		return err
+	}
+	addr, err := resolver.Resolve(context.Background(), pi.Addrs[0])
+	if err != nil {
+		return err
+	}
+	err = c.h.Connect(context.TODO(), peer.AddrInfo{
+		ID:    to,
+		Addrs: addr,
+	})
+	if err != nil {
+		return err
+	}
+
 	stream, err := c.h.NewStream(context.TODO(), to, c.protocolID)
 	if err != nil {
 		c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
