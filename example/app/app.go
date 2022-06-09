@@ -6,11 +6,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/topology"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/ChainSafe/chainbridge-core/topology"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
@@ -109,7 +110,7 @@ func Run() error {
 				eventHandlers := make([]listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := executor.NewEVMMessageHandler(*bridgeContract)
