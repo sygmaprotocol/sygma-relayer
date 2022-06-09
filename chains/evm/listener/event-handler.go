@@ -7,6 +7,8 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
+	"github.com/ChainSafe/chainbridge-hub/topology"
 	"github.com/ChainSafe/chainbridge-hub/tss"
 	"github.com/ChainSafe/chainbridge-hub/tss/keygen"
 	"github.com/ChainSafe/chainbridge-hub/tss/resharing"
@@ -70,16 +72,18 @@ func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
 }
 
 type RefreshEventHandler struct {
-	eventListener EventListener
-	bridgeAddress common.Address
-	coordinator   *tss.Coordinator
-	host          host.Host
-	communication comm.Communication
-	storer        resharing.SaveDataStorer
-	threshold     int
+	topologyProvider topology.NetworkTopologyProvider
+	eventListener    EventListener
+	bridgeAddress    common.Address
+	coordinator      *tss.Coordinator
+	host             host.Host
+	communication    comm.Communication
+	storer           resharing.SaveDataStorer
+	threshold        int
 }
 
 func NewRefreshEventHandler(
+	topologyProvider topology.NetworkTopologyProvider,
 	eventListener EventListener,
 	coordinator *tss.Coordinator,
 	host host.Host,
@@ -89,13 +93,14 @@ func NewRefreshEventHandler(
 	threshold int,
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
-		eventListener: eventListener,
-		coordinator:   coordinator,
-		host:          host,
-		communication: communication,
-		storer:        storer,
-		bridgeAddress: bridgeAddress,
-		threshold:     threshold,
+		topologyProvider: topologyProvider,
+		eventListener:    eventListener,
+		coordinator:      coordinator,
+		host:             host,
+		communication:    communication,
+		storer:           storer,
+		bridgeAddress:    bridgeAddress,
+		threshold:        threshold,
 	}
 }
 
@@ -107,6 +112,12 @@ func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 	if len(refreshEvents) == 0 {
 		return nil
 	}
+
+	topology, err := eh.topologyProvider.NetworkTopology()
+	if err != nil {
+		return err
+	}
+	p2p.LoadPeers(eh.host, topology.Peers)
 
 	resharing := resharing.NewResharing(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
