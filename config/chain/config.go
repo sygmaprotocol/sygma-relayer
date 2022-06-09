@@ -38,12 +38,6 @@ func (c *GeneralChainConfig) Validate() error {
 }
 
 func (c *GeneralChainConfig) ParseFlags() {
-	if path := viper.GetString(flags.TestKeyFlagName); path != "" {
-		c.Key = path
-		c.Insecure = true
-	} else {
-		c.Key = viper.GetString(flags.KeystoreFlagName)
-	}
 	c.BlockstorePath = viper.GetString(flags.BlockstoreFlagName)
 	c.FreshStart = viper.GetBool(flags.FreshStartFlagName)
 	c.LatestBlock = viper.GetBool(flags.LatestBlockFlagName)

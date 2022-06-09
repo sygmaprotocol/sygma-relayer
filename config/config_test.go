@@ -2,8 +2,6 @@ package config_test
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -33,23 +31,6 @@ func (s *GetConfigTestSuite) Test_GetConfig_InvalidPath() {
 	_, err := config.GetConfig("invalid")
 
 	s.NotNil(err)
-}
-
-func (s *GetConfigTestSuite) Test() {
-	file, err := ioutil.ReadFile("../example/cfg/pks/2.pk")
-	if err != nil {
-		return
-	}
-	privateKey, err := crypto.UnmarshalPrivateKey(file)
-	if err != nil {
-		return
-	}
-	marshalPrivateKey, err := crypto.MarshalPrivateKey(privateKey)
-	if err != nil {
-		return
-	}
-	strKey := crypto.ConfigEncodeKey(marshalPrivateKey)
-	fmt.Println(strKey)
 }
 
 func (s GetConfigTestSuite) Test_GetConfig_LoadFromENV() {
