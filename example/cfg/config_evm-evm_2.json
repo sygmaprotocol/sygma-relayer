@@ -3,7 +3,7 @@
     "mpcConfig": {
       "port": "9001",
       "keysharePath": "/cfg/keyshares/1.keyshare",
-      "keystorePath": "/cfg/pks/1.pk",
+      "key": "/cfg/pks/1.pk",
       "topologyConfiguration": {
         "accessKey": "test-access-key",
         "secKey": "test-sec-key"
