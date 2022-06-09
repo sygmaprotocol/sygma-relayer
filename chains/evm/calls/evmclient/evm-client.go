@@ -12,8 +12,6 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
-	"github.com/ChainSafe/chainbridge-core/keystore"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -62,11 +60,10 @@ func NewEVMClient(cfg *chain.EVMConfig) (*EVMClient, error) {
 	c := &EVMClient{}
 	generalConfig := cfg.GeneralChainConfig
 
-	kp, err := keystore.KeypairFromAddress(generalConfig.From, keystore.EthChain, generalConfig.KeystorePath, generalConfig.Insecure)
+	krp, err := secp256k1.NewKeypairFromString(cfg.GeneralChainConfig.Key)
 	if err != nil {
-		return c, err
+		return nil, err
 	}
-	krp := kp.(*secp256k1.Keypair)
 	c.kp = krp
 
 	rpcClient, err := rpc.DialContext(context.TODO(), generalConfig.Endpoint)

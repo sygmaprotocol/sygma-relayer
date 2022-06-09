@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"github.com/creasty/defaults"
+	"os"
 
 	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/spf13/viper"
@@ -24,17 +26,26 @@ func GetConfig(path string) (Config, error) {
 	rawConfig := RawConfig{}
 	config := Config{}
 
-	viper.SetConfigFile(path)
-	viper.SetConfigType("json")
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		// config file does not exist
+		rawConfig, err = LoadFromEnv()
+		if err != nil {
+			return Config{}, err
+		}
+	} else {
+		// config file exists
+		viper.SetConfigFile(path)
+		viper.SetConfigType("json")
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		return config, err
-	}
+		err = viper.ReadInConfig()
+		if err != nil {
+			return Config{}, err
+		}
 
-	err = viper.Unmarshal(&rawConfig)
-	if err != nil {
-		return config, err
+		err = viper.Unmarshal(&rawConfig)
+		if err != nil {
+			return config, err
+		}
 	}
 
 	if err := defaults.Set(&rawConfig); err != nil {

@@ -2,6 +2,8 @@ package config_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -25,10 +27,114 @@ func (s *GetConfigTestSuite) TearDownSuite() {}
 func (s *GetConfigTestSuite) SetupTest()     {}
 func (s *GetConfigTestSuite) TearDownTest()  {}
 
-func (s *GetConfigTestSuite) Test_InvalidPath() {
+func (s *GetConfigTestSuite) Test_GetConfig_InvalidPath() {
 	_, err := config.GetConfig("invalid")
 
 	s.NotNil(err)
+}
+
+func (s GetConfigTestSuite) Test_GetConfig_LoadFromENV() {
+	_ = os.Setenv("CBH_DOM_1", "{\n      \"id\": 1,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm1\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm1-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n      \"gasLimit\": 9000000,\n      \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
+	_ = os.Setenv("CBH_DOM_2", "{\n      \"id\": 2,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm2\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm2-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n      \"gasLimit\": 9000000,\n      \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
+
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEY", "test-pk")
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_THRESHOLD", "3")
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_PORT", "9000")
+
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY", "test-access-key")
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY", "test-sec-key")
+
+	// load from ENV
+	cnf, err := config.GetConfig("")
+	if err != nil {
+		return
+	}
+
+	s.Equal(config.Config{
+		RelayerConfig: relayer.RelayerConfig{
+			LogLevel: 1,
+			LogFile:  "out.log",
+			MpcConfig: relayer.MpcRelayerConfig{
+				TopologyConfiguration: relayer.TopologyConfiguration{
+					AccessKey:      "test-access-key",
+					SecKey:         "test-sec-key",
+					DocumentName:   "topology.json",
+					BucketRegion:   "us-east-1",
+					BucketName:     "mpc-topology",
+					ServiceAddress: "buckets.chainsafe.io",
+				},
+				Port:         9000,
+				KeysharePath: "/cfg/keyshares/0.keyshare",
+				Key:          "test-pk",
+				Threshold:    3,
+			},
+			BullyConfig: relayer.BullyConfig{
+				PingWaitTime:     1 * time.Second,
+				PingBackOff:      1 * time.Second,
+				PingInterval:     1 * time.Second,
+				ElectionWaitTime: 2 * time.Second,
+				BullyWaitTime:    25 * time.Second,
+			},
+		},
+		ChainConfigs: []map[string]interface{}{
+			{
+				"id":                 float64(1),
+				"type":               "evm",
+				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+				"gasLimit":           9e+06,
+				"maxGasPrice":        2e+10,
+				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+				"name":               "evm1",
+				"endpoint":           "ws://evm1-1:8546",
+				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+				"blockConfirmations": float64(2),
+			},
+			{
+				"id":                 float64(2),
+				"type":               "evm",
+				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+				"gasLimit":           9e+06,
+				"maxGasPrice":        2e+10,
+				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+				"name":               "evm2",
+				"endpoint":           "ws://evm2-1:8546",
+				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+				"blockConfirmations": float64(2),
+			},
+		},
+	}, cnf)
+}
+
+func (s *GetConfigTestSuite) Test_EnvLoading() {
+	// TODO
+	// _, err := config.GetConfig("test.json")
+	privKey, _, err := crypto.GenerateKeyPair(2, 1)
+	if err != nil {
+		return
+	}
+	marshalPrivateKey, err := crypto.MarshalPrivateKey(privKey)
+	if err != nil {
+		return
+	}
+
+	privKeyString := crypto.ConfigEncodeKey(marshalPrivateKey)
+
+	decodeKey, err := crypto.ConfigDecodeKey(privKeyString)
+	if err != nil {
+		return
+	}
+
+	pk, err := crypto.UnmarshalPrivateKey(decodeKey)
+	if err != nil {
+		return
+	}
+
+	fmt.Println(pk.Equals(privKey))
 }
 
 type ConfigTestCase struct {
@@ -39,7 +145,7 @@ type ConfigTestCase struct {
 	outConfig  config.Config
 }
 
-func (s *GetConfigTestSuite) TestConfigurationProcessing() {
+func (s *GetConfigTestSuite) Test_GetConfig_LoadFromFile() {
 	testCases := []ConfigTestCase{
 		{
 			name: "missing chain type",
@@ -52,6 +158,8 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 					LogLevel:                  "",
 					LogFile:                   "",
 					MpcConfig: relayer.RawMpcRelayerConfig{
+						Threshold: "5",
+						Port:      "2020",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
@@ -95,11 +203,12 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 				RelayerConfig: relayer.RawRelayerConfig{
 					LogLevel: "info",
 					MpcConfig: relayer.RawMpcRelayerConfig{
+						Threshold: "5",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
 						},
-						Port: 2020,
+						Port: "2020",
 					},
 					BullyConfig: relayer.RawBullyConfig{
 						PingWaitTime:     "2z",
@@ -126,7 +235,7 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 							AccessKey: "access-key",
 							SecKey:    "",
 						},
-						Port: 2020,
+						Port: "2020",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -148,6 +257,7 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
 						},
+						Threshold: "5",
 						// Port: use default value,
 					},
 				},
@@ -164,7 +274,8 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 					LogFile:                   "out.log",
 					OpenTelemetryCollectorURL: "",
 					MpcConfig: relayer.MpcRelayerConfig{
-						Port: 9000,
+						Port:      9000,
+						Threshold: 5,
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:      "access-key",
 							SecKey:         "sec-key",
@@ -200,10 +311,10 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 							SecKey:     "sec-key",
 							BucketName: "test-mpc-bucket",
 						},
-						Port:         2020,
+						Port:         "2020",
 						KeysharePath: "./share.key",
-						KeystorePath: "./key.pk",
-						Threshold:    5,
+						Key:          "./key.pk",
+						Threshold:    "5",
 					},
 					BullyConfig: relayer.RawBullyConfig{
 						PingWaitTime:     "1s",
@@ -228,7 +339,7 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port:         2020,
 						KeysharePath: "./share.key",
-						KeystorePath: "./key.pk",
+						Key:          "./key.pk",
 						Threshold:    5,
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:      "access-key",

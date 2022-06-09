@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rs/zerolog"
+	"strconv"
 	"time"
 )
 
@@ -19,7 +20,7 @@ type MpcRelayerConfig struct {
 	TopologyConfiguration TopologyConfiguration
 	Port                  uint16
 	KeysharePath          string
-	KeystorePath          string
+	Key                   string
 	Threshold             int
 }
 
@@ -50,9 +51,9 @@ type RawRelayerConfig struct {
 
 type RawMpcRelayerConfig struct {
 	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
-	KeystorePath          string                `mapstructure:"KeystorePath" json:"keystorePath"`
-	Threshold             int                   `mapstructure:"Threshold" json:"threshold"`
-	Port                  uint16                `mapstructure:"Port" json:"port" default:"9000"`
+	Key                   string                `mapstructure:"Key" json:"key"`
+	Threshold             string                `mapstructure:"Threshold" json:"threshold"`
+	Port                  string                `mapstructure:"Port" json:"port" default:"9000"`
 	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
 }
 
@@ -110,11 +111,21 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 	var mpcConfig MpcRelayerConfig
 
+	port, err := strconv.ParseInt(rawConfig.MpcConfig.Port, 0, 16)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc port from config %v", err)
+	}
+	mpcConfig.Port = uint16(port)
+
+	threshold, err := strconv.ParseInt(rawConfig.MpcConfig.Threshold, 0, 0)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc threshold from config %v", err)
+	}
+	mpcConfig.Threshold = int(threshold)
+
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
-	mpcConfig.Port = rawConfig.MpcConfig.Port
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
-	mpcConfig.KeystorePath = rawConfig.MpcConfig.KeystorePath
-	mpcConfig.Threshold = rawConfig.MpcConfig.Threshold
+	mpcConfig.Key = rawConfig.MpcConfig.Key
 
 	return mpcConfig, nil
 }

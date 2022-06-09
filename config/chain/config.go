@@ -13,7 +13,7 @@ type GeneralChainConfig struct {
 	Endpoint       string `mapstructure:"endpoint"`
 	From           string `mapstructure:"from"`
 	Type           string `mapstructure:"type"`
-	KeystorePath   string
+	Key            string
 	Insecure       bool
 	BlockstorePath string
 	FreshStart     bool
@@ -39,10 +39,10 @@ func (c *GeneralChainConfig) Validate() error {
 
 func (c *GeneralChainConfig) ParseFlags() {
 	if path := viper.GetString(flags.TestKeyFlagName); path != "" {
-		c.KeystorePath = path
+		c.Key = path
 		c.Insecure = true
 	} else {
-		c.KeystorePath = viper.GetString(flags.KeystoreFlagName)
+		c.Key = viper.GetString(flags.KeystoreFlagName)
 	}
 	c.BlockstorePath = viper.GetString(flags.BlockstoreFlagName)
 	c.FreshStart = viper.GetBool(flags.FreshStartFlagName)
