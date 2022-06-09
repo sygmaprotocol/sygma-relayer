@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ChainSafe/chainbridge-core/health"
 	"github.com/ChainSafe/chainbridge-core/topology"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -147,6 +148,8 @@ func Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go r.Start(ctx, errChn)
+
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
