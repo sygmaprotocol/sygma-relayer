@@ -160,6 +160,7 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
 			outConfig: config.Config{
 				RelayerConfig: relayer.RelayerConfig{
+					HealthPort:                9001,
 					LogLevel:                  1,
 					LogFile:                   "out.log",
 					OpenTelemetryCollectorURL: "",
@@ -192,8 +193,9 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 			name: "valid config",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
-					LogLevel: "debug",
-					LogFile:  "custom.log",
+					LogLevel:   "debug",
+					LogFile:    "custom.log",
+					HealthPort: 9002,
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:  "access-key",
@@ -224,6 +226,7 @@ func (s *GetConfigTestSuite) TestConfigurationProcessing() {
 				RelayerConfig: relayer.RelayerConfig{
 					LogLevel:                  0,
 					LogFile:                   "custom.log",
+					HealthPort:                9002,
 					OpenTelemetryCollectorURL: "",
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port:         2020,
