@@ -115,7 +115,7 @@ func Run() error {
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
