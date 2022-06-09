@@ -27,6 +27,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
@@ -88,7 +89,12 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClient(config)
+				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
 				if err != nil {
 					panic(err)
 				}

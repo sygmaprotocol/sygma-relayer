@@ -68,7 +68,7 @@ func localSetup(cmd *cobra.Command, args []string) error {
 func prettyPrint(config, config2 BridgeConfig) {
 	fmt.Printf(`
 ===============================================
-🎉🎉🎉 Config Successfully Deployed 🎉🎉🎉
+🎉🎉🎉 ChainBridge Successfully Deployed 🎉🎉🎉
 
 - Chain 1 -
 Bridge: %s

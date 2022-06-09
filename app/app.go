@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"os"
 	"os/signal"
 	"syscall"
@@ -93,7 +94,12 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClient(config)
+				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
 				if err != nil {
 					panic(err)
 				}
