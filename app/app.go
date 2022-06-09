@@ -6,7 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -66,9 +65,9 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
-	privBytes, err := ioutil.ReadFile(configuration.RelayerConfig.MpcConfig.KeystorePath)
+	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	priv, err := crypto.UnmarshalPrivateKey(privBytes)
 	if err != nil {
