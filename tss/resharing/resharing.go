@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/ecdsa/resharing"
 	"github.com/binance-chain/tss-lib/tss"
@@ -27,15 +27,15 @@ type startParams struct {
 }
 
 type SaveDataStorer interface {
-	GetKeyshare() (store.Keyshare, error)
-	StoreKeyshare(keyshare store.Keyshare) error
+	GetKeyshare() (keyshare.Keyshare, error)
+	StoreKeyshare(keyshare keyshare.Keyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
 }
 
 type Resharing struct {
 	common.BaseTss
-	key            store.Keyshare
+	key            keyshare.Keyshare
 	subscriptionID comm.SubscriptionID
 	storer         SaveDataStorer
 	newThreshold   int
@@ -49,11 +49,11 @@ func NewResharing(
 	storer SaveDataStorer,
 ) *Resharing {
 	storer.LockKeyshare()
-	var key store.Keyshare
+	var key keyshare.Keyshare
 	key, err := storer.GetKeyshare()
 	if err != nil {
 		// empty key for parties that don't have one
-		key = store.Keyshare{}
+		key = keyshare.Keyshare{}
 	}
 
 	partyStore := make(map[string]*tss.PartyID)
@@ -171,7 +171,7 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 			{
 				r.Log.Info().Msg("Successfully reshared key")
 
-				keyshare := store.NewKeyshare(key, r.newThreshold, r.Peers)
+				keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
 				err := r.storer.StoreKeyshare(keyshare)
 				r.ErrChn <- err
 				return

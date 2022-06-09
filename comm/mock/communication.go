@@ -7,7 +7,7 @@ package mock_comm
 import (
 	reflect "reflect"
 
-	comm "github.com/ChainSafe/chainbridge-core/comm"
+	comm "github.com/ChainSafe/chainbridge-hub/comm"
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )

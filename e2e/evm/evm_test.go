@@ -5,26 +5,26 @@ import (
 	"math/big"
 	"testing"
 
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
-	"github.com/ChainSafe/chainbridge-core/e2e/evm"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
-	"github.com/ethereum/go-ethereum"
 
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
+	"github.com/ChainSafe/chainbridge-hub/e2e/evm"
 )
 
 type TestClient interface {

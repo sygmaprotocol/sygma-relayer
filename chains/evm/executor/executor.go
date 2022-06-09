@@ -11,9 +11,6 @@ import (
 
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/tss"
-	"github.com/ChainSafe/chainbridge-core/tss/signing"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
@@ -21,6 +18,10 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/tss"
+	"github.com/ChainSafe/chainbridge-hub/tss/signing"
 )
 
 var (
@@ -33,7 +34,7 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposal(proposal *proposal.Proposal, signature []byte, revertOnFail bool, opts transactor.TransactOptions) (*common.Hash, error)
+	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
 	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
 }
 
@@ -109,7 +110,7 @@ func (e *Executor) Execute(m *message.Message) error {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				hash, err := e.executeProposal(prop, signatureData, m.RevertOnFail)
+				hash, err := e.executeProposal(prop, signatureData)
 				if err != nil {
 					return err
 				}
@@ -130,13 +131,13 @@ func (e *Executor) Execute(m *message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData, revertOnFail bool) (*common.Hash, error) {
+func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[64] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposal(prop, sig, revertOnFail, transactor.TransactOptions{
+	hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{
 		Priority: prop.Metadata.Priority,
 	})
 	if err != nil {

@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/creasty/defaults"
 
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
 	"github.com/spf13/viper"
 )
 

@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

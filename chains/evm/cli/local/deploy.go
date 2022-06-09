@@ -6,10 +6,10 @@ package local
 import (
 	"math/big"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"

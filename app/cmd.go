@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/ChainSafe/chainbridge-core/example/app"
-	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
+	"github.com/ChainSafe/chainbridge-core/flags"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 		Short: "Run app",
 		Long:  "Run app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := app.Run(); err != nil {
+			if err := Run(); err != nil {
 				return err
 			}
 			return nil
@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	flags.BindFlags(runCMD)
+	flags.BindFlags(rootCMD)
 }
 
 func Execute() {

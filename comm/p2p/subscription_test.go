@@ -1,9 +1,10 @@
 package p2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	comm "github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/stretchr/testify/suite"
 )
 
 type SessionSubscriptionManagerTestSuite struct {

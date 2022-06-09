@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -22,7 +22,7 @@ var (
 )
 
 type SaveDataStorer interface {
-	StoreKeyshare(keyshare store.Keyshare) error
+	StoreKeyshare(keyshare keyshare.Keyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
 }
@@ -135,7 +135,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 			{
 				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToECDSAPubKey()))
 
-				keyshare := store.NewKeyshare(key, k.threshold, k.Peers)
+				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
 				if err != nil {
 					k.ErrChn <- err

@@ -2,9 +2,12 @@ package comm_test
 
 import (
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/topology"
+	"testing"
+	"time"
+
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
+	"github.com/ChainSafe/chainbridge-hub/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -12,8 +15,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/stretchr/testify/suite"
-	"testing"
-	"time"
 )
 
 type CommunicationIntegrationTestSuite struct {

@@ -1,12 +1,13 @@
 package p2p
 
 import (
-	"github.com/ChainSafe/chainbridge-core/topology"
+	"testing"
+
+	"github.com/ChainSafe/chainbridge-hub/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type HostTestSuite struct {

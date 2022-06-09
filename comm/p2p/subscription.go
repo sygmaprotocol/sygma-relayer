@@ -1,8 +1,9 @@
 package p2p
 
 import (
-	comm "github.com/ChainSafe/chainbridge-core/comm"
 	"sync"
+
+	comm "github.com/ChainSafe/chainbridge-hub/comm"
 )
 
 // SessionSubscriptionManager manages channel subscriptions by comm.SessionID

@@ -3,9 +3,9 @@ package elector
 import (
 	"context"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"

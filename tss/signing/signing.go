@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -23,7 +23,7 @@ var (
 )
 
 type SaveDataFetcher interface {
-	GetKeyshare() (store.Keyshare, error)
+	GetKeyshare() (keyshare.Keyshare, error)
 	LockKeyshare()
 	UnlockKeyshare()
 }
@@ -31,7 +31,7 @@ type SaveDataFetcher interface {
 type Signing struct {
 	common.BaseTss
 	coordinator    bool
-	key            store.Keyshare
+	key            keyshare.Keyshare
 	msg            *big.Int
 	resultChn      chan interface{}
 	subscriptionID comm.SubscriptionID

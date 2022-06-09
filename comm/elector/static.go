@@ -3,7 +3,7 @@ package elector
 import (
 	"context"
 
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm/elector"
+	"github.com/ChainSafe/chainbridge-hub/comm/elector"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
