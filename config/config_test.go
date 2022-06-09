@@ -2,8 +2,6 @@ package config_test
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -24,8 +22,10 @@ func TestRunGetConfigTestSuite(t *testing.T) {
 
 func (s *GetConfigTestSuite) SetupSuite()    {}
 func (s *GetConfigTestSuite) TearDownSuite() {}
-func (s *GetConfigTestSuite) SetupTest()     {}
-func (s *GetConfigTestSuite) TearDownTest()  {}
+func (s *GetConfigTestSuite) SetupTest() {
+	os.Clearenv()
+}
+func (s *GetConfigTestSuite) TearDownTest() {}
 
 func (s *GetConfigTestSuite) Test_GetConfig_InvalidPath() {
 	_, err := config.GetConfig("invalid")
@@ -108,33 +108,6 @@ func (s GetConfigTestSuite) Test_GetConfig_LoadFromENV() {
 			},
 		},
 	}, cnf)
-}
-
-func (s *GetConfigTestSuite) Test_EnvLoading() {
-	// TODO
-	// _, err := config.GetConfig("test.json")
-	privKey, _, err := crypto.GenerateKeyPair(2, 1)
-	if err != nil {
-		return
-	}
-	marshalPrivateKey, err := crypto.MarshalPrivateKey(privKey)
-	if err != nil {
-		return
-	}
-
-	privKeyString := crypto.ConfigEncodeKey(marshalPrivateKey)
-
-	decodeKey, err := crypto.ConfigDecodeKey(privKeyString)
-	if err != nil {
-		return
-	}
-
-	pk, err := crypto.UnmarshalPrivateKey(decodeKey)
-	if err != nil {
-		return
-	}
-
-	fmt.Println(pk.Equals(privKey))
 }
 
 type ConfigTestCase struct {

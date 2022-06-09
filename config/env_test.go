@@ -17,8 +17,10 @@ func TestRunLoadFromEnvTestSuite(t *testing.T) {
 
 func (s *LoadFromEnvTestSuite) SetupSuite()    {}
 func (s *LoadFromEnvTestSuite) TearDownSuite() {}
-func (s *LoadFromEnvTestSuite) SetupTest()     {}
-func (s *LoadFromEnvTestSuite) TearDownTest()  {}
+func (s *LoadFromEnvTestSuite) SetupTest() {
+	os.Clearenv()
+}
+func (s *LoadFromEnvTestSuite) TearDownTest() {}
 
 func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 	_ = os.Setenv("CBH_RELAYER_OPENTELEMETRYCOLLECTORURL", "test.opentelemetry.url")
