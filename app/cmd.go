@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
 	"github.com/ChainSafe/chainbridge-core/flags"
 )
 
@@ -29,7 +30,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD)
+	rootCMD.AddCommand(runCMD, deploy.DeployEVM)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}
