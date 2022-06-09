@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"context"
 	"errors"
 	"fmt"
+
 	"github.com/ChainSafe/chainbridge-core/topology"
 
 	"github.com/libp2p/go-libp2p"
@@ -11,7 +11,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	noise "github.com/libp2p/go-libp2p-noise"
-	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/rs/zerolog/log"
 )
 
@@ -37,19 +36,12 @@ func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, p
 		"new libp2p host created with address: %s", h.Addrs()[0].String(),
 	)
 
-	resolver, err := madns.NewResolver()
-	if err != nil {
-		return nil, err
-	}
 	for _, p := range networkTopology.Peers {
-		if p.ID != h.ID() {
-			addr, err := resolver.Resolve(context.Background(), p.Addrs[0])
-			if err != nil {
-				return nil, err
-			}
-
-			h.Peerstore().AddAddr(p.ID, addr[0], peerstore.PermanentAddrTTL)
+		if p.ID == h.ID() {
+			continue
 		}
+
+		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
 	}
 
 	return h, nil
