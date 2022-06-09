@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	noise "github.com/libp2p/go-libp2p-noise"
 	"github.com/rs/zerolog/log"
@@ -36,13 +37,21 @@ func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, p
 		"new libp2p host created with address: %s", h.Addrs()[0].String(),
 	)
 
-	for _, p := range networkTopology.Peers {
-		if p.ID == h.ID() {
+	LoadPeers(h, networkTopology.Peers)
+	return h, nil
+}
+
+// LoadPeers clears out peerstore and loads new peers into it
+func LoadPeers(h host.Host, peers []*peer.AddrInfo) {
+	for _, p := range h.Peerstore().Peers() {
+		if p == h.ID() {
 			continue
 		}
 
-		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
+		h.Peerstore().RemovePeer(p)
 	}
 
-	return h, nil
+	for _, p := range peers {
+		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
+	}
 }

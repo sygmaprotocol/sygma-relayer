@@ -6,13 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/topology"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -31,11 +24,16 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func Run() error {
@@ -65,7 +63,7 @@ func Run() error {
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	priv, err := crypto.UnmarshalPrivateKey(privBytes)
 	if err != nil {
@@ -108,7 +106,7 @@ func Run() error {
 				eventHandlers := make([]listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := executor.NewEVMMessageHandler(*bridgeContract)
