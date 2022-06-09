@@ -175,6 +175,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		err := <-status
 		s.NotNil(err)
 	}
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
