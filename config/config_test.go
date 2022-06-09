@@ -53,8 +53,9 @@ func (s GetConfigTestSuite) Test_GetConfig_LoadFromENV() {
 
 	s.Equal(config.Config{
 		RelayerConfig: relayer.RelayerConfig{
-			LogLevel: 1,
-			LogFile:  "out.log",
+			LogLevel:   1,
+			LogFile:    "out.log",
+			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
 					AccessKey:      "test-access-key",
@@ -279,7 +280,7 @@ func (s *GetConfigTestSuite) Test_GetConfig_LoadFromFile() {
 				RelayerConfig: relayer.RawRelayerConfig{
 					LogLevel:   "debug",
 					LogFile:    "custom.log",
-					HealthPort: 9002,
+					HealthPort: "9002",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:  "access-key",

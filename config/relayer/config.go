@@ -46,7 +46,7 @@ type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
 	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
 	LogFile                   string              `mapstructure:"LogFile" json:"logFile" default:"out.log"`
-	HealthPort                uint16              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
+	HealthPort                string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig               RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
@@ -94,7 +94,12 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 
 	config.LogFile = rawConfig.LogFile
 	config.OpenTelemetryCollectorURL = rawConfig.OpenTelemetryCollectorURL
-	config.HealthPort = rawConfig.HealthPort
+
+	healthPort, err := strconv.ParseInt(rawConfig.HealthPort, 0, 16)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse health port %v", err)
+	}
+	config.HealthPort = uint16(healthPort)
 
 	mpcConfig, err := parseMpcConfig(rawConfig)
 	if err != nil {

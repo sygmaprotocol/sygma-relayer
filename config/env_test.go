@@ -26,6 +26,7 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 	_ = os.Setenv("CBH_RELAYER_OPENTELEMETRYCOLLECTORURL", "test.opentelemetry.url")
 	_ = os.Setenv("CBH_RELAYER_LOGLEVEL", "info")
 	_ = os.Setenv("CBH_RELAYER_LOGFILE", "test.log")
+	_ = os.Setenv("CBH_RELAYER_HEALTHPORT", "4000")
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
@@ -52,6 +53,7 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 		OpenTelemetryCollectorURL: "test.opentelemetry.url",
 		LogLevel:                  "info",
 		LogFile:                   "test.log",
+		HealthPort:                "4000",
 		MpcConfig: relayer.RawMpcRelayerConfig{
 			KeysharePath: "/cfg/keyshares/0.keyshare",
 			Key:          "test-pk",
