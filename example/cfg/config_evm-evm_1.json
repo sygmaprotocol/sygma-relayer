@@ -3,7 +3,8 @@
     "mpcConfig": {
       "port": "9000",
       "keysharePath": "/cfg/keyshares/0.keyshare",
-      "keystorePath": "/cfg/pks/0.pk",
+      "threshold": "2",
+      "key": "CAASpwkwggSjAgEAAoIBAQDVGgUufcOR+u/KjuifMbWbEy4F18250ua3/+PO2eSn/mNRhPp2KCWZJcbVvcvfmsrUG9rJC9DMeUZqttTGSF4/ZaNzzvW0b3Ij2NsI9F+R9HKfsbak8NT8z4nLlWF6V2JuZAD8papG+S60k97278kTPIDZZ+S1ZzH/ViFG/5eu26bNylU27AjL4tTRivXSW6hqlem/RnuPdHNtHqBmw2pAAsV/CZJjmibsk6wQJAMH5/o453rW5v2Ntc0rkGH0leszk9DUJoALr/623MP4re4ZsNPIoZE+ieU4sbM0d8vkbxs4BRcnAa075X8dX8KTl88MiA+AxW9nkW+X2Sn0XI1/AgMBAAECggEBAMNghduoJoRSo0L9Xz2FX9F79jgZMV7rg+iyzXQ6xa9YRkrZNqDaEg6lWfVhe+fYjZmGqEKneJnfnrX8Rnw8oVxSnVdyKkdx3h4LllZRZsX0bpsHXkM/IqdeyCFFJgf60h4Pxe/dG47SqwWYhVW1Zo8ia6fn3wKKSIanuv7TG4iN4Zd1T+joPF9ACq5zYqVBN0nwHTTrMdBjwWOo8jguLXwRgNw1j2qTcTfDvhfkHKXNVm2QMul8DOWZOpHPnFdp1pPu6lAuHyDUvfbA3RLIh2T//iuSWNiHw1bYXhQMcOeB0rqhISEE/qFNHC/9lzCqVoDTP4YfU0SV0ezx4Vgu9zECgYEA8K++vpfezsBEEvtl5iG2NfvqypC6rQrrt4WWEgvskRrNRY4NUeXC3CJpH6ItOwruIv0NTQz10RoH+d6m7isOoUHCSHKFVcePdDcFJXlQf8WN99vFATB39ItfL+fepLqKSZ8+dh59pq+76ewdvStZXhV3Idjcx3L/D2RIVj0nzUUCgYEA4qj6cCOUfEyeE2YIOJ0+iP3GUPu90pNWTpS5R8UE7GBgHCSqBlNpIcoaOzDVJWN30OYVoyBBxfYaTGx5L5adMCtQCUaSuYlCb0Sd8L6v5cnKNXm9Mdd7L19y9RamGdzGS4pkkatG8Gzod3DESXbcEYg5djn/8meeirFoDV6IsfMCgYAH7sLqpTbCubOErKR/IT1QKi1i38JHUcTTF6QKlDoHzkpVsIjf2iLB/qBYWpADEiknHhACKhsv+RuqMJxv3RtuVSyCFsQuP5WKzwVsZsMwcuJq+ONVVrOda7qHaaz84OkN5CG64uZhSAl5fD6+rV8UqsBybSNZr4CYkUWREhLtwQKBgHEGIhvZIin5arnxnxfcEVrucP3hCn7+yYLV1q5bKGFWjZZ7Ee2lmj8nMH1jlGXYe97HXPLDGwlD90k0rhl02V0zu+1kK7YpI9+oL7nk3IGRZivUUOuRr/OnfQOKD7nFxXvVvuCEsBMju6gTq02W35Y+f6jcsyyFTyGJ5YEFKtTRAoGAG/7OBEetoNyWTvMQ6w5HjQkz66n05DoUKFJ44T6ia1vlZCacZ5F7T1S0eMo3zlUp8F/Kz1VxmG3UlsiX3RMf9qiOh+HFIGI6lAtNojHn4jdXpCxTRHecu9GDmds8/7MLemJvoJ4oo3I1n/PyEA9fUMJn07MTGMAABw2IkcOS0dw=",
       "topologyConfiguration": {
         "accessKey": "test-access-key",
         "secKey": "test-sec-key"
@@ -23,7 +24,8 @@
       "genericHandler": "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
-      "blockConfirmations": 2
+      "blockConfirmations": 2,
+      "key": "9e83e7cd0ee087af0514f4f82b9f19445046ff8255cb17b7e463a820d9283acd"
     },
     {
       "id": 2,
@@ -37,7 +39,8 @@
       "genericHandler": "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
-      "blockConfirmations": 2
+      "blockConfirmations": 2,
+      "key": "079462dc6a4dee561d338b56223cf93f14f9881b341a040a5ac7c3396a0ad638"
     }
   ]
 }

@@ -6,15 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/ChainSafe/chainbridge-core/topology"
-
-	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -33,15 +24,21 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-core/topology"
 	"github.com/ChainSafe/chainbridge-core/tss"
 	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func Run() error {
-	configuration, err := config.GetConfig(viper.GetString(flags.ConfigFlagName))
+	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName))
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +62,7 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
-	privBytes, err := ioutil.ReadFile(configuration.RelayerConfig.MpcConfig.KeystorePath)
+	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +89,12 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClient(config)
+				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
 				if err != nil {
 					panic(err)
 				}
