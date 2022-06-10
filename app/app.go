@@ -28,7 +28,6 @@ import (
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-core/health"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
@@ -41,6 +40,7 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/comm/elector"
 	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
 	"github.com/ChainSafe/chainbridge-hub/config"
+	"github.com/ChainSafe/chainbridge-hub/health"
 	"github.com/ChainSafe/chainbridge-hub/keyshare"
 	"github.com/ChainSafe/chainbridge-hub/topology"
 	"github.com/ChainSafe/chainbridge-hub/tss"
@@ -99,7 +99,7 @@ func Run() error {
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
 
 				bridgeAddress := common.HexToAddress(config.Bridge)

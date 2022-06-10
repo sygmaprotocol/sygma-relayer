@@ -1,10 +1,13 @@
 package config
 
 import (
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
-	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
+
+	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
 )
 
 type LoadFromEnvTestSuite struct {
@@ -15,12 +18,9 @@ func TestRunLoadFromEnvTestSuite(t *testing.T) {
 	suite.Run(t, new(LoadFromEnvTestSuite))
 }
 
-func (s *LoadFromEnvTestSuite) SetupSuite()    {}
-func (s *LoadFromEnvTestSuite) TearDownSuite() {}
 func (s *LoadFromEnvTestSuite) SetupTest() {
 	os.Clearenv()
 }
-func (s *LoadFromEnvTestSuite) TearDownTest() {}
 
 func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 	_ = os.Setenv("CBH_RELAYER_OPENTELEMETRYCOLLECTORURL", "test.opentelemetry.url")
@@ -50,10 +50,12 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 
 	s.Nil(err)
 	s.Equal(relayer.RawRelayerConfig{
-		OpenTelemetryCollectorURL: "test.opentelemetry.url",
-		LogLevel:                  "info",
-		LogFile:                   "test.log",
-		HealthPort:                "4000",
+		RawRelayerConfig: coreRelayer.RawRelayerConfig{
+			OpenTelemetryCollectorURL: "test.opentelemetry.url",
+			LogLevel:                  "info",
+			LogFile:                   "test.log",
+		},
+		HealthPort: "4000",
 		MpcConfig: relayer.RawMpcRelayerConfig{
 			KeysharePath: "/cfg/keyshares/0.keyshare",
 			Key:          "test-pk",

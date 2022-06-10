@@ -55,8 +55,10 @@ func (s GetConfigTestSuite) Test_GetConfigFromENV() {
 
 	s.Equal(config.Config{
 		RelayerConfig: relayer.RelayerConfig{
-			LogLevel:   1,
-			LogFile:    "out.log",
+			RelayerConfig: coreRelayer.RelayerConfig{
+				LogLevel: 1,
+				LogFile:  "out.log",
+			},
 			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
@@ -261,8 +263,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						LogLevel:                  1,
 						LogFile:                   "out.log",
 						OpenTelemetryCollectorURL: "",
-						HealthPort:                9001,
 					},
+					HealthPort: 9001,
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port:      9000,
 						Threshold: 5,
@@ -294,10 +296,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
 					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel:   "debug",
-						LogFile:    "custom.log",
-						HealthPort: "9002",
+						LogLevel: "debug",
+						LogFile:  "custom.log",
 					},
+					HealthPort: "9002",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:  "access-key",
@@ -330,8 +332,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						LogLevel:                  0,
 						LogFile:                   "custom.log",
 						OpenTelemetryCollectorURL: "",
-						HealthPort:                9002,
 					},
+					HealthPort: 9002,
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port:         2020,
 						KeysharePath: "./share.key",

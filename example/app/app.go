@@ -101,7 +101,7 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				if err != nil {
 					panic(err)
 				}

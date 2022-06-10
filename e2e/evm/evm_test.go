@@ -61,13 +61,13 @@ func Test_EVM2EVM(t *testing.T) {
 		FeeHandlerAddr:    common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
 	}
 
-	ethClient1, err := evmclient.NewEVMClientFromParams(ETHEndpoint1, local.EveKp.PrivateKey())
+	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.EveKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := evmclient.NewEVMClientFromParams(ETHEndpoint2, local.EveKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.EveKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
