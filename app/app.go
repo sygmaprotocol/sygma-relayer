@@ -6,12 +6,13 @@ package app
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
@@ -27,6 +28,7 @@ import (
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
+	"github.com/ChainSafe/chainbridge-core/health"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
@@ -45,19 +47,22 @@ import (
 )
 
 func Run() error {
-	configuration, err := config.GetConfig(viper.GetString(flags.ConfigFlagName))
-	if err != nil {
-		panic(err)
+	var configuration config.Config
+	var err error
+	configFlag := viper.GetString(flags.ConfigFlagName)
+	if strings.ToLower(configFlag) == "env" {
+		configuration, err = config.GetConfigFromENV()
+		panicOnError(err)
+	} else {
+		configuration, err = config.GetConfigFromFile(configFlag)
+		panicOnError(err)
 	}
 
 	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
-	if err != nil {
-		panic(err)
-	}
+	panicOnError(err)
+
 	networkTopology, err := topologyProvider.NetworkTopology()
-	if err != nil {
-		panic(err)
-	}
+	panicOnError(err)
 
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {
@@ -65,23 +70,18 @@ func Run() error {
 	}
 
 	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
-	if err != nil {
-		panic(err)
-	}
+	panicOnError(err)
+
 	blockstore := store.NewBlockStore(db)
 
-	privBytes, err := ioutil.ReadFile(configuration.RelayerConfig.MpcConfig.KeystorePath)
-	if err != nil {
-		panic(err)
-	}
+	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
+	panicOnError(err)
+
 	priv, err := crypto.UnmarshalPrivateKey(privBytes)
-	if err != nil {
-		panic(err)
-	}
+	panicOnError(err)
+
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
-	if err != nil {
-		panic(err)
-	}
+	panicOnError(err)
 
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
@@ -94,14 +94,13 @@ func Run() error {
 		case "evm":
 			{
 				config, err := chain.NewEVMConfig(chainConfig)
-				if err != nil {
-					panic(err)
-				}
+				panicOnError(err)
 
-				client, err := evmclient.NewEVMClient(config)
-				if err != nil {
-					panic(err)
-				}
+				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				panicOnError(err)
+
+				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
+				panicOnError(err)
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
@@ -148,6 +147,8 @@ func Run() error {
 	defer cancel()
 	go r.Start(ctx, errChn)
 
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
+
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
 		syscall.SIGTERM,
@@ -162,5 +163,11 @@ func Run() error {
 	case sig := <-sysErr:
 		log.Info().Msgf("terminating got ` [%v] signal", sig)
 		return nil
+	}
+}
+
+func panicOnError(err error) {
+	if err != nil {
+		panic(err)
 	}
 }

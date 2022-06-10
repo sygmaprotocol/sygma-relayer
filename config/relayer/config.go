@@ -3,14 +3,17 @@ package relayer
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/rs/zerolog"
+
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 )
 
 type RelayerConfig struct {
 	relayer.RelayerConfig
+	HealthPort                uint16
 	MpcConfig   MpcRelayerConfig
 	BullyConfig BullyConfig
 }
@@ -19,7 +22,7 @@ type MpcRelayerConfig struct {
 	TopologyConfiguration TopologyConfiguration
 	Port                  uint16
 	KeysharePath          string
-	KeystorePath          string
+	Key                   string
 	Threshold             int
 }
 
@@ -42,15 +45,16 @@ type TopologyConfiguration struct {
 
 type RawRelayerConfig struct {
 	relayer.RawRelayerConfig `mapstructure:",squash"`
+	HealthPort                string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
 	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
 
 type RawMpcRelayerConfig struct {
 	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
-	KeystorePath          string                `mapstructure:"KeystorePath" json:"keystorePath"`
-	Threshold             int                   `mapstructure:"Threshold" json:"threshold"`
-	Port                  uint16                `mapstructure:"Port" json:"port" default:"9000"`
+	Key                   string                `mapstructure:"Key" json:"key"`
+	Threshold             string                `mapstructure:"Threshold" json:"threshold"`
+	Port                  string                `mapstructure:"Port" json:"port" default:"9000"`
 	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
 }
 
@@ -90,6 +94,12 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	config.LogFile = rawConfig.LogFile
 	config.OpenTelemetryCollectorURL = rawConfig.OpenTelemetryCollectorURL
 
+	healthPort, err := strconv.ParseInt(rawConfig.HealthPort, 0, 16)
+	if err != nil {
+		return RelayerConfig{}, fmt.Errorf("unable to parse health port %v", err)
+	}
+	config.HealthPort = uint16(healthPort)
+
 	mpcConfig, err := parseMpcConfig(rawConfig)
 	if err != nil {
 		return RelayerConfig{}, err
@@ -108,11 +118,21 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 	var mpcConfig MpcRelayerConfig
 
+	port, err := strconv.ParseInt(rawConfig.MpcConfig.Port, 0, 16)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc port from config %v", err)
+	}
+	mpcConfig.Port = uint16(port)
+
+	threshold, err := strconv.ParseInt(rawConfig.MpcConfig.Threshold, 0, 0)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc threshold from config %v", err)
+	}
+	mpcConfig.Threshold = int(threshold)
+
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
-	mpcConfig.Port = rawConfig.MpcConfig.Port
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
-	mpcConfig.KeystorePath = rawConfig.MpcConfig.KeystorePath
-	mpcConfig.Threshold = rawConfig.MpcConfig.Threshold
+	mpcConfig.Key = rawConfig.MpcConfig.Key
 
 	return mpcConfig, nil
 }
