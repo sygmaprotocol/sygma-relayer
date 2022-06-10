@@ -11,9 +11,7 @@ type wrapper struct {
 	Config RawConfig `json:"cbh"`
 }
 
-// LoadFromEnv loads RawConfig from ENV variables
-// TODO
-func LoadFromEnv() (RawConfig, error) {
+func loadFromEnv() (RawConfig, error) {
 	// load relayer config
 	jsonRelayerConfig, err := loadENVToJsonStructure()
 	if err != nil {

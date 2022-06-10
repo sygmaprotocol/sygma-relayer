@@ -38,7 +38,7 @@ import (
 )
 
 func Run() error {
-	configuration, err := config.GetConfig(viper.GetString(flags.ConfigFlagName))
+	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName))
 	if err != nil {
 		panic(err)
 	}
