@@ -8,7 +8,7 @@
 
 :construction: *This is still unstable MVP implementation of ChainBridge HUB* :construction:
 
-ChainBridge Hub uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-core) framework and replaces relayer voting mechanism with MPC signing process.
+ChainBridge Hub uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-core) framework and replaces the relayer voting mechanism with the MPC signing process.
 
 &nbsp;
 
@@ -20,30 +20,30 @@ ChainBridge Hub uses [chainbridge-core](https://github.com/ChainSafe/chainbridge
 &nbsp;
 
 ## Local environment
-Run `make example` to start local environment.
+Run `make example` to start the local environment.
 
-_This will start 2 evm networks, deploy and configure smart contracts, and start 3 preconfigured relayers._
+_This will start two EVM networks, deploy and configure smart contracts, and start three preconfigured relayers._
 
 &nbsp;
 
 ## Configuration
 
-Configuration can be provided either as configuration file or as ENV variables, depending on `--config` flag value.
-If it is set to `env` configuration properties are expected as ENV variables, otherwise you need to provide path to configuration file.
+Configuration can be provided either as a configuration file or as ENV variables, depending on `--config` flag value.
+If it is set to `env`, configuration properties are expected as ENV variables. Otherwise, you need to provide a path to the configuration file.
 
-Configuration consists of two distinct parts. First one being `RelayerConfig` defining various parameters of relayer. 
-Second one is list of `ChainConfig` that define parameters for each chain/domain that relayer is processing.
+Configuration consists of two distinct parts. The first one is `RelayerConfig`, defining various parameters of the relayer.
+The second one is a list of `ChainConfig` that defines parameters for each chain/domain that the relayer is processing.
 
 ### Configuration file
 
-Example of json configuration file can be found inside `/example/cfg` folder.
+An example of a JSON configuration file can be found inside `/example/cfg` folder.
 
-### ENV variables 
+### ENV variables
 
 _Each ENV variable needs to be prefixed with CBH._
 
 Properties of `RelayerConfig` are expected to be defined as separate ENV variables
-where ENV variable name reflects properties position in structure.
+where ENV variable name reflects properties position in the structure.
 
 For example, if you want to set `Config.RelayerConfig.MpcConfig.Port` this would
 translate to ENV variable named `CBH_RELAYER_MPCCONFIG_PORT`.
