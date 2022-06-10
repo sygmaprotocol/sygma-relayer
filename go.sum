@@ -78,6 +78,8 @@ github.com/ChainSafe/chainbridge-core v0.0.0-20220609113458-f699515e0e1a h1:FoLJ
 github.com/ChainSafe/chainbridge-core v0.0.0-20220609113458-f699515e0e1a/go.mod h1:3s5csqPlZSuMqSfO5MzWhvmoW92qBmdbLcRiOtiZFIU=
 github.com/ChainSafe/chainbridge-core v0.0.0-20220609114042-0fc83dde48b9 h1:oX5pgQ0B0LcSs/U3hPG+bp9ta6C9/mtrA8d8WZAUN40=
 github.com/ChainSafe/chainbridge-core v0.0.0-20220609114042-0fc83dde48b9/go.mod h1:3s5csqPlZSuMqSfO5MzWhvmoW92qBmdbLcRiOtiZFIU=
+github.com/ChainSafe/chainbridge-core v0.0.0-20220610103459-3b7a4631f178 h1:eDFs3OMnrA/vr9lAIs68tWzJBUvDwQxEj4OMlUYxiDY=
+github.com/ChainSafe/chainbridge-core v0.0.0-20220610103459-3b7a4631f178/go.mod h1:3s5csqPlZSuMqSfO5MzWhvmoW92qBmdbLcRiOtiZFIU=
 github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9 h1:VMMy/iOjcLuygRYmEv9wCXipIg/+OwwaLflAAmtrB0k=
 github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9/go.mod h1:goGkFwXMDrd2ZnrNyRKIQ6Z9HZbQqUE0ZIK3j8EdGkI=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
