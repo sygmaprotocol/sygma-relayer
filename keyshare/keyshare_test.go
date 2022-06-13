@@ -1,10 +1,10 @@
-package store_test
+package keyshare_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/suite"
@@ -12,7 +12,7 @@ import (
 
 type KeyshareStoreTestSuite struct {
 	suite.Suite
-	keyshareStore *store.KeyshareStore
+	keyshareStore *keyshare.KeyshareStore
 	path          string
 }
 
@@ -24,7 +24,7 @@ func (s *KeyshareStoreTestSuite) SetupSuite()    {}
 func (s *KeyshareStoreTestSuite) TearDownSuite() {}
 func (s *KeyshareStoreTestSuite) SetupTest() {
 	s.path = "share.json"
-	s.keyshareStore = store.NewKeyshareStore(s.path)
+	s.keyshareStore = keyshare.NewKeyshareStore(s.path)
 }
 func (s *KeyshareStoreTestSuite) TearDownTest() {
 	os.Remove(s.path)
@@ -40,7 +40,7 @@ func (s *KeyshareStoreTestSuite) Test_StoreAndRetrieveShare() {
 	peer1, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	peer2, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
 	peers := []peer.ID{peer1, peer2}
-	keyshare := store.NewKeyshare(keygen.NewLocalPartySaveData(5), threshold, peers)
+	keyshare := keyshare.NewKeyshare(keygen.NewLocalPartySaveData(5), threshold, peers)
 
 	err := s.keyshareStore.StoreKeyshare(keyshare)
 	s.Nil(err)

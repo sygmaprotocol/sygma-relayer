@@ -1,17 +1,13 @@
 package cli
 
 import (
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/account"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/admin"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/centrifuge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/deploy"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
 )
 
 // BindCLI is public function to be invoked in example-app's cobra command
@@ -71,24 +67,8 @@ func init() {
 	// deploy
 	EvmRootCLI.AddCommand(deploy.DeployEVM)
 
-	// admin
-	EvmRootCLI.AddCommand(admin.AdminCmd)
+	// add commands to evm-cli root
+	// local setup
+	EvmRootCLI.AddCommand(local.LocalSetupCmd)
 
-	// bridge
-	EvmRootCLI.AddCommand(bridge.BridgeCmd)
-
-	// erc20
-	EvmRootCLI.AddCommand(erc20.ERC20Cmd)
-
-	// erc721
-	EvmRootCLI.AddCommand(erc721.ERC721Cmd)
-
-	// centrifuge
-	EvmRootCLI.AddCommand(centrifuge.CentrifugeCmd)
-
-	// account
-	EvmRootCLI.AddCommand(account.AccountRootCMD)
-
-	// utils
-	EvmRootCLI.AddCommand(utils.UtilsCmd)
 }

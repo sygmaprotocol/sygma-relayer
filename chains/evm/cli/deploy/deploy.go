@@ -4,16 +4,17 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/feeHandler"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/generic"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
@@ -171,7 +172,7 @@ func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPr
 	log.Debug().Msgf("url: %s gas limit: %v gas price: %v", url, gasLimit, gasPrice)
 	log.Debug().Msgf("SENDER Private key 0x%s", hex.EncodeToString(crypto.FromECDSA(senderKeyPair.PrivateKey())))
 
-	ethClient, err := evmclient.NewEVMClientFromParams(url, senderKeyPair.PrivateKey())
+	ethClient, err := evmclient.NewEVMClient(url, senderKeyPair.PrivateKey())
 	if err != nil {
 		log.Error().Err(fmt.Errorf("ethereum client error: %v", err)).Msg("error initializing new EVM client")
 		return err

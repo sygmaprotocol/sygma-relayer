@@ -7,7 +7,7 @@ package mock_keygen
 import (
 	reflect "reflect"
 
-	store "github.com/ChainSafe/chainbridge-core/store"
+	keyshare "github.com/ChainSafe/chainbridge-hub/keyshare"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -47,7 +47,7 @@ func (mr *MockSaveDataStorerMockRecorder) LockKeyshare() *gomock.Call {
 }
 
 // StoreKeyshare mocks base method.
-func (m *MockSaveDataStorer) StoreKeyshare(keyshare store.Keyshare) error {
+func (m *MockSaveDataStorer) StoreKeyshare(keyshare keyshare.Keyshare) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreKeyshare", keyshare)
 	ret0, _ := ret[0].(error)

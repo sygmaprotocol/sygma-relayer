@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 )

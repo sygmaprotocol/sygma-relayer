@@ -3,18 +3,19 @@ package relayer
 import (
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog"
 	"strconv"
 	"time"
+
+	"github.com/rs/zerolog"
+
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 )
 
 type RelayerConfig struct {
-	OpenTelemetryCollectorURL string
-	LogLevel                  zerolog.Level
-	LogFile                   string
-	HealthPort                uint16
-	MpcConfig                 MpcRelayerConfig
-	BullyConfig               BullyConfig
+	relayer.RelayerConfig
+	HealthPort  uint16
+	MpcConfig   MpcRelayerConfig
+	BullyConfig BullyConfig
 }
 
 type MpcRelayerConfig struct {
@@ -43,12 +44,10 @@ type TopologyConfiguration struct {
 }
 
 type RawRelayerConfig struct {
-	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
-	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
-	LogFile                   string              `mapstructure:"LogFile" json:"logFile" default:"out.log"`
-	HealthPort                string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
-	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
-	BullyConfig               RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
+	relayer.RawRelayerConfig `mapstructure:",squash"`
+	HealthPort               string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
+	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
+	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
 
 type RawMpcRelayerConfig struct {

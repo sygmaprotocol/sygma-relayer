@@ -1,10 +1,11 @@
 package p2p
 
 import (
-	mock_network "github.com/ChainSafe/chainbridge-core/comm/p2p/mock/stream"
+	"testing"
+
+	mock_network "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type StreamManagerTestSuite struct {

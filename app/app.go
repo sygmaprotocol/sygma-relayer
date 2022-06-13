@@ -19,26 +19,31 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/executor"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/comm/elector"
-	"github.com/ChainSafe/chainbridge-core/comm/p2p"
-	"github.com/ChainSafe/chainbridge-core/config"
+	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
+	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-core/health"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-core/topology"
-	"github.com/ChainSafe/chainbridge-core/tss"
+
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-hub/comm/elector"
+	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
+	"github.com/ChainSafe/chainbridge-hub/config"
+	"github.com/ChainSafe/chainbridge-hub/health"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/chainbridge-hub/topology"
+	"github.com/ChainSafe/chainbridge-hub/tss"
 )
 
 func Run() error {
@@ -81,7 +86,7 @@ func Run() error {
 	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
-	keyshareStore := store.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
@@ -94,7 +99,7 @@ func Run() error {
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClientFromParams(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
@@ -105,21 +110,22 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, gasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				depositHandler := listener.NewETHDepositHandler(*bridgeContract)
-				depositHandler.RegisterDepositHandler(config.Erc20Handler, listener.Erc20DepositHandler)
-				depositHandler.RegisterDepositHandler(config.Erc721Handler, listener.Erc721DepositHandler)
-				depositHandler.RegisterDepositHandler(config.GenericHandler, listener.GenericDepositHandler)
-				eventListener := events.NewListener(client)
-				eventHandlers := make([]listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(eventListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, eventListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, config)
+				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
+				depositHandler.RegisterDepositHandler(config.Erc20Handler, coreListener.Erc20DepositHandler)
+				depositHandler.RegisterDepositHandler(config.Erc721Handler, coreListener.Erc721DepositHandler)
+				depositHandler.RegisterDepositHandler(config.GenericHandler, coreListener.GenericDepositHandler)
+				depositListener := coreEvents.NewListener(client)
+				tssListener := events.NewListener(client)
+				eventHandlers := make([]coreListener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
-				mh := executor.NewEVMMessageHandler(*bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, executor.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, executor.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, executor.GenericMessageHandler)
+				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
+				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
+				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
+				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
 				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
 				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)

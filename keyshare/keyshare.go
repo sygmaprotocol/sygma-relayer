@@ -1,4 +1,4 @@
-package store
+package keyshare
 
 import (
 	"encoding/json"

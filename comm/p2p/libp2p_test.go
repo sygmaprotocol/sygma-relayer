@@ -4,15 +4,16 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"github.com/ChainSafe/chainbridge-core/comm"
-	mock_host "github.com/ChainSafe/chainbridge-core/comm/p2p/mock/host"
-	mock_network "github.com/ChainSafe/chainbridge-core/comm/p2p/mock/stream"
+	"testing"
+
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	mock_host "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/host"
+	mock_network "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type Libp2pCommunicationTestSuite struct {

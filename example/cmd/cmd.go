@@ -4,12 +4,14 @@
 package cmd
 
 import (
-	evmCLI "github.com/ChainSafe/chainbridge-core/chains/evm/cli"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
-	"github.com/ChainSafe/chainbridge-core/example/app"
-	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
+	"github.com/ChainSafe/chainbridge-core/flags"
+
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
+	"github.com/ChainSafe/chainbridge-hub/example/app"
 )
 
 var (
@@ -34,7 +36,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, evmCLI.EvmRootCLI, local.LocalSetupCmd)
+	rootCMD.AddCommand(runCMD, deploy.DeployEVM, local.LocalSetupCmd)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}

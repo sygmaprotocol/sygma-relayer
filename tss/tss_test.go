@@ -8,18 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/config/relayer"
+	"github.com/ChainSafe/chainbridge-hub/keyshare"
 
-	"github.com/ChainSafe/chainbridge-core/comm"
-	"github.com/ChainSafe/chainbridge-core/comm/elector"
-	mock_comm "github.com/ChainSafe/chainbridge-core/comm/mock"
-	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-core/tss"
-	"github.com/ChainSafe/chainbridge-core/tss/keygen"
-	mock_tss "github.com/ChainSafe/chainbridge-core/tss/mock"
-	"github.com/ChainSafe/chainbridge-core/tss/resharing"
-	"github.com/ChainSafe/chainbridge-core/tss/signing"
-	tsstest "github.com/ChainSafe/chainbridge-core/tss/test"
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/comm/elector"
+	mock_comm "github.com/ChainSafe/chainbridge-hub/comm/mock"
+	"github.com/ChainSafe/chainbridge-hub/tss"
+	"github.com/ChainSafe/chainbridge-hub/tss/keygen"
+	mock_tss "github.com/ChainSafe/chainbridge-hub/tss/mock"
+	"github.com/ChainSafe/chainbridge-hub/tss/resharing"
+	"github.com/ChainSafe/chainbridge-hub/tss/signing"
+	tsstest "github.com/ChainSafe/chainbridge-hub/tss/test"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -175,6 +175,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		err := <-status
 		s.NotNil(err)
 	}
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -189,7 +190,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		fetcher := keyshare.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
 
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
@@ -229,7 +230,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		fetcher := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		fetcher := keyshare.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
 
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
@@ -316,7 +317,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		storer := store.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		storer := keyshare.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
 		share, _ := storer.GetKeyshare()
 		s.mockStorer.EXPECT().LockKeyshare()
 		s.mockStorer.EXPECT().UnlockKeyshare()

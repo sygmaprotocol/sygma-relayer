@@ -5,26 +5,26 @@ import (
 	"math/big"
 	"testing"
 
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
-	"github.com/ChainSafe/chainbridge-core/e2e/evm"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-core/keystore"
-	"github.com/ethereum/go-ethereum"
 
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
+	"github.com/ChainSafe/chainbridge-hub/e2e/evm"
 )
 
 type TestClient interface {
@@ -61,13 +61,13 @@ func Test_EVM2EVM(t *testing.T) {
 		FeeHandlerAddr:    common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
 	}
 
-	ethClient1, err := evmclient.NewEVMClientFromParams(ETHEndpoint1, local.EveKp.PrivateKey())
+	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.EveKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := evmclient.NewEVMClientFromParams(ETHEndpoint2, local.EveKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.EveKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}

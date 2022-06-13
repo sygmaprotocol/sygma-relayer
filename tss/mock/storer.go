@@ -7,7 +7,7 @@ package mock_tss
 import (
 	reflect "reflect"
 
-	store "github.com/ChainSafe/chainbridge-core/store"
+	keyshare "github.com/ChainSafe/chainbridge-hub/keyshare"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -35,10 +35,10 @@ func (m *MockSaveDataStorer) EXPECT() *MockSaveDataStorerMockRecorder {
 }
 
 // GetKeyshare mocks base method.
-func (m *MockSaveDataStorer) GetKeyshare() (store.Keyshare, error) {
+func (m *MockSaveDataStorer) GetKeyshare() (keyshare.Keyshare, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKeyshare")
-	ret0, _ := ret[0].(store.Keyshare)
+	ret0, _ := ret[0].(keyshare.Keyshare)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -62,7 +62,7 @@ func (mr *MockSaveDataStorerMockRecorder) LockKeyshare() *gomock.Call {
 }
 
 // StoreKeyshare mocks base method.
-func (m *MockSaveDataStorer) StoreKeyshare(keyshare store.Keyshare) error {
+func (m *MockSaveDataStorer) StoreKeyshare(keyshare keyshare.Keyshare) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreKeyshare", keyshare)
 	ret0, _ := ret[0].(error)
