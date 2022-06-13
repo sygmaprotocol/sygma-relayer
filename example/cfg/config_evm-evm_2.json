@@ -14,7 +14,6 @@
   "chains": [
     {
       "id": 1,
-      "from": "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
       "name": "evm1",
       "type": "evm",
       "endpoint": "ws://evm1-1:8546",
@@ -29,7 +28,6 @@
     },
     {
       "id": 2,
-      "from": "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
       "name": "evm2",
       "type": "evm",
       "endpoint": "ws://evm2-1:8546",

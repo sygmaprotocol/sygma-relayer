@@ -3,7 +3,7 @@ module github.com/ChainSafe/chainbridge-hub
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v0.0.0-20220610103459-3b7a4631f178
+	github.com/ChainSafe/chainbridge-core v0.0.0-20220613105328-520ba36caed6
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/creasty/defaults v1.6.0
@@ -13,7 +13,6 @@ require (
 	github.com/libp2p/go-libp2p-core v0.16.1
 	github.com/libp2p/go-libp2p-noise v0.5.0
 	github.com/minio/minio-go/v7 v7.0.27
-	github.com/mitchellh/mapstructure v1.4.2
 	github.com/multiformats/go-multiaddr v0.5.0
 	github.com/multiformats/go-multiaddr-dns v0.3.1
 	github.com/rs/zerolog v1.25.0
@@ -103,6 +102,7 @@ require (
 	github.com/minio/md5-simd v1.1.0 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
