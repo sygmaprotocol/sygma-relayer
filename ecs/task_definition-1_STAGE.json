@@ -82,7 +82,7 @@
        "logConfiguration": {
            "logDriver": "awslogs",
            "options": {
-               "awslogs-group": "/ecs/relayer-STAGE",
+               "awslogs-group": "/ecs/relayer-STAGE-1",
                "awslogs-region": "us-east-2",
                "awslogs-stream-prefix": "ecs"
            }
@@ -140,7 +140,7 @@
        "logConfiguration": {
            "logDriver": "awslogs",
            "options": {
-               "awslogs-group": "/ecs/relayer-STAGE",
+               "awslogs-group": "/ecs/relayer-STAGE-1",
                "awslogs-region": "us-east-2",
                "awslogs-stream-prefix": "ecs"
            }
