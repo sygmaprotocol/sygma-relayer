@@ -46,8 +46,32 @@
          ],
          "secrets": [ 
             { 
-               "name": "mychainbridgesecret",
-               "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/example"
+               "name": "CBH_RELAYER_MPCCONFIG_KEY",
+               "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_KEY"
+            },
+            { 
+                "name": "CBH_RELAYER_MPCCONFIG_THRESHOLD",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_THRESHOLD"
+            },
+            { 
+                "name": "CBH_RELAYER_MPCCONFIG_KEYSHAREPATH",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_KEYSHAREPATH"
+            },
+            { 
+                "name": "CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY"
+            },
+            { 
+                "name": "CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY"
+            },
+            { 
+                "name": "CBH_DOM_1",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_DOM_1"
+            },
+            { 
+                "name": "CBH_DOM_2",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_DOM_2"
             }
          ]
       },
