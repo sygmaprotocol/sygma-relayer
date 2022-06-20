@@ -4,6 +4,7 @@
 package local
 
 import (
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/erc20FS"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
@@ -37,6 +38,10 @@ type BridgeConfig struct {
 	Erc20Addr        common.Address
 	Erc20HandlerAddr common.Address
 	Erc20ResourceID  types.ResourceID
+
+	Erc20FixedSupplyAddr        common.Address
+	Erc20FixedSupplyHandlerAddr common.Address
+	Erc20FixedSupplyResourceID  types.ResourceID
 
 	GenericHandlerAddr common.Address
 	AssetStoreAddr     common.Address
@@ -85,7 +90,13 @@ func SetupEVMBridge(
 	erc20Contract, erc20ContractAddress, erc20HandlerContractAddress, err := deployErc20(
 		ethClient, t, bridgeContractAddress,
 	)
+	if err != nil {
+		return BridgeConfig{}, err
+	}
 
+	erc20FixedSupplyContract, erc20FixedSupplyContractAddress, err := deployErc20FixedSupply(
+		ethClient, t, bridgeContractAddress,
+	)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
@@ -103,6 +114,7 @@ func SetupEVMBridge(
 	erc20ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
 	genericResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
 	erc721ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
+	erc20FixedSupplyResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
 
 	conf := BridgeConfig{
 		BridgeAddr: bridgeContractAddress,
@@ -110,6 +122,10 @@ func SetupEVMBridge(
 		Erc20Addr:        erc20ContractAddress,
 		Erc20HandlerAddr: erc20HandlerContractAddress,
 		Erc20ResourceID:  erc20ResourceID,
+
+		Erc20FixedSupplyAddr:        erc20FixedSupplyContractAddress,
+		Erc20FixedSupplyResourceID:  erc20FixedSupplyResourceID,
+		Erc20FixedSupplyHandlerAddr: erc20HandlerContractAddress,
 
 		GenericHandlerAddr: genericHandlerAddress,
 		AssetStoreAddr:     assetStoreAddress,
@@ -140,6 +156,11 @@ func SetupEVMBridge(
 	}
 
 	err = SetupFeeHandler(bridgeContract, feeHandlerContract)
+	if err != nil {
+		return BridgeConfig{}, err
+	}
+
+	err = SetupERC20FixedSupplyHandler(bridgeContract, erc20FixedSupplyContract, mintTo, conf)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
@@ -186,6 +207,25 @@ func deployErc20(
 		erc20ContractAddress, erc20HandlerContractAddress,
 	)
 	return erc20Contract, erc20ContractAddress, erc20HandlerContractAddress, nil
+}
+
+func deployErc20FixedSupply(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
+) (*erc20FS.Erc20FixedSupplyContract, common.Address, error) {
+	contract := erc20FS.NewErc20FixedSupplyContract(ethClient, common.Address{}, t)
+	// initialSupply = 1 000 000 TFS
+	initialSupply := big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	contractAddress, err := contract.DeployContract(
+		"TestFixedSupply", "TFS", initialSupply,
+	)
+	if err != nil {
+		return nil, common.Address{}, err
+	}
+	log.Debug().Msgf(
+		"Erc20FixedSupply deployed to: %s",
+		contractAddress,
+	)
+	return contract, contractAddress, nil
 }
 
 func deployErc721(
@@ -262,6 +302,23 @@ func SetupERC20Handler(
 	}
 	// Set burnable input
 	_, err = bridgeContract.SetBurnableInput(conf.Erc20HandlerAddr, conf.Erc20Addr, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetupERC20FixedSupplyHandler(
+	bridgeContract *bridge.BridgeContract, erc20FixedSupplyContract *erc20FS.Erc20FixedSupplyContract, mintTo common.Address, conf BridgeConfig,
+) error {
+	_, err := bridgeContract.AdminSetResource(
+		conf.Erc20HandlerAddr, conf.Erc20ResourceID, conf.Erc20Addr, transactor.TransactOptions{GasLimit: 2000000},
+	)
+	if err != nil {
+		return err
+	}
+	tenTokens := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	_, err = erc20FixedSupplyContract.Transfer(mintTo, tenTokens, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return err
 	}
