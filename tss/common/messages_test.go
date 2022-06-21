@@ -3,7 +3,7 @@ package common_test
 import (
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-core/tss/common"
+	"github.com/ChainSafe/chainbridge-hub/tss/common"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -40,7 +40,7 @@ func TestRunStartMessageTestSuite(t *testing.T) {
 
 func (s *StartMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 	originalMsg := &common.StartMessage{
-		Params: []string{"test"},
+		Params: []byte("test"),
 	}
 	msgBytes, err := common.MarshalStartMessage(originalMsg.Params)
 	s.Nil(err)

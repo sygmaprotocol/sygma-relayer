@@ -1,5 +1,5 @@
 
-.PHONY: help run build install license
+.PHONY: help run build install license example
 all: help
 
 ## license: Adds license header to missing files.
@@ -19,7 +19,7 @@ coverage:
 	go tool cover -func cover.out | grep total | awk '{print $3}'
 
 test:
-	./scripts/test.sh
+	./scripts/tests.sh
 
 ## Install dependency subkey
 install-subkey:
@@ -27,26 +27,16 @@ install-subkey:
 	cargo install --force --git https://github.com/paritytech/substrate subkey
 
 genmocks:
-	mockgen -destination=./chains/evm/calls/evmgaspricer/mock/gas-pricer.go -source=./chains/evm/calls/evmgaspricer/gas-pricer.go
-	mockgen -destination=./relayer/mock/relayer.go -source=./relayer/relayer.go
-	mockgen -source=chains/evm/calls/calls.go -destination=chains/evm/calls/mock/calls.go
-	mockgen -source=chains/evm/calls/transactor/transact.go -destination=chains/evm/calls/transactor/mock/transact.go
-	mockgen -destination=./chains/evm/calls/transactor/itx/mock/itx.go -source=./chains/evm/calls/transactor/itx/itx.go
-	mockgen -destination=./chains/evm/calls/transactor/itx//mock/minimalForwarder.go -source=./chains/evm/calls/transactor/itx/minimalForwarder.go
-	mockgen -destination=./communication/p2p/mock/stream/stream.go github.com/libp2p/go-libp2p-core/network Stream
-	mockgen -destination=./communication/p2p/mock/host/host.go github.com/libp2p/go-libp2p-core/host Host
-	mockgen -destination=./communication/p2p/mock/conn/conn.go github.com/libp2p/go-libp2p-core/network Conn
 	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
 	mockgen -destination=./tss/common/mock/communication.go -source=./tss/common/base.go -package mock_tss
 	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go
 	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go
-	mockgen -source=./communication/communication.go -destination=./communication/mock/communication.go
-
-e2e-setup:
-	docker-compose --file=./e2e/evm-evm/docker-compose.e2e.yml up
+	mockgen --package mock_tss -destination=./tss/mock/storer.go -source=./tss/resharing/resharing.go
+	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
+	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 
 e2e-test:
-	./scripts/int_tests.sh
+	./scripts/e2e_tests.sh
 
-local-setup:
-	./scripts/local_setup.sh
+example:
+	docker-compose --file=./example/docker-compose.yml up

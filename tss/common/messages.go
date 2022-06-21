@@ -36,10 +36,10 @@ func UnmarshalTssMessage(msgBytes []byte) (*TssMessage, error) {
 }
 
 type StartMessage struct {
-	Params []string `json:"params"`
+	Params []byte `json:"params"`
 }
 
-func MarshalStartMessage(params []string) ([]byte, error) {
+func MarshalStartMessage(params []byte) ([]byte, error) {
 	startSignMessage := &StartMessage{
 		Params: params,
 	}

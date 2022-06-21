@@ -9,9 +9,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/communication"
-	"github.com/ChainSafe/chainbridge-core/tss"
-	"github.com/ChainSafe/chainbridge-core/tss/signing"
+	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
@@ -19,7 +18,14 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+
+	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/chainbridge-hub/tss"
+	"github.com/ChainSafe/chainbridge-hub/tss/signing"
+)
+
+var (
+	executionCheckPeriod = time.Second * 15
 )
 
 type MessageHandler interface {
@@ -28,14 +34,14 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposal(proposal *proposal.Proposal, signature []byte, revertOnFail bool, opts transactor.TransactOptions) (*common.Hash, error)
+	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
 	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
 }
 
 type Executor struct {
 	coordinator *tss.Coordinator
 	host        host.Host
-	comm        communication.Communication
+	comm        comm.Communication
 	fetcher     signing.SaveDataFetcher
 	bridge      BridgeContract
 	mh          MessageHandler
@@ -43,7 +49,7 @@ type Executor struct {
 
 func NewExecutor(
 	host host.Host,
-	comm communication.Communication,
+	comm comm.Communication,
 	coordinator *tss.Coordinator,
 	mh MessageHandler,
 	bridgeContract BridgeContract,
@@ -83,7 +89,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		fmt.Sprintf("%d-%d", m.Destination, m.DepositNonce),
+		e.sessionID(m.Destination, m.DepositNonce),
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -96,21 +102,16 @@ func (e *Executor) Execute(m *message.Message) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(executionCheckPeriod)
 	defer ticker.Stop()
+	defer cancel()
 	for {
 		select {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				sig := signatureData.Signature.R
-				sig = append(sig[:], signatureData.Signature.S[:]...)
-				sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-				sig[64] += 27
-
-				hash, err := e.bridge.ExecuteProposal(prop, sig, m.RevertOnFail, transactor.TransactOptions{})
+				hash, err := e.executeProposal(prop, signatureData)
 				if err != nil {
-					cancel()
 					return err
 				}
 
@@ -124,9 +125,28 @@ func (e *Executor) Execute(m *message.Message) error {
 				}
 
 				log.Info().Msgf("Successfully executed proposal %v", prop)
-				cancel()
 				return nil
 			}
 		}
 	}
+}
+
+func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+	sig := signatureData.Signature.R
+	sig = append(sig[:], signatureData.Signature.S[:]...)
+	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+	sig[64] += 27 // Transform V from 0/1 to 27/28
+
+	hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{
+		Priority: prop.Metadata.Priority,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, err
+}
+
+func (e *Executor) sessionID(destination uint8, depositNonce uint64) string {
+	return fmt.Sprintf("%d-%d", destination, depositNonce)
 }
