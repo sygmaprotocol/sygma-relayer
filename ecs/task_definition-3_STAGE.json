@@ -40,7 +40,7 @@
          ],
          "environment": [
            {
-             "value": "relayer",
+             "value": "relayer-3",
              "name": "DD_SERVICE"
            }
          ],
