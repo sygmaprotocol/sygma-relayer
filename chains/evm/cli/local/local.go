@@ -71,60 +71,48 @@ func prettyPrint(config, config2 BridgeConfig) {
 🎉🎉🎉 ChainBridge Successfully Deployed 🎉🎉🎉
 
 - Chain 1 -
-Bridge: %s
-Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
-ERC20: %s
-ERC20 Handler: %s
-ERC721: %s
-ERC721 Handler: %s
-Generic Handler: %s
-Asset Store: %s
-ERC20 resourceId: %s
-ERC721 resourceId: %s
-Generic resourceId: %s
+%s
 
 - Chain 2 -
-Bridge: %s
-Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
-ERC20: %s
-ERC20 Handler: %s
-ERC721: %s
-ERC721 Handler: %s
-Generic Handler: %s
-Asset Store: %s
-ERC20 resourceId: %s
-ERC721 resourceId: %s
-Generic resourceId: %s
+%s
 
 ===============================================
 `,
-		// config
-		config.BridgeAddr,
-		config.FeeHandlerAddr,
-		config.IsBasicFeeHandler,
-		config.Fee,
-		config.Erc20Addr,
-		config.Erc20HandlerAddr,
-		config.Erc721Addr,
-		config.Erc721HandlerAddr,
-		config.GenericHandlerAddr,
-		config.AssetStoreAddr,
-		config.Erc20ResourceID,
-		config.Erc721ResourceID,
-		config.GenericResourceID,
-		// config2
-		config2.BridgeAddr,
-		config2.FeeHandlerAddr,
-		config2.IsBasicFeeHandler,
-		config.Fee,
-		config2.Erc20Addr,
-		config2.Erc20HandlerAddr,
-		config.Erc721Addr,
-		config.Erc721HandlerAddr,
-		config2.GenericHandlerAddr,
-		config2.AssetStoreAddr,
-		config2.Erc20ResourceID,
-		config2.Erc721ResourceID,
-		config2.GenericResourceID,
+		prettyFormatChainInfo(config),
+		prettyFormatChainInfo(config2),
+	)
+}
+
+func prettyFormatChainInfo(cfg BridgeConfig) string {
+	return fmt.Sprintf(`
+Bridge: %s
+Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
+ERC20: %s
+ERC20FixedSupply: %s
+ERC20 Handler: %s
+ERC721: %s
+ERC721 Handler: %s
+Generic Handler: %s
+Asset Store: %s
+ERC20 resourceId: %s
+ERC20FixedSupply resourceId: %s
+ERC721 resourceId: %s
+Generic resourceId: %s
+`,
+		cfg.BridgeAddr,
+		cfg.FeeHandlerAddr,
+		cfg.IsBasicFeeHandler,
+		cfg.Fee,
+		cfg.Erc20Addr,
+		cfg.Erc20FixedSupplyAddr,
+		cfg.Erc20HandlerAddr,
+		cfg.Erc721Addr,
+		cfg.Erc721HandlerAddr,
+		cfg.GenericHandlerAddr,
+		cfg.AssetStoreAddr,
+		cfg.Erc20ResourceID,
+		cfg.Erc20FixedSupplyResourceID,
+		cfg.Erc721ResourceID,
+		cfg.GenericResourceID,
 	)
 }
