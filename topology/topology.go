@@ -69,8 +69,7 @@ func (t topologyProvider) NetworkTopology() (NetworkTopology, error) {
 	data := make([]byte, stat.Size)
 	_, err = obj.Read(data)
 	if err != nil {
-		log.Err(err).Msg("unable to read topology data")
-		return NetworkTopology{}, err
+		log.Err(err).Msg("error on reading topology data")
 	}
 
 	rawTopology := &RawTopology{}
