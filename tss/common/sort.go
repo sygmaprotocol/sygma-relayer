@@ -29,3 +29,11 @@ func (sps SortablePeerSlice) Less(i, j int) bool {
 	jHash := crypto.Keccak256(append([]byte(sps[j].ID.Pretty()), []byte(sps[j].SessionID)...))
 	return binary.BigEndian.Uint64(iHash) > binary.BigEndian.Uint64(jHash)
 }
+
+func (sps SortablePeerSlice) GetPeerIDs() peer.IDSlice {
+	ids := peer.IDSlice{}
+	for _, p := range sps {
+		ids = append(ids, p.ID)
+	}
+	return ids
+}

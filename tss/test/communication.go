@@ -2,29 +2,30 @@ package tsstest
 
 import (
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/communication"
+
+	"github.com/ChainSafe/chainbridge-hub/comm"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 type Receiver interface {
-	ReceiveMessage(msg *communication.WrappedMessage, topic communication.ChainBridgeMessageType, sessionID string)
+	ReceiveMessage(msg *comm.WrappedMessage, topic comm.ChainBridgeMessageType, sessionID string)
 }
 
 type TestCommunication struct {
 	Host               host.Host
-	Subscriptions      map[communication.SubscriptionID]chan *communication.WrappedMessage
+	Subscriptions      map[comm.SubscriptionID]chan *comm.WrappedMessage
 	PeerCommunications map[string]Receiver
 }
 
 func (tc *TestCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
-	msgType communication.ChainBridgeMessageType,
+	msgType comm.ChainBridgeMessageType,
 	sessionID string,
 	errChan chan error,
 ) {
-	wMsg := communication.WrappedMessage{
+	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
 		Payload:     msg,
@@ -41,18 +42,18 @@ func (tc *TestCommunication) Broadcast(
 
 func (ts *TestCommunication) Subscribe(
 	sessionID string,
-	topic communication.ChainBridgeMessageType,
-	channel chan *communication.WrappedMessage,
-) communication.SubscriptionID {
-	subID := communication.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))
+	topic comm.ChainBridgeMessageType,
+	channel chan *comm.WrappedMessage,
+) comm.SubscriptionID {
+	subID := comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))
 	ts.Subscriptions[subID] = channel
 	return subID
 }
 
-func (ts *TestCommunication) UnSubscribe(subscriptionID communication.SubscriptionID) {
+func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 	delete(ts.Subscriptions, subscriptionID)
 }
 
-func (ts *TestCommunication) ReceiveMessage(msg *communication.WrappedMessage, topic communication.ChainBridgeMessageType, sessionID string) {
-	ts.Subscriptions[communication.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
+func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.ChainBridgeMessageType, sessionID string) {
+	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }

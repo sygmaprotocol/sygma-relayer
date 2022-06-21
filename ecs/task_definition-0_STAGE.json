@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-           "run --config /cfg/config_evm-evm_1.json --testkey alice --fresh"
+           "run --config=env"
           ],
          "portMappings": [ 
            { 
