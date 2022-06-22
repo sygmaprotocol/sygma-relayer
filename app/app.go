@@ -102,7 +102,9 @@ func Run() error {
 				// temporary code for testing only!
 
 				config, err := chain.NewEVMConfig(chainConfig)
-				config.BlockRetryInterval = 5 * time.Second
+				config.BlockRetryInterval = 15 * time.Second
+				log.Info().Msg("EVM Config")
+				log.Info().Msgf("%+v", config)
 				panicOnError(err)
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
@@ -164,6 +166,8 @@ func Run() error {
 		syscall.SIGINT,
 		syscall.SIGHUP,
 		syscall.SIGQUIT)
+
+	log.Info().Msg("Started relayer...")
 
 	select {
 	case err := <-errChn:
