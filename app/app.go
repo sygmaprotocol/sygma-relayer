@@ -93,6 +93,13 @@ func Run() error {
 		switch chainConfig["type"] {
 		case "evm":
 			{
+				// temporary code for testing only!
+				u := chainConfig["rpcUrl"]
+				if u != nil {
+					chainConfig["endpoint"] = u
+				}
+				// temporary code for testing only!
+
 				config, err := chain.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
