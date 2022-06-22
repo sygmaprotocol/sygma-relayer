@@ -1,6 +1,9 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
+FROM alpine:3.6 as alpine
+RUN apk add -U --no-cache ca-certificates
+
 FROM  golang:1.18-stretch AS builder
 ADD . /src
 WORKDIR /src
@@ -12,5 +15,6 @@ RUN go build -o /bridge .
 FROM debian:stretch-slim
 COPY --from=builder /bridge ./
 RUN chmod +x ./bridge
+COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["./bridge"]
