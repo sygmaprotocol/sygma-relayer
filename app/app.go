@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
@@ -101,6 +102,7 @@ func Run() error {
 				// temporary code for testing only!
 
 				config, err := chain.NewEVMConfig(chainConfig)
+				config.BlockRetryInterval = 5 * time.Second
 				panicOnError(err)
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
