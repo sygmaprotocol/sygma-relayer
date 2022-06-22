@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-           "run --config=env"
+           "run", "--config=env"
           ],
          "portMappings": [ 
            { 
