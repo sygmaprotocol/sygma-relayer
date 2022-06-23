@@ -6,18 +6,16 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -59,7 +57,8 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
 	panicOnError(err)
 
 	networkTopology, err := topologyProvider.NetworkTopology()
@@ -102,7 +101,6 @@ func Run() error {
 				// temporary code for testing only!
 
 				config, err := chain.NewEVMConfig(chainConfig)
-				config.BlockRetryInterval = 15 * time.Second
 				log.Info().Msg("EVM Config")
 				log.Info().Msgf("%+v", config)
 				panicOnError(err)
