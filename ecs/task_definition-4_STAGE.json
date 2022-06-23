@@ -8,7 +8,7 @@
           "logDriver": "awsfirelens",
           "options": {
               "provider": "ecs",
-              "dd_service": "relayer",
+              "dd_service": "relayer-4",
               "dd_tags": "env:STAGE,project:chainbridge",
               "dd_message_key": "log",
               "Host": "http-intake.logs.datadoghq.com",
