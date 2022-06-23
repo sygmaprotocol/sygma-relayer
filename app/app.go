@@ -158,7 +158,8 @@ func Run() error {
 		syscall.SIGHUP,
 		syscall.SIGQUIT)
 
-	log.Info().Msg("Started relayer...")
+	relayerName := viper.GetString("name")
+	log.Info().Msgf("Started relayer: %s", relayerName)
 
 	select {
 	case err := <-errChn:

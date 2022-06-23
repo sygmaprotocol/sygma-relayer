@@ -5,6 +5,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -26,6 +27,8 @@ var (
 
 func init() {
 	flags.BindFlags(rootCMD)
+	rootCMD.PersistentFlags().String("name", "", "relayer name")
+	_ = viper.BindPFlag("name", rootCMD.PersistentFlags().Lookup("name"))
 }
 
 func Execute() {
