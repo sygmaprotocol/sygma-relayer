@@ -94,19 +94,19 @@ func SetupEVMBridge(
 		return BridgeConfig{}, err
 	}
 
-	erc20FixedSupplyContract, erc20FixedSupplyContractAddress, err := deployErc20FixedSupply(
-		ethClient, t, bridgeContractAddress,
-	)
-	if err != nil {
-		return BridgeConfig{}, err
-	}
-
 	genericHandlerAddress, assetStoreAddress, err := deployGeneric(ethClient, t, bridgeContractAddress)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
 
 	feeHandlerContract, err := deployFeeHandler(ethClient, t, bridgeContractAddress)
+	if err != nil {
+		return BridgeConfig{}, err
+	}
+
+	erc20FixedSupplyContract, erc20FixedSupplyContractAddress, err := deployErc20FixedSupply(
+		ethClient, t, bridgeContractAddress,
+	)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
