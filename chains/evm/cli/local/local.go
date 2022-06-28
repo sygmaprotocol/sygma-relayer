@@ -2,10 +2,10 @@ package local
 
 import (
 	"fmt"
-
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-
+	"github.com/ChainSafe/chainbridge-core/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )
 
@@ -110,9 +110,13 @@ Generic resourceId: %s
 		cfg.Erc721HandlerAddr,
 		cfg.GenericHandlerAddr,
 		cfg.AssetStoreAddr,
-		cfg.Erc20ResourceID,
-		cfg.Erc20FixedSupplyResourceID,
-		cfg.Erc721ResourceID,
-		cfg.GenericResourceID,
+		rIDtoString(cfg.Erc20ResourceID),
+		rIDtoString(cfg.Erc20FixedSupplyResourceID),
+		rIDtoString(cfg.Erc721ResourceID),
+		rIDtoString(cfg.GenericResourceID),
 	)
+}
+
+func rIDtoString(rid types.ResourceID) string {
+	return common.Bytes2Hex(rid[:])
 }
