@@ -139,15 +139,15 @@ func Run() error {
 		}
 	}
 
-	_ = relayer.NewRelayer(
+	r := relayer.NewRelayer(
 		chains,
 		&opentelemetry.ConsoleTelemetry{},
 	)
 
 	errChn := make(chan error)
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// go r.Start(ctx, errChn)
+	go r.Start(ctx, errChn)
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
