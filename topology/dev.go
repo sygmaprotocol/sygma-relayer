@@ -12,6 +12,7 @@ func NewFixedNetworkTopologyProvider() (NetworkTopologyProvider, error) {
 type fixedTopologyProvider struct{}
 
 func (p fixedTopologyProvider) NetworkTopology() (NetworkTopology, error) {
+
 	fixedData := `{
     "peers": [
         {"peerAddress": "/dns4/relayer-0.relayer-0/tcp/9000/p2p/QmVuMSb6unWs2m22sgEQF97XvShbrd9JAkX7Kh2xQ9EYGC"},
