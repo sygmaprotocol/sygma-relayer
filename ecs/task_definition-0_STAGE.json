@@ -155,7 +155,7 @@
    }
    ],
    "cpu": "1024",
-   "memory": "1024",
+   "memory": "2048",
    "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-ecsTaskExecutionRole",
    "family": "relayer-container-STAGE",
    "networkMode": "awsvpc",
