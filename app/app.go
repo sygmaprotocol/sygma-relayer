@@ -102,6 +102,7 @@ func Run() error {
 				if err != nil {
 					log.Error().Err(err)
 				}
+
 				log.Info().Msgf("Starting %s from block %s", config.GeneralChainConfig.Name, lastStoredBlock.String())
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
