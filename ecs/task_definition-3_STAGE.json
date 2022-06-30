@@ -154,10 +154,10 @@
        "volumesFrom": []
    }
    ],
-   "cpu": "256",
+   "cpu": "1024",
    "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-ecsTaskExecutionRole",
    "family": "relayer-container-STAGE",
-   "memory": "512",
+   "memory": "1024",
    "networkMode": "awsvpc",
    "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
