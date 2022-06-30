@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -50,6 +51,16 @@ func (l *Listener) FetchRefreshEvents(ctx context.Context, contractAddress commo
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(KeyRefreshSig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, log := range logs {
+		var retryEvent hubEvents.RetryEvent
+		err = eh.bridgeABI.UnpackIntoInterface(retryEvent, "Retry", event.Data)
+		if err != nil {
+			return fmt.Errorf(
+				"unable to unpack retry event with txhash %s, because of: %+v", event.TxHash.Hex(), err,
+			)
+		}
 	}
 
 	return logs, nil

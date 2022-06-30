@@ -19,3 +19,7 @@ const (
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
 	RetrySig             EventSig = "Retry(string)"
 )
+
+type RetryEvent struct {
+	TxHash string
+}

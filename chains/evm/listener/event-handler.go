@@ -7,6 +7,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
 	"strings"
@@ -26,7 +27,7 @@ import (
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
-	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
 }
 
 type RetryEventHandler struct {
@@ -65,18 +66,7 @@ func (eh *RetryEventHandler) HandleEvent(block *big.Int, msgChan chan *message.M
 		return nil
 	}
 
-	type RetryEvent struct {
-		TxHash string
-	}
-
 	for _, event := range retryEvents {
-		var retryEvent RetryEvent
-		err = eh.bridgeABI.UnpackIntoInterface(retryEvent, "Retry", event.Data)
-		if err != nil {
-			return fmt.Errorf(
-				"unable to unpack retry event with txhash %s, because of: %+v", event.TxHash.Hex(), err,
-			)
-		}
 
 		retryDepositTxHash := common.HexToHash(retryEvent.TxHash)
 		receipt, err := eh.client.WaitAndReturnTxReceipt(retryDepositTxHash)
