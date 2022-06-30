@@ -98,6 +98,12 @@ func Run() error {
 				log.Info().Msgf("%+v", config)
 				panicOnError(err)
 
+				lastStoredBlock, err := blockstore.GetLastStoredBlock(*config.GeneralChainConfig.Id)
+				if err != nil {
+					log.Error().Err(err)
+				}
+				log.Info().Msgf("Starting %s from block %s", config.GeneralChainConfig.Name, lastStoredBlock.String())
+
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
