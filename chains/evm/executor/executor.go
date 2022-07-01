@@ -145,7 +145,7 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[64] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions)
+	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{})
 	if err != nil {
 		return nil, err
 	}
