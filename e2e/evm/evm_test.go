@@ -255,3 +255,7 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	s.Nil(err)
 	s.Equal(true, exists)
 }
+
+func (s *IntegrationTestSuite) Test_RetryDeposit() {
+
+}
