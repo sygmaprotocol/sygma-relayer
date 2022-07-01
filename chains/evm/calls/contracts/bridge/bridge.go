@@ -23,6 +23,13 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
 )
 
+type BridgeProposal struct {
+	OriginDomainID uint8
+	ResourceID     [32]byte
+	DepositNonce   uint64
+	Data           []byte
+}
+
 type BridgeContract struct {
 	contracts.Contract
 }
@@ -213,15 +220,9 @@ func (c *BridgeContract) ExecuteProposals(
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
-	type bridgeProposal struct {
-		OriginDomainID uint8
-		DepositNonce   uint64
-		ResourceID     [32]byte
-		Data           []byte
-	}
-	bridgeProposals := make([]*bridgeProposal, 0)
+	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, &bridgeProposal{
+		bridgeProposals = append(bridgeProposals, BridgeProposal{
 			OriginDomainID: prop.Source,
 			DepositNonce:   prop.DepositNonce,
 			ResourceID:     prop.ResourceId,
@@ -263,19 +264,13 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 
 	arguments := abi.Arguments{
 		{
+			Name: "proposals",
 			Type: proposalType,
 		},
 	}
-
-	type bridgeProposal struct {
-		OriginDomainID uint8
-		DepositNonce   uint64
-		ResourceID     [32]byte
-		Data           []byte
-	}
-	bridgeProposals := make([]*bridgeProposal, 0)
+	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, &bridgeProposal{
+		bridgeProposals = append(bridgeProposals, BridgeProposal{
 			OriginDomainID: prop.Source,
 			DepositNonce:   prop.DepositNonce,
 			ResourceID:     prop.ResourceId,
