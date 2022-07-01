@@ -4,7 +4,6 @@
 package local
 
 import (
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/erc20FS"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
@@ -39,9 +38,9 @@ type BridgeConfig struct {
 	Erc20HandlerAddr common.Address
 	Erc20ResourceID  types.ResourceID
 
-	Erc20FixedSupplyAddr        common.Address
-	Erc20FixedSupplyHandlerAddr common.Address
-	Erc20FixedSupplyResourceID  types.ResourceID
+	Erc20LockReleaseAddr        common.Address
+	Erc20LockReleaseHandlerAddr common.Address
+	Erc20LockReleaseResourceID  types.ResourceID
 
 	GenericHandlerAddr common.Address
 	AssetStoreAddr     common.Address
@@ -104,7 +103,7 @@ func SetupEVMBridge(
 		return BridgeConfig{}, err
 	}
 
-	erc20FixedSupplyContract, erc20FixedSupplyContractAddress, err := deployErc20FixedSupply(
+	erc20LockReleaseContract, erc20LockReleaseContractAddress, err := deployErc20LockRelease(
 		ethClient, t, bridgeContractAddress,
 	)
 	if err != nil {
@@ -123,9 +122,9 @@ func SetupEVMBridge(
 		Erc20HandlerAddr: erc20HandlerContractAddress,
 		Erc20ResourceID:  erc20ResourceID,
 
-		Erc20FixedSupplyAddr:        erc20FixedSupplyContractAddress,
-		Erc20FixedSupplyResourceID:  erc20FixedSupplyResourceID,
-		Erc20FixedSupplyHandlerAddr: erc20HandlerContractAddress,
+		Erc20LockReleaseAddr:        erc20LockReleaseContractAddress,
+		Erc20LockReleaseResourceID:  erc20FixedSupplyResourceID,
+		Erc20LockReleaseHandlerAddr: erc20HandlerContractAddress,
 
 		GenericHandlerAddr: genericHandlerAddress,
 		AssetStoreAddr:     assetStoreAddress,
@@ -160,7 +159,7 @@ func SetupEVMBridge(
 		return BridgeConfig{}, err
 	}
 
-	err = SetupERC20FixedSupplyHandler(bridgeContract, erc20FixedSupplyContract, mintTo, conf)
+	err = SetupERC20LockReleaseHandler(bridgeContract, erc20LockReleaseContract, mintTo, conf)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
@@ -209,14 +208,12 @@ func deployErc20(
 	return erc20Contract, erc20ContractAddress, erc20HandlerContractAddress, nil
 }
 
-func deployErc20FixedSupply(
+func deployErc20LockRelease(
 	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
-) (*erc20FS.Erc20FixedSupplyContract, common.Address, error) {
-	contract := erc20FS.NewErc20FixedSupplyContract(ethClient, common.Address{}, t)
-	// initialSupply = 1 000 000 TFS
-	initialSupply := big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+) (*erc20.ERC20Contract, common.Address, error) {
+	contract := erc20.NewERC20Contract(ethClient, common.Address{}, t)
 	contractAddress, err := contract.DeployContract(
-		"TestFixedSupply", "TFS", initialSupply,
+		"TestLockRelease", "TLR",
 	)
 	if err != nil {
 		return nil, common.Address{}, err
@@ -308,20 +305,22 @@ func SetupERC20Handler(
 	return nil
 }
 
-func SetupERC20FixedSupplyHandler(
-	bridgeContract *bridge.BridgeContract, erc20FixedSupplyContract *erc20FS.Erc20FixedSupplyContract, mintTo common.Address, conf BridgeConfig,
+func SetupERC20LockReleaseHandler(
+	bridgeContract *bridge.BridgeContract, erc20Contract *erc20.ERC20Contract, mintTo common.Address, conf BridgeConfig,
 ) error {
 	_, err := bridgeContract.AdminSetResource(
-		conf.Erc20HandlerAddr, conf.Erc20ResourceID, conf.Erc20Addr, transactor.TransactOptions{GasLimit: 2000000},
+		conf.Erc20LockReleaseHandlerAddr, conf.Erc20LockReleaseResourceID, conf.Erc20LockReleaseAddr, transactor.TransactOptions{GasLimit: 2000000},
 	)
 	if err != nil {
 		return err
 	}
+
 	tenTokens := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
-	_, err = erc20FixedSupplyContract.Transfer(mintTo, tenTokens, transactor.TransactOptions{GasLimit: 2000000})
+	_, err = erc20Contract.MintTokens(mintTo, tenTokens, transactor.TransactOptions{})
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
