@@ -38,6 +38,12 @@
              "protocol": "tcp"
            }
          ],
+         "mountPoints": [
+            {
+             "containerPath": "/src/mount",
+             "sourceVolume": "efs"
+            }
+        ],
          "environment": [
            {
              "value": "relayer-1",
@@ -155,14 +161,22 @@
    }
    ],
    "cpu": "1024",
+   "memory": "2048",
    "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-ecsTaskExecutionRole",
    "family": "relayer-container-STAGE",
-   "memory": "2048",
    "networkMode": "awsvpc",
    "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
     },
- 
+    "volumes": [
+        {
+            "name": "efs",
+            "efs_volume_configuration": {
+                "file_system_id": "fs-000ab26f0217a06e2",
+                "root_directory": "/src/mount"
+            }
+        }
+    ],
    "requiresCompatibilities": [ 
        "FARGATE" 
     ]
