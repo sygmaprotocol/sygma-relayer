@@ -67,22 +67,9 @@ func (eh *RetryEventHandler) HandleEvent(block *big.Int, msgChan chan *message.M
 	}
 
 	for _, event := range retryEvents {
-
-		retryDepositTxHash := common.HexToHash(retryEvent.TxHash)
-		receipt, err := eh.client.WaitAndReturnTxReceipt(retryDepositTxHash)
+		depositEvent, err := eh.fetchDepositEvent(event)
 		if err != nil {
-			return fmt.Errorf(
-				"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
-			)
-		}
-
-		// find deposit event
-		var depositEvent events.Deposit
-		for _, log := range receipt.Logs {
-			err := eh.bridgeABI.UnpackIntoInterface(depositEvent, "Deposit", log.Data)
-			if err == nil {
-				break
-			}
+			return err
 		}
 
 		msg, err := eh.depositHandler.HandleDeposit(
@@ -96,6 +83,25 @@ func (eh *RetryEventHandler) HandleEvent(block *big.Int, msgChan chan *message.M
 		msgChan <- msg
 	}
 	return nil
+}
+
+func (eh *RetryEventHandler) fetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error) {
+	retryDepositTxHash := common.HexToHash(event.TxHash)
+	receipt, err := eh.client.WaitAndReturnTxReceipt(retryDepositTxHash)
+	if err != nil {
+		return events.Deposit{}, fmt.Errorf(
+			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
+		)
+	}
+
+	var depositEvent events.Deposit
+	for _, log := range receipt.Logs {
+		err := eh.bridgeABI.UnpackIntoInterface(depositEvent, "Deposit", log.Data)
+		if err == nil {
+			break
+		}
+	}
+	return depositEvent, nil
 }
 
 type KeygenEventHandler struct {
