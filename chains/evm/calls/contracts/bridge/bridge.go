@@ -208,6 +208,34 @@ func (c *BridgeContract) ExecuteProposal(
 	)
 }
 
+func (c *BridgeContract) ExecuteProposals(
+	proposals []*proposal.Proposal,
+	signature []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	type bridgeProposal struct {
+		OriginDomainID uint8
+		DepositNonce   uint64
+		ResourceID     [32]byte
+		Data           []byte
+	}
+	bridgeProposals := make([]*bridgeProposal, 0)
+	for _, prop := range proposals {
+		bridgeProposals = append(bridgeProposals, &bridgeProposal{
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.DepositNonce,
+			ResourceID:     prop.ResourceId,
+			Data:           prop.Data,
+		})
+	}
+
+	return c.ExecuteTransaction(
+		"executeProposals",
+		opts,
+		bridgeProposals,
+	)
+}
+
 func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
 	nonceBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBytes, proposal.DepositNonce)
@@ -222,6 +250,45 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 		nil,
 	)
 	hash := crypto.Keccak256Hash(proposalBytes)
+	return hash.Bytes(), nil
+}
+
+func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
+	proposalType, _ := abi.NewType("tuple[]", "struct Bridge.Proposal", []abi.ArgumentMarshaling{
+		{Name: "originDomainID", Type: "uint8", InternalType: "uint8"},
+		{Name: "depositNonce", Type: "uint64", InternalType: "uint64"},
+		{Name: "resourceID", Type: "bytes32", InternalType: "bytes32"},
+		{Name: "data", Type: "bytes", InternalType: "bytes"},
+	})
+
+	arguments := abi.Arguments{
+		{
+			Type: proposalType,
+		},
+	}
+
+	type bridgeProposal struct {
+		OriginDomainID uint8
+		DepositNonce   uint64
+		ResourceID     [32]byte
+		Data           []byte
+	}
+	bridgeProposals := make([]*bridgeProposal, 0)
+	for _, prop := range proposals {
+		bridgeProposals = append(bridgeProposals, &bridgeProposal{
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.DepositNonce,
+			ResourceID:     prop.ResourceId,
+			Data:           prop.Data,
+		})
+	}
+
+	bytes, err := arguments.Pack(bridgeProposals)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	hash := crypto.Keccak256Hash(bytes)
 	return hash.Bytes(), nil
 }
 
