@@ -234,6 +234,7 @@ func (c *BridgeContract) ExecuteProposals(
 		"executeProposals",
 		opts,
 		bridgeProposals,
+		signature,
 	)
 }
 
