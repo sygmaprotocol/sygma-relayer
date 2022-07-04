@@ -173,7 +173,7 @@
             "name": "efs",
             "efsVolumeConfiguration": {
                 "fileSystemId": "fs-000ab26f0217a06e2",
-                "rootDirectory": "/"
+                "transitEncryption": "ENABLED"
             }
         }
     ],
