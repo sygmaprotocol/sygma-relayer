@@ -4,15 +4,34 @@
 package app
 
 import (
+	"github.com/ChainSafe/chainbridge-core/flags"
+	"github.com/ChainSafe/chainbridge-hub/config"
+	"github.com/ChainSafe/chainbridge-hub/health"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
 func Run() error {
 	var err error
+
+	var configuration config.Config
+
+	configFlag := viper.GetString(flags.ConfigFlagName)
+	if strings.ToLower(configFlag) == "env" {
+		configuration, err = config.GetConfigFromENV()
+		panicOnError(err)
+	} else {
+		configuration, err = config.GetConfigFromFile(configFlag)
+		panicOnError(err)
+	}
+
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
+
 	// temporary code for testing
 	file := "test file content"
 	_ = ioutil.WriteFile("test.json", []byte(file), 0644)
@@ -40,16 +59,6 @@ func Run() error {
 	}
 	// temporary code for testing
 
-	//var configuration config.Config
-	//
-	//configFlag := viper.GetString(flags.ConfigFlagName)
-	//if strings.ToLower(configFlag) == "env" {
-	//	configuration, err = config.GetConfigFromENV()
-	//	panicOnError(err)
-	//} else {
-	//	configuration, err = config.GetConfigFromFile(configFlag)
-	//	panicOnError(err)
-	//}
 	//
 	//// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	//topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
@@ -172,8 +181,8 @@ func Run() error {
 	//}
 }
 
-//func panicOnError(err error) {
-//	if err != nil {
-//		panic(err)
-//	}
-//}
+func panicOnError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
