@@ -262,11 +262,15 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 		{Name: "resourceID", Type: "bytes32", InternalType: "bytes32"},
 		{Name: "data", Type: "bytes", InternalType: "bytes"},
 	})
+	domainType, _ := abi.NewType("uint8", "uint8", nil)
 
 	arguments := abi.Arguments{
 		{
 			Name: "proposals",
 			Type: proposalType,
+		},
+		{
+			Type: domainType,
 		},
 	}
 	bridgeProposals := make([]BridgeProposal, 0)
@@ -279,7 +283,7 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 		})
 	}
 
-	bytes, err := arguments.Pack(bridgeProposals)
+	bytes, err := arguments.Pack(bridgeProposals, proposals[0].Destination)
 	if err != nil {
 		return []byte{}, err
 	}
