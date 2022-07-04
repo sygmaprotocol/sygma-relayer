@@ -257,5 +257,57 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 }
 
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
+	txOptions := transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	}
+
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20LockReleaseAddr, transactor1)
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
+
+	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
+	s.Nil(err)
+	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+
+	amountToDeposit := big.NewInt(1000000)
+
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
+		transactor.TransactOptions{
+			Priority: uint8(2), // fast
+			Value:    s.config1.Fee,
+		})
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 140 gwei
+	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.NotNil(err)
+
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, txOptions)
+	if err != nil {
+		return
+	}
+	s.Nil(err)
+	s.NotNil(retryTxHash)
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.NotNil(err)
+
+	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
+	s.Nil(err)
+	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
+
+	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+	//Balance has increased
+	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
