@@ -15,6 +15,7 @@ RUN go build -o /bridge .
 FROM debian:stretch-slim
 COPY --from=builder /bridge ./
 RUN chmod +x ./bridge
+RUN mkdir -p /mount
 COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["./bridge"]
