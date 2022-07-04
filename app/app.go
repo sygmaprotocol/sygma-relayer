@@ -172,8 +172,8 @@ func Run() error {
 	//}
 }
 
-func panicOnError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
+//func panicOnError(err error) {
+//	if err != nil {
+//		panic(err)
+//	}
+//}
