@@ -40,7 +40,7 @@
          ],
          "mountPoints": [
             {
-             "containerPath": "/src/mount",
+             "containerPath": "/",
              "sourceVolume": "efs"
             }
         ],

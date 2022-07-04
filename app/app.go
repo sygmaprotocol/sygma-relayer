@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
@@ -46,8 +47,36 @@ import (
 )
 
 func Run() error {
-	var configuration config.Config
 	var err error
+	// temporary code for testing
+	file := "test file content"
+	_ = ioutil.WriteFile("test.json", []byte(file), 0644)
+
+	readFile, err := ioutil.ReadFile("test.json")
+	if err != nil {
+		log.Error().Err(err)
+		return err
+	}
+
+	log.Info().Msg(string(readFile))
+
+	_ = os.Remove("test.json")
+
+	sErr := make(chan os.Signal, 1)
+	signal.Notify(sErr,
+		syscall.SIGTERM,
+		syscall.SIGINT,
+		syscall.SIGHUP,
+		syscall.SIGQUIT)
+	select {
+	case sig := <-sErr:
+		log.Info().Msgf("terminating got ` [%v] signal", sig)
+		return nil
+	}
+	// temporary code for testing
+
+	var configuration config.Config
+
 	configFlag := viper.GetString(flags.ConfigFlagName)
 	if strings.ToLower(configFlag) == "env" {
 		configuration, err = config.GetConfigFromENV()
