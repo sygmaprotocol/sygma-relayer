@@ -171,9 +171,9 @@
     "volumes": [
         {
             "name": "efs",
-            "efs_volume_configuration": {
-                "file_system_id": "fs-000ab26f0217a06e2",
-                "root_directory": "/"
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-000ab26f0217a06e2",
+                "rootDirectory": "/"
             }
         }
     ],
