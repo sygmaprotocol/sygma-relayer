@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R4"
+            "run", "--config=env", "--name=R4", "--latest=true"
           ],
          "portMappings": [ 
            { 
@@ -38,6 +38,12 @@
              "protocol": "tcp"
            }
          ],
+         "mountPoints": [
+            {
+             "containerPath": "/mount",
+             "sourceVolume": "efs"
+            }
+        ],
          "environment": [
            {
              "value": "relayer-4",
@@ -162,7 +168,15 @@
    "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
     },
- 
+    "volumes": [
+        {
+            "name": "efs",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-000ab26f0217a06e2",
+                "transitEncryption": "ENABLED"
+            }
+        }
+    ],
    "requiresCompatibilities": [ 
        "FARGATE" 
     ]

@@ -37,7 +37,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"math/big"
 	"os"
 	"os/signal"
 	"strings"
@@ -68,31 +67,11 @@ func Run() error {
 	for _, pAdrInfo := range networkTopology.Peers {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
-	// viper.GetString(flags.BlockstoreFlagName)
-	db, err := lvldb.NewLvlDB("./mount/lvldbdata")
+
+	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 	panicOnError(err)
 
 	blockstore := store.NewBlockStore(db)
-
-	// temporary code for testing
-	block0, err := blockstore.GetLastStoredBlock(0)
-	if err != nil || block0.Cmp(big.NewInt(7173026)) <= 0 {
-		err = blockstore.StoreBlock(big.NewInt(7173026), 0)
-		panicOnError(err)
-		log.Info().Msg("Last stored block wasn't found for 0")
-	} else {
-		log.Info().Msgf("Last stored block for %s is: %s", "0", block0.String())
-	}
-
-	block1, _ := blockstore.GetLastStoredBlock(1)
-	if err != nil || block1.Cmp(big.NewInt(27037512)) <= 0 {
-		err = blockstore.StoreBlock(big.NewInt(27037512), 1)
-		panicOnError(err)
-		log.Info().Msg("Last stored block wasn't found for domain 1")
-	} else {
-		log.Info().Msgf("Last stored block for %s is: %s", "1", block0.String())
-	}
-	// temporary code for testing
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
