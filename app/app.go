@@ -75,11 +75,23 @@ func Run() error {
 	blockstore := store.NewBlockStore(db)
 
 	// temporary code for testing
-	err = blockstore.StoreBlock(big.NewInt(7173026), 0)
-	panicOnError(err)
+	block0, err := blockstore.GetLastStoredBlock(0)
+	if err != nil || block0.Cmp(big.NewInt(7173026)) <= 0 {
+		err = blockstore.StoreBlock(big.NewInt(7173026), 0)
+		panicOnError(err)
+		log.Info().Msg("Last stored block wasn't found for 0")
+	} else {
+		log.Info().Msgf("Last stored block for %s is: %s", "0", block0.String())
+	}
 
-	err = blockstore.StoreBlock(big.NewInt(27037512), 1)
-	panicOnError(err)
+	block1, _ := blockstore.GetLastStoredBlock(1)
+	if err != nil || block1.Cmp(big.NewInt(27037512)) <= 0 {
+		err = blockstore.StoreBlock(big.NewInt(27037512), 1)
+		panicOnError(err)
+		log.Info().Msg("Last stored block wasn't found for domain 1")
+	} else {
+		log.Info().Msgf("Last stored block for %s is: %s", "1", block0.String())
+	}
 	// temporary code for testing
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
