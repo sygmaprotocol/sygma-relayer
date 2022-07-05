@@ -68,8 +68,8 @@ func Run() error {
 	for _, pAdrInfo := range networkTopology.Peers {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
-
-	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+	// viper.GetString(flags.BlockstoreFlagName)
+	db, err := lvldb.NewLvlDB("./mount/lvldbdata")
 	panicOnError(err)
 
 	blockstore := store.NewBlockStore(db)
