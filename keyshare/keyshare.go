@@ -3,6 +3,7 @@ package keyshare
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -74,6 +75,7 @@ func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
 	k := Keyshare{}
 
 	kb, err := ioutil.ReadFile(ks.path)
+	log.Info().Str("file", "keyshare").Msg(string(kb))
 	if err != nil {
 		return k, fmt.Errorf("error on reading keyshare file: %s", err)
 	}
