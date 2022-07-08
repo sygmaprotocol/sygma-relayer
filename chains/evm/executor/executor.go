@@ -123,7 +123,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 					return err
 				}
 
-				log.Info().Msgf("Sent proposals %v execution with hash: %s", proposals, hash)
+				log.Info().Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
