@@ -81,7 +81,6 @@ func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
 	}
 
 	kb = FixKeyshareFile(kb)
-
 	err = json.Unmarshal(kb, &k)
 	if err != nil {
 		return k, fmt.Errorf("error on unmarshaling keyshare file: %s", err)
