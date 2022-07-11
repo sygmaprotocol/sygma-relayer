@@ -67,20 +67,20 @@ func SetupEVMBridge(
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
-	adminFunctions := []string{
-		"0x80ae1c28", // adminPauseTransfers
-		"0xffaac0eb", // adminUnpauseTransfers
-		"0xcb10f215", // adminSetResource
-		"0x5a1ad87c", // adminSetGenericResource
-		"0x8c0c2631", // adminSetBurnable
-		"0xedc20c3c", // adminSetDepositNonce
-		"0xd15ef64e", // adminSetForwarder
-		"0x9d33b6d4", // adminChangeAccessControl
-		"0x8b63aebf", // adminChangeFeeHandler
-		"0xbd2a1820", // adminWithdraw
-		"0x6ba6db6b", // startKeygen
-		"0xd2e5fae9", // endKeygen
-		"0xf5f63b39", // refreshKey
+	adminFunctions := [][]byte{
+		[]byte("0x80ae1c28"), // adminPauseTransfers
+		[]byte("0xffaac0eb"), // adminUnpauseTransfers
+		[]byte("0xcb10f215"), // adminSetResource
+		[]byte("0x5a1ad87c"), // adminSetGenericResource
+		[]byte("0x8c0c2631"), // adminSetBurnable
+		[]byte("0xedc20c3c"), // adminSetDepositNonce
+		[]byte("0xd15ef64e"), // adminSetForwarder
+		[]byte("0x9d33b6d4"), // adminChangeAccessControl
+		[]byte("0x8b63aebf"), // adminChangeFeeHandler
+		[]byte("0xbd2a1820"), // adminWithdraw
+		[]byte("0x6ba6db6b"), // startKeygen
+		[]byte("0xd2e5fae9"), // endKeygen
+		[]byte("0xf5f63b39"), // refreshKey
 	}
 	admins := make([]common.Address, len(adminFunctions))
 	for i, _ := range adminFunctions {
