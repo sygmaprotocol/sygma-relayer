@@ -23,6 +23,13 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
 )
 
+type BridgeProposal struct {
+	OriginDomainID uint8
+	ResourceID     [32]byte
+	DepositNonce   uint64
+	Data           []byte
+}
+
 type BridgeContract struct {
 	contracts.Contract
 }
@@ -208,6 +215,29 @@ func (c *BridgeContract) ExecuteProposal(
 	)
 }
 
+func (c *BridgeContract) ExecuteProposals(
+	proposals []*proposal.Proposal,
+	signature []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	bridgeProposals := make([]BridgeProposal, 0)
+	for _, prop := range proposals {
+		bridgeProposals = append(bridgeProposals, BridgeProposal{
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.DepositNonce,
+			ResourceID:     prop.ResourceId,
+			Data:           prop.Data,
+		})
+	}
+
+	return c.ExecuteTransaction(
+		"executeProposals",
+		opts,
+		bridgeProposals,
+		signature,
+	)
+}
+
 func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, error) {
 	nonceBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBytes, proposal.DepositNonce)
@@ -222,6 +252,43 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 		nil,
 	)
 	hash := crypto.Keccak256Hash(proposalBytes)
+	return hash.Bytes(), nil
+}
+
+func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
+	proposalType, _ := abi.NewType("tuple[]", "struct Bridge.Proposal", []abi.ArgumentMarshaling{
+		{Name: "originDomainID", Type: "uint8", InternalType: "uint8"},
+		{Name: "depositNonce", Type: "uint64", InternalType: "uint64"},
+		{Name: "resourceID", Type: "bytes32", InternalType: "bytes32"},
+		{Name: "data", Type: "bytes", InternalType: "bytes"},
+	})
+	domainType, _ := abi.NewType("uint8", "uint8", nil)
+
+	arguments := abi.Arguments{
+		{
+			Name: "proposals",
+			Type: proposalType,
+		},
+		{
+			Type: domainType,
+		},
+	}
+	bridgeProposals := make([]BridgeProposal, 0)
+	for _, prop := range proposals {
+		bridgeProposals = append(bridgeProposals, BridgeProposal{
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.DepositNonce,
+			ResourceID:     prop.ResourceId,
+			Data:           prop.Data,
+		})
+	}
+
+	bytes, err := arguments.Pack(bridgeProposals, proposals[0].Destination)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	hash := crypto.Keccak256Hash(bytes)
 	return hash.Bytes(), nil
 }
 

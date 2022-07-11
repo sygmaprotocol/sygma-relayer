@@ -52,8 +52,8 @@ func NewKeygenEventHandler(
 	}
 }
 
-func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
-	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, block, block)
+func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
@@ -61,7 +61,7 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 		return nil
 	}
 
-	keygen := keygen.NewKeygen(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(startBlock), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
@@ -104,8 +104,8 @@ func NewRefreshEventHandler(
 	}
 }
 
-func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
-	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, block, block)
+func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
@@ -119,7 +119,7 @@ func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 	}
 	p2p.LoadPeers(eh.host, topology.Peers)
 
-	resharing := resharing.NewResharing(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
+	resharing := resharing.NewResharing(eh.sessionID(startBlock), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
