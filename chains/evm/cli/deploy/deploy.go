@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
 
@@ -68,6 +69,8 @@ var (
 	FeeHandlerWithOracle bool
 	RelayerThreshold     uint64
 	Relayers             []string
+	Admins               []string
+	AdminFunctions       []string
 )
 
 func BindDeployEVMFlags(cmd *cobra.Command) {
@@ -87,6 +90,8 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&GenericHandler, "generic-handler", false, "Deploy generic handler")
 	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Deploy fee handler with fee oracle. The basic fee handler will be deployed by default")
 	cmd.Flags().StringSliceVar(&Relayers, "relayers", []string{}, "List of initial relayers")
+	cmd.Flags().StringSliceVar(&Admins, "admins", []string{}, "List of initial admins per admin function")
+	cmd.Flags().StringSliceVar(&AdminFunctions, "admin-functions", []string{}, "List of initial admin functions")
 	cmd.Flags().Uint64Var(&RelayerThreshold, "relayer-threshold", 1, "Number of votes required for a proposal to pass")
 }
 
@@ -188,9 +193,19 @@ func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPr
 	for _, v := range Deployments {
 		switch v {
 		case "bridge":
+			accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
+			_, err := accessControlSegregatorContract.DeployContract(
+				AdminFunctions,
+				Admins,
+			)
+			if err != nil {
+				log.Error().Err(fmt.Errorf("access control segregator deploy failed: %w", err))
+				return err
+			}
+
 			log.Debug().Msgf("deploying bridge..")
 			bc := bridge.NewBridgeContract(ethClient, common.Address{}, t)
-			BridgeAddr, err = bc.DeployContract(DomainId)
+			BridgeAddr, err = bc.DeployContract(DomainId, accessControlSegregatorContract.ContractAddress())
 			if err != nil {
 				log.Error().Err(fmt.Errorf("bridge deploy failed: %w", err))
 				return err
