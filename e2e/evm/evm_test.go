@@ -45,7 +45,7 @@ func Test_EVM2EVM(t *testing.T) {
 		Erc20HandlerAddr: common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0x74557EFe2Da80FC058f649DB7c049D06582DEa0b"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0x08907B389ECA69E7cF2BC82614C1e9CdB4936304"),
 		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
@@ -293,6 +293,11 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.NotNil(err)
+
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
+	if err != nil {
+		return
+	}
 
 	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, txOptions)
 	if err != nil {

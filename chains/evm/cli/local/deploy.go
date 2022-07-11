@@ -321,6 +321,12 @@ func SetupERC20LockReleaseHandler(
 		return err
 	}
 
+	// Approving tokens
+	_, err = erc20Contract.ApproveTokens(conf.Erc20HandlerAddr, tenTokens, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
