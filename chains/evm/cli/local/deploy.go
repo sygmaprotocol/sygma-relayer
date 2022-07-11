@@ -32,6 +32,12 @@ var (
 	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")
 )
 
+func SliceTo4Bytes(in []byte) [4]byte {
+	var res [4]byte
+	copy(res[:], in)
+	return res
+}
+
 type BridgeConfig struct {
 	BridgeAddr common.Address
 
@@ -67,20 +73,20 @@ func SetupEVMBridge(
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
-	adminFunctions := [][]byte{
-		[]byte("0x80ae1c28"), // adminPauseTransfers
-		[]byte("0xffaac0eb"), // adminUnpauseTransfers
-		[]byte("0xcb10f215"), // adminSetResource
-		[]byte("0x5a1ad87c"), // adminSetGenericResource
-		[]byte("0x8c0c2631"), // adminSetBurnable
-		[]byte("0xedc20c3c"), // adminSetDepositNonce
-		[]byte("0xd15ef64e"), // adminSetForwarder
-		[]byte("0x9d33b6d4"), // adminChangeAccessControl
-		[]byte("0x8b63aebf"), // adminChangeFeeHandler
-		[]byte("0xbd2a1820"), // adminWithdraw
-		[]byte("0x6ba6db6b"), // startKeygen
-		[]byte("0xd2e5fae9"), // endKeygen
-		[]byte("0xf5f63b39"), // refreshKey
+	adminFunctions := [][4]byte{
+		SliceTo4Bytes([]byte("0x80ae1c28")), // adminPauseTransfers
+		SliceTo4Bytes([]byte("0xffaac0eb")), // adminUnpauseTransfers
+		SliceTo4Bytes([]byte("0xcb10f215")), // adminSetResource
+		SliceTo4Bytes([]byte("0x5a1ad87c")), // adminSetGenericResource
+		SliceTo4Bytes([]byte("0x8c0c2631")), // adminSetBurnable
+		SliceTo4Bytes([]byte("0xedc20c3c")), // adminSetDepositNonce
+		SliceTo4Bytes([]byte("0xd15ef64e")), // adminSetForwarder
+		SliceTo4Bytes([]byte("0x9d33b6d4")), // adminChangeAccessControl
+		SliceTo4Bytes([]byte("0x8b63aebf")), // adminChangeFeeHandler
+		SliceTo4Bytes([]byte("0xbd2a1820")), // adminWithdraw
+		SliceTo4Bytes([]byte("0x6ba6db6b")), // startKeygen
+		SliceTo4Bytes([]byte("0xd2e5fae9")), // endKeygen
+		SliceTo4Bytes([]byte("0xf5f63b39")), // refreshKey
 	}
 	admins := make([]common.Address, len(adminFunctions))
 	for i, _ := range adminFunctions {
