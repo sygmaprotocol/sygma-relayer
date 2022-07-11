@@ -4,7 +4,7 @@
 package local
 
 import (
-	"fmt"
+	"encoding/hex"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
@@ -74,28 +74,27 @@ func SetupEVMBridge(
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
-	adminFunctions := [][4]byte{
-		SliceTo4Bytes([]byte("0x80ae1c28")), // adminPauseTransfers
-		SliceTo4Bytes([]byte("0xffaac0eb")), // adminUnpauseTransfers
-		SliceTo4Bytes([]byte("0xcb10f215")), // adminSetResource
-		SliceTo4Bytes([]byte("0x5a1ad87c")), // adminSetGenericResource
-		SliceTo4Bytes([]byte("0x8c0c2631")), // adminSetBurnable
-		SliceTo4Bytes([]byte("0xedc20c3c")), // adminSetDepositNonce
-		SliceTo4Bytes([]byte("0xd15ef64e")), // adminSetForwarder
-		SliceTo4Bytes([]byte("0x9d33b6d4")), // adminChangeAccessControl
-		SliceTo4Bytes([]byte("0x8b63aebf")), // adminChangeFeeHandler
-		SliceTo4Bytes([]byte("0xbd2a1820")), // adminWithdraw
-		SliceTo4Bytes([]byte("0x6ba6db6b")), // startKeygen
-		SliceTo4Bytes([]byte("0xd2e5fae9")), // endKeygen
-		SliceTo4Bytes([]byte("0xf5f63b39")), // refreshKey
+	adminFunctionHexes := []string{
+		"0x80ae1c28", // adminPauseTransfers
+		"0xffaac0eb", // adminUnpauseTransfers
+		"0xcb10f215", // adminSetResource
+		"0x5a1ad87c", // adminSetGenericResource
+		"0x8c0c2631", // adminSetBurnable
+		"0xedc20c3c", // adminSetDepositNonce
+		"0xd15ef64e", // adminSetForwarder
+		"0x9d33b6d4", // adminChangeAccessControl
+		"0x8b63aebf", // adminChangeFeeHandler
+		"0xbd2a1820", // adminWithdraw
+		"0x6ba6db6b", // startKeygen
+		"0xd2e5fae9", // endKeygen
+		"0xf5f63b39", // refreshKey
 	}
-
-	fmt.Println(SliceTo4Bytes([]byte("0xd2e5fae9")))
-	fmt.Println([]byte("0xd2e5fae9"))
-
-	admins := make([]common.Address, len(adminFunctions))
-	for i, _ := range adminFunctions {
+	admins := make([]common.Address, len(adminFunctionHexes))
+	adminFunctions := make([][4]byte, len(adminFunctionHexes))
+	for i, functionHex := range adminFunctionHexes {
 		admins[i] = ethClient.From()
+		hexBytes, _ := hex.DecodeString(string(functionHex))
+		adminFunctions[i] = SliceTo4Bytes(hexBytes)
 	}
 	_, err := accessControlSegregatorContract.DeployContract(
 		adminFunctions,
