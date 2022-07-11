@@ -75,19 +75,19 @@ func SetupEVMBridge(
 
 	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
 	adminFunctionHexes := []string{
-		"0x80ae1c28", // adminPauseTransfers
-		"0xffaac0eb", // adminUnpauseTransfers
-		"0xcb10f215", // adminSetResource
-		"0x5a1ad87c", // adminSetGenericResource
-		"0x8c0c2631", // adminSetBurnable
-		"0xedc20c3c", // adminSetDepositNonce
-		"0xd15ef64e", // adminSetForwarder
-		"0x9d33b6d4", // adminChangeAccessControl
-		"0x8b63aebf", // adminChangeFeeHandler
-		"0xbd2a1820", // adminWithdraw
-		"0x6ba6db6b", // startKeygen
-		"0xd2e5fae9", // endKeygen
-		"0xf5f63b39", // refreshKey
+		"80ae1c28", // adminPauseTransfers
+		"ffaac0eb", // adminUnpauseTransfers
+		"cb10f215", // adminSetResource
+		"5a1ad87c", // adminSetGenericResource
+		"8c0c2631", // adminSetBurnable
+		"edc20c3c", // adminSetDepositNonce
+		"d15ef64e", // adminSetForwarder
+		"9d33b6d4", // adminChangeAccessControl
+		"8b63aebf", // adminChangeFeeHandler
+		"bd2a1820", // adminWithdraw
+		"6ba6db6b", // startKeygen
+		"d2e5fae9", // endKeygen
+		"f5f63b39", // refreshKey
 	}
 	admins := make([]common.Address, len(adminFunctionHexes))
 	adminFunctions := make([][4]byte, len(adminFunctionHexes))
