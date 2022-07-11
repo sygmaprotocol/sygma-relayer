@@ -2,7 +2,7 @@ package events
 
 import (
 	"context"
-	"fmt"
+	"github.com/rs/zerolog/log"
 	"math/big"
 	"strings"
 
@@ -36,13 +36,14 @@ func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.
 	}
 
 	var retryEvents []RetryEvent
-	for _, log := range logs {
+	for _, dl := range logs {
 		var event RetryEvent
-		err = l.abi.UnpackIntoInterface(event, "Retry", log.Data)
+		err = l.abi.UnpackIntoInterface(&event, "Retry", dl.Data)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"unable to unpack retry event with txhash %s, because of: %+v", log.TxHash.Hex(), err,
+			log.Error().Msgf(
+				"unable to unpack retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
 			)
+			continue
 		}
 		retryEvents = append(retryEvents, event)
 	}

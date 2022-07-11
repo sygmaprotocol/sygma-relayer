@@ -5,13 +5,16 @@ import (
 	"math/big"
 	"testing"
 
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -127,136 +130,135 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 }
 
-//
-//func (s *IntegrationTestSuite) Test_Erc20Deposit() {
-//	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
-//
-//	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-//	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
-//	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-//
-//	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-//	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
-//
-//	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
-//	s.Nil(err)
-//	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
-//	s.Nil(err)
-//
-//	amountToDeposit := big.NewInt(1000000)
-//
-//	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
-//		transactor.TransactOptions{
-//			Priority: uint8(2), // fast
-//			Value:    s.config1.Fee,
-//		})
-//	s.Nil(err)
-//
-//	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-//	s.Nil(err)
-//	// check gas price of deposit tx - 140 gwei
-//	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
-//
-//	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-//	s.Nil(err)
-//
-//	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
-//	s.Nil(err)
-//	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
-//
-//	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
-//	s.Nil(err)
-//	//Balance has increased
-//	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
-//}
+func (s *IntegrationTestSuite) Test_Erc20Deposit() {
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
-//func (s *IntegrationTestSuite) Test_Erc721Deposit() {
-//	tokenId := big.NewInt(1)
-//	metadata := "metadata.url"
-//
-//	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
-//
-//	txOptions := transactor.TransactOptions{
-//		Priority: uint8(2), // fast
-//	}
-//
-//	// erc721 contract for evm1
-//	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-//	erc721Contract1 := erc721.NewErc721Contract(s.client1, s.config1.Erc721Addr, transactor1)
-//	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-//
-//	// erc721 contract for evm2
-//	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-//	erc721Contract2 := erc721.NewErc721Contract(s.client2, s.config2.Erc721Addr, transactor2)
-//
-//	// Mint token and give approval
-//	// This is done here so token only exists on evm1
-//	_, err := erc721Contract1.Mint(tokenId, metadata, s.client1.From(), txOptions)
-//	s.Nil(err, "Mint failed")
-//	_, err = erc721Contract1.Approve(tokenId, s.config1.Erc721HandlerAddr, txOptions)
-//	s.Nil(err, "Approve failed")
-//
-//	// Check on evm1 if initial owner is admin
-//	initialOwner, err := erc721Contract1.Owner(tokenId)
-//	s.Nil(err)
-//	s.Equal(initialOwner.String(), s.client1.From().String())
-//
-//	// Check on evm2 token doesn't exist
-//	_, err = erc721Contract2.Owner(tokenId)
-//	s.Error(err)
-//
-//	depositTxHash, err := bridgeContract1.Erc721Deposit(
-//		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
-//			Value: s.config1.Fee,
-//		},
-//	)
-//	s.Nil(err)
-//
-//	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-//	s.Nil(err)
-//	// check gas price of deposit tx - 50 gwei (slow)
-//	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
-//
-//	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-//	s.Nil(err)
-//
-//	// Check on evm1 that token is burned
-//	_, err = erc721Contract1.Owner(tokenId)
-//	s.Error(err)
-//
-//	// Check on evm2 that token is minted to destination address
-//	owner, err := erc721Contract2.Owner(tokenId)
-//	s.Nil(err)
-//	s.Equal(dstAddr.String(), owner.String())
-//}
-//
-//func (s *IntegrationTestSuite) Test_GenericDeposit() {
-//	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-//	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-//
-//	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-//	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
-//
-//	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
-//
-//	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
-//		Priority: uint8(0), // slow
-//		Value:    s.config1.Fee,
-//	})
-//	s.Nil(err)
-//
-//	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-//	s.Nil(err)
-//	// check gas price of deposit tx - 140 gwei
-//	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
-//
-//	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-//	s.Nil(err)
-//	// Asset hash sent is stored in centrifuge asset store contract
-//	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-//	s.Nil(err)
-//	s.Equal(true, exists)
-//}
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
+
+	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
+	s.Nil(err)
+	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+
+	amountToDeposit := big.NewInt(1000000)
+
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
+		transactor.TransactOptions{
+			Priority: uint8(2), // fast
+			Value:    s.config1.Fee,
+		})
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 140 gwei
+	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+
+	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
+	s.Nil(err)
+	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
+
+	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+	//Balance has increased
+	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+}
+
+func (s *IntegrationTestSuite) Test_Erc721Deposit() {
+	tokenId := big.NewInt(1)
+	metadata := "metadata.url"
+
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
+
+	txOptions := transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	}
+
+	// erc721 contract for evm1
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	erc721Contract1 := erc721.NewErc721Contract(s.client1, s.config1.Erc721Addr, transactor1)
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+
+	// erc721 contract for evm2
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+	erc721Contract2 := erc721.NewErc721Contract(s.client2, s.config2.Erc721Addr, transactor2)
+
+	// Mint token and give approval
+	// This is done here so token only exists on evm1
+	_, err := erc721Contract1.Mint(tokenId, metadata, s.client1.From(), txOptions)
+	s.Nil(err, "Mint failed")
+	_, err = erc721Contract1.Approve(tokenId, s.config1.Erc721HandlerAddr, txOptions)
+	s.Nil(err, "Approve failed")
+
+	// Check on evm1 if initial owner is admin
+	initialOwner, err := erc721Contract1.Owner(tokenId)
+	s.Nil(err)
+	s.Equal(initialOwner.String(), s.client1.From().String())
+
+	// Check on evm2 token doesn't exist
+	_, err = erc721Contract2.Owner(tokenId)
+	s.Error(err)
+
+	depositTxHash, err := bridgeContract1.Erc721Deposit(
+		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
+			Value: s.config1.Fee,
+		},
+	)
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 50 gwei (slow)
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+
+	// Check on evm1 that token is burned
+	_, err = erc721Contract1.Owner(tokenId)
+	s.Error(err)
+
+	// Check on evm2 that token is minted to destination address
+	owner, err := erc721Contract2.Owner(tokenId)
+	s.Nil(err)
+	s.Equal(dstAddr.String(), owner.String())
+}
+
+func (s *IntegrationTestSuite) Test_GenericDeposit() {
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
+
+	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
+
+	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
+		Priority: uint8(0), // slow
+		Value:    s.config1.Fee,
+	})
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 140 gwei
+	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+	// Asset hash sent is stored in centrifuge asset store contract
+	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
+	s.Nil(err)
+	s.Equal(true, exists)
+}
 
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
@@ -307,7 +309,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.NotNil(retryTxHash)
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.NotNil(err)
+	s.Nil(err)
 
 	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
 	s.Nil(err)
