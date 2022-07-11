@@ -87,14 +87,6 @@ func Run() error {
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
-	// test code
-
-	_, err = keyshareStore.GetKeyshare()
-	if err != nil {
-		return err
-	}
-	// test code
-
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
