@@ -294,6 +294,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
+	// this should time out as handler doesn't have any tokens
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.NotNil(err)
 

@@ -113,7 +113,7 @@ func SetupEVMBridge(
 	erc20ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
 	genericResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
 	erc721ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
-	erc20FixedSupplyResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
+	erc20LockReleaseResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
 
 	conf := BridgeConfig{
 		BridgeAddr: bridgeContractAddress,
@@ -123,7 +123,7 @@ func SetupEVMBridge(
 		Erc20ResourceID:  erc20ResourceID,
 
 		Erc20LockReleaseAddr:        erc20LockReleaseContractAddress,
-		Erc20LockReleaseResourceID:  erc20FixedSupplyResourceID,
+		Erc20LockReleaseResourceID:  erc20LockReleaseResourceID,
 		Erc20LockReleaseHandlerAddr: erc20HandlerContractAddress,
 
 		GenericHandlerAddr: genericHandlerAddress,
@@ -219,7 +219,7 @@ func deployErc20LockRelease(
 		return nil, common.Address{}, err
 	}
 	log.Debug().Msgf(
-		"Erc20FixedSupply deployed to: %s",
+		"Erc20LockRelease deployed to: %s",
 		contractAddress,
 	)
 	return contract, contractAddress, nil

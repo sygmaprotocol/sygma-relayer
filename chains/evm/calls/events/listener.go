@@ -41,7 +41,7 @@ func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.
 		err = l.abi.UnpackIntoInterface(&event, "Retry", dl.Data)
 		if err != nil {
 			log.Error().Msgf(
-				"unable to unpack retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
+				"failed unpacking retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
 			)
 			continue
 		}

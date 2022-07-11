@@ -103,8 +103,8 @@ func (eh *RetryEventHandler) fetchDepositEvent(event hubEvents.RetryEvent) (even
 	}
 
 	var depositEvent events.Deposit
-	for _, log := range receipt.Logs {
-		err := eh.bridgeABI.UnpackIntoInterface(&depositEvent, "Deposit", log.Data)
+	for _, l := range receipt.Logs {
+		err := eh.bridgeABI.UnpackIntoInterface(&depositEvent, "Deposit", l.Data)
 		if err == nil {
 			break
 		}
