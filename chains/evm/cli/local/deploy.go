@@ -10,12 +10,13 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/generic"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/util"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/generic"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
@@ -32,12 +33,6 @@ var EveKp = keystore.TestKeyRing.EthereumKeys[keystore.EveKey]
 var (
 	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")
 )
-
-func SliceTo4Bytes(in []byte) [4]byte {
-	var res [4]byte
-	copy(res[:], in)
-	return res
-}
 
 type BridgeConfig struct {
 	BridgeAddr common.Address
@@ -94,7 +89,7 @@ func SetupEVMBridge(
 	for i, functionHex := range adminFunctionHexes {
 		admins[i] = ethClient.From()
 		hexBytes, _ := hex.DecodeString(string(functionHex))
-		adminFunctions[i] = SliceTo4Bytes(hexBytes)
+		adminFunctions[i] = util.SliceTo4Bytes(hexBytes)
 	}
 	_, err := accessControlSegregatorContract.DeployContract(
 		adminFunctions,
