@@ -88,7 +88,6 @@ func Run() error {
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	// test code
-
 	_, err = keyshareStore.GetKeyshare()
 	if err != nil {
 		return err
