@@ -3,7 +3,7 @@ module github.com/ChainSafe/chainbridge-hub
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v0.0.0-20220613105328-520ba36caed6
+	github.com/ChainSafe/chainbridge-core v0.0.0-20220621171034-fe929c3b4cca
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/creasty/defaults v1.6.0
