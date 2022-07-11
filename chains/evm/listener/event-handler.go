@@ -9,6 +9,7 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
 	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/rs/zerolog/log"
 	"math/big"
 	"strings"
 
@@ -57,8 +58,8 @@ func NewRetryEventHandler(
 	}
 }
 
-func (eh *RetryEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
-	retryEvents, err := eh.eventListener.FetchRetryEvents(context.Background(), eh.bridgeAddress, block, block)
+func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	retryEvents, err := eh.eventListener.FetchRetryEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
 	}
@@ -66,22 +67,29 @@ func (eh *RetryEventHandler) HandleEvent(block *big.Int, msgChan chan *message.M
 		return nil
 	}
 
+	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
 		depositEvent, err := eh.fetchDepositEvent(event)
 		if err != nil {
 			return err
 		}
-
 		msg, err := eh.depositHandler.HandleDeposit(
 			eh.domainID, depositEvent.DestinationDomainID, depositEvent.DepositNonce,
 			depositEvent.ResourceID, depositEvent.Data, depositEvent.HandlerResponse,
 		)
 		if err != nil {
-			return err
+			log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+			continue
 		}
 
-		msgChan <- msg
+		log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+		retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
 	}
+
+	for _, retries := range retriesByDomain {
+		msgChan <- retries
+	}
+
 	return nil
 }
 
