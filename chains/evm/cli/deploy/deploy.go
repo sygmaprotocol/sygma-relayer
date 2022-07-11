@@ -47,7 +47,8 @@ var DeployEVM = &cobra.Command{
 }
 
 const (
-	TwoDaysTermInBlocks int64 = 6200
+	TwoDaysTermInBlocks   int64    = 6200
+
 )
 
 var (
@@ -90,8 +91,18 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&GenericHandler, "generic-handler", false, "Deploy generic handler")
 	cmd.Flags().BoolVar(&FeeHandlerWithOracle, "fee-handler-with-oracle", false, "Deploy fee handler with fee oracle. The basic fee handler will be deployed by default")
 	cmd.Flags().StringSliceVar(&Relayers, "relayers", []string{}, "List of initial relayers")
-	cmd.Flags().StringSliceVar(&Admins, "admins", []string{}, "List of initial admins per admin function")
-	cmd.Flags().StringSliceVar(&AdminFunctions, "admin-functions", []string{}, "List of initial admin functions")
+	cmd.Flags().StringSliceVar(
+		&Admins,
+		"admins",
+		[]string{"0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365"}
+		"List of initial admin addresses per admin function",
+	)
+	cmd.Flags().StringSliceVar(
+		&AdminFunctions,
+		"admin-functions",
+		[]string{"80ae1c28", "ffaac0eb", "cb10f215", "5a1ad87c", "8c0c2631", "edc20c3c", "d15ef64e", "9d33b6d4", "8b63aebf", "bd2a1820", "6ba6db6b", "d2e5fae9", "f5f63b39"}
+		"List of initial admin functions in non-prefixed hex format",
+	)
 	cmd.Flags().Uint64Var(&RelayerThreshold, "relayer-threshold", 1, "Number of votes required for a proposal to pass")
 }
 
@@ -100,6 +111,10 @@ func init() {
 }
 
 func ValidateDeployFlags(cmd *cobra.Command, args []string) error {
+	if len(Admins) != len(AdminFunctions) {
+		return fmt.Errorf("Admins and admin functions length should be equal")
+	}
+
 	Deployments = make([]string, 0)
 	if DeployAll {
 		flags.MarkFlagsAsRequired(cmd, "relayer-threshold", "domain", "erc20-symbol", "erc20-name")
@@ -193,6 +208,13 @@ func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPr
 	for _, v := range Deployments {
 		switch v {
 		case "bridge":
+			admins := make([]common.Address, len(Admins))
+			adminFunctions := make([][4]byte, len(AdminFunctions))
+			for i, functionHex := range adminFunctionHexes {
+				admins[i] = ethClient.From()
+				hexBytes, _ := hex.DecodeString(string(functionHex))
+				adminFunctions[i] = SliceTo4Bytes(hexBytes)
+			}
 			accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
 			_, err := accessControlSegregatorContract.DeployContract(
 				AdminFunctions,
