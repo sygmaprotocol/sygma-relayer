@@ -3,6 +3,7 @@ package evm_test
 import (
 	"context"
 	"math/big"
+	"math/rand"
 	"testing"
 
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
@@ -173,7 +174,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
-	tokenId := big.NewInt(1)
+	tokenId := big.NewInt(int64(rand.Int()))
 	metadata := "metadata.url"
 
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
@@ -239,7 +240,7 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
-	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
+	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
 
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
 		Priority: uint8(0), // slow

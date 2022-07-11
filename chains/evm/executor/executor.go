@@ -34,8 +34,8 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposal(proposal *proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
-	ProposalHash(proposal *proposal.Proposal) ([]byte, error)
+	ExecuteProposals(proposals []*proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
 }
 
 type Executor struct {
@@ -65,22 +65,30 @@ func NewExecutor(
 	}
 }
 
-// Execute starts a signing process and executes proposal when signature is generated
-func (e *Executor) Execute(m *message.Message) error {
-	prop, err := e.mh.HandleMessage(m)
-	if err != nil {
-		return err
-	}
+// Execute starts a signing process and executes proposals when signature is generated
+func (e *Executor) Execute(msgs []*message.Message) error {
+	proposals := make([]*proposal.Proposal, len(msgs))
+	for i, m := range msgs {
+		prop, err := e.mh.HandleMessage(m)
+		if err != nil {
+			return err
+		}
 
-	isExecuted, err := e.bridge.IsProposalExecuted(prop)
-	if err != nil {
-		return err
+		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+		if err != nil {
+			return err
+		}
+		if isExecuted {
+			continue
+		}
+
+		proposals[i] = prop
 	}
-	if isExecuted {
+	if len(proposals) == 0 {
 		return nil
 	}
 
-	propHash, err := e.bridge.ProposalHash(prop)
+	propHash, err := e.bridge.ProposalsHash(proposals)
 	if err != nil {
 		return err
 	}
@@ -89,7 +97,7 @@ func (e *Executor) Execute(m *message.Message) error {
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		e.sessionID(m.Destination, m.DepositNonce),
+		e.sessionID(propHash),
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -110,36 +118,34 @@ func (e *Executor) Execute(m *message.Message) error {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*tssSigning.SignatureData)
-				hash, err := e.executeProposal(prop, signatureData)
+				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					return err
 				}
 
-				log.Info().Msgf("Sent proposal %v execution with hash: %s", prop, hash)
+				log.Info().Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
-				isExecuted, err := e.bridge.IsProposalExecuted(prop)
+				isExecuted, err := e.bridge.IsProposalExecuted(proposals[0])
 				if err != nil || !isExecuted {
 					continue
 				}
 
-				log.Info().Msgf("Successfully executed proposal %v", prop)
+				log.Info().Msgf("Successfully executed proposals %v", proposals)
 				return nil
 			}
 		}
 	}
 }
 
-func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[64] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposal(prop, sig, transactor.TransactOptions{
-		Priority: prop.Metadata.Priority,
-	})
+	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +153,6 @@ func (e *Executor) executeProposal(prop *proposal.Proposal, signatureData *tssSi
 	return hash, err
 }
 
-func (e *Executor) sessionID(destination uint8, depositNonce uint64) string {
-	return fmt.Sprintf("%d-%d", destination, depositNonce)
+func (e *Executor) sessionID(hash []byte) string {
+	return fmt.Sprintf("signing-%s", common.Bytes2Hex(hash))
 }

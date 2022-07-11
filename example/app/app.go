@@ -17,7 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm"
+	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
@@ -32,6 +32,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
 
+	"github.com/ChainSafe/chainbridge-hub/chains/evm"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
@@ -130,7 +131,8 @@ func Run() error {
 				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
 				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
-				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
+				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
+				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
 			}
