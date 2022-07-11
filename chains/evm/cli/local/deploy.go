@@ -4,6 +4,7 @@
 package local
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
@@ -88,6 +89,10 @@ func SetupEVMBridge(
 		SliceTo4Bytes([]byte("0xd2e5fae9")), // endKeygen
 		SliceTo4Bytes([]byte("0xf5f63b39")), // refreshKey
 	}
+
+	fmt.Println(SliceTo4Bytes([]byte("0xd2e5fae9")))
+	fmt.Println([]byte("0xd2e5fae9"))
+
 	admins := make([]common.Address, len(adminFunctions))
 	for i, _ := range adminFunctions {
 		admins[i] = ethClient.From()
