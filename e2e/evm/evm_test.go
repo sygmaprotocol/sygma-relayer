@@ -2,20 +2,20 @@ package evm_test
 
 import (
 	"context"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"math/big"
 	"math/rand"
 	"testing"
 
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -49,12 +49,12 @@ func Test_EVM2EVM(t *testing.T) {
 		Erc20HandlerAddr: common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0x08907B389ECA69E7cF2BC82614C1e9CdB4936304"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0x0641308E7d2fDc15c66C70B8C13aE8B5E1d51586"),
+		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-		Erc721HandlerAddr: common.HexToAddress("0xb83065680e6AEc805774d8545516dF4e936F0dC0"),
 		Erc721Addr:        common.HexToAddress("0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b"),
+		Erc721HandlerAddr: common.HexToAddress("0xb83065680e6AEc805774d8545516dF4e936F0dC0"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
 		GenericHandlerAddr: common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
