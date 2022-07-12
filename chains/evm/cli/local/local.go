@@ -88,14 +88,14 @@ func prettyFormatChainInfo(cfg BridgeConfig) string {
 Bridge: %s
 Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
 ERC20: %s
-ERC20FixedSupply: %s
+ERC20LockRelease: %s
 ERC20 Handler: %s
 ERC721: %s
 ERC721 Handler: %s
 Generic Handler: %s
 Asset Store: %s
 ERC20 resourceId: %s
-ERC20FixedSupply resourceId: %s
+ERC20LockRelease resourceId: %s
 ERC721 resourceId: %s
 Generic resourceId: %s
 `,
