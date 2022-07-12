@@ -34,7 +34,7 @@ jobs:
           chmod +x $HOME/.local/bin/subkey
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: TSS tests
-        run: go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep 'tss')
+        run: go test -p 1 -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep 'tss')
       - name: Unit tests
         run: go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep -v 'cbcli\|e2e\|tss')
       - name: Cover
