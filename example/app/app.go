@@ -57,6 +57,7 @@ func Run() error {
 			{PeerAddress: "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
 			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
 		},
+		Threshold: "2",
 	})
 
 	var allowedPeers peer.IDSlice
@@ -120,8 +121,8 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
