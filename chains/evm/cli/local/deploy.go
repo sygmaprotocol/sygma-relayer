@@ -4,16 +4,19 @@
 package local
 
 import (
+	"encoding/hex"
 	"math/big"
 
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/generic"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/util"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/generic"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
@@ -69,8 +72,39 @@ func SetupEVMBridge(
 	staticGasPricer := evmgaspricer.NewStaticGasPriceDeterminant(ethClient, nil)
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
+	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
+	adminFunctionHexes := []string{
+		"80ae1c28", // adminPauseTransfers
+		"ffaac0eb", // adminUnpauseTransfers
+		"cb10f215", // adminSetResource
+		"5a1ad87c", // adminSetGenericResource
+		"8c0c2631", // adminSetBurnable
+		"edc20c3c", // adminSetDepositNonce
+		"d15ef64e", // adminSetForwarder
+		"9d33b6d4", // adminChangeAccessControl
+		"8b63aebf", // adminChangeFeeHandler
+		"bd2a1820", // adminWithdraw
+		"6ba6db6b", // startKeygen
+		"d2e5fae9", // endKeygen
+		"f5f63b39", // refreshKey
+	}
+	admins := make([]common.Address, len(adminFunctionHexes))
+	adminFunctions := make([][4]byte, len(adminFunctionHexes))
+	for i, functionHex := range adminFunctionHexes {
+		admins[i] = ethClient.From()
+		hexBytes, _ := hex.DecodeString(string(functionHex))
+		adminFunctions[i] = util.SliceTo4Bytes(hexBytes)
+	}
+	_, err := accessControlSegregatorContract.DeployContract(
+		adminFunctions,
+		admins,
+	)
+	if err != nil {
+		return BridgeConfig{}, err
+	}
+
 	bridgeContract := bridge.NewBridgeContract(ethClient, common.Address{}, t)
-	bridgeContractAddress, err := bridgeContract.DeployContract(domainID)
+	bridgeContractAddress, err := bridgeContract.DeployContract(domainID, accessControlSegregatorContract.ContractAddress())
 	if err != nil {
 		return BridgeConfig{}, err
 	}
