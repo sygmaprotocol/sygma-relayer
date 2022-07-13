@@ -43,27 +43,27 @@ const ETHEndpoint2 = "ws://localhost:8548"
 // Alice key is used by the relayer, Eve key is used as admin and depositter
 func Test_EVM2EVM(t *testing.T) {
 	config := local.BridgeConfig{
-		BridgeAddr: common.HexToAddress("0xb911DF90bCccd3D76a1d8f5fDcd32471e28Cc2c1"),
+		BridgeAddr: common.HexToAddress("0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235"),
 
-		Erc20Addr:        common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
-		Erc20HandlerAddr: common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
+		Erc20Addr:        common.HexToAddress("0xDA8556C2485048eee3dE91085347c3210785323c"),
+		Erc20HandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0x0641308E7d2fDc15c66C70B8C13aE8B5E1d51586"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
+		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-		Erc721Addr:        common.HexToAddress("0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b"),
-		Erc721HandlerAddr: common.HexToAddress("0xb83065680e6AEc805774d8545516dF4e936F0dC0"),
+		Erc721Addr:        common.HexToAddress("0xd6D787253cc022E6839583aD0cBECfc9c60b581c"),
+		Erc721HandlerAddr: common.HexToAddress("0x1cd88Fa5848389E4027d29B267BAB561300CEA2A"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-		GenericHandlerAddr: common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
+		GenericHandlerAddr: common.HexToAddress("0xf1a8fDee59ecc8bDbAAA7cC0757876177d0FB255"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0xe1588E2c6a002AE93AeD325A910Ed30961874109"),
+		AssetStoreAddr:     common.HexToAddress("0x1C9D948eddE23f66f8c816241C7587bC2845fA7d"),
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    common.HexToAddress("0x08907B389ECA69E7cF2BC82614C1e9CdB4936304"),
+		FeeHandlerAddr:    common.HexToAddress("0xbD259407A231Ad2a50df1e8CBaCe9A5E63EB65D5"),
 	}
 
 	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.CharlieKp.PrivateKey())
@@ -293,6 +293,9 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
 
 	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
 	if err != nil {
