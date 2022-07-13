@@ -66,13 +66,13 @@ func Test_EVM2EVM(t *testing.T) {
 		FeeHandlerAddr:    common.HexToAddress("0x08907B389ECA69E7cF2BC82614C1e9CdB4936304"),
 	}
 
-	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.EveKp.PrivateKey())
+	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.EveKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
@@ -293,10 +293,6 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
-
-	// this should time out as handler doesn't have any tokens
-	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.NotNil(err)
 
 	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
 	if err != nil {

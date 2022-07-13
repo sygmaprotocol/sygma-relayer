@@ -29,6 +29,7 @@ import (
 var AliceKp = keystore.TestKeyRing.EthereumKeys[keystore.AliceKey]
 var BobKp = keystore.TestKeyRing.EthereumKeys[keystore.BobKey]
 var EveKp = keystore.TestKeyRing.EthereumKeys[keystore.EveKey]
+var CharlieKp = keystore.TestKeyRing.EthereumKeys[keystore.CharlieKey]
 
 var (
 	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")

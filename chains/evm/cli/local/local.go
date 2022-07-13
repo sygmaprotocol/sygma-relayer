@@ -35,27 +35,27 @@ func init() {
 
 func localSetup(cmd *cobra.Command, args []string) error {
 	// init client1
-	ethClient, err := evmclient.NewEVMClient(ethEndpoint1, EveKp.PrivateKey())
+	ethClient, err := evmclient.NewEVMClient(ethEndpoint1, CharlieKp.PrivateKey())
 	if err != nil {
 		return err
 	}
 
 	// init client2
-	ethClient2, err := evmclient.NewEVMClient(ethEndpoint2, EveKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ethEndpoint2, CharlieKp.PrivateKey())
 	if err != nil {
 		return err
 	}
 
 	// chain 1
 	// domainsId: 0
-	config, err := SetupEVMBridge(ethClient, fabric1, 1, EveKp.CommonAddress())
+	config, err := SetupEVMBridge(ethClient, fabric1, 1, CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, EveKp.CommonAddress())
+	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
