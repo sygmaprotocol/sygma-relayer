@@ -29,6 +29,7 @@ type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
+	FetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error)
 }
 
 type RetryEventHandler struct {
@@ -69,7 +70,7 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 
 	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
-		depositEvent, err := eh.fetchDepositEvent(event)
+		depositEvent, err := eh.eventListener.FetchDepositEvent(event)
 		if err != nil {
 			return err
 		}
@@ -91,25 +92,6 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 	}
 
 	return nil
-}
-
-func (eh *RetryEventHandler) fetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error) {
-	retryDepositTxHash := common.HexToHash(event.TxHash)
-	receipt, err := eh.client.WaitAndReturnTxReceipt(retryDepositTxHash)
-	if err != nil {
-		return events.Deposit{}, fmt.Errorf(
-			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
-		)
-	}
-
-	var depositEvent events.Deposit
-	for _, l := range receipt.Logs {
-		err := eh.bridgeABI.UnpackIntoInterface(&depositEvent, "Deposit", l.Data)
-		if err == nil {
-			break
-		}
-	}
-	return depositEvent, nil
 }
 
 type KeygenEventHandler struct {
