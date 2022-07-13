@@ -40,7 +40,7 @@ type TestClient interface {
 const ETHEndpoint1 = "ws://localhost:8546"
 const ETHEndpoint2 = "ws://localhost:8548"
 
-// Alice key is used by the relayer, Eve key is used as admin and depositter
+// Alice key is used by the relayer, Charlie key is used as admin and depositter
 func Test_EVM2EVM(t *testing.T) {
 	config := local.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235"),
@@ -141,7 +141,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
@@ -275,7 +275,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
