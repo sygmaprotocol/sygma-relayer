@@ -6,7 +6,19 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/chains/evm"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
+	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
+
+	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
@@ -20,6 +32,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
+
+	"github.com/ChainSafe/chainbridge-hub/chains/evm"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
@@ -31,16 +45,6 @@ import (
 	"github.com/ChainSafe/chainbridge-hub/keyshare"
 	"github.com/ChainSafe/chainbridge-hub/topology"
 	"github.com/ChainSafe/chainbridge-hub/tss"
-	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 )
 
 func Run() error {
@@ -93,16 +97,7 @@ func Run() error {
 		case "evm":
 			{
 				config, err := chain.NewEVMConfig(chainConfig)
-				log.Info().Msg("EVM Config")
-				log.Info().Msgf("%+v", config)
 				panicOnError(err)
-
-				lastStoredBlock, err := blockstore.GetLastStoredBlock(*config.GeneralChainConfig.Id)
-				if err != nil {
-					log.Error().Err(err)
-				}
-
-				log.Info().Msgf("Starting %s from block %s", config.GeneralChainConfig.Name, lastStoredBlock.String())
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
 				panicOnError(err)
@@ -128,6 +123,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
@@ -136,7 +132,8 @@ func Run() error {
 				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
 				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
-				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
+				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
+				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
 			}
@@ -145,15 +142,15 @@ func Run() error {
 		}
 	}
 
-	_ = relayer.NewRelayer(
+	r := relayer.NewRelayer(
 		chains,
 		&opentelemetry.ConsoleTelemetry{},
 	)
 
 	errChn := make(chan error)
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// go r.Start(ctx, errChn)
+	go r.Start(ctx, errChn)
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 

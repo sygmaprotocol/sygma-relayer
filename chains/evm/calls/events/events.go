@@ -17,4 +17,9 @@ const (
 	KeyRefreshSig        EventSig = "KeyRefresh()"
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32)"
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
+	RetrySig             EventSig = "Retry(string)"
 )
+
+type RetryEvent struct {
+	TxHash string
+}

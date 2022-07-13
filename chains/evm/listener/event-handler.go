@@ -3,7 +3,15 @@ package listener
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/rs/zerolog/log"
 	"math/big"
+	"strings"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-hub/comm"
@@ -20,6 +28,70 @@ import (
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
+	FetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error)
+}
+
+type RetryEventHandler struct {
+	client         calls.ClientDispatcher
+	eventListener  EventListener
+	depositHandler listener.DepositHandler
+	bridgeAddress  common.Address
+	bridgeABI      abi.ABI
+	domainID       uint8
+}
+
+func NewRetryEventHandler(
+	client calls.ClientDispatcher,
+	eventListener EventListener,
+	depositHandler listener.DepositHandler,
+	bridgeAddress common.Address,
+	domainID uint8,
+) *RetryEventHandler {
+	bridgeABI, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
+	return &RetryEventHandler{
+		eventListener:  eventListener,
+		depositHandler: depositHandler,
+		bridgeAddress:  bridgeAddress,
+		client:         client,
+		bridgeABI:      bridgeABI,
+		domainID:       domainID,
+	}
+}
+
+func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	retryEvents, err := eh.eventListener.FetchRetryEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
+	if err != nil {
+		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
+	}
+	if len(retryEvents) == 0 {
+		return nil
+	}
+
+	retriesByDomain := make(map[uint8][]*message.Message)
+	for _, event := range retryEvents {
+		depositEvent, err := eh.eventListener.FetchDepositEvent(event)
+		if err != nil {
+			return err
+		}
+		msg, err := eh.depositHandler.HandleDeposit(
+			eh.domainID, depositEvent.DestinationDomainID, depositEvent.DepositNonce,
+			depositEvent.ResourceID, depositEvent.Data, depositEvent.HandlerResponse,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+			continue
+		}
+
+		log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+		retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
+	}
+
+	for _, retries := range retriesByDomain {
+		msgChan <- retries
+	}
+
+	return nil
 }
 
 type KeygenEventHandler struct {
@@ -52,8 +124,8 @@ func NewKeygenEventHandler(
 	}
 }
 
-func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
-	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, block, block)
+func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
@@ -61,7 +133,7 @@ func (eh *KeygenEventHandler) HandleEvent(block *big.Int, msgChan chan *message.
 		return nil
 	}
 
-	keygen := keygen.NewKeygen(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
+	keygen := keygen.NewKeygen(eh.sessionID(startBlock), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil
@@ -104,8 +176,8 @@ func NewRefreshEventHandler(
 	}
 }
 
-func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message.Message) error {
-	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, block, block)
+func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
@@ -119,7 +191,7 @@ func (eh *RefreshEventHandler) HandleEvent(block *big.Int, msgChan chan *message
 	}
 	p2p.LoadPeers(eh.host, topology.Peers)
 
-	resharing := resharing.NewResharing(eh.sessionID(block), eh.threshold, eh.host, eh.communication, eh.storer)
+	resharing := resharing.NewResharing(eh.sessionID(startBlock), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil

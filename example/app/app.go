@@ -17,7 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm"
+	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
@@ -32,6 +32,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
 
+	"github.com/ChainSafe/chainbridge-hub/chains/evm"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
@@ -121,6 +122,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
@@ -129,7 +131,8 @@ func Run() error {
 				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
 				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
 
-				chain := evm.NewEVMChain(evmListener, executor, blockstore, config)
+				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
+				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
 			}

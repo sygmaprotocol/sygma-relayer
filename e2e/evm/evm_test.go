@@ -2,19 +2,20 @@ package evm_test
 
 import (
 	"context"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"math/big"
+	"math/rand"
 	"testing"
 
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -39,35 +40,39 @@ type TestClient interface {
 const ETHEndpoint1 = "ws://localhost:8546"
 const ETHEndpoint2 = "ws://localhost:8548"
 
-// Alice key is used by the relayer, Eve key is used as admin and depositter
+// Alice key is used by the relayer, Charlie key is used as admin and depositter
 func Test_EVM2EVM(t *testing.T) {
 	config := local.BridgeConfig{
-		BridgeAddr: common.HexToAddress("0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66"),
+		BridgeAddr: common.HexToAddress("0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235"),
 
-		Erc20Addr:        common.HexToAddress("0xb83065680e6AEc805774d8545516dF4e936F0dC0"),
-		Erc20HandlerAddr: common.HexToAddress("0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e"),
+		Erc20Addr:        common.HexToAddress("0xDA8556C2485048eee3dE91085347c3210785323c"),
+		Erc20HandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc721HandlerAddr: common.HexToAddress("0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b"),
-		Erc721Addr:        common.HexToAddress("0x05C5AFACf64A6082D4933752FfB447AED63581b1"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
+		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
+		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
+
+		Erc721Addr:        common.HexToAddress("0xd6D787253cc022E6839583aD0cBECfc9c60b581c"),
+		Erc721HandlerAddr: common.HexToAddress("0x1cd88Fa5848389E4027d29B267BAB561300CEA2A"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-		GenericHandlerAddr: common.HexToAddress("0xe1588E2c6a002AE93AeD325A910Ed30961874109"),
+		GenericHandlerAddr: common.HexToAddress("0xf1a8fDee59ecc8bDbAAA7cC0757876177d0FB255"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0x7573B1c6de00a73e98CDac5Cd2c4a252BdC87600"),
+		AssetStoreAddr:     common.HexToAddress("0x1C9D948eddE23f66f8c816241C7587bC2845fA7d"),
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    common.HexToAddress("0x08CFcF164dc2C4AB1E0966F236E87F913DE77b69"),
+		FeeHandlerAddr:    common.HexToAddress("0xbD259407A231Ad2a50df1e8CBaCe9A5E63EB65D5"),
 	}
 
-	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.EveKp.PrivateKey())
+	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.EveKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +141,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.EveKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
@@ -169,7 +174,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
-	tokenId := big.NewInt(1)
+	tokenId := big.NewInt(int64(rand.Int()))
 	metadata := "metadata.url"
 
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
@@ -235,7 +240,7 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
-	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(1)))
+	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
 
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
 		Priority: uint8(0), // slow
@@ -254,4 +259,65 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
 	s.Nil(err)
 	s.Equal(true, exists)
+}
+
+func (s *IntegrationTestSuite) Test_RetryDeposit() {
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
+
+	txOptions := transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	}
+
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20LockReleaseAddr, transactor1)
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
+
+	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
+	s.Nil(err)
+	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+
+	amountToDeposit := big.NewInt(1000000)
+
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
+		transactor.TransactOptions{
+			Priority: uint8(2), // fast
+			Value:    s.config1.Fee,
+		})
+	s.Nil(err)
+
+	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	s.Nil(err)
+	// check gas price of deposit tx - 140 gwei
+	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.NotNil(err)
+
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
+	if err != nil {
+		return
+	}
+
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, txOptions)
+	if err != nil {
+		return
+	}
+	s.Nil(err)
+	s.NotNil(retryTxHash)
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+
+	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
+	s.Nil(err)
+	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
+
+	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+	//Balance has increased
+	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
