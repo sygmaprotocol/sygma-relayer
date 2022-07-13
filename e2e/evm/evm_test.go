@@ -295,7 +295,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.Nil(err)
+	s.NotNil(err)
 
 	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
 	if err != nil {
