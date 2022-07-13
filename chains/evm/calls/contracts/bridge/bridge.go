@@ -373,3 +373,8 @@ func (c *BridgeContract) AdminChangeFeeHandler(
 		feeHandlerAddr,
 	)
 }
+
+func (c *BridgeContract) Retry(hash common.Hash, opts transactor.TransactOptions) (*common.Hash, error) {
+	log.Debug().Msgf("Retrying deposit from transaction: %s", hash.Hex())
+	return c.ExecuteTransaction("retry", opts, hash.Hex())
+}
