@@ -70,8 +70,6 @@ github.com/Azure/go-autorest/logger v0.1.0/go.mod h1:oExouG+K6PryycPJfVSxi/koC6L
 github.com/Azure/go-autorest/tracing v0.5.0/go.mod h1:r/s2XiOKccPW3HrqB+W0TQzfbtp2fGCgRFtBroKn4Dk=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/ChainSafe/chainbridge-core v0.0.0-20220613105328-520ba36caed6 h1:0vBU57klEDfCIzevo8s3rGIZgR7gEFoyXd9G7eRrWgk=
-github.com/ChainSafe/chainbridge-core v0.0.0-20220613105328-520ba36caed6/go.mod h1:3s5csqPlZSuMqSfO5MzWhvmoW92qBmdbLcRiOtiZFIU=
 github.com/ChainSafe/chainbridge-core v0.0.0-20220621171034-fe929c3b4cca h1:V/c+pYWBdyac8e/7twI+yyePE/OEBybovVEr/VVcDtA=
 github.com/ChainSafe/chainbridge-core v0.0.0-20220621171034-fe929c3b4cca/go.mod h1:3s5csqPlZSuMqSfO5MzWhvmoW92qBmdbLcRiOtiZFIU=
 github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9 h1:VMMy/iOjcLuygRYmEv9wCXipIg/+OwwaLflAAmtrB0k=
@@ -648,6 +646,8 @@ github.com/mitchellh/go-homedir v1.1.0 h1:lukF9ziXFxDFPkA1vsr5zpc1XuPDn/wFntq5mG
 github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/go-testing-interface v1.0.0/go.mod h1:kRemZodwjscx+RGhAo8eIhFbs2+BFgRtFPeD/KE+zxI=
 github.com/mitchellh/gox v0.4.0/go.mod h1:Sd9lOJ0+aimLBi73mGofS1ycjY8lL3uZM3JPS42BGNg=
+github.com/mitchellh/hashstructure/v2 v2.0.2 h1:vGKWl0YJqUNxE8d+h8f6NJLcCJrgbhC4NcD46KavDd4=
+github.com/mitchellh/hashstructure/v2 v2.0.2/go.mod h1:MG3aRVU/N29oo/V/IhBX8GR/zz4kQkprJgF2EVszyDE=
 github.com/mitchellh/iochan v1.0.0/go.mod h1:JwYml1nuB7xOzsp52dPpHFffvOCDupsG0QubkSMEySY=
 github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=

@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/comm"
 	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
 	"github.com/ChainSafe/chainbridge-hub/topology"
@@ -19,7 +20,7 @@ import (
 
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
-	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Refresh, error)
 }
 
 type KeygenEventHandler struct {
@@ -116,6 +117,15 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	topology, err := eh.topologyProvider.NetworkTopology()
 	if err != nil {
 		return err
+	}
+	hash, err := topology.Hash()
+	if err != nil {
+		return err
+	}
+	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
+	// if multiple refresh events inside block range use latest
+	if hash != expectedHash {
+		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
 	}
 	p2p.LoadPeers(eh.host, topology.Peers)
 

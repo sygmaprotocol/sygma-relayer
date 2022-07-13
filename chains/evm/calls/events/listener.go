@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/rs/zerolog/log"
 )
 
 type ChainClient interface {
@@ -37,11 +38,33 @@ func (l *Listener) FetchKeygenEvents(ctx context.Context, contractAddress common
 	return logs, nil
 }
 
-func (l *Listener) FetchRefreshEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {
+func (l *Listener) FetchRefreshEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*Refresh, error) {
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(KeyRefreshSig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
 	}
+	refreshEvents := make([]*Refresh, 0)
 
-	return logs, nil
+	for _, re := range logs {
+		r, err := l.UnpackRefresh(l.abi, re.Data)
+		if err != nil {
+			log.Err(err).Msgf("failed unpacking refresh event log")
+			continue
+		}
+
+		refreshEvents = append(refreshEvents, r)
+	}
+
+	return refreshEvents, nil
+}
+
+func (l *Listener) UnpackRefresh(abi abi.ABI, data []byte) (*Refresh, error) {
+	var rl Refresh
+
+	err := abi.UnpackIntoInterface(&rl, "KeyRefresh", data)
+	if err != nil {
+		return &Refresh{}, err
+	}
+
+	return &rl, nil
 }
