@@ -51,6 +51,7 @@ func Run() error {
 		panic(err)
 	}
 
+	topologyStore := topology.NewTopologyStore("store.json")
 	networkTopology, _ := topology.ProcessRawTopology(&topology.RawTopology{
 		Peers: []topology.RawPeer{
 			{PeerAddress: "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"},
@@ -58,6 +59,8 @@ func Run() error {
 			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
 		},
 	})
+	err = topologyStore.StoreTopology(networkTopology)
+	fmt.Println(err)
 
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {
