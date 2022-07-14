@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"strings"
@@ -104,6 +105,12 @@ func Run() error {
 
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
+
+				mod := config.StartBlock.Mod(config.StartBlock, config.BlockConfirmations)
+				// startBlock % blockConfirmations == 0
+				if mod.Cmp(big.NewInt(0)) == 0 {
+					config.StartBlock = config.StartBlock.Sub(config.StartBlock, mod)
+				}
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{

@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R4", "--latest=true"
+            "run", "--config=env", "--name=R4"
           ],
          "portMappings": [ 
            { 
