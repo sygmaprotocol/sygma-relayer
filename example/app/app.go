@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"syscall"
@@ -105,6 +106,12 @@ func Run() error {
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				if err != nil {
 					panic(err)
+				}
+
+				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
+				// startBlock % blockConfirmations == 0
+				if mod.Cmp(big.NewInt(0)) != 0 {
+					config.StartBlock.Sub(config.StartBlock, mod)
 				}
 
 				bridgeAddress := common.HexToAddress(config.Bridge)

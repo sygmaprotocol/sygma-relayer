@@ -106,10 +106,10 @@ func Run() error {
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
 
-				mod := config.StartBlock.Mod(config.StartBlock, config.BlockConfirmations)
+				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
 				// startBlock % blockConfirmations == 0
-				if mod.Cmp(big.NewInt(0)) == 0 {
-					config.StartBlock = config.StartBlock.Sub(config.StartBlock, mod)
+				if mod.Cmp(big.NewInt(0)) != 0 {
+					config.StartBlock.Sub(config.StartBlock, mod)
 				}
 				lastStoredBlock, err := blockstore.GetLastStoredBlock(*config.GeneralChainConfig.Id)
 				panicOnError(err)
@@ -153,15 +153,15 @@ func Run() error {
 		}
 	}
 
-	_ = relayer.NewRelayer(
+	r := relayer.NewRelayer(
 		chains,
 		&opentelemetry.ConsoleTelemetry{},
 	)
 
 	errChn := make(chan error)
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// go r.Start(ctx, errChn)
+	go r.Start(ctx, errChn)
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
