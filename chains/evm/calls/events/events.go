@@ -17,10 +17,15 @@ const (
 	KeyRefreshSig        EventSig = "KeyRefresh(string)"
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32)"
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
+	RetrySig             EventSig = "Retry(string)"
 )
 
 // Refresh struct holds key refresh event data
 type Refresh struct {
 	// SHA1 hash of topology file
 	Hash string
+}
+
+type RetryEvent struct {
+	TxHash string
 }

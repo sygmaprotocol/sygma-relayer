@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var TestTimeout = time.Second * 600
+var TestTimeout = time.Minute * 2
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
