@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/logger"
 	"math/big"
 	"os"
 	"os/signal"
@@ -60,6 +61,8 @@ func Run() error {
 		configuration, err = config.GetConfigFromFile(configFlag)
 		panicOnError(err)
 	}
+
+	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
 	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
