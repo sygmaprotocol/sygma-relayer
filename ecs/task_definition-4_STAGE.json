@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R4", "--blockstore=/mount/lvldbdata"
+            "run", "--config=env", "--name=R4", "--blockstore=/mount/r4/lvldbdata"
           ],
          "portMappings": [ 
            { 
