@@ -30,7 +30,7 @@ func (s *KeyshareStoreTestSuite) TearDownTest() {
 	os.Remove(s.path)
 }
 
-func (s *KeyshareStoreTestSuite) Test_RetreiveInvalidFile() {
+func (s *KeyshareStoreTestSuite) Test_RetrieveInvalidFile() {
 	_, err := s.keyshareStore.GetKeyshare()
 	s.NotNil(err)
 }

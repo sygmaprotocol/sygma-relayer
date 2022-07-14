@@ -74,6 +74,7 @@ func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
 
 type RefreshEventHandler struct {
 	topologyProvider topology.NetworkTopologyProvider
+	topologyStore    *topology.TopologyStore
 	eventListener    EventListener
 	bridgeAddress    common.Address
 	coordinator      *tss.Coordinator
@@ -85,6 +86,7 @@ type RefreshEventHandler struct {
 
 func NewRefreshEventHandler(
 	topologyProvider topology.NetworkTopologyProvider,
+	topologyStore *topology.TopologyStore,
 	eventListener EventListener,
 	coordinator *tss.Coordinator,
 	host host.Host,
@@ -95,6 +97,7 @@ func NewRefreshEventHandler(
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
 		topologyProvider: topologyProvider,
+		topologyStore:    topologyStore,
 		eventListener:    eventListener,
 		coordinator:      coordinator,
 		host:             host,
@@ -105,6 +108,8 @@ func NewRefreshEventHandler(
 	}
 }
 
+// HandleEvent fetches refresh events and in case of an event retrieves and stores the latest topology
+// and starts a resharing tss process
 func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
 	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
@@ -122,6 +127,11 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	if err != nil {
 		return err
 	}
+	err = eh.topologyStore.StoreTopology(topology)
+	if err != nil {
+		return err
+	}
+
 	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
 	// if multiple refresh events inside block range use latest
 	if hash != expectedHash {

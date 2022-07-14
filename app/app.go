@@ -61,9 +61,16 @@ func Run() error {
 
 	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	panicOnError(err)
+	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
+	networkTopology, err := topologyStore.Topology()
+	// if topology is not already in file, read from provider
+	if err != nil {
+		networkTopology, err := topologyProvider.NetworkTopology()
+		panicOnError(err)
 
-	networkTopology, err := topologyProvider.NetworkTopology()
-	panicOnError(err)
+		err = topologyStore.StoreTopology(networkTopology)
+		panicOnError(err)
+	}
 
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {
