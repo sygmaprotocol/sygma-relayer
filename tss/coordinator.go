@@ -81,6 +81,8 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 			{
 				err := fmt.Errorf("tss process timed out after %v", tssTimeout)
 				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process timed out")
+				tssProcess.Stop()
+				ctx.Done()
 				statusChn <- err
 				return
 			}
