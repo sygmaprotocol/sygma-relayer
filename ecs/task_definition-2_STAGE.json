@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R2", "--fresh=true"
+            "run", "--config=env", "--name=R2"
           ],
          "portMappings": [ 
            { 
