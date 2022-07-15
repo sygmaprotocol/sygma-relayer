@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
-	"github.com/ChainSafe/chainbridge-core/flags"
+	"github.com/ChainSafe/sygma-core/chains/evm/cli/deploy"
+	"github.com/ChainSafe/sygma-core/flags"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
 	"github.com/ChainSafe/chainbridge-hub/example/app"

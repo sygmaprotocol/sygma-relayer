@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
+	coreRelayer "github.com/ChainSafe/sygma-core/config/relayer"
 
 	"github.com/ChainSafe/chainbridge-hub/config"
 	"github.com/ChainSafe/chainbridge-hub/config/relayer"

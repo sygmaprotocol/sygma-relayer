@@ -9,11 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-core/chains/evm/listener"
+	"github.com/ChainSafe/sygma-core/relayer/message"
 
 	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/comm"

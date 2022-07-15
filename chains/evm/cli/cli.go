@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/deploy"
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"

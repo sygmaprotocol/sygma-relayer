@@ -2,9 +2,10 @@ package local
 
 import (
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/types"
+
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
+	"github.com/ChainSafe/sygma-core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )

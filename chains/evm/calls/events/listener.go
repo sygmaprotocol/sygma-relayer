@@ -11,7 +11,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 
 	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
 )
