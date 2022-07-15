@@ -91,7 +91,7 @@ func Run() error {
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
-	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
+	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)

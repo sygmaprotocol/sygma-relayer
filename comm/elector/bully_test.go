@@ -44,7 +44,7 @@ func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 }
 
 func (s *BullyTestSuite) SetupSuite() {
-	s.testProtocolID = "/chainbridge/coordinator/1.0.0"
+	s.testProtocolID = "/sygma/coordinator/1.0.0"
 	s.testSessionID = "1"
 	s.portOffset = 0
 }

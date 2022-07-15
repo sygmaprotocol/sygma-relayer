@@ -10,21 +10,21 @@ import (
 type SessionSubscriptionManager struct {
 	lock *sync.Mutex
 	// sessionID -> messageType -> subscriptionID
-	subscribersMap map[string]map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage
+	subscribersMap map[string]map[comm.MessageType]map[string]chan *comm.WrappedMessage
 }
 
 func NewSessionSubscriptionManager() SessionSubscriptionManager {
 	return SessionSubscriptionManager{
 		lock: &sync.Mutex{},
 		subscribersMap: make(
-			map[string]map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage,
+			map[string]map[comm.MessageType]map[string]chan *comm.WrappedMessage,
 		),
 	}
 }
 
 func (ms *SessionSubscriptionManager) getSubscribers(
 	sessionID string,
-	msgType comm.ChainBridgeMessageType,
+	msgType comm.MessageType,
 ) []chan *comm.WrappedMessage {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
@@ -40,7 +40,7 @@ func (ms *SessionSubscriptionManager) getSubscribers(
 }
 
 func (ms *SessionSubscriptionManager) subscribe(
-	sessionID string, msgType comm.ChainBridgeMessageType, channel chan *comm.WrappedMessage,
+	sessionID string, msgType comm.MessageType, channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
@@ -48,7 +48,7 @@ func (ms *SessionSubscriptionManager) subscribe(
 	_, ok := ms.subscribersMap[sessionID]
 	if !ok {
 		ms.subscribersMap[sessionID] =
-			map[comm.ChainBridgeMessageType]map[string]chan *comm.WrappedMessage{}
+			map[comm.MessageType]map[string]chan *comm.WrappedMessage{}
 	}
 
 	_, ok = ms.subscribersMap[sessionID][msgType]

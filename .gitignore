@@ -28,7 +28,7 @@ site/
 keys/
 *.key
 
-# Chainbridge
+# Sygma
 config.toml
 config.json
 *.block

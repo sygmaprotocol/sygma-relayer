@@ -9,7 +9,7 @@ import (
 )
 
 type Receiver interface {
-	ReceiveMessage(msg *comm.WrappedMessage, topic comm.ChainBridgeMessageType, sessionID string)
+	ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string)
 }
 
 type TestCommunication struct {
@@ -21,7 +21,7 @@ type TestCommunication struct {
 func (tc *TestCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
-	msgType comm.ChainBridgeMessageType,
+	msgType comm.MessageType,
 	sessionID string,
 	errChan chan error,
 ) {
@@ -42,7 +42,7 @@ func (tc *TestCommunication) Broadcast(
 
 func (ts *TestCommunication) Subscribe(
 	sessionID string,
-	topic comm.ChainBridgeMessageType,
+	topic comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	subID := comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))
@@ -54,6 +54,6 @@ func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 	delete(ts.Subscriptions, subscriptionID)
 }
 
-func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.ChainBridgeMessageType, sessionID string) {
+func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string) {
 	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }

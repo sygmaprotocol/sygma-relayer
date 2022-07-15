@@ -12,7 +12,7 @@ import (
 // It is defined as: SessionID-MessageType-SubscriptionIdentifier
 type SubscriptionID string
 
-func NewSubscriptionID(sessionID string, msgType ChainBridgeMessageType) SubscriptionID {
+func NewSubscriptionID(sessionID string, msgType MessageType) SubscriptionID {
 	return SubscriptionID(fmt.Sprintf("%s-%d-%d", sessionID, msgType, uint32(time.Now().UnixNano())))
 }
 
@@ -24,7 +24,7 @@ func (sID SubscriptionID) SessionID() string {
 	return sessID
 }
 
-func (sID SubscriptionID) MessageType() ChainBridgeMessageType {
+func (sID SubscriptionID) MessageType() MessageType {
 	_, msgType, _, err := sID.Unwrap()
 	if err != nil {
 		return msgType
@@ -40,7 +40,7 @@ func (sID SubscriptionID) SubscriptionIdentifier() string {
 	return subID
 }
 
-func (sID SubscriptionID) Unwrap() (string, ChainBridgeMessageType, string, error) {
+func (sID SubscriptionID) Unwrap() (string, MessageType, string, error) {
 	subIDParts := strings.Split(string(sID), "-")
 	if len(subIDParts) != 3 {
 		return "", Unknown, "", errors.New("invalid subscriptionID")
@@ -55,5 +55,5 @@ func (sID SubscriptionID) Unwrap() (string, ChainBridgeMessageType, string, erro
 		return "", Unknown, "", errors.New("invalid message type")
 	}
 
-	return subIDParts[0], ChainBridgeMessageType(msgType), subIDParts[2], nil
+	return subIDParts[0], MessageType(msgType), subIDParts[2], nil
 }

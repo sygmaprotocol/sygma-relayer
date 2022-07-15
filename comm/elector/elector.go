@@ -18,7 +18,7 @@ const (
 	Bully
 )
 
-const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
+const ProtocolID protocol.ID = "/sygma/coordinator/1.0.0"
 
 type CoordinatorElector interface {
 	Coordinator(ctx context.Context, peers peer.IDSlice) (peer.ID, error)
