@@ -5,9 +5,12 @@ package app
 
 import (
 	"github.com/ChainSafe/chainbridge-core/logger"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-hub/config"
@@ -27,8 +30,6 @@ func Run() error {
 	}
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
-
-	return nil
 
 	//// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	//topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
@@ -134,24 +135,24 @@ func Run() error {
 	//
 	//go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 	//
-	//sysErr := make(chan os.Signal, 1)
-	//signal.Notify(sysErr,
-	//	syscall.SIGTERM,
-	//	syscall.SIGINT,
-	//	syscall.SIGHUP,
-	//	syscall.SIGQUIT)
-	//
-	//relayerName := viper.GetString("name")
-	//log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
-	//
-	//select {
+	sysErr := make(chan os.Signal, 1)
+	signal.Notify(sysErr,
+		syscall.SIGTERM,
+		syscall.SIGINT,
+		syscall.SIGHUP,
+		syscall.SIGQUIT)
+
+	relayerName := viper.GetString("name")
+	// log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
+	log.Info().Msg(relayerName)
+	select {
 	//case err := <-errChn:
 	//	log.Error().Err(err).Msg("failed to listen and serve")
 	//	return err
-	//case sig := <-sysErr:
-	//	log.Info().Msgf("terminating got ` [%v] signal", sig)
-	//	return nil
-	//}
+	case sig := <-sysErr:
+		log.Info().Msgf("terminating got ` [%v] signal", sig)
+		return nil
+	}
 }
 
 func panicOnError(err error) {
