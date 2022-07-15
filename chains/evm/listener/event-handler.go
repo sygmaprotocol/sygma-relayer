@@ -205,8 +205,8 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 		return err
 	}
 
-	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
 	// if multiple refresh events inside block range use latest
+	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
 	if hash != expectedHash {
 		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
 	}
