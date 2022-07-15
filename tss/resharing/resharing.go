@@ -3,8 +3,6 @@ package resharing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"time"
 
 	"github.com/ChainSafe/chainbridge-hub/comm"
 	"github.com/ChainSafe/chainbridge-hub/keyshare"
@@ -15,10 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	SigningTimeout = time.Minute * 30
 )
 
 type startParams struct {
@@ -65,7 +59,6 @@ func NewResharing(
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "resharing").Logger(),
-			Timeout:       SigningTimeout,
 			Cancel:        func() {},
 		},
 		key:          key,
@@ -164,7 +157,6 @@ func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error
 
 // processEndMessage routes signature to result channel.
 func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
-	ticker := time.NewTicker(r.Timeout)
 	for {
 		select {
 		case key := <-endChn:
@@ -174,11 +166,6 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 				keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
 				err := r.storer.StoreKeyshare(keyshare)
 				r.ErrChn <- err
-				return
-			}
-		case <-ticker.C:
-			{
-				r.ErrChn <- fmt.Errorf("reshare process timed out in: %s", SigningTimeout)
 				return
 			}
 		case <-ctx.Done():

@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ChainSafe/chainbridge-hub/comm/elector"
@@ -18,6 +19,7 @@ import (
 var (
 	initiatePeriod     = 15 * time.Second
 	coordinatorTimeout = 15 * time.Minute
+	tssTimeout         = 30 * time.Minute
 )
 
 type TssProcess interface {
@@ -70,9 +72,20 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
 	retried := false
+	ticker := time.NewTicker(tssTimeout)
+	defer ticker.Stop()
 	defer tssProcess.Stop()
 	for {
 		select {
+		case <-ticker.C:
+			{
+				err := fmt.Errorf("tss process timed out after %v", tssTimeout)
+				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process timed out")
+				tssProcess.Stop()
+				ctx.Done()
+				statusChn <- err
+				return
+			}
 		case <-ctx.Done():
 			{
 				statusChn <- nil

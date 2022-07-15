@@ -33,8 +33,8 @@ jobs:
           mv $HOME/.local/bin/subkey-v2.0.0 $HOME/.local/bin/subkey
           chmod +x $HOME/.local/bin/subkey
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Test
-        run: make test
+      - name: Unit tests
+        run: go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep -v 'cbcli\|e2e\|tss')
       - name: Cover
         run:  echo "COVER=$(go tool cover -func cover.out | grep total | awk '{print substr($3, 1, length($3)-1)}')" >> $GITHUB_ENV
       - name: Create comment

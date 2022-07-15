@@ -155,7 +155,6 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen2", s.threshold, host, &communication, s.mockStorer)
-		keygen.Timeout = time.Second * 5
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
@@ -239,7 +238,6 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 		if err != nil {
 			panic(err)
 		}
-		signing.Timeout = time.Millisecond * 200
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, signing)

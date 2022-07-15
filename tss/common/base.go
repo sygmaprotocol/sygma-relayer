@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/ChainSafe/chainbridge-hub/comm"
 	"github.com/binance-chain/tss-lib/tss"
@@ -27,7 +26,6 @@ type BaseTss struct {
 	Communication comm.Communication
 	Peers         []peer.ID
 	Log           zerolog.Logger
-	Timeout       time.Duration
 
 	ErrChn chan error
 	Cancel context.CancelFunc
