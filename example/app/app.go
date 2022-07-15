@@ -17,32 +17,32 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
-	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
-	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
-	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
-	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-core/lvldb"
-	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/relayer"
-	"github.com/ChainSafe/chainbridge-core/store"
+	coreEvm "github.com/ChainSafe/sygma-core/chains/evm"
+	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
+	coreExecutor "github.com/ChainSafe/sygma-core/chains/evm/executor"
+	coreListener "github.com/ChainSafe/sygma-core/chains/evm/listener"
+	"github.com/ChainSafe/sygma-core/config/chain"
+	"github.com/ChainSafe/sygma-core/e2e/dummy"
+	"github.com/ChainSafe/sygma-core/flags"
+	"github.com/ChainSafe/sygma-core/lvldb"
+	"github.com/ChainSafe/sygma-core/opentelemetry"
+	"github.com/ChainSafe/sygma-core/relayer"
+	"github.com/ChainSafe/sygma-core/store"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-hub/comm/elector"
-	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
-	"github.com/ChainSafe/chainbridge-hub/config"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
-	"github.com/ChainSafe/chainbridge-hub/topology"
-	"github.com/ChainSafe/chainbridge-hub/tss"
+	"github.com/ChainSafe/sygma/chains/evm"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma/chains/evm/executor"
+	"github.com/ChainSafe/sygma/chains/evm/listener"
+	"github.com/ChainSafe/sygma/comm/elector"
+	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma/config"
+	"github.com/ChainSafe/sygma/keyshare"
+	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma/tss"
 )
 
 func Run() error {
@@ -83,7 +83,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
+	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)

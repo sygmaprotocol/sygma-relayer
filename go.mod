@@ -1,9 +1,9 @@
-module github.com/ChainSafe/chainbridge-hub
+module github.com/ChainSafe/sygma
 
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v0.0.0-20220621171034-fe929c3b4cca
+	github.com/ChainSafe/sygma-core v0.1.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/creasty/defaults v1.6.0
@@ -181,7 +181,7 @@ require (
 
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
-	github.com/binance-chain/tss-lib => github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9
+	github.com/binance-chain/tss-lib => github.com/ChainSafe/tss-lib v1.4.0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.2-alpha.regen.4
 	google.golang.org/protobuf => google.golang.org/protobuf v1.25.0
 )

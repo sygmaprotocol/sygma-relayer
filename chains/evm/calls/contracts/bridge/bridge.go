@@ -13,14 +13,14 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
-	"github.com/ChainSafe/chainbridge-core/types"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/deposit"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/sygma-core/chains/evm/executor/proposal"
+	"github.com/ChainSafe/sygma-core/types"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
 )
 
 type BridgeProposal struct {

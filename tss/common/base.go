@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/sygma/comm"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -82,7 +82,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.ChainBridgeMessageType) {
+func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) {
 	for {
 		select {
 		case msg := <-outChn:

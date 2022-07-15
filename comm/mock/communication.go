@@ -7,7 +7,7 @@ package mock_comm
 import (
 	reflect "reflect"
 
-	comm "github.com/ChainSafe/chainbridge-hub/comm"
+	comm "github.com/ChainSafe/sygma/comm"
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 )
@@ -36,7 +36,7 @@ func (m *MockCommunication) EXPECT() *MockCommunicationMockRecorder {
 }
 
 // Broadcast mocks base method.
-func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType comm.ChainBridgeMessageType, sessionID string, errChan chan error) {
+func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType comm.MessageType, sessionID string, errChan chan error) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID, errChan)
 }
@@ -48,7 +48,7 @@ func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionI
 }
 
 // Subscribe mocks base method.
-func (m *MockCommunication) Subscribe(sessionID string, msgType comm.ChainBridgeMessageType, channel chan *comm.WrappedMessage) comm.SubscriptionID {
+func (m *MockCommunication) Subscribe(sessionID string, msgType comm.MessageType, channel chan *comm.WrappedMessage) comm.SubscriptionID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", sessionID, msgType, channel)
 	ret0, _ := ret[0].(comm.SubscriptionID)

@@ -1,11 +1,11 @@
 package comm
 
-// ChainBridgeMessageType represents message type identificator
-type ChainBridgeMessageType uint8
+// MessageType represents message type identificator
+type MessageType uint8
 
 const (
 	// TssKeyGenMsg message type used for communicating key generation.
-	TssKeyGenMsg ChainBridgeMessageType = iota
+	TssKeyGenMsg MessageType = iota
 	// TssKeySignMsg message type used for communicating signature for specific message.
 	TssKeySignMsg
 	// TssInitiateMsg message type sent by the leader to signify preparation for a tss process.
@@ -33,7 +33,7 @@ const (
 )
 
 // String implements fmt.Stringer
-func (msgType ChainBridgeMessageType) String() string {
+func (msgType MessageType) String() string {
 	switch msgType {
 	case TssKeyGenMsg:
 		return "TssKeyGenMsg"

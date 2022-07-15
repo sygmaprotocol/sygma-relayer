@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-hub/comm/elector"
+	"github.com/ChainSafe/sygma/comm/elector"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"

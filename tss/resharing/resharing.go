@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/keyshare"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/ecdsa/resharing"
 	"github.com/binance-chain/tss-lib/tss"
