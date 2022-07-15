@@ -10,12 +10,22 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/rs/zerolog/log"
 )
 
 type NetworkTopology struct {
 	Peers     []*peer.AddrInfo
 	Threshold int
+}
+
+func (nt NetworkTopology) Hash() (string, error) {
+	hash, err := hashstructure.Hash(nt, hashstructure.FormatV2, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.FormatUint(hash, 10), nil
 }
 
 type NetworkTopologyProvider interface {
@@ -32,7 +42,7 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 		return nil, err
 	}
 
-	return topologyProvider{
+	return &topologyProvider{
 		client:       *client,
 		documentName: config.DocumentName,
 		bucketName:   config.BucketName,
@@ -54,7 +64,7 @@ type topologyProvider struct {
 	bucketName   string
 }
 
-func (t topologyProvider) NetworkTopology() (NetworkTopology, error) {
+func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
 	ctx := context.Background()
 
 	obj, err := t.client.GetObject(ctx, t.bucketName, t.documentName, minio.GetObjectOptions{})

@@ -40,6 +40,7 @@ type TopologyConfiguration struct {
 	BucketRegion   string `mapstructure:"BucketRegion" default:"us-east-1" json:"bucketRegion"`
 	BucketName     string `mapstructure:"BucketName" default:"mpc-topology" json:"bucketName"`
 	ServiceAddress string `mapstructure:"ServiceAddress" default:"buckets.chainsafe.io" json:"serviceAddress"`
+	Path           string `mapstructure:"Path" json:"path"`
 }
 
 type RawRelayerConfig struct {

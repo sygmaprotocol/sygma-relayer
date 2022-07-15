@@ -122,7 +122,7 @@ func Run() error {
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 

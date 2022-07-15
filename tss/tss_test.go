@@ -156,7 +156,9 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen2", s.threshold, host, &communication, s.mockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinator.TssTimeout = time.Millisecond
+		coordinators = append(coordinators, coordinator)
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -174,7 +176,6 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		err := <-status
 		s.NotNil(err)
 	}
-	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -239,7 +240,9 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 			panic(err)
 		}
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinator.TssTimeout = time.Nanosecond
+		coordinators = append(coordinators, coordinator)
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -252,7 +255,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	}
 
 	err := <-statusChn
-	s.Nil(err)
+	s.NotNil(err)
 	err = <-statusChn
 	s.NotNil(err)
 	err = <-statusChn
