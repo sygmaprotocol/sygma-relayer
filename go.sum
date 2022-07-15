@@ -72,8 +72,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ChainSafe/sygma-core v0.1.0 h1:reISjGBwKacdz8eDXiSTjl1YXTcT6hb6+UdjW95bOQE=
 github.com/ChainSafe/sygma-core v0.1.0/go.mod h1:/K9YU7LV2hW4LjHvqPPFVRdcSCj+YbwTl/TcTdepIpM=
-github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9 h1:VMMy/iOjcLuygRYmEv9wCXipIg/+OwwaLflAAmtrB0k=
-github.com/ChainSafe/tss-lib v1.3.3-0.20220519103656-04bb6cb3c3a9/go.mod h1:goGkFwXMDrd2ZnrNyRKIQ6Z9HZbQqUE0ZIK3j8EdGkI=
+github.com/ChainSafe/tss-lib v1.4.0 h1:Cz6TgNZI91CmwrCZRA1RmXqgDFXLYwYnezjaAQ4aHY0=
+github.com/ChainSafe/tss-lib v1.4.0/go.mod h1:goGkFwXMDrd2ZnrNyRKIQ6Z9HZbQqUE0ZIK3j8EdGkI=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
