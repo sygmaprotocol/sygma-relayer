@@ -38,6 +38,8 @@ type Coordinator struct {
 	pendingProcesses map[string]bool
 
 	CoordinatorTimeout time.Duration
+	TssTimeout         time.Duration
+	InitiatePeriod     time.Duration
 }
 
 func NewCoordinator(
@@ -46,11 +48,14 @@ func NewCoordinator(
 	electorFactory *elector.CoordinatorElectorFactory,
 ) *Coordinator {
 	return &Coordinator{
-		host:               host,
-		communication:      communication,
-		electorFactory:     electorFactory,
-		pendingProcesses:   make(map[string]bool),
+		host:             host,
+		communication:    communication,
+		electorFactory:   electorFactory,
+		pendingProcesses: make(map[string]bool),
+
 		CoordinatorTimeout: coordinatorTimeout,
+		TssTimeout:         tssTimeout,
+		InitiatePeriod:     initiatePeriod,
 	}
 }
 
@@ -69,19 +74,18 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
 	errChn := make(chan error)
-	c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
+	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
 	retried := false
-	ticker := time.NewTicker(tssTimeout)
+	ticker := time.NewTicker(c.TssTimeout)
 	defer ticker.Stop()
 	defer tssProcess.Stop()
 	for {
 		select {
 		case <-ticker.C:
 			{
-				err := fmt.Errorf("tss process timed out after %v", tssTimeout)
+				err := fmt.Errorf("tss process timed out after %v", c.TssTimeout)
 				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process timed out")
-				tssProcess.Stop()
 				ctx.Done()
 				statusChn <- err
 				return
@@ -174,7 +178,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
-	ticker := time.NewTicker(initiatePeriod)
+	ticker := time.NewTicker(c.InitiatePeriod)
 	defer ticker.Stop()
 	c.broadcastInitiateMsg(tssProcess.SessionID())
 	for {
