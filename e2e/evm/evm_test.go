@@ -24,9 +24,9 @@ import (
 	"github.com/ChainSafe/sygma-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-core/keystore"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
-	"github.com/ChainSafe/chainbridge-hub/e2e/evm"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/cli/local"
+	"github.com/ChainSafe/sygma/e2e/evm"
 )
 
 type TestClient interface {

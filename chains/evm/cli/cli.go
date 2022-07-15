@@ -6,8 +6,8 @@ import (
 
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/deploy"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
+	"github.com/ChainSafe/sygma/chains/evm/cli/deploy"
+	"github.com/ChainSafe/sygma/chains/evm/cli/local"
 )
 
 // BindCLI is public function to be invoked in example-app's cobra command

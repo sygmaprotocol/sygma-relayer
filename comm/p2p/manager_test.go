@@ -3,7 +3,7 @@ package p2p
 import (
 	"testing"
 
-	mock_network "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/stream"
+	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )

@@ -13,7 +13,7 @@ import (
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
 )
 
 type ChainClient interface {

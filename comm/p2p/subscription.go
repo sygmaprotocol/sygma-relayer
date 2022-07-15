@@ -3,7 +3,7 @@ package p2p
 import (
 	"sync"
 
-	comm "github.com/ChainSafe/chainbridge-hub/comm"
+	comm "github.com/ChainSafe/sygma/comm"
 )
 
 // SessionSubscriptionManager manages channel subscriptions by comm.SessionID

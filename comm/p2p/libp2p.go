@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	comm "github.com/ChainSafe/chainbridge-hub/comm"
+	comm "github.com/ChainSafe/sygma/comm"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"

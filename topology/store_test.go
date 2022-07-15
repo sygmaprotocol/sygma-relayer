@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-hub/topology"
+	"github.com/ChainSafe/sygma/topology"
 	"github.com/stretchr/testify/suite"
 )
 

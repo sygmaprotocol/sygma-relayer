@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
+	"github.com/ChainSafe/sygma/comm"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"

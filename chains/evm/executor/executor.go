@@ -19,9 +19,9 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/sygma-core/relayer/message"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/tss"
-	"github.com/ChainSafe/chainbridge-hub/tss/signing"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/tss"
+	"github.com/ChainSafe/sygma/tss/signing"
 )
 
 var (

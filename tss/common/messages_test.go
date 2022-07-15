@@ -3,7 +3,7 @@ package common_test
 import (
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/stretchr/testify/suite"
 )
 

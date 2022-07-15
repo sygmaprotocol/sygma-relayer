@@ -1,4 +1,4 @@
-module github.com/ChainSafe/chainbridge-hub
+module github.com/ChainSafe/sygma
 
 go 1.18
 

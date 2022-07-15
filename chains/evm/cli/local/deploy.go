@@ -7,11 +7,11 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/accessControlSegregator"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/feeHandler"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/generic"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/util"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/accessControlSegregator"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/generic"
+	"github.com/ChainSafe/sygma/chains/evm/calls/util"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"

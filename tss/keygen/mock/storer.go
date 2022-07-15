@@ -7,7 +7,7 @@ package mock_keygen
 import (
 	reflect "reflect"
 
-	keyshare "github.com/ChainSafe/chainbridge-hub/keyshare"
+	keyshare "github.com/ChainSafe/sygma/keyshare"
 	gomock "github.com/golang/mock/gomock"
 )
 

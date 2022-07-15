@@ -10,8 +10,8 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/deploy"
 	"github.com/ChainSafe/sygma-core/flags"
 
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/cli/local"
-	"github.com/ChainSafe/chainbridge-hub/example/app"
+	"github.com/ChainSafe/sygma/chains/evm/cli/local"
+	"github.com/ChainSafe/sygma/example/app"
 )
 
 var (
