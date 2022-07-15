@@ -30,7 +30,6 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
-	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_THRESHOLD", "3")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_PORT", "9000")
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY", "test-access-key")
@@ -59,7 +58,6 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 		MpcConfig: relayer.RawMpcRelayerConfig{
 			KeysharePath: "/cfg/keyshares/0.keyshare",
 			Key:          "test-pk",
-			Threshold:    "3",
 			Port:         "9000",
 			TopologyConfiguration: relayer.TopologyConfiguration{
 				AccessKey:      "test-access-key",

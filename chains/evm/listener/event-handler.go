@@ -154,7 +154,6 @@ type RefreshEventHandler struct {
 	host             host.Host
 	communication    comm.Communication
 	storer           resharing.SaveDataStorer
-	threshold        int
 }
 
 func NewRefreshEventHandler(
@@ -166,7 +165,6 @@ func NewRefreshEventHandler(
 	communication comm.Communication,
 	storer resharing.SaveDataStorer,
 	bridgeAddress common.Address,
-	threshold int,
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
 		topologyProvider: topologyProvider,
@@ -177,7 +175,6 @@ func NewRefreshEventHandler(
 		communication:    communication,
 		storer:           storer,
 		bridgeAddress:    bridgeAddress,
-		threshold:        threshold,
 	}
 }
 
@@ -212,7 +209,7 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	}
 	p2p.LoadPeers(eh.host, topology.Peers)
 
-	resharing := resharing.NewResharing(eh.sessionID(startBlock), eh.threshold, eh.host, eh.communication, eh.storer)
+	resharing := resharing.NewResharing(eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
 
 	return nil

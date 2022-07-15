@@ -15,7 +15,8 @@ import (
 )
 
 type NetworkTopology struct {
-	Peers []*peer.AddrInfo
+	Peers     []*peer.AddrInfo
+	Threshold int
 }
 
 func (nt NetworkTopology) Hash() (string, error) {
@@ -49,7 +50,8 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 }
 
 type RawTopology struct {
-	Peers []RawPeer `mapstructure:"Peers" json:"peers"`
+	Peers     []RawPeer `mapstructure:"Peers" json:"peers"`
+	Threshold string    `mapstructure:"Threshold" json:"threshold"`
 }
 
 type RawPeer struct {
@@ -102,5 +104,13 @@ func ProcessRawTopology(rawTopology *RawTopology) (NetworkTopology, error) {
 		}
 		peers = append(peers, addrInfo)
 	}
-	return NetworkTopology{Peers: peers}, nil
+
+	threshold, err := strconv.ParseInt(rawTopology.Threshold, 0, 0)
+	if err != nil {
+		return NetworkTopology{}, fmt.Errorf("unable to parse mpc threshold from topology %v", err)
+	}
+	if threshold <= 1 {
+		return NetworkTopology{}, fmt.Errorf("mpc threshold must be bigger then 1 %v", err)
+	}
+	return NetworkTopology{Peers: peers, Threshold: int(threshold)}, nil
 }

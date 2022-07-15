@@ -23,7 +23,6 @@ type MpcRelayerConfig struct {
 	Port                  uint16
 	KeysharePath          string
 	Key                   string
-	Threshold             int
 }
 
 type BullyConfig struct {
@@ -54,7 +53,6 @@ type RawRelayerConfig struct {
 type RawMpcRelayerConfig struct {
 	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
 	Key                   string                `mapstructure:"Key" json:"key"`
-	Threshold             string                `mapstructure:"Threshold" json:"threshold"`
 	Port                  string                `mapstructure:"Port" json:"port" default:"9000"`
 	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
 }
@@ -124,12 +122,6 @@ func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc port from config %v", err)
 	}
 	mpcConfig.Port = uint16(port)
-
-	threshold, err := strconv.ParseInt(rawConfig.MpcConfig.Threshold, 0, 0)
-	if err != nil {
-		return MpcRelayerConfig{}, fmt.Errorf("unable to parse mpc threshold from config %v", err)
-	}
-	mpcConfig.Threshold = int(threshold)
 
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
