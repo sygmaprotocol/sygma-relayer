@@ -112,10 +112,6 @@ func Run() error {
 				if mod.Cmp(big.NewInt(0)) != 0 {
 					config.StartBlock.Sub(config.StartBlock, mod)
 				}
-				lastStoredBlock, err := blockstore.GetLastStoredBlock(*config.GeneralChainConfig.Id)
-				panicOnError(err)
-				log.Info().Msgf("Starting block: %s", config.StartBlock.String())
-				log.Info().Msgf("Last stored block: %s", lastStoredBlock.String())
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
