@@ -3,17 +3,19 @@ package listener
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
-	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/rs/zerolog/log"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/rs/zerolog/log"
+
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/consts"
+
+	hubEvents "github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-hub/comm"
 	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
 	"github.com/ChainSafe/chainbridge-hub/topology"
@@ -27,7 +29,7 @@ import (
 
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
-	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*hubEvents.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
 	FetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error)
 }
@@ -145,6 +147,7 @@ func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
 
 type RefreshEventHandler struct {
 	topologyProvider topology.NetworkTopologyProvider
+	topologyStore    *topology.TopologyStore
 	eventListener    EventListener
 	bridgeAddress    common.Address
 	coordinator      *tss.Coordinator
@@ -156,6 +159,7 @@ type RefreshEventHandler struct {
 
 func NewRefreshEventHandler(
 	topologyProvider topology.NetworkTopologyProvider,
+	topologyStore *topology.TopologyStore,
 	eventListener EventListener,
 	coordinator *tss.Coordinator,
 	host host.Host,
@@ -166,6 +170,7 @@ func NewRefreshEventHandler(
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
 		topologyProvider: topologyProvider,
+		topologyStore:    topologyStore,
 		eventListener:    eventListener,
 		coordinator:      coordinator,
 		host:             host,
@@ -176,6 +181,8 @@ func NewRefreshEventHandler(
 	}
 }
 
+// HandleEvent fetches refresh events and in case of an event retrieves and stores the latest topology
+// and starts a resharing tss process
 func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
 	refreshEvents, err := eh.eventListener.FetchRefreshEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
@@ -188,6 +195,20 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	topology, err := eh.topologyProvider.NetworkTopology()
 	if err != nil {
 		return err
+	}
+	hash, err := topology.Hash()
+	if err != nil {
+		return err
+	}
+	err = eh.topologyStore.StoreTopology(topology)
+	if err != nil {
+		return err
+	}
+
+	// if multiple refresh events inside block range use latest
+	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
+	if hash != expectedHash {
+		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
 	}
 	p2p.LoadPeers(eh.host, topology.Peers)
 
