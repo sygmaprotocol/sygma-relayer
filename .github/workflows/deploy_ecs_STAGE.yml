@@ -1,17 +1,13 @@
 name: Deploy ECS
 
-on:
-  push:
-    branches:
-      - devops/add-ecs-deploy
-# on:
-#   workflow_run:
-#     workflows:
-#       - Unit tests
-#     branches:
-#       - main
-#     types:
-#       - completed
+ on:
+   workflow_run:
+     workflows:
+       - Unit tests
+     branches:
+       - main
+     types:
+       - completed
 
 env:
   AWS_REGION: "us-east-2"
@@ -63,7 +59,7 @@ jobs:
           service: relayer-service-${{ env.ENVIRONMENT }}-1
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
-          
+
       - name: Deploy to Amazon ECS - Relayer 2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
