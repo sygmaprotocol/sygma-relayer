@@ -3,7 +3,7 @@
 
 package main
 
-import "github.com/ChainSafe/chainbridge-hub/app"
+import "github.com/ChainSafe/sygma/app"
 
 func main() {
 	app.Execute()

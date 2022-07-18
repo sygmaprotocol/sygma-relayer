@@ -6,45 +6,47 @@ package app
 import (
 	"context"
 	"fmt"
-	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
-	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
-	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
-	"github.com/ChainSafe/chainbridge-core/logger"
-	"github.com/ChainSafe/chainbridge-core/lvldb"
-	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/relayer"
-	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/executor"
-	"github.com/ChainSafe/chainbridge-hub/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-hub/comm/elector"
-	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
-	"github.com/ChainSafe/chainbridge-hub/health"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
-	"github.com/ChainSafe/chainbridge-hub/topology"
-	"github.com/ChainSafe/chainbridge-hub/tss"
-	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"math/big"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-hub/config"
+	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
+
+	coreEvm "github.com/ChainSafe/sygma-core/chains/evm"
+	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmgaspricer"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
+	coreExecutor "github.com/ChainSafe/sygma-core/chains/evm/executor"
+	coreListener "github.com/ChainSafe/sygma-core/chains/evm/listener"
+	"github.com/ChainSafe/sygma-core/config/chain"
+	"github.com/ChainSafe/sygma-core/flags"
+	"github.com/ChainSafe/sygma-core/logger"
+	"github.com/ChainSafe/sygma-core/lvldb"
+	"github.com/ChainSafe/sygma-core/opentelemetry"
+	"github.com/ChainSafe/sygma-core/relayer"
+	"github.com/ChainSafe/sygma-core/store"
+
+	"github.com/ChainSafe/sygma/chains/evm"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma/chains/evm/executor"
+	"github.com/ChainSafe/sygma/chains/evm/listener"
+	"github.com/ChainSafe/sygma/comm/elector"
+	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma/config"
+	"github.com/ChainSafe/sygma/health"
+	"github.com/ChainSafe/sygma/keyshare"
+	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma/tss"
 )
 
 func Run() error {
@@ -65,9 +67,16 @@ func Run() error {
 	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
 	panicOnError(err)
+	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
+	networkTopology, err := topologyStore.Topology()
+	// if topology is not already in file, read from provider
+	if err != nil {
+		networkTopology, err := topologyProvider.NetworkTopology()
+		panicOnError(err)
 
-	networkTopology, err := topologyProvider.NetworkTopology()
-	panicOnError(err)
+		err = topologyStore.StoreTopology(networkTopology)
+		panicOnError(err)
+	}
 
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {
@@ -88,7 +97,7 @@ func Run() error {
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
-	comm := p2p.NewCommunication(host, "p2p/chainbridge", allowedPeers)
+	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
@@ -129,8 +138,8 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, configuration.RelayerConfig.MpcConfig.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 

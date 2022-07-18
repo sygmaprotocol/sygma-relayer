@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
+	coreRelayer "github.com/ChainSafe/sygma-core/config/relayer"
 
-	"github.com/ChainSafe/chainbridge-hub/config"
-	"github.com/ChainSafe/chainbridge-hub/config/relayer"
+	"github.com/ChainSafe/sygma/config"
+	"github.com/ChainSafe/sygma/config/relayer"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,7 +41,6 @@ func (s GetConfigTestSuite) Test_GetConfigFromENV() {
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
-	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_THRESHOLD", "3")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_PORT", "9000")
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY", "test-access-key")
@@ -72,7 +71,6 @@ func (s GetConfigTestSuite) Test_GetConfigFromENV() {
 				Port:         9000,
 				KeysharePath: "/cfg/keyshares/0.keyshare",
 				Key:          "test-pk",
-				Threshold:    3,
 			},
 			BullyConfig: relayer.BullyConfig{
 				PingWaitTime:     1 * time.Second,
@@ -138,8 +136,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						LogFile:                   "",
 					},
 					MpcConfig: relayer.RawMpcRelayerConfig{
-						Threshold: "5",
-						Port:      "2020",
+						Port: "2020",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
@@ -188,7 +185,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						LogLevel: "info",
 					},
 					MpcConfig: relayer.RawMpcRelayerConfig{
-						Threshold: "5",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
@@ -246,7 +242,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 							AccessKey: "access-key",
 							SecKey:    "sec-key",
 						},
-						Threshold: "5",
 						// Port: use default value,
 					},
 				},
@@ -266,8 +261,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 					HealthPort: 9001,
 					MpcConfig: relayer.MpcRelayerConfig{
-						Port:      9000,
-						Threshold: 5,
+						Port: 9000,
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:      "access-key",
 							SecKey:         "sec-key",
@@ -309,7 +303,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port:         "2020",
 						KeysharePath: "./share.key",
 						Key:          "./key.pk",
-						Threshold:    "5",
 					},
 					BullyConfig: relayer.RawBullyConfig{
 						PingWaitTime:     "1s",
@@ -338,7 +331,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port:         2020,
 						KeysharePath: "./share.key",
 						Key:          "./key.pk",
-						Threshold:    5,
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							AccessKey:      "access-key",
 							SecKey:         "sec-key",

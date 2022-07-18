@@ -3,23 +3,17 @@ package signing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
-	"time"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/keyshare"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
-)
-
-var (
-	SigningTimeout = time.Minute * 15
 )
 
 type SaveDataFetcher interface {
@@ -60,7 +54,6 @@ func NewSigning(
 			Peers:         key.Peers,
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
-			Timeout:       SigningTimeout,
 			Cancel:        func() {},
 		},
 		key: key,
@@ -172,7 +165,6 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 
 // processEndMessage routes signature to result channel.
 func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
-	ticker := time.NewTicker(s.Timeout)
 	for {
 		select {
 		case sig := <-endChn:
@@ -183,11 +175,6 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.Si
 					s.resultChn <- sig
 				}
 				s.ErrChn <- nil
-				return
-			}
-		case <-ticker.C:
-			{
-				s.ErrChn <- fmt.Errorf("signing process timed out in: %s", SigningTimeout)
 				return
 			}
 		case <-ctx.Done():

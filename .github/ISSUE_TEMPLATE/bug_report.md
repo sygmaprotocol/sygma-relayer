@@ -30,7 +30,6 @@ assignees: ''
 4.
 
 ## Versions
-ChainBridge commit (or docker tag):
-chainbridge-solidity version:
-chainbridge-substrate version:
+Sygma commit (or docker tag):
+chainbride-solidity version:
 Go version:

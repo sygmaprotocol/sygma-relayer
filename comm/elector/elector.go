@@ -3,9 +3,9 @@ package elector
 import (
 	"context"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
-	"github.com/ChainSafe/chainbridge-hub/config/relayer"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma/config/relayer"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -18,7 +18,7 @@ const (
 	Bully
 )
 
-const ProtocolID protocol.ID = "/chainbridge/coordinator/1.0.0"
+const ProtocolID protocol.ID = "/sygma/coordinator/1.0.0"
 
 type CoordinatorElector interface {
 	Coordinator(ctx context.Context, peers peer.IDSlice) (peer.ID, error)

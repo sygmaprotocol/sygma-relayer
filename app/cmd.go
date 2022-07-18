@@ -1,11 +1,12 @@
 package app
 
 import (
-	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/deploy"
-	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/ChainSafe/sygma-core/chains/evm/cli/deploy"
+	"github.com/ChainSafe/sygma-core/flags"
 )
 
 var (

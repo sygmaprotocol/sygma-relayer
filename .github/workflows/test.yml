@@ -13,7 +13,7 @@ jobs:
       matrix:
         go-version: [1.18.x]
         platform: [ ubuntu-latest ]
-    runs-on: ${{ matrix.platform }}
+    runs-on: self-hosted
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -27,14 +27,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Install Subkey
-        run: |
-          wget -P $HOME/.local/bin/ https://chainbridge.ams3.digitaloceanspaces.com/subkey-v2.0.0
-          mv $HOME/.local/bin/subkey-v2.0.0 $HOME/.local/bin/subkey
-          chmod +x $HOME/.local/bin/subkey
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Unit tests
-        run: go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep -v 'cbcli\|e2e\|tss')
+      - name: Tests
+        run: go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep -v 'cbcli\|e2e')
       - name: Cover
         run:  echo "COVER=$(go tool cover -func cover.out | grep total | awk '{print substr($3, 1, length($3)-1)}')" >> $GITHUB_ENV
       - name: Create comment

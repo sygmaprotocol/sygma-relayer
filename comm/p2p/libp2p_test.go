@@ -6,9 +6,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	mock_host "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/host"
-	mock_network "github.com/ChainSafe/chainbridge-hub/comm/p2p/mock/stream"
+	"github.com/ChainSafe/sygma/comm"
+	mock_host "github.com/ChainSafe/sygma/comm/p2p/mock/host"
+	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"

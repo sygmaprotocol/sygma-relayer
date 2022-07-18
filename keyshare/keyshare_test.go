@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +30,7 @@ func (s *KeyshareStoreTestSuite) TearDownTest() {
 	os.Remove(s.path)
 }
 
-func (s *KeyshareStoreTestSuite) Test_RetreiveInvalidFile() {
+func (s *KeyshareStoreTestSuite) Test_RetrieveInvalidFile() {
 	_, err := s.keyshareStore.GetKeyshare()
 	s.NotNil(err)
 }

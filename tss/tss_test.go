@@ -8,18 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-hub/config/relayer"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
+	"github.com/ChainSafe/sygma/config/relayer"
+	"github.com/ChainSafe/sygma/keyshare"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/comm/elector"
-	mock_comm "github.com/ChainSafe/chainbridge-hub/comm/mock"
-	"github.com/ChainSafe/chainbridge-hub/tss"
-	"github.com/ChainSafe/chainbridge-hub/tss/keygen"
-	mock_tss "github.com/ChainSafe/chainbridge-hub/tss/mock"
-	"github.com/ChainSafe/chainbridge-hub/tss/resharing"
-	"github.com/ChainSafe/chainbridge-hub/tss/signing"
-	tsstest "github.com/ChainSafe/chainbridge-hub/tss/test"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/comm/elector"
+	mock_comm "github.com/ChainSafe/sygma/comm/mock"
+	"github.com/ChainSafe/sygma/tss"
+	"github.com/ChainSafe/sygma/tss/keygen"
+	mock_tss "github.com/ChainSafe/sygma/tss/mock"
+	"github.com/ChainSafe/sygma/tss/resharing"
+	"github.com/ChainSafe/sygma/tss/signing"
+	tsstest "github.com/ChainSafe/sygma/tss/test"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -155,9 +155,10 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		}
 		communicationMap[host.ID()] = &communication
 		keygen := keygen.NewKeygen("keygen2", s.threshold, host, &communication, s.mockStorer)
-		keygen.Timeout = time.Second * 5
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinator.TssTimeout = time.Millisecond
+		coordinators = append(coordinators, coordinator)
 		processes = append(processes, keygen)
 	}
 	setupCommunication(communicationMap)
@@ -175,7 +176,6 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		err := <-status
 		s.NotNil(err)
 	}
-	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -239,9 +239,10 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 		if err != nil {
 			panic(err)
 		}
-		signing.Timeout = time.Millisecond * 200
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
-		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinator.TssTimeout = time.Nanosecond
+		coordinators = append(coordinators, coordinator)
 		processes = append(processes, signing)
 	}
 	setupCommunication(communicationMap)
@@ -254,7 +255,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	}
 
 	err := <-statusChn
-	s.Nil(err)
+	s.NotNil(err)
 	err = <-statusChn
 	s.NotNil(err)
 	err = <-statusChn

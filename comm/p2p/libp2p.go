@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	comm "github.com/ChainSafe/chainbridge-hub/comm"
+	comm "github.com/ChainSafe/sygma/comm"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -46,7 +46,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDS
 func (c Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
 	msg []byte,
-	msgType comm.ChainBridgeMessageType,
+	msgType comm.MessageType,
 	sessionID string,
 	errChan chan error,
 ) {
@@ -82,7 +82,7 @@ func (c Libp2pCommunication) Broadcast(
 
 func (c Libp2pCommunication) Subscribe(
 	sessionID string,
-	msgType comm.ChainBridgeMessageType,
+	msgType comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	subID := c.subscribe(sessionID, msgType, channel)
@@ -109,7 +109,7 @@ func (c Libp2pCommunication) UnSubscribe(
 func (c Libp2pCommunication) sendMessage(
 	to peer.ID,
 	msg []byte,
-	msgType comm.ChainBridgeMessageType,
+	msgType comm.MessageType,
 	sessionID string,
 ) error {
 	pi := c.h.Peerstore().PeerInfo(to)

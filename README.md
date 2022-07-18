@@ -1,4 +1,4 @@
-# Chainbridge Hub
+# Sygma bridge
 
 <a href="https://golang.org">
 <img alt="go" src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white" />
@@ -6,9 +6,9 @@
 
 &nbsp;
 
-:construction: *This is still unstable MVP implementation of ChainBridge HUB* :construction:
+:construction: *This is still unstable MVP implementation of Sygma* :construction:
 
-ChainBridge Hub uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-core) framework and replaces the relayer voting mechanism with the MPC signing process.
+Sygma bridge uses [sygma-core](https://github.com/ChainSafe/sygma-core) framework and replaces the relayer voting mechanism with the MPC signing process.
 
 &nbsp;
 

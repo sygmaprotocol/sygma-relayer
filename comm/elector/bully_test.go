@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-hub/comm/p2p"
-	"github.com/ChainSafe/chainbridge-hub/config/relayer"
-	"github.com/ChainSafe/chainbridge-hub/topology"
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma/config/relayer"
+	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -44,7 +44,7 @@ func TestRunCommunicationIntegrationTestSuite(t *testing.T) {
 }
 
 func (s *BullyTestSuite) SetupSuite() {
-	s.testProtocolID = "/chainbridge/coordinator/1.0.0"
+	s.testProtocolID = "/sygma/coordinator/1.0.0"
 	s.testSessionID = "1"
 	s.portOffset = 0
 }

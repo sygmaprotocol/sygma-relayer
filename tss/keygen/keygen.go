@@ -3,22 +3,16 @@ package keygen
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
-	"github.com/ChainSafe/chainbridge-hub/comm"
-	"github.com/ChainSafe/chainbridge-hub/keyshare"
-	"github.com/ChainSafe/chainbridge-hub/tss/common"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/keyshare"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	KeygenTimeout = time.Minute * 15
 )
 
 type SaveDataStorer interface {
@@ -50,7 +44,6 @@ func NewKeygen(
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
-			Timeout:       KeygenTimeout,
 			Cancel:        func() {},
 		},
 		storer:    storer,
@@ -128,7 +121,6 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
 func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
-	ticker := time.NewTicker(k.Timeout)
 	for {
 		select {
 		case key := <-endChn:
@@ -142,11 +134,6 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 				}
 
 				k.ErrChn <- nil
-				return
-			}
-		case <-ticker.C:
-			{
-				k.ErrChn <- fmt.Errorf("keygen process timed out in: %s", KeygenTimeout)
 				return
 			}
 		case <-ctx.Done():
