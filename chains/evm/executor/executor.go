@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	executionCheckPeriod = time.Second * 15
+	executionCheckPeriod = time.Minute
+	signingTimeout       = 30 * time.Minute
 )
 
 type MessageHandler interface {
@@ -106,11 +107,13 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 
 	sigChn := make(chan interface{})
-	statusChn := make(chan error, 1)
+	statusChn := make(chan error)
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
 	ticker := time.NewTicker(executionCheckPeriod)
+	defer ticker.Stop()
+	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
 	defer cancel()
 	for {
@@ -125,6 +128,10 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 
 				log.Info().Msgf("Sent proposals execution with hash: %s", hash)
 			}
+		case err := <-statusChn:
+			{
+				return err
+			}
 		case <-ticker.C:
 			{
 				isExecuted, err := e.bridge.IsProposalExecuted(proposals[0])
@@ -134,6 +141,10 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 
 				log.Info().Msgf("Successfully executed proposals %v", proposals)
 				return nil
+			}
+		case <-timeout.C:
+			{
+				return fmt.Errorf("execution timed out in %s", signingTimeout)
 			}
 		}
 	}
