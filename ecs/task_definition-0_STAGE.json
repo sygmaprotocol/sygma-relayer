@@ -71,6 +71,10 @@
                 "name": "CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY",
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY"
             },
+            {
+                "name": "CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
+            },
             { 
                 "name": "CBH_DOM_1",
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/CBH_DOM_1"
