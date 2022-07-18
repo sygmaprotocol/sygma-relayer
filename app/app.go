@@ -179,8 +179,8 @@ func Run() error {
 		syscall.SIGQUIT)
 
 	relayerName := viper.GetString("name")
-	// log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
-	log.Info().Msg(relayerName)
+	log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
+
 	select {
 	case err := <-errChn:
 		log.Error().Err(err).Msg("failed to listen and serve")
