@@ -2,6 +2,7 @@ package keyshare
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -74,12 +75,12 @@ func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
 
 	kb, err := ioutil.ReadFile(ks.path)
 	if err != nil {
-		return k, err
+		return k, fmt.Errorf("error on reading keyshare file: %s", err)
 	}
 
 	err = json.Unmarshal(kb, &k)
 	if err != nil {
-		return k, err
+		return k, fmt.Errorf("error on unmarshaling keyshare file: %s", err)
 	}
 
 	return k, err
