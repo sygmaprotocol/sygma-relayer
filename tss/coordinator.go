@@ -129,7 +129,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				case *SubsetError:
 					{
-						log.Warn().Str("SessionID", sessionID).Str("PeerID", err.Peer.Pretty()).Msgf(err.Error())
+						log.Info().Str("SessionID", sessionID).Str("PeerID", err.Peer.Pretty()).Msgf(err.Error())
 						tssProcess.Stop()
 						retried = true
 
