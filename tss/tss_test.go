@@ -346,5 +346,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	s.Nil(err)
 	err = <-statusChn
 	s.Nil(err)
+
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
