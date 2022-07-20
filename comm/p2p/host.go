@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
-	noise "github.com/libp2p/go-libp2p-noise"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	"github.com/rs/zerolog/log"
 )
 
