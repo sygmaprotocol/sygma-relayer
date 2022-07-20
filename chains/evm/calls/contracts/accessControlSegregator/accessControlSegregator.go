@@ -26,4 +26,3 @@ func NewAccessControlSegregatorContract(
 	b := common.FromHex(consts.AccessControlSegregatorBin)
 	return &AccessControlSegregatorContract{contracts.NewContract(address, a, b, client, transactor)}
 }
-
