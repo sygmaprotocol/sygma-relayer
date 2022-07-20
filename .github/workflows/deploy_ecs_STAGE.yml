@@ -5,13 +5,13 @@ on:
     workflows:
       - E2E Tests
     branches:
-      - main
+      - devops/add-ecs-deploy
     types:
       - completed
 
 env:
   AWS_REGION: "us-east-2"
-  ECR_REPOSITORY: relayer-stage
+  ECR_REPOSITORY: relayer-0-stage
   ENVIRONMENT: STAGE
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-0_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}-0
+          service: relayer-0-service-${{ env.ENVIRONMENT }}-0
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
@@ -56,7 +56,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-1_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}-1
+          service: relayer-1-service-${{ env.ENVIRONMENT }}-1
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
@@ -64,7 +64,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-2_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}-2
+          service: relayer-2-service-${{ env.ENVIRONMENT }}-2
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
@@ -72,7 +72,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-3_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}-3
+          service: relayer-3-service-${{ env.ENVIRONMENT }}-3
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 
@@ -80,6 +80,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ecs/task_definition-4_${{ env.ENVIRONMENT }}.json
-          service: relayer-service-${{ env.ENVIRONMENT }}-4
+          service: relayer-4-service-${{ env.ENVIRONMENT }}-4
           cluster: relayer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
