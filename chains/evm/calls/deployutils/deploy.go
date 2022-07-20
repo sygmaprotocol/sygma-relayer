@@ -65,10 +65,13 @@ AccessControl: %s
 FeeRouter: %s
 FeeHandlerWithOracle: %s
 ERC20Handler: %s
+ResourceID %v
 ===============
 ERC20: %s
 Symbol %s
 ===============
+Fee percent %v
+
 
 `,
 		r.BridgeAddr,
