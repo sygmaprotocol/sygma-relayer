@@ -5,7 +5,8 @@
 # Exit on failure
 set -ex
 
-geth init /root/genesis.json
+geth init /root/genesis_1.json
+geth init /root/genesis_2.json
 rm -f /root/.ethereum/keystore/*
 
 # If accounts are not set, set all accounts.
