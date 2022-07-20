@@ -7,12 +7,6 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/accessControlSegregator"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/generic"
-	"github.com/ChainSafe/sygma/chains/evm/calls/util"
-
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc20"
@@ -22,6 +16,11 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/sygma-core/keystore"
 	"github.com/ChainSafe/sygma-core/types"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/accessControlSegregator"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/generic"
+	"github.com/ChainSafe/sygma/chains/evm/calls/util"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog/log"
 )
@@ -88,6 +87,7 @@ func SetupEVMBridge(
 		"6ba6db6b", // startKeygen
 		"d2e5fae9", // endKeygen
 		"f5f63b39", // refreshKey
+		"a973ec93", //grantAccess
 	}
 	admins := make([]common.Address, len(adminFunctionHexes))
 	adminFunctions := make([][4]byte, len(adminFunctionHexes))
