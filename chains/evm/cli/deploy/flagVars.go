@@ -1,8 +1,6 @@
 package deploy
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ChainSafe/sygma-core/crypto/secp256k1"
@@ -43,7 +41,4 @@ var (
 var (
 	senderKeyPair *secp256k1.Keypair
 	url           string
-	gasPrice      *big.Int
-	prepare       bool
-	gasLimit      uint64
 )

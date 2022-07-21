@@ -7,20 +7,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/rs/zerolog/log"
-
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/sygma-core/types"
-
 	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/rs/zerolog/log"
 )
 
 type BridgeProposal struct {
