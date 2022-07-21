@@ -35,6 +35,8 @@ config.json
 gethdata1/
 gethdata2/
 centrifuge-chain/
+sygma
+
 # Solidity
 /solidity
 /cfgBuilder/*.toml
