@@ -30,14 +30,14 @@ import (
 
 var ErrNoDeploymentFlagsProvided = errors.New("provide at least one deployment flag. For help use --help")
 
-var DeployEVM = &cobra.Command{
-	Use:   "deploy",
+var deployCustomCLI = &cobra.Command{
+	Use:   "custom",
 	Short: "Deploy smart contracts",
 	Long:  "This command can be used to deploy all or some of the contracts required for bridging. Selection of contracts can be made by either specifying --all or a subset of flags",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
-	RunE: CallDeployCLI,
+	RunE: CallDeployCustom,
 	Args: func(cmd *cobra.Command, args []string) error {
 		err := ValidateDeployFlags(cmd, args)
 		if err != nil {
@@ -85,7 +85,7 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 }
 
 func init() {
-	BindDeployEVMFlags(DeployEVM)
+	BindDeployEVMFlags(deployCustomCLI)
 }
 
 func ValidateDeployFlags(cmd *cobra.Command, args []string) error {
@@ -155,12 +155,12 @@ func ProcessDeployFlags(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func CallDeployCLI(cmd *cobra.Command, args []string) error {
+func CallDeployCustom(cmd *cobra.Command, args []string) error {
 	txFabric := evmtransaction.NewTransaction
-	return DeployCLI(cmd, args, txFabric, &evmgaspricer.LondonGasPriceDeterminant{})
+	return DeployCustom(cmd, args, txFabric, &evmgaspricer.LondonGasPriceDeterminant{})
 }
 
-func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPricer utils.GasPricerWithPostConfig) error {
+func DeployCustom(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPricer utils.GasPricerWithPostConfig) error {
 	// fetch global flag values
 	url, gasLimit, gasPrice, senderKeyPair, _, err := flags.GlobalFlagValues(cmd)
 	if err != nil {

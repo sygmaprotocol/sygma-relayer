@@ -59,13 +59,11 @@ func init() {
 
 	// add commands to evm-cli root
 	// deploy
-	HubRootCLI.AddCommand(deploy.DeployEVM)
+	HubRootCLI.AddCommand(deploy.DeployCLI)
 
 	// add commands to evm-cli root
 	// local setup
 	HubRootCLI.AddCommand(local.LocalSetupCmd)
-
-	HubRootCLI.AddCommand(deploy.DeplotTestnetCMD)
 
 	HubRootCLI.AddCommand(fee.FeeHandlerCmd)
 

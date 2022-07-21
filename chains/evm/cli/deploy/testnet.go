@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var DeplotTestnetCMD = &cobra.Command{
-	Use:   "testnet-deploy",
+var deplotTestnet = &cobra.Command{
+	Use:   "testnet",
 	Short: "deploy testnet Sygma copy",
 	Long:  "Lighter version of deploy CLI that deploys exact version of Sygma bridge that has been deployed on Testnet",
 	PreRun: func(cmd *cobra.Command, args []string) {
@@ -58,7 +58,7 @@ func BindSDeployTestNetFlags(cmd *cobra.Command) {
 }
 
 func init() {
-	BindSDeployTestNetFlags(DeplotTestnetCMD)
+	BindSDeployTestNetFlags(deplotTestnet)
 }
 
 func deployTestnet(cmd *cobra.Command, args []string) error {
@@ -72,7 +72,7 @@ func deployTestnet(cmd *cobra.Command, args []string) error {
 		Erc20Symbol:      Erc20Symbol,
 		Erc20Name:        Erc20Name,
 		FeePercent:       FeePercent,
-		GasUsed:          FeeGasUsed,
+		FeeGas:           FeeGasUsed,
 	})
 	if err != nil {
 		return err
