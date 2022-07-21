@@ -26,7 +26,7 @@ func NewFeeRouter(
 	return &FeeRouter{contracts.NewContract(feeRouterAddress, a, b, client, transactor)}
 }
 
-// AdminSetResourceHandler sets providedeeHandler as handler for provided domainID and resourceID. https://github.com/ChainSafe/sygma-solidity/blob/master/contracts/handlers/FeeHandlerRouter.sol#L54
+// AdminSetResourceHandler sets handler for provided domainID and resourceID. https://github.com/ChainSafe/sygma-solidity/blob/master/contracts/handlers/FeeHandlerRouter.sol#L54
 func (c *FeeRouter) AdminSetResourceHandler(destDomainID uint8, resourceID types.ResourceID, feeHandlerAddress common.Address, opts transactor.TransactOptions) (*common.Hash, error) {
 	return c.ExecuteTransaction(
 		"adminSetResourceHandler",
