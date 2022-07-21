@@ -4,6 +4,7 @@ import (
 	"github.com/ChainSafe/sygma/chains/evm/cli"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/ChainSafe/sygma-core/flags"
 )
@@ -27,6 +28,8 @@ var (
 
 func init() {
 	flags.BindFlags(rootCMD)
+	rootCMD.PersistentFlags().String("name", "", "relayer name")
+	_ = viper.BindPFlag("name", rootCMD.PersistentFlags().Lookup("name"))
 }
 
 func Execute() {

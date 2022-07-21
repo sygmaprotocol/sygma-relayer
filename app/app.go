@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	coreListener "github.com/ChainSafe/sygma-core/chains/evm/listener"
 	"github.com/ChainSafe/sygma-core/config/chain"
 	"github.com/ChainSafe/sygma-core/flags"
+	"github.com/ChainSafe/sygma-core/logger"
 	"github.com/ChainSafe/sygma-core/lvldb"
 	"github.com/ChainSafe/sygma-core/opentelemetry"
 	"github.com/ChainSafe/sygma-core/relayer"
@@ -48,8 +50,9 @@ import (
 )
 
 func Run() error {
-	var configuration config.Config
 	var err error
+	var configuration config.Config
+
 	configFlag := viper.GetString(flags.ConfigFlagName)
 	if strings.ToLower(configFlag) == "env" {
 		configuration, err = config.GetConfigFromENV()
@@ -59,7 +62,10 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
+
+	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
 	networkTopology, err := topologyStore.Topology()
@@ -109,6 +115,12 @@ func Run() error {
 
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
+
+				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
+				// startBlock % blockConfirmations == 0
+				if mod.Cmp(big.NewInt(0)) != 0 {
+					config.StartBlock.Sub(config.StartBlock, mod)
+				}
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
@@ -165,6 +177,9 @@ func Run() error {
 		syscall.SIGINT,
 		syscall.SIGHUP,
 		syscall.SIGQUIT)
+
+	relayerName := viper.GetString("name")
+	log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
 
 	select {
 	case err := <-errChn:
