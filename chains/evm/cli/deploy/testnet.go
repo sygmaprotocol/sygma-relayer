@@ -14,7 +14,7 @@ import (
 var DeplotTestnetCMD = &cobra.Command{
 	Use:   "testnet-deploy",
 	Short: "deploy testnet Sygma copy",
-	Long:  "Lighter version of deploy CLI that deploys exact version of Sygma bridge that have been deployed on Testnet",
+	Long:  "Lighter version of deploy CLI that deploys exact version of Sygma bridge that has been deployed on Testnet",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
