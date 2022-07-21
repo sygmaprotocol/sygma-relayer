@@ -1,4 +1,4 @@
-package local
+package deploy
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/sygma-core/types"
+	"github.com/ChainSafe/sygma/chains/evm/cli/local"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )
@@ -36,27 +37,27 @@ func init() {
 
 func localSetup(cmd *cobra.Command, args []string) error {
 	// init client1
-	ethClient, err := evmclient.NewEVMClient(ethEndpoint1, CharlieKp.PrivateKey())
+	ethClient, err := evmclient.NewEVMClient(ethEndpoint1, local.CharlieKp.PrivateKey())
 	if err != nil {
 		return err
 	}
 
 	// init client2
-	ethClient2, err := evmclient.NewEVMClient(ethEndpoint2, CharlieKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ethEndpoint2, local.CharlieKp.PrivateKey())
 	if err != nil {
 		return err
 	}
 
 	// chain 1
 	// domainsId: 0
-	config, err := SetupEVMBridge(ethClient, fabric1, 1, CharlieKp.CommonAddress())
+	config, err := local.SetupEVMBridge(ethClient, fabric1, 1, local.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := SetupEVMBridge(ethClient2, fabric2, 2, CharlieKp.CommonAddress())
+	config2, err := local.SetupEVMBridge(ethClient2, fabric2, 2, local.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,7 @@ func localSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func prettyPrint(config, config2 BridgeConfig) {
+func prettyPrint(config, config2 local.BridgeConfig) {
 	fmt.Printf(`
 ===============================================
 🎉🎉🎉 Sygma Successfully Deployed 🎉🎉🎉
@@ -84,7 +85,7 @@ func prettyPrint(config, config2 BridgeConfig) {
 	)
 }
 
-func prettyFormatChainInfo(cfg BridgeConfig) string {
+func prettyFormatChainInfo(cfg local.BridgeConfig) string {
 	return fmt.Sprintf(`
 Bridge: %s
 Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)

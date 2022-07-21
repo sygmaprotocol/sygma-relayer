@@ -19,4 +19,5 @@ var DeployCLI = &cobra.Command{
 func init() {
 	DeployCLI.AddCommand(deployCustomCLI)
 	DeployCLI.AddCommand(deplotTestnet)
+	DeployCLI.AddCommand(LocalSetupCmd)
 }

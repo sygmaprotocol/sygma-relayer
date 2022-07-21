@@ -10,8 +10,6 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/utils"
 	"github.com/ChainSafe/sygma/chains/evm/cli/deploy"
-	"github.com/ChainSafe/sygma/chains/evm/cli/fee"
-	"github.com/ChainSafe/sygma/chains/evm/cli/local"
 	"github.com/spf13/cobra"
 )
 
@@ -60,11 +58,5 @@ func init() {
 	// add commands to evm-cli root
 	// deploy
 	HubRootCLI.AddCommand(deploy.DeployCLI)
-
-	// add commands to evm-cli root
-	// local setup
-	HubRootCLI.AddCommand(local.LocalSetupCmd)
-
-	HubRootCLI.AddCommand(fee.FeeHandlerCmd)
 
 }
