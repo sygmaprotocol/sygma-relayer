@@ -5,8 +5,8 @@
 # Exit on failure
 set -ex
 
-geth init /root/genesis_1.json
-geth init /root/genesis_2.json
+# Initialize different genesis file depending on set GENESIS_PATH
+geth init ${GENESIS_PATH}
 rm -f /root/.ethereum/keystore/*
 
 # If accounts are not set, set all accounts.
