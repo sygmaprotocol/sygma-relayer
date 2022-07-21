@@ -142,6 +142,9 @@ func SetupSygma(dc *DeployConfig) (*DeployResults, error) {
 		return nil, err
 	}
 	erc20Contract, err := DeployERC20Token(ethClient, t, dc.Erc20Name, dc.Erc20Symbol)
+	if err != nil {
+		return nil, err
+	}
 
 	// Setting up resourceID for ERC20 token
 	_, err = bridgeContract.AdminSetResource(*erc20HandlerContract.ContractAddress(), rID, *erc20Contract.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})

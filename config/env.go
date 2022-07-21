@@ -26,7 +26,7 @@ func loadFromEnv() (RawConfig, error) {
 
 	// load chain configs
 	index := 1
-	for true {
+	for {
 		rawDomainConfig := os.Getenv(fmt.Sprintf("CBH_DOM_%d", index))
 		if rawDomainConfig == "" {
 			break

@@ -26,6 +26,9 @@ func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, fhc
 		return nil, err
 	}
 	fh, err := DeployFeeHandlerWithOracle(ethClient, t, fhc.BridgeContractAddress, *fr.ContractAddress())
+	if err != nil {
+		return nil, err
+	}
 
 	// Setup fee
 	//Set FeeHandler on FeeRouter
