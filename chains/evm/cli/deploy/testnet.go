@@ -63,7 +63,17 @@ func init() {
 
 func deployTestnet(cmd *cobra.Command, args []string) error {
 
-	dr, err := deployutils.DeployAndInitiallySetupSygma(senderKeyPair.PrivateKey(), url, DomainId, ResourceID, FeeOracleAddress, Erc20Symbol, Erc20Name, FeePercent, FeeGasUsed)
+	dr, err := deployutils.SetupSygma(&deployutils.DeployConfig{
+		DeployKey:        senderKeyPair.PrivateKey(),
+		NodeURL:          url,
+		DomainID:         DomainId,
+		ResourceID:       ResourceID,
+		FeeOracleAddress: FeeOracleAddress,
+		Erc20Symbol:      Erc20Symbol,
+		Erc20Name:        Erc20Name,
+		FeePercent:       FeePercent,
+		GasUsed:          FeeGasUsed,
+	})
 	if err != nil {
 		return err
 	}
