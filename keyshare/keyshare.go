@@ -78,19 +78,10 @@ func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
 		return k, fmt.Errorf("error on reading keyshare file: %s", err)
 	}
 
-	kb = FixKeyshareFile(kb)
 	err = json.Unmarshal(kb, &k)
 	if err != nil {
 		return k, fmt.Errorf("error on unmarshaling keyshare file: %s", err)
 	}
 
 	return k, err
-}
-
-func FixKeyshareFile(data []byte) []byte {
-	err := json.Unmarshal(data, &Keyshare{})
-	if err != nil {
-		return data[:len(data)-2]
-	}
-	return data
 }
