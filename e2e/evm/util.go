@@ -14,7 +14,7 @@ import (
 )
 
 var TestTimeout = time.Minute * 2
-var setupTimeout = time.Minute * 10
+var setupTimeout = time.Minute * 30
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
