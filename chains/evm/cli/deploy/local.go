@@ -50,14 +50,14 @@ func localSetup(cmd *cobra.Command, args []string) error {
 
 	// chain 1
 	// domainsId: 0
-	config, err := deployutils.SetupEVMBridge(ethClient, fabric1, 1, 2, deployutils.CharlieKp.CommonAddress())
+	config, err := deployutils.TestSetupEVMBridge(ethClient, fabric1, 1, 2, deployutils.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := deployutils.SetupEVMBridge(ethClient2, fabric2, 2, 1, deployutils.CharlieKp.CommonAddress())
+	config2, err := deployutils.TestSetupEVMBridge(ethClient2, fabric2, 2, 1, deployutils.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func localSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func prettyPrint(config, config2 deployutils.BridgeConfig) {
+func prettyPrint(config, config2 *deployutils.BridgeConfig) {
 	fmt.Printf(`
 ===============================================
 🎉🎉🎉 Sygma Successfully Deployed 🎉🎉🎉
@@ -85,7 +85,7 @@ func prettyPrint(config, config2 deployutils.BridgeConfig) {
 	)
 }
 
-func prettyFormatChainInfo(cfg deployutils.BridgeConfig) string {
+func prettyFormatChainInfo(cfg *deployutils.BridgeConfig) string {
 	return fmt.Sprintf(`
 Bridge: %s
 Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)

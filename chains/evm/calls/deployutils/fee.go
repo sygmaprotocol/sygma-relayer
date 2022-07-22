@@ -22,6 +22,7 @@ type FeeHandlerSetupConfig struct {
 	FeeAmount        *big.Int // For BasicFeeHandler
 }
 type FeeHandlerDeployResutls struct {
+	FeeRouter         *feeHandler.FeeRouter
 	FeeHandlerAddress common.Address
 	FeeRouterAddress  common.Address
 }
@@ -92,6 +93,7 @@ func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, fhc *Fee
 		return nil, err
 	}
 	return &FeeHandlerDeployResutls{
+		FeeRouter:         fr,
 		FeeHandlerAddress: *fh.ContractAddress(),
 		FeeRouterAddress:  *fr.ContractAddress(),
 	}, nil

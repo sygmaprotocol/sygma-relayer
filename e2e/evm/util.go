@@ -14,6 +14,7 @@ import (
 )
 
 var TestTimeout = time.Minute * 2
+var setupTimeout = time.Minute * 10
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
@@ -53,9 +54,9 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 	}
 }
 
-func WaitUntilBridgeReady(client Client, bridge common.Address) error {
+func WaitUntilBridgeReady(client Client, feeHandlerAddress common.Address) error {
 	startBlock, _ := client.LatestBlock()
-	logs, err := client.FetchEventLogs(context.Background(), bridge, string(events.FeeChangedSig), big.NewInt(1), startBlock)
+	logs, err := client.FetchEventLogs(context.Background(), feeHandlerAddress, string(events.FeeChangedSig), big.NewInt(1), startBlock)
 	if err != nil {
 		return err
 	}
@@ -65,11 +66,13 @@ func WaitUntilBridgeReady(client Client, bridge common.Address) error {
 
 	query := ethereum.FilterQuery{
 		FromBlock: startBlock,
-		Addresses: []common.Address{bridge},
+		Addresses: []common.Address{feeHandlerAddress},
 		Topics: [][]common.Hash{
 			{events.FeeChangedSig.GetTopic()},
 		},
 	}
+	timeout := time.After(setupTimeout)
+
 	ch := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, ch)
 	if err != nil {
@@ -84,6 +87,8 @@ func WaitUntilBridgeReady(client Client, bridge common.Address) error {
 			if err != nil {
 				return err
 			}
+		case <-timeout:
+			return errors.New("test timed out waiting for bridge setup")
 		}
 	}
 }

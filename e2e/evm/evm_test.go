@@ -6,28 +6,25 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
-
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc721"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
-
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc20"
+	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/sygma-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-core/keystore"
-
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
 	"github.com/ChainSafe/sygma/e2e/evm"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/suite"
 )
 
 type TestClient interface {
@@ -37,6 +34,7 @@ type TestClient interface {
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
 const ETHEndpoint1 = "ws://localhost:8546"
@@ -65,7 +63,7 @@ func Test_EVM2EVM(t *testing.T) {
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    common.HexToAddress("0xbD259407A231Ad2a50df1e8CBaCe9A5E63EB65D5"),
+		FeeHandlerAddr:    common.HexToAddress("0xd48970BD2484Be0333372025806A418249A19AAe"),
 	}
 
 	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, deployutils.CharlieKp.PrivateKey())
@@ -131,6 +129,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+	log.Info().Msg("Bridge is set")
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
@@ -148,6 +147,8 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
+	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+
 	amountToDeposit := big.NewInt(1000000)
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
@@ -156,6 +157,8 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 			Value:    s.config1.Fee,
 		})
 	s.Nil(err)
+
+	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
@@ -173,6 +176,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	s.Nil(err)
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+
+	// Check that FeeHandler ETH balance increased
+	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, s.config1.Fee))
+
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
