@@ -3,19 +3,23 @@ package deployutils
 import (
 	"math/big"
 
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
+
+	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 type FeeHandlerSetupConfig struct {
-	DestDomainID          uint8
-	ResourceID            types.ResourceID
-	BridgeContractAddress common.Address
-	FeeOracleAddress      common.Address
-	FeePercent            uint16
-	FeeGas                uint32
-	FeeAmount             *big.Int // For BasicFeeHandler
+	DestDomainID     uint8
+	ResourceID       types.ResourceID
+	BridgeContract   *bridge.BridgeContract
+	FeeOracleAddress common.Address
+	FeePercent       uint16
+	FeeGas           uint32
+	FeeAmount        *big.Int // For BasicFeeHandler
 }
 type FeeHandlerDeployResutls struct {
 	FeeHandlerAddress common.Address
@@ -24,11 +28,11 @@ type FeeHandlerDeployResutls struct {
 
 func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, fhc *FeeHandlerSetupConfig) (*FeeHandlerDeployResutls, error) {
 	// Deploy
-	fr, err := DeployFeeRouter(ethClient, t, fhc.BridgeContractAddress)
+	fr, err := DeployFeeRouter(ethClient, t, *fhc.BridgeContract.ContractAddress())
 	if err != nil {
 		return nil, err
 	}
-	fh, err := DeployFeeHandlerWithOracle(ethClient, t, fhc.BridgeContractAddress, *fr.ContractAddress())
+	fh, err := DeployFeeHandlerWithOracle(ethClient, t, *fhc.BridgeContract.ContractAddress(), *fr.ContractAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +53,11 @@ func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, fhc
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = fhc.BridgeContract.AdminChangeFeeHandler(*fr.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
 	return &FeeHandlerDeployResutls{
 		FeeHandlerAddress: *fh.ContractAddress(),
 		FeeRouterAddress:  *fr.ContractAddress(),
@@ -57,11 +66,11 @@ func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, fhc
 
 func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, fhc *FeeHandlerSetupConfig) (*FeeHandlerDeployResutls, error) {
 	// Deploy
-	fr, err := DeployFeeRouter(ethClient, t, fhc.BridgeContractAddress)
+	fr, err := DeployFeeRouter(ethClient, t, *fhc.BridgeContract.ContractAddress())
 	if err != nil {
 		return nil, err
 	}
-	fh, err := DeployBasicFeeHandler(ethClient, t, fhc.BridgeContractAddress, *fr.ContractAddress())
+	fh, err := DeployBasicFeeHandler(ethClient, t, *fhc.BridgeContract.ContractAddress(), *fr.ContractAddress())
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +87,47 @@ func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, fhc *Fee
 	if err != nil {
 		return nil, err
 	}
+	_, err = fhc.BridgeContract.AdminChangeFeeHandler(*fr.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
 	return &FeeHandlerDeployResutls{
 		FeeHandlerAddress: *fh.ContractAddress(),
 		FeeRouterAddress:  *fr.ContractAddress(),
 	}, nil
+}
+
+func DeployFeeRouter(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
+) (*feeHandler.FeeRouter, error) {
+	feeRouterContract := feeHandler.NewFeeRouter(ethClient, common.Address{}, t)
+	_, err := feeRouterContract.DeployContract(bridgeContractAddress)
+	if err != nil {
+		return nil, err
+	}
+	return feeRouterContract, nil
+}
+
+func DeployFeeHandlerWithOracle(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress common.Address,
+) (*feeHandler.FeeHandlerWithOracleContract, error) {
+	feeHandlerContract := feeHandler.NewFeeHandlerWithOracleContract(ethClient, common.Address{}, t)
+	_, err := feeHandlerContract.DeployContract(bridgeContractAddress, feeRouterAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return feeHandlerContract, nil
+}
+
+func DeployBasicFeeHandler(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress common.Address,
+) (*feeHandler.BasicFeeHandlerContract, error) {
+	feeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
+	_, err := feeHandlerContract.DeployContract(bridgeContractAddress, feeRouterAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return feeHandlerContract, nil
 }
