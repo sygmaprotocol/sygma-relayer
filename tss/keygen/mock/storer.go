@@ -34,6 +34,21 @@ func (m *MockSaveDataStorer) EXPECT() *MockSaveDataStorerMockRecorder {
 	return m.recorder
 }
 
+// GetKeyshare mocks base method.
+func (m *MockSaveDataStorer) GetKeyshare() (keyshare.Keyshare, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeyshare")
+	ret0, _ := ret[0].(keyshare.Keyshare)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeyshare indicates an expected call of GetKeyshare.
+func (mr *MockSaveDataStorerMockRecorder) GetKeyshare() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyshare", reflect.TypeOf((*MockSaveDataStorer)(nil).GetKeyshare))
+}
+
 // LockKeyshare mocks base method.
 func (m *MockSaveDataStorer) LockKeyshare() {
 	m.ctrl.T.Helper()
