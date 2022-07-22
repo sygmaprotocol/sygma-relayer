@@ -141,6 +141,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 		err := <-status
 		s.Nil(err)
 	}
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -176,6 +177,7 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 		err := <-status
 		s.NotNil(err)
 	}
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -216,6 +218,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	s.Nil(err)
 	sig := <-resultChn
 	s.NotNil(sig)
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -260,6 +263,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	s.NotNil(err)
 	err = <-statusChn
 	s.NotNil(err)
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -293,6 +297,7 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 		err := <-status
 		s.Nil(err)
 	}
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
 
@@ -346,5 +351,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	s.Nil(err)
 	err = <-statusChn
 	s.Nil(err)
+
+	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
