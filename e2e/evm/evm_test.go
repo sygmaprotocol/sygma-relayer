@@ -148,6 +148,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	s.Nil(err)
 
 	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
 

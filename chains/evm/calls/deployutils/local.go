@@ -162,8 +162,6 @@ func TestSetupEVMBridge(
 	if err != nil {
 		return nil, err
 	}
-
 	log.Debug().Msgf("All deployments and preparations are done")
-
 	return conf, nil
 }
