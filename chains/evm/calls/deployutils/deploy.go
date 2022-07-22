@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc20"
@@ -131,6 +132,7 @@ func SetupSygma(dc *DeployConfig) (*DeployResults, error) {
 		dc.FeeOracleAddress,
 		dc.FeePercent,
 		dc.FeeGas,
+		big.NewInt(0),
 	})
 	if err != nil {
 		return nil, err
@@ -219,6 +221,18 @@ func DeployFeeHandlerWithOracle(
 	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress common.Address,
 ) (*feeHandler.FeeHandlerWithOracleContract, error) {
 	feeHandlerContract := feeHandler.NewFeeHandlerWithOracleContract(ethClient, common.Address{}, t)
+	_, err := feeHandlerContract.DeployContract(bridgeContractAddress, feeRouterAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return feeHandlerContract, nil
+}
+
+func DeployBasicFeeHandler(
+	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress common.Address,
+) (*feeHandler.BasicFeeHandlerContract, error) {
+	feeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
 	_, err := feeHandlerContract.DeployContract(bridgeContractAddress, feeRouterAddress)
 	if err != nil {
 		return nil, err

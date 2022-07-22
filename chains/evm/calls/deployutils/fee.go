@@ -1,6 +1,8 @@
 package deployutils
 
 import (
+	"math/big"
+
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-core/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +15,7 @@ type FeeHandlerSetupConfig struct {
 	FeeOracleAddress      common.Address
 	FeePercent            uint16
 	FeeGas                uint32
+	FeeAmount             *big.Int // For BasicFeeHandler
 }
 type FeeHandlerDeployResutls struct {
 	FeeHandlerAddress common.Address
@@ -43,6 +46,35 @@ func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, fhc
 	}
 	// Set fee properties (percentage, gasUsed)
 	_, err = fh.SetFeeProperties(fhc.FeeGas, fhc.FeePercent, transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	return &FeeHandlerDeployResutls{
+		FeeHandlerAddress: *fh.ContractAddress(),
+		FeeRouterAddress:  *fr.ContractAddress(),
+	}, nil
+}
+
+func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, fhc *FeeHandlerSetupConfig) (*FeeHandlerDeployResutls, error) {
+	// Deploy
+	fr, err := DeployFeeRouter(ethClient, t, fhc.BridgeContractAddress)
+	if err != nil {
+		return nil, err
+	}
+	fh, err := DeployBasicFeeHandler(ethClient, t, fhc.BridgeContractAddress, *fr.ContractAddress())
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup fee
+	//Set FeeHandler on FeeRouter
+	_, err = fr.AdminSetResourceHandler(fhc.DestDomainID, fhc.ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	// Set FeeOracle address  for FeeHandlers (if required)
+	// Set fee properties (percentage, gasUsed)
+	_, err = fh.ChangeFee(fhc.FeeAmount, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}

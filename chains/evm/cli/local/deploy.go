@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"math/big"
 
+	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
+
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc20"
@@ -18,7 +20,6 @@ import (
 	"github.com/ChainSafe/sygma-core/types"
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/accessControlSegregator"
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/generic"
 	"github.com/ChainSafe/sygma/chains/evm/calls/util"
 	"github.com/ethereum/go-ethereum/common"
@@ -54,6 +55,7 @@ type BridgeConfig struct {
 	Erc721ResourceID  types.ResourceID
 
 	FeeHandlerAddr    common.Address
+	FeeRouterAddress  common.Address
 	IsBasicFeeHandler bool
 	Fee               *big.Int
 }
@@ -67,31 +69,17 @@ func SetupEVMBridge(
 	ethClient EVMClient,
 	fabric calls.TxFabric,
 	domainID uint8,
+	destDomainID uint8,
 	mintTo common.Address,
 ) (BridgeConfig, error) {
 	staticGasPricer := evmgaspricer.NewStaticGasPriceDeterminant(ethClient, nil)
 	t := signAndSend.NewSignAndSendTransactor(fabric, staticGasPricer, ethClient)
 
 	accessControlSegregatorContract := accessControlSegregator.NewAccessControlSegregatorContract(ethClient, common.Address{}, t)
-	adminFunctionHexes := []string{
-		"80ae1c28", // adminPauseTransfers
-		"ffaac0eb", // adminUnpauseTransfers
-		"cb10f215", // adminSetResource
-		"5a1ad87c", // adminSetGenericResource
-		"8c0c2631", // adminSetBurnable
-		"edc20c3c", // adminSetDepositNonce
-		"d15ef64e", // adminSetForwarder
-		"9d33b6d4", // adminChangeAccessControl
-		"8b63aebf", // adminChangeFeeHandler
-		"bd2a1820", // adminWithdraw
-		"6ba6db6b", // startKeygen
-		"d2e5fae9", // endKeygen
-		"f5f63b39", // refreshKey
-		"a973ec93", //grantAccess
-	}
-	admins := make([]common.Address, len(adminFunctionHexes))
-	adminFunctions := make([][4]byte, len(adminFunctionHexes))
-	for i, functionHex := range adminFunctionHexes {
+
+	admins := make([]common.Address, len(deployutils.AdminFunctionHexes))
+	adminFunctions := make([][4]byte, len(deployutils.AdminFunctionHexes))
+	for i, functionHex := range deployutils.AdminFunctionHexes {
 		admins[i] = ethClient.From()
 		hexBytes, _ := hex.DecodeString(string(functionHex))
 		adminFunctions[i] = util.SliceTo4Bytes(hexBytes)
@@ -133,11 +121,6 @@ func SetupEVMBridge(
 		return BridgeConfig{}, err
 	}
 
-	feeHandlerContract, err := deployFeeHandler(ethClient, t, bridgeContractAddress)
-	if err != nil {
-		return BridgeConfig{}, err
-	}
-
 	erc20LockReleaseContract, erc20LockReleaseContractAddress, err := deployErc20LockRelease(
 		ethClient, t, bridgeContractAddress,
 	)
@@ -149,6 +132,16 @@ func SetupEVMBridge(
 	genericResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31))
 	erc721ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 	erc20LockReleaseResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
+
+	feeDeloyResutls, err := deployutils.SetupFeeBasicHandler(ethClient, t, &deployutils.FeeHandlerSetupConfig{
+		DestDomainID:          destDomainID,
+		ResourceID:            erc20ResourceID,
+		BridgeContractAddress: bridgeContractAddress,
+		FeeAmount:             big.NewInt(100000000000),
+	})
+	if err != nil {
+		return BridgeConfig{}, err
+	}
 
 	conf := BridgeConfig{
 		BridgeAddr: bridgeContractAddress,
@@ -171,7 +164,8 @@ func SetupEVMBridge(
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    *feeHandlerContract.ContractAddress(),
+		FeeHandlerAddr:    feeDeloyResutls.FeeHandlerAddress,
+		FeeRouterAddress:  feeDeloyResutls.FeeRouterAddress,
 	}
 
 	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
@@ -185,11 +179,6 @@ func SetupEVMBridge(
 	}
 
 	err = SetupGenericHandler(bridgeContract, conf)
-	if err != nil {
-		return BridgeConfig{}, err
-	}
-
-	err = SetupFeeHandler(bridgeContract, feeHandlerContract)
 	if err != nil {
 		return BridgeConfig{}, err
 	}
@@ -278,33 +267,6 @@ func deployErc721(
 		erc721ContractAddress, erc721HandlerContractAddress,
 	)
 	return erc721Contract, erc721ContractAddress, erc721HandlerContractAddress, nil
-}
-
-func deployFeeHandler(
-	ethClient EVMClient, t transactor.Transactor, bridgeContractAddress common.Address,
-) (*feeHandler.BasicFeeHandlerContract, error) {
-	feeHandlerContract := feeHandler.NewBasicFeeHandlerContract(ethClient, common.Address{}, t)
-	_, err := feeHandlerContract.DeployContract(bridgeContractAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	return feeHandlerContract, nil
-}
-
-func SetupFeeHandler(bridgeContract *bridge.BridgeContract, feeHandlerContract *feeHandler.BasicFeeHandlerContract) error {
-	_, err := bridgeContract.AdminChangeFeeHandler(*feeHandlerContract.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return err
-	}
-
-	basicFee := big.NewInt(100000000000)
-	_, err = feeHandlerContract.ChangeFee(basicFee, transactor.TransactOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func SetupERC20Handler(
