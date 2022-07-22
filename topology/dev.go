@@ -20,7 +20,7 @@ func (p fixedTopologyProvider) NetworkTopology() (NetworkTopology, error) {
         {"peerAddress": "/dns4/relayer-2.relayer-2/tcp/9000/p2p/QmVF5HpD7oPkRGFF62pJC6w2QQgD5fZ6qVAzupamugjsTC"},
         {"peerAddress": "/dns4/relayer-3.relayer-3/tcp/9000/p2p/QmZG9c35vUBehEDTkG1mLhw2J4jHG3VsYcJAuY1kqevohE"},
         {"peerAddress": "/dns4/relayer-4.relayer-4/tcp/9000/p2p/QmaFmSv7PkmCo5n4bDLRC8cvDkxDdnbw2sz9ZFNG3EaxHE"}
-    ], "threshold": 3}`
+    ], "threshold": "3"}`
 
 	rawTopology := &RawTopology{}
 	err := json.Unmarshal([]byte(fixedData), rawTopology)
