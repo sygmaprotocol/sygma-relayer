@@ -10,11 +10,6 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc721"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
@@ -23,19 +18,24 @@ import (
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/sygma-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-core/keystore"
-
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma/chains/evm/cli/local"
+	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
 	"github.com/ChainSafe/sygma/e2e/evm"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/suite"
 )
 
 type TestClient interface {
-	local.EVMClient
+	deployutils.EVMClient
 	LatestBlock() (*big.Int, error)
 	CodeAt(ctx context.Context, contractAddress common.Address, block *big.Int) ([]byte, error)
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
 	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
 const ETHEndpoint1 = "ws://localhost:8546"
@@ -43,14 +43,14 @@ const ETHEndpoint2 = "ws://localhost:8548"
 
 // Alice key is used by the relayer, Charlie key is used as admin and depositter
 func Test_EVM2EVM(t *testing.T) {
-	config := local.BridgeConfig{
+	config := deployutils.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235"),
 
 		Erc20Addr:        common.HexToAddress("0xDA8556C2485048eee3dE91085347c3210785323c"),
 		Erc20HandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0xbD259407A231Ad2a50df1e8CBaCe9A5E63EB65D5"),
 		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
@@ -63,17 +63,18 @@ func Test_EVM2EVM(t *testing.T) {
 		AssetStoreAddr:     common.HexToAddress("0x1C9D948eddE23f66f8c816241C7587bC2845fA7d"),
 
 		IsBasicFeeHandler: true,
-		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    common.HexToAddress("0xbD259407A231Ad2a50df1e8CBaCe9A5E63EB65D5"),
+		Fee:               deployutils.BasicFee,
+		FeeHandlerAddr:    common.HexToAddress("0xA81cC6305C6f62Ccd81fc7D1E2EC6F804aCB4512"),
+		FeeRouterAddress:  common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
 	}
 
-	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, local.CharlieKp.PrivateKey())
+	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, deployutils.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := dummy.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, local.CharlieKp.PrivateKey())
+	ethClient2, err := evmclient.NewEVMClient(ETHEndpoint2, deployutils.CharlieKp.PrivateKey())
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +99,7 @@ func NewEVM2EVMTestSuite(
 	fabric1, fabric2 calls.TxFabric,
 	client1, client2 TestClient,
 	gasPricer1, gasPricer2 calls.GasPricer,
-	config1, config2 local.BridgeConfig,
+	config1, config2 deployutils.BridgeConfig,
 ) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
 		fabric1:    fabric1,
@@ -120,16 +121,18 @@ type IntegrationTestSuite struct {
 	gasPricer2 calls.GasPricer
 	fabric1    calls.TxFabric
 	fabric2    calls.TxFabric
-	config1    local.BridgeConfig
-	config2    local.BridgeConfig
+	config1    deployutils.BridgeConfig
+	config2    deployutils.BridgeConfig
 }
 
 // SetupSuite waits until all contracts are deployed
 func (s *IntegrationTestSuite) SetupSuite() {
+	log.Info().Msg("Waiting for Bridge to set")
 	err := evm.WaitUntilBridgeReady(s.client2, s.config2.FeeHandlerAddr)
 	if err != nil {
 		panic(err)
 	}
+	log.Info().Msg("Bridge is set")
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
@@ -142,9 +145,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+
+	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
@@ -155,6 +161,8 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 			Value:    s.config1.Fee,
 		})
 	s.Nil(err)
+
+	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
@@ -172,6 +180,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	s.Nil(err)
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+
+	// Check that FeeHandler ETH balance increased
+	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, s.config1.Fee))
+
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
@@ -276,7 +290,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)

@@ -28,7 +28,7 @@ func loadFromEnv() (RawConfig, error) {
 
 	// load chain configs
 	index := 1
-	for true {
+	for {
 		rawDomainConfig := os.Getenv(fmt.Sprintf("%s_DOM_%d", EnvPrefix, index))
 		if rawDomainConfig == "" {
 			break
