@@ -150,7 +150,7 @@
        "logConfiguration": {
            "logDriver": "awslogs",
            "options": {
-               "awslogs-group": "/ecs/relaye-2-STAGE",
+               "awslogs-group": "/ecs/relayer-2-STAGE",
                "awslogs-region": "us-east-2",
                "awslogs-stream-prefix": "ecs"
            }
