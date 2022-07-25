@@ -33,7 +33,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, cli.HubRootCLI)
+	rootCMD.AddCommand(runCMD, cli.EVMRootCLI)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}
