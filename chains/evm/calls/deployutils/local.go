@@ -44,7 +44,7 @@ type BridgeConfig struct {
 	Fee               *big.Int
 }
 
-func TestSetupEVMBridge(
+func SetupLocalSygmaRelayer(
 	ethClient EVMClient,
 	fabric calls.TxFabric,
 	domainID uint8,

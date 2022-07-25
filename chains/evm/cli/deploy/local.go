@@ -50,14 +50,14 @@ func localSetup(cmd *cobra.Command, args []string) error {
 
 	// chain 1
 	// domainsId: 0
-	config, err := deployutils.TestSetupEVMBridge(ethClient, fabric1, 1, 2, deployutils.CharlieKp.CommonAddress())
+	config, err := deployutils.SetupLocalSygmaRelayer(ethClient, fabric1, 1, 2, deployutils.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
 
 	// chain 2
 	// domainId: 1
-	config2, err := deployutils.TestSetupEVMBridge(ethClient2, fabric2, 2, 1, deployutils.CharlieKp.CommonAddress())
+	config2, err := deployutils.SetupLocalSygmaRelayer(ethClient2, fabric2, 2, 1, deployutils.CharlieKp.CommonAddress())
 	if err != nil {
 		return err
 	}
