@@ -135,6 +135,9 @@ func SetupSygmaTestnet(dc *DeployConfig) (*DeployResults, error) {
 
 	// Set provided resourceID on FeeRouter
 	_, err = fr.AdminSetResourceHandler(dc.DestDomainID, rID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
 
 	dr := &DeployResults{
 		BridgeAddr:           *bridgeContract.ContractAddress(),
