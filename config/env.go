@@ -8,8 +8,10 @@ import (
 )
 
 type wrapper struct {
-	Config RawConfig `json:"cbh"`
+	Config RawConfig `json:"syg"`
 }
+
+const EnvPrefix = "SYG"
 
 func loadFromEnv() (RawConfig, error) {
 	// load relayer config
@@ -27,7 +29,7 @@ func loadFromEnv() (RawConfig, error) {
 	// load chain configs
 	index := 1
 	for {
-		rawDomainConfig := os.Getenv(fmt.Sprintf("CBH_DOM_%d", index))
+		rawDomainConfig := os.Getenv(fmt.Sprintf("%s_DOM_%d", EnvPrefix, index))
 		if rawDomainConfig == "" {
 			break
 		}
@@ -46,7 +48,7 @@ func loadFromEnv() (RawConfig, error) {
 func loadENVToJsonStructure() ([]byte, error) {
 	structure := map[string]interface{}{}
 	for _, e := range os.Environ() {
-		if strings.Contains(e, "CBH") {
+		if strings.Contains(e, EnvPrefix) {
 			pair := strings.SplitN(e, "=", 2)
 			indexes := strings.Split(pair[0], "_")
 			mountMap(structure, indexes, pair[1])
