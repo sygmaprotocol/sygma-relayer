@@ -12,6 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var BasicFee = big.NewInt(100000000000)
+
 type EVMClient interface {
 	calls.ContractCallerDispatcher
 	evmgaspricer.GasPriceClient
@@ -95,6 +97,33 @@ func TestSetupEVMBridge(
 	erc721ResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31))
 	erc20LockReleaseResourceID := calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
 
+	// Deploy FeeRouter and set it up on the bridge contact
+	fr, err := SetupFeeRouter(ethClient, t, bridgeContract)
+	if err != nil {
+		return nil, err
+	}
+	fh, err := DeployBasicFeeHandler(ethClient, t, bridgeContractAddress, *fr.ContractAddress())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc20ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	_, err = fr.AdminSetResourceHandler(destDomainID, genericResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc20LockReleaseResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+
 	conf := &BridgeConfig{
 		BridgeAddr: bridgeContractAddress,
 
@@ -116,6 +145,8 @@ func TestSetupEVMBridge(
 
 		IsBasicFeeHandler: true,
 		Fee:               big.NewInt(100000000000),
+		FeeHandlerAddr:    *fh.ContractAddress(),
+		FeeRouterAddress:  *fr.ContractAddress(),
 	}
 
 	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
@@ -138,30 +169,11 @@ func TestSetupEVMBridge(
 		return nil, err
 	}
 
-	feeDeloyResutls, err := SetupFeeBasicHandler(ethClient, t, &FeeHandlerSetupConfig{
-		DestDomainID:   destDomainID,
-		ResourceID:     erc20ResourceID,
-		BridgeContract: bridgeContract,
-		FeeAmount:      big.NewInt(100000000000),
-	})
+	_, err = fh.ChangeFee(BasicFee, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	conf.FeeHandlerAddr = feeDeloyResutls.FeeHandlerAddress
-	conf.FeeRouterAddress = feeDeloyResutls.FeeRouterAddress
 
-	_, err = feeDeloyResutls.FeeRouter.AdminSetResourceHandler(destDomainID, erc721ResourceID, feeDeloyResutls.FeeHandlerAddress, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
-	_, err = feeDeloyResutls.FeeRouter.AdminSetResourceHandler(destDomainID, genericResourceID, feeDeloyResutls.FeeHandlerAddress, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
-	_, err = feeDeloyResutls.FeeRouter.AdminSetResourceHandler(destDomainID, erc20LockReleaseResourceID, feeDeloyResutls.FeeHandlerAddress, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
 	log.Debug().Msgf("All deployments and preparations are done")
 	return conf, nil
 }

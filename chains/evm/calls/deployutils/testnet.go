@@ -3,7 +3,6 @@ package deployutils
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"math/big"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmgaspricer"
@@ -88,8 +87,8 @@ ResourceID %v
 	)
 }
 
-// DeployAndInitiallySetupSygma deploys all neccessary smart contracts that in current time deployed on TestNet environment. Should be used for test purposes
-func SetupSygma(dc *DeployConfig) (*DeployResults, error) {
+// SetupSygmaTestnet deploys all neccessary smart contracts that in current time deployed on TestNet environment. Should be used for test purposes
+func SetupSygmaTestnet(dc *DeployConfig) (*DeployResults, error) {
 
 	ethClient, err := evmclient.NewEVMClient(dc.NodeURL, dc.DeployKey)
 	if err != nil {
@@ -112,45 +111,43 @@ func SetupSygma(dc *DeployConfig) (*DeployResults, error) {
 		return nil, err
 	}
 
-	feeResults, err := SetupFeeHandlerWithOracle(ethClient, t, &FeeHandlerSetupConfig{
-		dc.DestDomainID,
-		rID,
-		bridgeContract,
-		dc.FeeOracleAddress,
-		dc.FeePercent,
-		dc.FeeGas,
-		big.NewInt(0),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Setting up deployed FeeRouter on the Bridge
-	_, err = bridgeContract.AdminChangeFeeHandler(feeResults.FeeHandlerAddress, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
 	erc20Contract, err := DeployERC20Token(ethClient, t, dc.Erc20Name, dc.Erc20Symbol)
 	if err != nil {
 		return nil, err
 	}
-
 	// Setting up resourceID for ERC20 token
 	_, err = bridgeContract.AdminSetResource(*erc20HandlerContract.ContractAddress(), rID, *erc20Contract.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
+
+	// Deploy FeeRouter and set it up on the bridge contact
+	fr, err := SetupFeeRouter(ethClient, t, bridgeContract)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deploy FeeHandlerWithOracle set FeeOracle address and FeeProperties
+	fh, err := SetupFeeHandlerWithOracle(ethClient, t, *bridgeContract.ContractAddress(), *fr.ContractAddress(), dc.FeeOracleAddress, dc.FeeGas, dc.FeePercent)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set provided resourceID on FeeRouter
+	_, err = fr.AdminSetResourceHandler(dc.DestDomainID, rID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+
 	dr := &DeployResults{
 		BridgeAddr:           *bridgeContract.ContractAddress(),
 		DomainID:             dc.DomainID,
 		AccessControlAddress: *accessControlContract.ContractAddress(),
-		FeeHandlerAddress:    feeResults.FeeHandlerAddress,
-		FeeRouterAddress:     feeResults.FeeRouterAddress,
+		FeeHandlerAddress:    *fh.ContractAddress(),
+		FeeRouterAddress:     *fr.ContractAddress(),
 		Erc20HandlerAddr:     *erc20HandlerContract.ContractAddress(),
 		Erc20Addr:            *erc20Contract.ContractAddress(),
 		ERC20Sybmol:          dc.Erc20Symbol,
 		Erc20ResourceID:      rID,
 		Fee:                  dc.FeePercent,
 	}
+
 	return dr, nil
 }
