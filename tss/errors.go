@@ -13,3 +13,11 @@ type CoordinatorError struct {
 func (ce *CoordinatorError) Error() string {
 	return fmt.Sprintf("coordinator %s non-responsive", ce.Coordinator.Pretty())
 }
+
+type SubsetError struct {
+	Peer peer.ID
+}
+
+func (se *SubsetError) Error() string {
+	return fmt.Sprintf("party %s not in signing subset", se.Peer)
+}

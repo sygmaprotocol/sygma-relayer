@@ -19,6 +19,7 @@ services:
       - NODEKEY=98ab333347a12cef869f92b3de44085f9e44891e513bcf1d76a99eecbcdd5e17
       - NETWORKID=1
       - MINE=true
+      - GENESIS_PATH=/root/genesis_1.json
     entrypoint: "/root/entrypoint.sh"
 
   # SECOND CHAIN
@@ -38,6 +39,7 @@ services:
       - NODEKEY=98ab333347a12cef869f92b3de44085f9e44891e513bcf1d76a99eecbcdd5e17
       - NETWORKID=2
       - MINE=true
+      - GENESIS_PATH=/root/genesis_2.json
     entrypoint: "/root/entrypoint.sh"
 
   setup:

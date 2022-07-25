@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/ChainSafe/sygma/comm"
-	"github.com/ChainSafe/sygma/keyshare"
-	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
+
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/keyshare"
+	errors "github.com/ChainSafe/sygma/tss"
+	"github.com/ChainSafe/sygma/tss/common"
 )
 
 type SaveDataFetcher interface {
@@ -82,8 +84,7 @@ func (s *Signing) Start(
 	}
 
 	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
-		s.Log.Info().Msgf("Party is not in signing subset")
-		s.ErrChn <- nil
+		s.ErrChn <- &errors.SubsetError{Peer: s.Host.ID()}
 		return
 	}
 

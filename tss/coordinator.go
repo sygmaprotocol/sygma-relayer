@@ -18,7 +18,7 @@ import (
 
 var (
 	initiatePeriod     = 15 * time.Second
-	coordinatorTimeout = 15 * time.Minute
+	coordinatorTimeout = 30 * time.Minute
 	tssTimeout         = 30 * time.Minute
 )
 
@@ -126,6 +126,15 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 						}
 
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
+					}
+				case *SubsetError:
+					{
+						log.Info().Str("SessionID", sessionID).Str("PeerID", err.Peer.Pretty()).Msgf(err.Error())
+						tssProcess.Stop()
+						retried = true
+
+						// wait for start message if existing singing process fails
+						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""))
 					}
 				default:
 					{

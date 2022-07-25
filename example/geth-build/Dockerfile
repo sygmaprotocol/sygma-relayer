@@ -4,7 +4,8 @@ FROM ethereum/client-go:v1.10.8
 
 WORKDIR /root
 
-COPY ./genesis.json .
+COPY ./genesis_1.json .
+COPY ./genesis_2.json .
 COPY ./keystore /root/keystore
 COPY entrypoint.sh .
 COPY ./password.txt .
