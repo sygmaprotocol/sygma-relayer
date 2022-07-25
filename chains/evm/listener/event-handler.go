@@ -127,6 +127,11 @@ func NewKeygenEventHandler(
 }
 
 func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	key, err := eh.storer.GetKeyshare()
+	if (key.Threshold != 0) && (err == nil) {
+		return nil
+	}
+
 	keygenEvents, err := eh.eventListener.FetchKeygenEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)

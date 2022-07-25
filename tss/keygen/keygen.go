@@ -19,6 +19,7 @@ type SaveDataStorer interface {
 	StoreKeyshare(keyshare keyshare.Keyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
+	GetKeyshare() (keyshare.Keyshare, error)
 }
 
 type Keygen struct {
