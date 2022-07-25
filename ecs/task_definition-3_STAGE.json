@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R3", "--blockstore=/mount/r3/lvldbdata"
+            "run", "--config=env", "--latest=true", "--name=R3", "--blockstore=/mount/r3/lvldbdata"
           ],
          "portMappings": [ 
            { 
