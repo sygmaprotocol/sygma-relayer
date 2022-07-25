@@ -40,13 +40,13 @@ An example of a JSON configuration file can be found inside `/example/cfg` folde
 
 ### ENV variables
 
-_Each ENV variable needs to be prefixed with CBH._
+_Each ENV variable needs to be prefixed with SYG._
 
 Properties of `RelayerConfig` are expected to be defined as separate ENV variables
 where ENV variable name reflects properties position in the structure.
 
 For example, if you want to set `Config.RelayerConfig.MpcConfig.Port` this would
-translate to ENV variable named `CBH_RELAYER_MPCCONFIG_PORT`.
+translate to ENV variable named `SYG_RELAYER_MPCCONFIG_PORT`.
 
 Each `ChainConfig` is defined as one ENV variable, where its content is JSON configuration for one chain/domain.
-Variables are named like this: `CBH_DOM_X` where `X` is domain id.
+Variables are named like this: `SYG_DOM_X` where `X` is domain id.
