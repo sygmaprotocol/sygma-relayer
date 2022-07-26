@@ -177,9 +177,19 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
+	errChan := make(chan error)
 	go c.communication.Broadcast(
-		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID, nil,
+		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID, errChan,
 	)
+
+	go func() {
+		for {
+			select {
+			case e := <-errChan:
+				log.Error().Msgf("error on broadcasting initiate message: %+v", e)
+			}
+		}
+	}()
 }
 
 // initiate sends initiate message to all peers and waits
