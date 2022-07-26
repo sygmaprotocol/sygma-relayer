@@ -4,7 +4,6 @@
 package app
 
 import (
-	"github.com/ChainSafe/sygma/health"
 	"os"
 	"os/signal"
 	"syscall"
@@ -132,8 +131,7 @@ func Run() error {
 	//defer cancel()
 	//go r.Start(ctx, errChn)
 
-	// configuration.RelayerConfig.HealthPort
-	go health.StartHealthEndpoint(9001)
+	// go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
