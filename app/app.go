@@ -28,6 +28,7 @@ import (
 	"github.com/ChainSafe/sygma/comm/elector"
 	"github.com/ChainSafe/sygma/comm/p2p"
 	"github.com/ChainSafe/sygma/config"
+	"github.com/ChainSafe/sygma/health"
 	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/ChainSafe/sygma/lvldb"
 	"github.com/ChainSafe/sygma/topology"
@@ -42,8 +43,8 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
-	"github.com/ChainSafe/sygma/health"
 	"github.com/rs/zerolog/log"
 )
 
@@ -61,6 +62,11 @@ func Run() error {
 	}
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
+
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
+
+	// force old container to shut down - temporary
+	time.Sleep(10 * time.Minute)
 
 	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
@@ -167,8 +173,6 @@ func Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go r.Start(ctx, errChn)
-
-	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
