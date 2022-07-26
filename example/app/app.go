@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma/lvldb"
 	"math/big"
 	"os"
 	"os/signal"
@@ -28,7 +29,6 @@ import (
 	"github.com/ChainSafe/sygma-core/config/chain"
 	"github.com/ChainSafe/sygma-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-core/flags"
-	"github.com/ChainSafe/sygma-core/lvldb"
 	"github.com/ChainSafe/sygma-core/opentelemetry"
 	"github.com/ChainSafe/sygma-core/relayer"
 	"github.com/ChainSafe/sygma-core/store"
