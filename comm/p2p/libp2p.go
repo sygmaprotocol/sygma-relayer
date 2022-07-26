@@ -69,14 +69,13 @@ func (c Libp2pCommunication) Broadcast(
 		if hostID == peerID {
 			continue // don't send message to itself
 		}
-		p := peerID
-		go func() {
-			err := c.sendMessage(p, marshaledMsg, msgType, sessionID)
+		go func(peerID peer.ID) {
+			err := c.sendMessage(peerID, marshaledMsg, msgType, sessionID)
 			if err != nil {
-				SendError(errChan, err)
+				SendError(errChan, err, peerID)
 				return
 			}
-		}()
+		}(peerID)
 	}
 }
 

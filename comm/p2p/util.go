@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"github.com/libp2p/go-libp2p-core/network"
 	"io"
+
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 const (
@@ -58,7 +61,11 @@ func WriteStream(msg []byte, stream network.Stream) error {
 }
 
 // SendError passes error to errChan if possible, if not drops error
-func SendError(errChan chan error, err error) {
+func SendError(errChan chan error, err error, peer peer.ID) {
+	err = &comm.CommunicationError{
+		Err:  err,
+		Peer: peer,
+	}
 	select {
 	case errChan <- err:
 		// error sent
