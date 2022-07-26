@@ -3,9 +3,11 @@ package lvldb
 import (
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
+	"sync"
 )
 
 type LVLDB struct {
+	mu   sync.Mutex
 	path string
 }
 
@@ -14,6 +16,9 @@ func NewLvlDB(path string) (*LVLDB, error) {
 }
 
 func (db *LVLDB) GetByKey(key []byte) ([]byte, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	d, err := db.openFile()
 	if err != nil {
 		return nil, err
@@ -24,6 +29,9 @@ func (db *LVLDB) GetByKey(key []byte) ([]byte, error) {
 }
 
 func (db *LVLDB) SetByKey(key []byte, value []byte) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	d, err := db.openFile()
 	if err != nil {
 		return err
