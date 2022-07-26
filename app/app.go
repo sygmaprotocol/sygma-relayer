@@ -6,6 +6,20 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma/lvldb"
+	"math/big"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
+	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
+
 	coreEvm "github.com/ChainSafe/sygma-core/chains/evm"
 	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
@@ -17,10 +31,10 @@ import (
 	"github.com/ChainSafe/sygma-core/config/chain"
 	"github.com/ChainSafe/sygma-core/flags"
 	"github.com/ChainSafe/sygma-core/logger"
-	"github.com/ChainSafe/sygma-core/lvldb"
 	"github.com/ChainSafe/sygma-core/opentelemetry"
 	"github.com/ChainSafe/sygma-core/relayer"
 	"github.com/ChainSafe/sygma-core/store"
+
 	"github.com/ChainSafe/sygma/chains/evm"
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma/chains/evm/calls/events"
@@ -33,18 +47,6 @@ import (
 	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/ChainSafe/sygma/topology"
 	"github.com/ChainSafe/sygma/tss"
-	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/spf13/viper"
-	"math/big"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-
-	"github.com/rs/zerolog/log"
 )
 
 func Run() error {

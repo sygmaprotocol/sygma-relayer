@@ -1,11 +1,11 @@
 package app
 
 import (
+	"github.com/ChainSafe/sygma/chains/evm/cli"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/deploy"
 	"github.com/ChainSafe/sygma-core/flags"
 )
 
@@ -33,7 +33,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, deploy.DeployEVM)
+	rootCMD.AddCommand(runCMD, cli.EVMRootCLI)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}

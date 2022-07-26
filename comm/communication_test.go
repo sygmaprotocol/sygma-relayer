@@ -113,7 +113,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.Len(errChan, 0)
 }
 
-func (s CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
+func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
 	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
 	externalHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},

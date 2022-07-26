@@ -30,14 +30,14 @@ import (
 
 var ErrNoDeploymentFlagsProvided = errors.New("provide at least one deployment flag. For help use --help")
 
-var DeployEVM = &cobra.Command{
-	Use:   "deploy",
+var deployCustomCLI = &cobra.Command{
+	Use:   "custom",
 	Short: "Deploy smart contracts",
 	Long:  "This command can be used to deploy all or some of the contracts required for bridging. Selection of contracts can be made by either specifying --all or a subset of flags",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		logger.LoggerMetadata(cmd.Name(), cmd.Flags())
 	},
-	RunE: CallDeployCLI,
+	RunE: CallDeployCustom,
 	Args: func(cmd *cobra.Command, args []string) error {
 		err := ValidateDeployFlags(cmd, args)
 		if err != nil {
@@ -50,29 +50,6 @@ var DeployEVM = &cobra.Command{
 
 const (
 	TwoDaysTermInBlocks int64 = 6200
-)
-
-var (
-	// Flags for all EVM Deploy CLI commands
-	Bridge               bool
-	BridgeAddress        string
-	DeployAll            bool
-	DomainId             uint8
-	GenericHandler       bool
-	Erc20                bool
-	Erc20Handler         bool
-	Erc20Name            string
-	Erc20Symbol          string
-	Erc721               bool
-	Erc721Handler        bool
-	Erc721Name           string
-	Erc721Symbol         string
-	Erc721BaseURI        string
-	FeeHandlerWithOracle bool
-	RelayerThreshold     uint64
-	Relayers             []string
-	Admins               []string
-	AdminFunctions       []string
 )
 
 func BindDeployEVMFlags(cmd *cobra.Command) {
@@ -95,20 +72,20 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(
 		&Admins,
 		"admins",
-		[]string{"0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365"},
+		[]string{"0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365", "0x000000000000000000000000000000000000000000000000000000616c696365"},
 		"List of initial admin addresses per admin function",
 	)
 	cmd.Flags().StringSliceVar(
 		&AdminFunctions,
 		"admin-functions",
-		[]string{"80ae1c28", "ffaac0eb", "cb10f215", "5a1ad87c", "8c0c2631", "edc20c3c", "d15ef64e", "9d33b6d4", "8b63aebf", "bd2a1820", "6ba6db6b", "d2e5fae9", "f5f63b39"},
-		"List of initial admin functions in non-prefixed hex format",
+		[]string{"80ae1c28", "ffaac0eb", "cb10f215", "5a1ad87c", "8c0c2631", "edc20c3c", "d15ef64e", "9d33b6d4", "8b63aebf", "bd2a1820", "6ba6db6b", "d2e5fae9", "f5f63b39", "a973ec93"},
+		"List of initial admin functions in non-prefixed hex format. By default al functions are included",
 	)
 	cmd.Flags().Uint64Var(&RelayerThreshold, "relayer-threshold", 1, "Number of votes required for a proposal to pass")
 }
 
 func init() {
-	BindDeployEVMFlags(DeployEVM)
+	BindDeployEVMFlags(deployCustomCLI)
 }
 
 func ValidateDeployFlags(cmd *cobra.Command, args []string) error {
@@ -178,12 +155,12 @@ func ProcessDeployFlags(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func CallDeployCLI(cmd *cobra.Command, args []string) error {
+func CallDeployCustom(cmd *cobra.Command, args []string) error {
 	txFabric := evmtransaction.NewTransaction
-	return DeployCLI(cmd, args, txFabric, &evmgaspricer.LondonGasPriceDeterminant{})
+	return DeployCustom(cmd, args, txFabric, &evmgaspricer.LondonGasPriceDeterminant{})
 }
 
-func DeployCLI(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPricer utils.GasPricerWithPostConfig) error {
+func DeployCustom(cmd *cobra.Command, args []string, txFabric calls.TxFabric, gasPricer utils.GasPricerWithPostConfig) error {
 	// fetch global flag values
 	url, gasLimit, gasPrice, senderKeyPair, _, err := flags.GlobalFlagValues(cmd)
 	if err != nil {

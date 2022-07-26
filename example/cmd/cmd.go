@@ -4,13 +4,13 @@
 package cmd
 
 import (
+	deploy2 "github.com/ChainSafe/sygma/chains/evm/cli/deploy"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/deploy"
 	"github.com/ChainSafe/sygma-core/flags"
 
-	"github.com/ChainSafe/sygma/chains/evm/cli/local"
 	"github.com/ChainSafe/sygma/example/app"
 )
 
@@ -36,7 +36,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, deploy.DeployEVM, local.LocalSetupCmd)
+	rootCMD.AddCommand(runCMD, deploy.DeployEVM, deploy2.LocalSetupCmd)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}
