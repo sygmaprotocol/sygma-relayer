@@ -24,7 +24,7 @@
           ]
           },
           "command": [
-            "run", "--config=env", "--name=R1", "--blockstore=/mount/r1/lvldbdata"
+            "run", "--config=env", "--name=R1", "--latest=true", "--blockstore=/mount/relayer1/lvldbdata"
           ],
          "portMappings": [ 
            { 
