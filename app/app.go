@@ -44,6 +44,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func Run() error {
@@ -84,8 +85,16 @@ func Run() error {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
-	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
-	panicOnError(err)
+	var db *lvldb.LVLDB
+	for {
+		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+		if err != nil {
+			log.Err(err)
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
+	}
 
 	blockstore := store.NewBlockStore(db)
 
