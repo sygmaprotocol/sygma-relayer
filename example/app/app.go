@@ -6,7 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma/lvldb"
+	"github.com/ChainSafe/sygma-core/lvldb"
 	"math/big"
 	"os"
 	"os/signal"
