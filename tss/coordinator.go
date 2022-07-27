@@ -73,6 +73,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
+	log.Info().Msgf("Starting process %s with coordinator %s", tssProcess.SessionID(), coordinator.Pretty())
 	errChn := make(chan error)
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
@@ -156,8 +157,10 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 // start initiates listeners for coordinator and participants with static calculated coordinator
 func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordinator peer.ID, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	if coordinator.Pretty() == c.host.ID().Pretty() {
+		log.Info().Msg("I am elected leader so I am going to start process")
 		c.initiate(ctx, tssProcess, resultChn, errChn, excludedPeers)
 	} else {
+		log.Info().Msg("I am not a leader so I am waiting for process to start")
 		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator)
 	}
 }
