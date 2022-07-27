@@ -78,7 +78,7 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	// tmp
+	// debugging log
 	log.Info().Msgf("%+v", networkTopology.Peers)
 
 	var allowedPeers peer.IDSlice
@@ -86,6 +86,8 @@ func Run() error {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
+	// this is temporary solution related to specifics of aws deployment
+	// effectively it waits until old instance is killed
 	var db *lvldb.LVLDB
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
@@ -107,6 +109,10 @@ func Run() error {
 
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
+
+	utilComm := p2p.NewCommunication(host, "p2p/util", allowedPeers)
+	checker := topology.NewCommLivelinessChecker(utilComm, allowedPeers, host.ID())
+	checker.StartCheck()
 
 	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
