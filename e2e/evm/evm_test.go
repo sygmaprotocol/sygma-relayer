@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
@@ -352,6 +353,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	amountToDeposit := big.NewInt(1000000)
 	numOfDeposits := 10
 
+	var wg sync.WaitGroup
 	for i := 0; i < numOfDeposits; i++ {
 		go func() {
 			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
@@ -359,9 +361,12 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 					Priority: uint8(2), // fast
 					Value:    s.config1.Fee,
 				})
+			wg.Add(1)
+			defer wg.Done()
 			s.Nil(err)
 		}()
 	}
+	wg.Wait()
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
