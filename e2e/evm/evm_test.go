@@ -345,7 +345,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(local.CharlieKp.CommonAddress())
+	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
