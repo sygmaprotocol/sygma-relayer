@@ -362,7 +362,6 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 			s.Nil(err)
 		}()
 	}
-
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
