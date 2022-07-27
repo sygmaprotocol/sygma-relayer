@@ -78,6 +78,7 @@ func Run() error {
 		panicOnError(err)
 	}
 
+	// tmp
 	log.Info().Msgf("%+v", networkTopology.Peers)
 
 	var allowedPeers peer.IDSlice
