@@ -141,7 +141,6 @@ func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int
 	}
 
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
-
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
 
