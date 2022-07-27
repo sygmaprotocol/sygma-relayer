@@ -35,8 +35,8 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposals(proposals []*proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
-	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
+	ExecuteProposals(proposals []proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	ProposalsHash(proposals []proposal.Proposal) ([]byte, error)
 }
 
 type Executor struct {
@@ -68,7 +68,7 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
-	proposals := make([]*proposal.Proposal, len(msgs))
+	proposals := make([]proposal.Proposal, len(msgs))
 	for i, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
@@ -83,7 +83,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			continue
 		}
 
-		proposals[i] = prop
+		proposals[i] = *prop
 	}
 	if len(proposals) == 0 {
 		return nil
@@ -134,7 +134,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			}
 		case <-ticker.C:
 			{
-				isExecuted, err := e.bridge.IsProposalExecuted(proposals[0])
+				isExecuted, err := e.bridge.IsProposalExecuted(&proposals[0])
 				if err != nil || !isExecuted {
 					continue
 				}
@@ -150,7 +150,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+func (e *Executor) executeProposal(proposals []proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)

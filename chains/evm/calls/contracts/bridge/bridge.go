@@ -214,7 +214,7 @@ func (c *BridgeContract) ExecuteProposal(
 }
 
 func (c *BridgeContract) ExecuteProposals(
-	proposals []*proposal.Proposal,
+	proposals []proposal.Proposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
@@ -253,7 +253,7 @@ func (c *BridgeContract) ProposalHash(proposal *proposal.Proposal) ([]byte, erro
 	return hash.Bytes(), nil
 }
 
-func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
+func (c *BridgeContract) ProposalsHash(proposals []proposal.Proposal) ([]byte, error) {
 	proposalType, _ := abi.NewType("tuple[]", "struct Bridge.Proposal", []abi.ArgumentMarshaling{
 		{Name: "originDomainID", Type: "uint8", InternalType: "uint8"},
 		{Name: "depositNonce", Type: "uint64", InternalType: "uint64"},
