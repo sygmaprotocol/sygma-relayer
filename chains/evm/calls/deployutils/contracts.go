@@ -31,7 +31,7 @@ var AdminFunctionHexes = []string{
 	"bd2a1820", // adminWithdraw
 	"6ba6db6b", // startKeygen
 	"d2e5fae9", // endKeygen
-	"f5f63b39", // refreshKey
+	"d8236744", // refreshKey
 	"a973ec93", //grantAccess
 }
 
