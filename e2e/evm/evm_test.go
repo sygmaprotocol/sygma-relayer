@@ -351,7 +351,9 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 	amountToDeposit := big.NewInt(1000000)
-	numOfDeposits := 10
+	numOfDeposits := 25
+	amountBefore := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
+	amountAfter := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
 
 	var wg sync.WaitGroup
 	for i := 0; i < numOfDeposits; i++ {
@@ -372,9 +374,9 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 
 	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
 	s.Nil(err)
-	s.Equal(amountToDeposit.Mul(amountToDeposit, big.NewInt(int64(numOfDeposits))), senderBalBefore.Sub(senderBalBefore, senderBalAfter))
+	s.Equal(amountBefore, senderBalBefore.Sub(senderBalBefore, senderBalAfter))
 
 	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
-	s.Equal(amountToDeposit.Mul(amountToDeposit, big.NewInt(int64(numOfDeposits))), destBalanceAfter.Sub(destBalanceAfter, destBalanceBefore))
+	s.Equal(amountAfter, destBalanceAfter.Sub(destBalanceAfter, destBalanceBefore))
 }
