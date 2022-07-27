@@ -48,6 +48,10 @@
            {
              "value": "relayer-1",
              "name": "DD_SERVICE"
+           },
+           {
+             "name": "SYG_RELAYER_LOGLEVEL",
+             "value": "debug"
            }
          ],
          "secrets": [ 

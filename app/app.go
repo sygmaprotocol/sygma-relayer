@@ -90,10 +90,9 @@ func Run() error {
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 		if err != nil {
-			log.Err(err)
 			time.Sleep(5 * time.Second)
 		} else {
-			log.Info().Msg("Succesfully connected to file")
+			log.Info().Msg("Successfully connected to blockstore file")
 			break
 		}
 	}
