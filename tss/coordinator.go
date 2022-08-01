@@ -18,7 +18,7 @@ import (
 
 var (
 	initiatePeriod     = 15 * time.Second
-	coordinatorTimeout = 30 * time.Minute
+	coordinatorTimeout = 5 * time.Minute
 	tssTimeout         = 30 * time.Minute
 )
 
@@ -141,7 +141,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 						retried = true
 
 						// wait for start message if existing singing process fails
-						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""))
+						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""), c.TssTimeout)
 					}
 				default:
 					{
@@ -157,11 +157,9 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 // start initiates listeners for coordinator and participants with static calculated coordinator
 func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordinator peer.ID, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
 	if coordinator.Pretty() == c.host.ID().Pretty() {
-		log.Info().Msg("I am elected leader so I am going to start process")
 		c.initiate(ctx, tssProcess, resultChn, errChn, excludedPeers)
 	} else {
-		log.Info().Msg("I am not a leader so I am waiting for process to start")
-		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator)
+		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator, c.CoordinatorTimeout)
 	}
 }
 
@@ -180,19 +178,9 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
-	errChan := make(chan error)
 	go c.communication.Broadcast(
-		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID, errChan,
+		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID, nil,
 	)
-
-	go func() {
-		for {
-			select {
-			case e := <-errChan:
-				log.Error().Msgf("error on broadcasting initiate message: %+v", e)
-			}
-		}
-	}()
 }
 
 // initiate sends initiate message to all peers and waits
@@ -257,6 +245,7 @@ func (c *Coordinator) waitForStart(
 	resultChn chan interface{},
 	errChn chan error,
 	coordinator peer.ID,
+	timeout time.Duration,
 ) {
 	msgChan := make(chan *comm.WrappedMessage)
 	startMsgChn := make(chan *comm.WrappedMessage)
@@ -266,13 +255,13 @@ func (c *Coordinator) waitForStart(
 	startSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
-	coordinatorTimeoutTicker := time.NewTicker(c.CoordinatorTimeout)
+	coordinatorTimeoutTicker := time.NewTicker(timeout)
 	defer coordinatorTimeoutTicker.Stop()
 	for {
 		select {
 		case wMsg := <-msgChan:
 			{
-				coordinatorTimeoutTicker.Reset(coordinatorTimeout)
+				coordinatorTimeoutTicker.Reset(timeout)
 
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
 				go c.communication.Broadcast(

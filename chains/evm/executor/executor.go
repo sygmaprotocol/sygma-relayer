@@ -68,8 +68,8 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
-	proposals := make([]*proposal.Proposal, len(msgs))
-	for i, m := range msgs {
+	proposals := make([]*proposal.Proposal, 0)
+	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
 			return err
@@ -83,7 +83,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			continue
 		}
 
-		proposals[i] = prop
+		proposals = append(proposals, prop)
 	}
 	if len(proposals) == 0 {
 		return nil
@@ -134,13 +134,20 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			}
 		case <-ticker.C:
 			{
-				isExecuted, err := e.bridge.IsProposalExecuted(proposals[0])
-				if err != nil || !isExecuted {
-					continue
+				allExecuted := true
+				for _, prop := range proposals {
+					isExecuted, err := e.bridge.IsProposalExecuted(prop)
+					if err != nil || !isExecuted {
+						allExecuted = false
+						continue
+					}
+
+					log.Info().Msgf("Successfully executed proposal %v", prop)
 				}
 
-				log.Info().Msgf("Successfully executed proposals %v", proposals)
-				return nil
+				if allExecuted {
+					return nil
+				}
 			}
 		case <-timeout.C:
 			{

@@ -78,7 +78,7 @@ func BindDeployEVMFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(
 		&AdminFunctions,
 		"admin-functions",
-		[]string{"80ae1c28", "ffaac0eb", "cb10f215", "5a1ad87c", "8c0c2631", "edc20c3c", "d15ef64e", "9d33b6d4", "8b63aebf", "bd2a1820", "6ba6db6b", "d2e5fae9", "f5f63b39", "a973ec93"},
+		[]string{"80ae1c28", "ffaac0eb", "cb10f215", "5a1ad87c", "8c0c2631", "edc20c3c", "d15ef64e", "9d33b6d4", "8b63aebf", "bd2a1820", "6ba6db6b", "d2e5fae9", "d8236744", "a973ec93"},
 		"List of initial admin functions in non-prefixed hex format. By default al functions are included",
 	)
 	cmd.Flags().Uint64Var(&RelayerThreshold, "relayer-threshold", 1, "Number of votes required for a proposal to pass")

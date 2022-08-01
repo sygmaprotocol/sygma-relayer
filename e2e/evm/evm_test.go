@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts/centrifuge"
@@ -335,4 +336,47 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+}
+
+func (s *IntegrationTestSuite) Test_MultipleDeposits() {
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
+
+	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
+	s.Nil(err)
+	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+	amountToDeposit := big.NewInt(1000000)
+	numOfDeposits := 25
+	amountBefore := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
+	amountAfter := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
+
+	var wg sync.WaitGroup
+	for i := 0; i < numOfDeposits; i++ {
+		go func() {
+			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
+				transactor.TransactOptions{
+					Priority: uint8(2), // fast
+					Value:    s.config1.Fee,
+				})
+			wg.Add(1)
+			defer wg.Done()
+			s.Nil(err)
+		}()
+	}
+	wg.Wait()
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+
+	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
+	s.Nil(err)
+	s.Equal(amountBefore, senderBalBefore.Sub(senderBalBefore, senderBalAfter))
+
+	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+	s.Equal(amountAfter, destBalanceAfter.Sub(destBalanceAfter, destBalanceBefore))
 }
