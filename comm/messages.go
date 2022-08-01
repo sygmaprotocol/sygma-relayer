@@ -12,6 +12,8 @@ const (
 	TssInitiateMsg
 	// TssStartMsg message type sent by a leader to signify the start of a tss process after parties sent the ready message.
 	TssStartMsg
+	// TssFailMsg message type sent by parties after an communication or tss error happens during process.
+	TssFailMsg
 	// TssReadyMsg message type sent by parties after the leader sends TssInitiateMsg to signify they are ready for the tss process.
 	TssReadyMsg
 	// TssReshareMsg message type used for resharing tss messages.
@@ -43,6 +45,8 @@ func (msgType MessageType) String() string {
 		return "TssInitiateMsg"
 	case TssStartMsg:
 		return "TssStartMsg"
+	case TssFailMsg:
+		return "TssFailMsg"
 	case TssReadyMsg:
 		return "TssReadyMsg"
 	case TssReshareMsg:

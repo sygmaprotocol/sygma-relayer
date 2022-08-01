@@ -68,17 +68,13 @@ type FailMessage struct {
 	ExcludedPeers []peer.ID `json:"excludedPeers"`
 }
 
-func MarshalFailMessage(excludedPeers []peer.ID) ([]byte, error) {
+func MarshalFailMessage(excludedPeers []peer.ID) []byte {
 	failMsg := &FailMessage{
 		ExcludedPeers: excludedPeers,
 	}
 
-	msgBytes, err := json.Marshal(failMsg)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return msgBytes, nil
+	msgBytes, _ := json.Marshal(failMsg)
+	return msgBytes
 }
 
 func UnmarshalFailMessage(msgBytes []byte) (*FailMessage, error) {
