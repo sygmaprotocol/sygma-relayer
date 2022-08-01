@@ -2,6 +2,8 @@ package common
 
 import (
 	"encoding/json"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 type TssMessage struct {
@@ -54,6 +56,33 @@ func MarshalStartMessage(params []byte) ([]byte, error) {
 
 func UnmarshalStartMessage(msgBytes []byte) (*StartMessage, error) {
 	msg := &StartMessage{}
+	err := json.Unmarshal(msgBytes, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
+}
+
+type FailMessage struct {
+	ExcludedPeers []peer.ID `json:"excludedPeers"`
+}
+
+func MarshalFailMessage(excludedPeers []peer.ID) ([]byte, error) {
+	failMsg := &FailMessage{
+		ExcludedPeers: excludedPeers,
+	}
+
+	msgBytes, err := json.Marshal(failMsg)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return msgBytes, nil
+}
+
+func UnmarshalFailMessage(msgBytes []byte) (*FailMessage, error) {
+	msg := &FailMessage{}
 	err := json.Unmarshal(msgBytes, msg)
 	if err != nil {
 		return nil, err
