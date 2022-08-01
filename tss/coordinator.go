@@ -18,7 +18,7 @@ import (
 
 var (
 	initiatePeriod     = 15 * time.Second
-	coordinatorTimeout = 30 * time.Minute
+	coordinatorTimeout = 5 * time.Minute
 	tssTimeout         = 30 * time.Minute
 )
 
@@ -140,7 +140,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 						retried = true
 
 						// wait for start message if existing singing process fails
-						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""))
+						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""), c.TssTimeout)
 					}
 				default:
 					{
@@ -158,7 +158,7 @@ func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordina
 	if coordinator.Pretty() == c.host.ID().Pretty() {
 		c.initiate(ctx, tssProcess, resultChn, errChn, excludedPeers)
 	} else {
-		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator)
+		c.waitForStart(ctx, tssProcess, resultChn, errChn, coordinator, c.CoordinatorTimeout)
 	}
 }
 
@@ -244,6 +244,7 @@ func (c *Coordinator) waitForStart(
 	resultChn chan interface{},
 	errChn chan error,
 	coordinator peer.ID,
+	timeout time.Duration,
 ) {
 	msgChan := make(chan *comm.WrappedMessage)
 	startMsgChn := make(chan *comm.WrappedMessage)
@@ -253,13 +254,13 @@ func (c *Coordinator) waitForStart(
 	startSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
 
-	coordinatorTimeoutTicker := time.NewTicker(c.CoordinatorTimeout)
+	coordinatorTimeoutTicker := time.NewTicker(timeout)
 	defer coordinatorTimeoutTicker.Stop()
 	for {
 		select {
 		case wMsg := <-msgChan:
 			{
-				coordinatorTimeoutTicker.Reset(coordinatorTimeout)
+				coordinatorTimeoutTicker.Reset(timeout)
 
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
 				go c.communication.Broadcast(
