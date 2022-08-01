@@ -11,8 +11,9 @@ import (
 
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
-	"github.com/ethereum/go-ethereum/common"
+	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/tss"
+	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/ChainSafe/sygma/tss/signing"
 )
 
@@ -94,6 +96,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		return err
 	}
 
+	sessionID := e.sessionID(propHash)
 	msg := big.NewInt(0)
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
@@ -111,9 +114,11 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
+	failChn := make(chan *comm.WrappedMessage)
+	subscriptionID := e.comm.Subscribe(sessionID, comm.TssFailMsg, failChn)
 	ticker := time.NewTicker(executionCheckPeriod)
-	defer ticker.Stop()
 	timeout := time.NewTicker(signingTimeout)
+	defer e.comm.UnSubscribe(subscriptionID)
 	defer ticker.Stop()
 	defer cancel()
 	for {
@@ -123,6 +128,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 				signatureData := sigResult.(*tssSigning.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
+					go e.comm.Broadcast(e.host.Peerstore().Peers(), common.MarshalFailMessage([]peer.ID{e.host.ID()}), comm.TssFailMsg, sessionID, nil)
 					return err
 				}
 
@@ -157,7 +163,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*common.Hash, error) {
+func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*ethCommon.Hash, error) {
 	sig := signatureData.Signature.R
 	sig = append(sig[:], signatureData.Signature.S[:]...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
@@ -172,5 +178,5 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 }
 
 func (e *Executor) sessionID(hash []byte) string {
-	return fmt.Sprintf("signing-%s", common.Bytes2Hex(hash))
+	return fmt.Sprintf("signing-%s", ethCommon.Bytes2Hex(hash))
 }
