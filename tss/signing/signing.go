@@ -203,3 +203,7 @@ func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool 
 
 	return readyParticipants
 }
+
+func (s *Signing) Retryable() bool {
+	return true
+}
