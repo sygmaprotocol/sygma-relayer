@@ -68,9 +68,7 @@ func (s *FailMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 		ExcludedPeers: excludedPeers,
 	}
 
-	msgBytes, err := common.MarshalFailMessage(excludedPeers)
-	s.Nil(err)
-
+	msgBytes := common.MarshalFailMessage(excludedPeers)
 	unmarshaledMsg, err := common.UnmarshalFailMessage(msgBytes)
 	s.Nil(err)
 

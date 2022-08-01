@@ -37,7 +37,7 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposals(proposals []*proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*common.Hash, error)
+	ExecuteProposals(proposals []*proposal.Proposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
 	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
 }
 
