@@ -114,11 +114,8 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
-	failChn := make(chan *comm.WrappedMessage)
-	subscriptionID := e.comm.Subscribe(sessionID, comm.TssFailMsg, failChn)
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
-	defer e.comm.UnSubscribe(subscriptionID)
 	defer ticker.Stop()
 	defer cancel()
 	for {
