@@ -110,9 +110,9 @@ func Run() error {
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
-	utilComm := p2p.NewCommunication(host, "p2p/util", allowedPeers)
-	checker := topology.NewCommLivelinessChecker(utilComm, allowedPeers, host.ID())
-	checker.StartCheck()
+	//utilComm := p2p.NewCommunication(host, "p2p/util", allowedPeers)
+	//checker := topology.NewCommLivelinessChecker(utilComm, allowedPeers, host.ID())
+	//checker.StartCheck()
 
 	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
