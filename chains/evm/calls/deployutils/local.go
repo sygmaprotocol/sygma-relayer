@@ -17,6 +17,8 @@ import (
 )
 
 var BasicFee = big.NewInt(100000000000)
+var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
+var GasUsed = uint32(100000)
 
 type EVMClient interface {
 	calls.ContractCallerDispatcher
@@ -43,10 +45,11 @@ type BridgeConfig struct {
 	Erc721HandlerAddr common.Address
 	Erc721ResourceID  types.ResourceID
 
-	FeeHandlerAddr    common.Address
-	FeeRouterAddress  common.Address
-	IsBasicFeeHandler bool
-	Fee               *big.Int
+	BasicFeeHandlerAddr      common.Address
+	FeeRouterAddress         common.Address
+	FeeHandlerWithOracleAddr common.Address
+	BasicFee                 *big.Int
+	OracleFee                uint16
 }
 
 func SetupLocalSygmaRelayer(
@@ -111,16 +114,20 @@ func SetupLocalSygmaRelayer(
 	if err != nil {
 		return nil, err
 	}
+	fhwo, err := DeployFeeHandlerWithOracle(ethClient, t, bridgeContractAddress, *fr.ContractAddress())
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = fr.AdminSetResourceHandler(destDomainID, erc20ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	_, err = fr.AdminSetResourceHandler(destDomainID, genericResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, genericResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
@@ -148,10 +155,11 @@ func SetupLocalSygmaRelayer(
 		Erc721HandlerAddr: erc721HandlerContractAddress,
 		Erc721ResourceID:  erc721ResourceID,
 
-		IsBasicFeeHandler: true,
-		Fee:               big.NewInt(100000000000),
-		FeeHandlerAddr:    *fh.ContractAddress(),
-		FeeRouterAddress:  *fr.ContractAddress(),
+		BasicFeeHandlerAddr:      *fh.ContractAddress(),
+		FeeRouterAddress:         *fr.ContractAddress(),
+		FeeHandlerWithOracleAddr: *fhwo.ContractAddress(),
+		OracleFee:                OracleFee,
+		BasicFee:                 BasicFee,
 	}
 
 	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
@@ -175,6 +183,10 @@ func SetupLocalSygmaRelayer(
 	}
 
 	_, err = fh.ChangeFee(BasicFee, transactor.TransactOptions{GasLimit: 2000000})
+	if err != nil {
+		return nil, err
+	}
+	_, err = fhwo.SetFeeProperties(GasUsed, OracleFee, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}

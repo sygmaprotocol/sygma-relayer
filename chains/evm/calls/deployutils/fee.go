@@ -14,10 +14,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type FeeHandlerDeployResutls struct {
-	FeeRouter         *feeHandler.FeeRouter
-	FeeHandlerAddress common.Address
-	FeeRouterAddress  common.Address
+type FeeHandlerDeployResults struct {
+	FeeRouter                   *feeHandler.FeeRouter
+	BasicFeeHandlerAddress      common.Address
+	FeeHandlerWithOracleAddress common.Address
+	FeeRouterAddress            common.Address
 }
 
 func SetupFeeRouter(ethClient EVMClient, t transactor.Transactor, bridgeContract *bridge.BridgeContract) (*feeHandler.FeeRouter, error) {

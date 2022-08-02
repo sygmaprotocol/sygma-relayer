@@ -91,7 +91,8 @@ func prettyPrint(config, config2 *deployutils.BridgeConfig) {
 func prettyFormatChainInfo(cfg *deployutils.BridgeConfig) string {
 	return fmt.Sprintf(`
 Bridge: %s
-Fee Handler: %s (is basic fee handler: %t, fee amount: %v wei)
+BasicFee Handler: %s (fee amount: %v wei)
+FeeHandlerWithOracle: %s (fee percentage: %v %%)
 FeeRouterAddress: %s,
 ERC20: %s
 ERC20LockRelease: %s
@@ -106,9 +107,10 @@ ERC721 resourceId: %s
 Generic resourceId: %s
 `,
 		cfg.BridgeAddr,
-		cfg.FeeHandlerAddr,
-		cfg.IsBasicFeeHandler,
-		cfg.Fee,
+		cfg.BasicFeeHandlerAddr,
+		cfg.BasicFee,
+		cfg.FeeHandlerWithOracleAddr,
+		float32(cfg.OracleFee)/float32(100),
 		cfg.FeeRouterAddress,
 		cfg.Erc20Addr,
 		cfg.Erc20LockReleaseAddr,
