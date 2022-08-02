@@ -104,6 +104,20 @@ services:
       - ./cfg:/cfg
     restart: always
 
+  fee-oracle:
+    image: "chainsafe/sygma-fee-oracle"
+    container_name: fee-oracle
+    logging:
+      driver: none
+    depends_on:
+      - evm1-1
+      - evm2-1
+    networks:
+      - evm1
+      - evm2
+    ports:
+      - "8091:8091"
+
 networks:
   evm2:
   evm1:
