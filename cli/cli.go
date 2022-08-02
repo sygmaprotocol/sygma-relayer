@@ -1,6 +1,7 @@
-package app
+package cli
 
 import (
+	"github.com/ChainSafe/sygma/app"
 	"github.com/ChainSafe/sygma/chains/evm/cli"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -18,7 +19,7 @@ var (
 		Short: "Run app",
 		Long:  "Run app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := Run(); err != nil {
+			if err := app.Run(); err != nil {
 				return err
 			}
 			return nil
