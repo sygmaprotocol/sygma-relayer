@@ -78,9 +78,6 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	// debugging log
-	log.Info().Msgf("%+v", networkTopology.Peers)
-
 	var allowedPeers peer.IDSlice
 	for _, pAdrInfo := range networkTopology.Peers {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
