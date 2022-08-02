@@ -66,10 +66,11 @@ func Test_EVM2EVM(t *testing.T) {
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x1C9D948eddE23f66f8c816241C7587bC2845fA7d"),
 
-		IsBasicFeeHandler: true,
-		Fee:               deployutils.BasicFee,
-		FeeHandlerAddr:    common.HexToAddress("0xA81cC6305C6f62Ccd81fc7D1E2EC6F804aCB4512"),
-		FeeRouterAddress:  common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
+		BasicFeeHandlerAddr:      common.HexToAddress("0xA81cC6305C6f62Ccd81fc7D1E2EC6F804aCB4512"),
+		FeeHandlerWithOracleAddr: common.HexToAddress("0xe69cCE3c1CE4A870810Bdefd64b735411D0Aa9ac"),
+		FeeRouterAddress:         common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
+		BasicFee:                 deployutils.BasicFee,
+		OracleFee:                deployutils.OracleFee,
 	}
 
 	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, deployutils.CharlieKp.PrivateKey())
@@ -132,7 +133,7 @@ type IntegrationTestSuite struct {
 // SetupSuite waits until all contracts are deployed
 func (s *IntegrationTestSuite) SetupSuite() {
 	log.Info().Msg("Waiting for Bridge to set")
-	err := evm.WaitUntilBridgeReady(s.client2, s.config2.FeeHandlerAddr)
+	err := evm.WaitUntilBridgeReady(s.client2, s.config2.BasicFeeHandlerAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -154,7 +155,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
-	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
 	s.Nil(err)
 
 	amountToDeposit := big.NewInt(1000000)
@@ -162,7 +163,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
-			Value:    s.config1.Fee,
+			Value:    s.config1.BasicFee,
 		})
 	s.Nil(err)
 
@@ -186,9 +187,9 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 
 	// Check that FeeHandler ETH balance increased
-	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.FeeHandlerAddr, nil)
+	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
 	s.Nil(err)
-	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, s.config1.Fee))
+	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, s.config1.BasicFee))
 
 }
 
@@ -229,7 +230,7 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
 		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
-			Value: s.config1.Fee,
+			Value: big.NewInt(int64(s.config1.OracleFee)),
 		},
 	)
 	s.Nil(err)
@@ -263,7 +264,7 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
 		Priority: uint8(0), // slow
-		Value:    s.config1.Fee,
+		Value:    big.NewInt(int64(s.config1.OracleFee)),
 	})
 	s.Nil(err)
 
@@ -304,7 +305,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
-			Value:    s.config1.Fee,
+			Value:    s.config1.BasicFee,
 		})
 	s.Nil(err)
 
@@ -364,7 +365,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
 				transactor.TransactOptions{
 					Priority: uint8(2), // fast
-					Value:    s.config1.Fee,
+					Value:    s.config1.BasicFee,
 				})
 			wg.Add(1)
 			defer wg.Done()
