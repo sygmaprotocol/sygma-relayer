@@ -6,20 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma-core/lvldb"
-	"math/big"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-
-	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
-
 	coreEvm "github.com/ChainSafe/sygma-core/chains/evm"
 	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
@@ -31,10 +17,10 @@ import (
 	"github.com/ChainSafe/sygma-core/config/chain"
 	"github.com/ChainSafe/sygma-core/flags"
 	"github.com/ChainSafe/sygma-core/logger"
+	"github.com/ChainSafe/sygma-core/lvldb"
 	"github.com/ChainSafe/sygma-core/opentelemetry"
 	"github.com/ChainSafe/sygma-core/relayer"
 	"github.com/ChainSafe/sygma-core/store"
-
 	"github.com/ChainSafe/sygma/chains/evm"
 	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma/chains/evm/calls/events"
@@ -47,6 +33,18 @@ import (
 	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/ChainSafe/sygma/topology"
 	"github.com/ChainSafe/sygma/tss"
+	"github.com/ethereum/go-ethereum/common"
+	secp256k1 "github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
+	"math/big"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
 )
 
 func Run() error {
@@ -64,6 +62,8 @@ func Run() error {
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
+
 	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
 	panicOnError(err)
@@ -71,7 +71,7 @@ func Run() error {
 	networkTopology, err := topologyStore.Topology()
 	// if topology is not already in file, read from provider
 	if err != nil {
-		networkTopology, err := topologyProvider.NetworkTopology()
+		networkTopology, err = topologyProvider.NetworkTopology()
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
@@ -83,8 +83,18 @@ func Run() error {
 		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
-	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
-	panicOnError(err)
+	// this is temporary solution related to specifics of aws deployment
+	// effectively it waits until old instance is killed
+	var db *lvldb.LVLDB
+	for {
+		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+		if err != nil {
+			time.Sleep(5 * time.Second)
+		} else {
+			log.Info().Msg("Successfully connected to blockstore file")
+			break
+		}
+	}
 
 	blockstore := store.NewBlockStore(db)
 
@@ -168,8 +178,6 @@ func Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go r.Start(ctx, errChn)
-
-	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,

@@ -73,6 +73,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
+	log.Info().Msgf("Starting process %s with coordinator %s", tssProcess.SessionID(), coordinator.Pretty())
 	errChn := make(chan error)
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
