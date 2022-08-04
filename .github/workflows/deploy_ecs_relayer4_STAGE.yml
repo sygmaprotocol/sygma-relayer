@@ -3,7 +3,7 @@ name: Deploy ECS relayer 4
 on:
   push:
     branches:
-      - devops/add-ecs-deploy
+      - main
 
 env:
   AWS_REGION: "us-east-2"
