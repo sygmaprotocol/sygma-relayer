@@ -2,6 +2,8 @@
 .PHONY: help run build install license example
 all: help
 
+export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore
+
 ## license: Adds license header to missing files.
 license:
 	@echo "  >  \033[32mAdding license headers...\033[0m "
@@ -20,11 +22,6 @@ coverage:
 
 test:
 	./scripts/tests.sh
-
-## Install dependency subkey
-install-subkey:
-	curl https://getsubstrate.io -sSf | bash -s -- --fast
-	cargo install --force --git https://github.com/paritytech/substrate subkey
 
 genmocks:
 	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message

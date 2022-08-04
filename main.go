@@ -3,8 +3,8 @@
 
 package main
 
-import "github.com/ChainSafe/sygma/app"
+import "github.com/ChainSafe/sygma/cli"
 
 func main() {
-	app.Execute()
+	cli.Execute()
 }

@@ -6,7 +6,7 @@ ADD . /src
 WORKDIR /src
 RUN cd /src && echo $(ls -1 /src)
 RUN go mod download
-RUN go build -o /bridge ./example/
+RUN go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" -o /bridge ./example/
 
 # final stage
 FROM debian:stretch-slim

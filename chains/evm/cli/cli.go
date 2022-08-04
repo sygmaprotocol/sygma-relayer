@@ -2,7 +2,6 @@ package cli
 
 import (
 	coreCLI "github.com/ChainSafe/sygma-core/chains/evm/cli"
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/account"
 	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
 	"github.com/ChainSafe/sygma/chains/evm/cli/deploy"
 	"github.com/spf13/cobra"
@@ -29,9 +28,6 @@ func init() {
 	// to be used across all evm-cli commands (i.e. global)
 
 	coreCLI.BindEVMCLIFlags(EVMRootCLI)
-
-	// account
-	EVMRootCLI.AddCommand(account.AccountRootCMD)
 
 	// add commands to evm-cli root
 	// deploy
