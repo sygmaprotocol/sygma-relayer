@@ -34,12 +34,18 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent) (events.Deposit, error) {
+func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address) (events.Deposit, error) {
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
 	if err != nil {
 		return events.Deposit{}, fmt.Errorf(
 			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
+		)
+	}
+
+	if receipt.ContractAddress != bridgeAddress {
+		return events.Deposit{}, fmt.Errorf(
+			"deposit event contract address %s doesn't match bridge address %s", receipt.ContractAddress, bridgeAddress
 		)
 	}
 
