@@ -19,6 +19,7 @@ import (
 type ChainClient interface {
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	WaitAndReturnTxReceipt(h common.Hash) (*ethTypes.Receipt, error)
+	LatestBlock() (*big.Int, error)
 }
 
 type Listener struct {
@@ -34,7 +35,7 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address) (events.Deposit, error) {
+func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error) {
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
 	if err != nil {
@@ -45,7 +46,18 @@ func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Addr
 
 	if receipt.ContractAddress != bridgeAddress {
 		return events.Deposit{}, fmt.Errorf(
-			"deposit event contract address %s doesn't match bridge address %s", receipt.ContractAddress, bridgeAddress
+			"deposit event contract address %s doesn't match bridge address %s", receipt.ContractAddress, bridgeAddress,
+		)
+	}
+	latestBlock, err := l.client.LatestBlock()
+	if err != nil {
+		return events.Deposit{}, err
+	}
+	if receipt.BlockNumber.Cmp(latestBlock.Add(latestBlock, blockConfirmations)) != 1 {
+		return events.Deposit{}, fmt.Errorf(
+			"deposit event block %s less than latest block + block confirmations %s",
+			receipt.BlockNumber,
+			latestBlock.Add(latestBlock, blockConfirmations),
 		)
 	}
 
