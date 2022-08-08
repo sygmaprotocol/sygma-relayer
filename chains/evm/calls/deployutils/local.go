@@ -19,6 +19,7 @@ import (
 var BasicFee = big.NewInt(100000000000)
 var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
 var GasUsed = uint32(100000)
+var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
 
 type EVMClient interface {
 	calls.ContractCallerDispatcher
@@ -119,19 +120,19 @@ func SetupLocalSygmaRelayer(
 		return nil, err
 	}
 
-	_, err = fr.AdminSetResourceHandler(destDomainID, erc20ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc20ResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	_, err = fr.AdminSetResourceHandler(destDomainID, genericResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, genericResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
-	_, err = fr.AdminSetResourceHandler(destDomainID, erc20LockReleaseResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
+	_, err = fr.AdminSetResourceHandler(destDomainID, erc20LockReleaseResourceID, *fhwo.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
