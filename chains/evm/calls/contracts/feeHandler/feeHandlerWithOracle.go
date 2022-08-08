@@ -76,28 +76,6 @@ func (f *FeeHandlerWithOracleContract) DistributeFee(
 	)
 }
 
-func (f *FeeHandlerWithOracleContract) CollectFee(
-	sender common.Address,
-	fromDomainID uint8,
-	destDomainID uint8,
-	resourceID types.ResourceID,
-	data []byte,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Collecting fee for deposit from sender: %s, from domain: %v, to domain: %v, for resourceID: %v", sender, fromDomainID, destDomainID, hexutil.Encode(resourceID[:]))
-	return f.ExecuteTransaction(
-		"collectFee",
-		opts,
-		sender,
-		fromDomainID,
-		destDomainID,
-		resourceID,
-		data,
-		feeData,
-	)
-}
-
 func (f *FeeHandlerWithOracleContract) CalculateFee(
 	sender common.Address,
 	fromDomainID uint8,
