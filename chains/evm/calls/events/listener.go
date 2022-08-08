@@ -49,11 +49,11 @@ func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Addr
 	if err != nil {
 		return events.Deposit{}, err
 	}
-	if receipt.BlockNumber.Cmp(latestBlock.Add(latestBlock, blockConfirmations)) != 1 {
+	if latestBlock.Cmp(receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations)) != 1 {
 		return events.Deposit{}, fmt.Errorf(
-			"deposit event block %s less than latest block + block confirmations %s",
-			receipt.BlockNumber,
-			latestBlock.Add(latestBlock, blockConfirmations),
+			"latest block %s higher than receipt block number + block confirmations %s",
+			latestBlock,
+			receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations),
 		)
 	}
 
