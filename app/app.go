@@ -6,6 +6,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
 	coreEvm "github.com/ChainSafe/sygma-core/chains/evm"
 	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
@@ -39,12 +46,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"math/big"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 )
 
 func Run() error {
@@ -150,7 +151,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)

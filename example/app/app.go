@@ -6,11 +6,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma-core/lvldb"
 	"math/big"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/ChainSafe/sygma-core/lvldb"
 
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
@@ -130,7 +131,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, nil, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(client, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
 				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)

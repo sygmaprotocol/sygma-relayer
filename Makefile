@@ -34,6 +34,8 @@ genmocks:
 	mockgen --package mock_tss -destination=./tss/mock/storer.go -source=./tss/resharing/resharing.go
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
+	mockgen -source=./chains/evm/listener/event-handler.go -destination=./chains/evm/listener/mock/listener.go
+	mockgen -destination=chains/evm/listener/mock/deposit-handler.go github.com/ChainSafe/sygma-core/chains/evm/listener DepositHandler
 
 e2e-test:
 	./scripts/e2e_tests.sh
