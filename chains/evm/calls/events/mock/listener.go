@@ -67,6 +67,22 @@ func (mr *MockChainClientMockRecorder) LatestBlock() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LatestBlock", reflect.TypeOf((*MockChainClient)(nil).LatestBlock))
 }
 
+// TransactionByHash mocks base method.
+func (m *MockChainClient) TransactionByHash(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionByHash", ctx, hash)
+	ret0, _ := ret[0].(*types.Transaction)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// TransactionByHash indicates an expected call of TransactionByHash.
+func (mr *MockChainClientMockRecorder) TransactionByHash(ctx, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionByHash", reflect.TypeOf((*MockChainClient)(nil).TransactionByHash), ctx, hash)
+}
+
 // WaitAndReturnTxReceipt mocks base method.
 func (m *MockChainClient) WaitAndReturnTxReceipt(h common.Hash) (*types.Receipt, error) {
 	m.ctrl.T.Helper()

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/rs/zerolog/log"
 
@@ -18,6 +19,7 @@ import (
 
 type ChainClient interface {
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 	WaitAndReturnTxReceipt(h common.Hash) (*ethTypes.Receipt, error)
 	LatestBlock() (*big.Int, error)
 }
@@ -43,12 +45,6 @@ func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Addr
 			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
 		)
 	}
-
-	if receipt.ContractAddress != bridgeAddress {
-		return events.Deposit{}, fmt.Errorf(
-			"deposit event contract address %s doesn't match bridge address %s", receipt.ContractAddress, bridgeAddress,
-		)
-	}
 	latestBlock, err := l.client.LatestBlock()
 	if err != nil {
 		return events.Deposit{}, err
@@ -58,6 +54,16 @@ func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Addr
 			"deposit event block %s less than latest block + block confirmations %s",
 			receipt.BlockNumber,
 			latestBlock.Add(latestBlock, blockConfirmations),
+		)
+	}
+
+	tx, _, err := l.client.TransactionByHash(context.Background(), retryDepositTxHash)
+	if err != nil {
+		return events.Deposit{}, err
+	}
+	if *tx.To() != bridgeAddress {
+		return events.Deposit{}, fmt.Errorf(
+			"deposit event contract address %s doesn't match bridge address %s", tx.To(), bridgeAddress,
 		)
 	}
 
