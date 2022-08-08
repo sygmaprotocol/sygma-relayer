@@ -1,0 +1,64 @@
+{
+  "resources": [
+    {
+      "symbol": "eth",
+      "decimal": 18,
+      "tokenAddress": "0x0000000000000000000000000000000000000000",
+      "domainId": 1
+    },
+    {
+      "symbol": "usdt",
+      "decimal": 6,
+      "tokenAddress": "0x3ecef08d0e2dad803847e052249bb4f8bff2d5bb",
+      "domainId": 1
+    },
+    {
+      "symbol": "matic",
+      "decimal": 18,
+      "tokenAddress": "0x3960a10e8f29e96c7ab697ec9ec9ad35fbfe911b",
+      "domainId": 1
+    },
+    {
+      "symbol": "doge",
+      "decimal": 8,
+      "tokenAddress": "0xbA2aE424d960c26247Dd6c32edC70B295c744C43",
+      "domainId": 1
+    },
+    {
+      "symbol": "Test",
+      "decimal": 18,
+      "tokenAddress": "0xDA8556C2485048eee3dE91085347c3210785323c",
+      "domainId": 1
+    },
+    {
+      "symbol": "eth",
+      "decimal": 18,
+      "tokenAddress": "0x3EcEf08D0e2DaD803847E052249bb4F8bFf2D5bB",
+      "domainId": 2
+    },
+    {
+      "symbol": "usdt",
+      "decimal": 6,
+      "tokenAddress": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      "domainId": 2
+    },
+    {
+      "symbol": "matic",
+      "decimal": 18,
+      "tokenAddress": "0x0000000000000000000000000000000000000000",
+      "domainId": 2
+    },
+    {
+      "symbol": "doge",
+      "decimal": 18,
+      "tokenAddress": "0x8A953CfE442c5E8855cc6c61b1293FA648BAE472",
+      "domainId": 2
+    },
+    {
+      "symbol": "Test",
+      "decimal": 18,
+      "tokenAddress": "0xDA8556C2485048eee3dE91085347c3210785323c",
+      "domainId": 2
+    }
+  ]
+}
