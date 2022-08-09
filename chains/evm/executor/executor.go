@@ -117,6 +117,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
+	defer timeout.Stop()
 	defer cancel()
 	for {
 		select {
