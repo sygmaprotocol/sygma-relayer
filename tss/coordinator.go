@@ -105,24 +105,23 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 			}
 		case msg := <-failChn:
 			{
-				failMsg, err := common.UnmarshalFailMessage(msg.Payload)
-				if err != nil {
-					statusChn <- err
-					return
+				// ignore messages that are no from coordinator
+				if msg.From.Pretty() != coordinator.Pretty() {
+					continue
 				}
 
 				if !tssProcess.Retryable() {
-					statusChn <- fmt.Errorf("process failed with culprits: %+v", failMsg.ExcludedPeers)
+					statusChn <- fmt.Errorf("process failed with culprit: %s", coordinator.Pretty())
 					return
 				}
 
-				err = c.lockRetry(sessionID)
+				err := c.lockRetry(sessionID)
 				if err != nil {
 					continue
 				}
 
 				tssProcess.Stop()
-				go c.retry(ctx, tssProcess, resultChn, errChn, failMsg.ExcludedPeers)
+				go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{msg.From})
 			}
 		case err := <-errChn:
 			{
@@ -130,7 +129,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					statusChn <- nil
 					return
 				}
-				log.Err(err).Msgf("Tss process failed")
+				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 
 				if !tssProcess.Retryable() {
 					statusChn <- fmt.Errorf("process failed with error: %+v", err)
@@ -143,23 +142,21 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					continue
 				}
 
+				tssProcess.Stop()
+
 				switch err := err.(type) {
 				case *CoordinatorError:
 					{
-						tssProcess.Stop()
-
 						excludedPeers := []peer.ID{err.Peer}
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *comm.CommunicationError:
 					{
-						tssProcess.Stop()
 						excludedPeers := []peer.ID{err.Peer}
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *tss.Error:
 					{
-						tssProcess.Stop()
 						excludedPeers, err := common.PeersFromParties(err.Culprits())
 						if err != nil {
 							statusChn <- err
@@ -170,9 +167,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				case *SubsetError:
 					{
-						log.Info().Str("SessionID", sessionID).Str("PeerID", err.Peer.Pretty()).Msgf(err.Error())
-						tssProcess.Stop()
-
 						// wait for start message if existing singing process fails
 						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""), c.TssTimeout)
 					}

@@ -13,7 +13,6 @@ import (
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
@@ -22,7 +21,6 @@ import (
 
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/tss"
-	"github.com/ChainSafe/sygma/tss/common"
 	"github.com/ChainSafe/sygma/tss/signing"
 )
 
@@ -126,7 +124,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 				signatureData := sigResult.(*tssSigning.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
-					go e.comm.Broadcast(e.host.Peerstore().Peers(), common.MarshalFailMessage([]peer.ID{e.host.ID()}), comm.TssFailMsg, sessionID, nil)
+					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
 					return err
 				}
 
