@@ -105,7 +105,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 			}
 		case msg := <-failChn:
 			{
-				// ignore messages that are no from coordinator
+				// ignore messages that are not from coordinator
 				if msg.From.Pretty() != coordinator.Pretty() {
 					continue
 				}
