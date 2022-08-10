@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"testing"
@@ -54,13 +53,36 @@ func (s *ListenerTestSuite) Test_FetchDepositEvent_EventTooNew() {
 	s.NotNil(err)
 }
 
-func (s *ListenerTestSuite) Test_FetchDepositEvent_BridgeAndDepositHashMismatch() {
+func (s *ListenerTestSuite) Test_FetchDepositEvent_NoDepositEvent() {
 	s.mockClient.EXPECT().WaitAndReturnTxReceipt(common.HexToHash("0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c")).Return(&types.Receipt{
 		BlockNumber: big.NewInt(14),
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
-	tx := types.NewTransaction(1, common.HexToAddress("0x1ec6b294902d42fee964d29fa962e5976e71e67d"), big.NewInt(0), 100, big.NewInt(1), []byte{})
-	s.mockClient.EXPECT().TransactionByHash(context.Background(), common.HexToHash("0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c")).Return(tx, false, nil)
+
+	_, err := s.listener.FetchDepositEvent(
+		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
+		common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
+		big.NewInt(5),
+	)
+
+	s.NotNil(err)
+}
+
+func (s *ListenerTestSuite) Test_FetchDepositEvent_NoMatchingEvent() {
+	s.mockClient.EXPECT().WaitAndReturnTxReceipt(common.HexToHash("0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c")).Return(&types.Receipt{
+		BlockNumber: big.NewInt(14),
+		Logs: []*types.Log{
+			{
+				Address: common.HexToAddress("0x1ec6b294902d42fee964d29fa962e5976e71e67d"),
+				Data:    []byte{},
+			},
+			{
+				Address: common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
+				Data:    []byte{},
+			},
+		},
+	}, nil)
+	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
 
 	_, err := s.listener.FetchDepositEvent(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
@@ -72,18 +94,28 @@ func (s *ListenerTestSuite) Test_FetchDepositEvent_BridgeAndDepositHashMismatch(
 }
 
 func (s *ListenerTestSuite) Test_FetchDepositEvent_ValidEvent() {
+	depositEvent := common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000001d00000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000005600000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000148e0a907331554af72563bd8d43051c2e64be5d350102000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 	s.mockClient.EXPECT().WaitAndReturnTxReceipt(common.HexToHash("0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c")).Return(&types.Receipt{
 		BlockNumber: big.NewInt(14),
+		Logs: []*types.Log{
+			{
+				Address: common.HexToAddress("0x1ec6b294902d42fee964d29fa962e5976e71e67d"),
+				Data:    depositEvent,
+			},
+			{
+				Address: common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
+				Data:    depositEvent,
+			},
+		},
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
-	tx := types.NewTransaction(1, common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"), big.NewInt(0), 100, big.NewInt(1), []byte{})
-	s.mockClient.EXPECT().TransactionByHash(context.Background(), common.HexToHash("0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c")).Return(tx, false, nil)
 
-	_, err := s.listener.FetchDepositEvent(
+	d, err := s.listener.FetchDepositEvent(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
 		common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
 		big.NewInt(5),
 	)
 
 	s.Nil(err)
+	s.Equal(d.DestinationDomainID, uint8(2))
 }
