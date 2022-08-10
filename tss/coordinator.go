@@ -194,6 +194,11 @@ func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordina
 // at the same time
 func (c *Coordinator) lockRetry(sessionID string) error {
 	value, ok := c.retriedProcesses[sessionID]
+
+	fmt.Println("LOCKING")
+	fmt.Println(value)
+	fmt.Println(ok)
+
 	if value || !ok {
 		err := fmt.Errorf("process %s has pending retry", sessionID)
 		log.Err(err).Msg("retry already locked")
