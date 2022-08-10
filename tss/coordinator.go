@@ -152,8 +152,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				case *comm.CommunicationError:
 					{
-						excludedPeers := []peer.ID{err.Peer}
-						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
+						go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{})
 					}
 				case *tss.Error:
 					{

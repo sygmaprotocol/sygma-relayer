@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"reflect"
 	"time"
 
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
@@ -113,9 +114,16 @@ func (s *Signing) Start(
 			s.ErrChn <- err
 		}
 
+		waitingFor := make([]*tss.PartyID, 0)
 		for {
-			fmt.Println(s.Party.WaitingFor())
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Minute)
+			if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
+				s.ErrChn <- &comm.CommunicationError{
+					Err: fmt.Errorf("waiting for peers %s", waitingFor),
+				}
+			}
+
+			waitingFor = s.Party.WaitingFor()
 		}
 	}()
 }
