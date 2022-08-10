@@ -107,16 +107,21 @@ services:
   fee-oracle:
     image: "chainsafe/sygma-fee-oracle"
     container_name: fee-oracle
-    logging:
-      driver: none
+    command: go run main.go server -r ./fee-oracle-config/resource.json -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
     depends_on:
       - evm1-1
       - evm2-1
     networks:
       - evm1
       - evm2
+    volumes:
+      - ./fee-oracle-config:/app/feeOracle/fee-oracle-config
     ports:
       - "8091:8091"
+    environment:
+      - APP_MODE=debug
+      - IDENTITY_KEY=71aec985a12cfcbabc7969845215ceac56038e87477c8337e373eab7b15796cf
+      - IDENTITY_KEY_TYPE=secp256k1
 
 networks:
   evm2:
