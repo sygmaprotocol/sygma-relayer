@@ -149,14 +149,12 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 						tssProcess.Stop()
 
 						excludedPeers := []peer.ID{err.Peer}
-						go c.communication.Broadcast(c.host.Peerstore().Peers(), common.MarshalFailMessage(excludedPeers), comm.TssFailMsg, tssProcess.SessionID(), nil)
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *comm.CommunicationError:
 					{
 						tssProcess.Stop()
 						excludedPeers := []peer.ID{err.Peer}
-						go c.communication.Broadcast(c.host.Peerstore().Peers(), common.MarshalFailMessage(excludedPeers), comm.TssFailMsg, tssProcess.SessionID(), nil)
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *tss.Error:
@@ -168,7 +166,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 							return
 						}
 
-						go c.communication.Broadcast(c.host.Peerstore().Peers(), common.MarshalFailMessage(excludedPeers), comm.TssFailMsg, tssProcess.SessionID(), nil)
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *SubsetError:
