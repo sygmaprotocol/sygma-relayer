@@ -14,7 +14,7 @@ const (
 	TssStartMsg
 	// TssFailMsg message type sent by parties after an communication or tss error happens during process.
 	TssFailMsg
-	// TssReadyMsg message type sent by parties after the leader sends TssInitiateMsg to signify they are ready for the tss process.
+	// TssReadyMsg message type sent by coordinator sent if the process fails.
 	TssReadyMsg
 	// TssReshareMsg message type used for resharing tss messages.
 	TssReshareMsg
