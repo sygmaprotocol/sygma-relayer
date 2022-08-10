@@ -3,7 +3,9 @@ package signing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
@@ -109,6 +111,11 @@ func (s *Signing) Start(
 		err := s.Party.Start()
 		if err != nil {
 			s.ErrChn <- err
+		}
+
+		for {
+			fmt.Println(s.Party.WaitingFor())
+			time.Sleep(time.Second * 10)
 		}
 	}()
 }
