@@ -144,10 +144,12 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				case *comm.CommunicationError:
 					{
+						log.Info().Msgf("COMMUNICATION")
 						go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{})
 					}
 				case *tss.Error:
 					{
+						log.Info().Msgf("TSS")
 						excludedPeers, err := common.PeersFromParties(err.Culprits())
 						if err != nil {
 							statusChn <- err
@@ -158,11 +160,13 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				case *SubsetError:
 					{
+						log.Info().Msgf("SUBSET")
 						// wait for start message if existing singing process fails
 						go c.waitForStart(ctx, tssProcess, resultChn, errChn, peer.ID(""), c.TssTimeout)
 					}
 				default:
 					{
+						log.Info().Msgf("DEFAULT")
 						statusChn <- err
 						return
 					}
@@ -191,6 +195,7 @@ func (c *Coordinator) lockRetry(sessionID string) error {
 		return err
 	}
 
+	log.Info().Msgf("RETRIED PROCESS == TRUE")
 	c.retriedProcesses[sessionID] = true
 	return nil
 }
@@ -198,12 +203,14 @@ func (c *Coordinator) lockRetry(sessionID string) error {
 // retry initiates full bully process to calculate coordinator and starts a new tss process after
 // an expected error ocurred during regular tss execution
 func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
+	log.Info().Msgf("RETRYING")
 	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcess.SessionID(), elector.Bully)
 	coordinator, err := coordinatorElector.Coordinator(ctx, common.ExcludePeers(tssProcess.ValidCoordinators(), excludedPeers))
 	if err != nil {
 		errChn <- err
 		return
 	}
+	log.Info().Msgf("COORDINATOR APPEAREVD")
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
 }
 
