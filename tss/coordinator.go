@@ -110,18 +110,10 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					continue
 				}
 
-				if !tssProcess.Retryable() {
-					statusChn <- fmt.Errorf("process failed with culprit: %s", coordinator.Pretty())
-					return
-				}
-
-				err := c.lockRetry(sessionID)
-				if err != nil {
-					continue
-				}
-
-				tssProcess.Stop()
-				go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{msg.From})
+				err := fmt.Errorf("tss fail message received for process %s", sessionID)
+				log.Err(err).Msgf("Tss process fail message received")
+				statusChn <- err
+				return
 			}
 		case err := <-errChn:
 			{
