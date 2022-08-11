@@ -128,14 +128,13 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					return
 				}
 
-				err := c.lockRetry(sessionID)
-				if err != nil {
+				retryError := c.lockRetry(sessionID)
+				if retryError != nil {
 					// retry is already pending
 					continue
 				}
 
 				tssProcess.Stop()
-
 				switch err := err.(type) {
 				case *CoordinatorError:
 					{
@@ -155,7 +154,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 							statusChn <- err
 							return
 						}
-
+						t
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *SubsetError:
