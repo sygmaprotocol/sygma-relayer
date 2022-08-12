@@ -154,7 +154,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 							statusChn <- err
 							return
 						}
-						t
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *SubsetError:
