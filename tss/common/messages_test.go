@@ -19,9 +19,8 @@ func (s *TssMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
 	originalMsg := &common.TssMessage{
 		MsgBytes:    []byte{1},
 		IsBroadcast: true,
-		From:        "fromAddress",
 	}
-	msgBytes, err := common.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBroadcast, originalMsg.From)
+	msgBytes, err := common.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBroadcast)
 	s.Nil(err)
 
 	unmarshaledMsg, err := common.UnmarshalTssMessage(msgBytes)

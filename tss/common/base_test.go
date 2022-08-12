@@ -176,7 +176,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 	}
-	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
 	}
@@ -202,7 +202,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 	}
-	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
 	}
@@ -227,7 +227,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 	}
-	msg, _ := common.MarshalTssMessage([]byte{1}, true, peerID)
+	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
 	}

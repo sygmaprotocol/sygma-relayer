@@ -6,14 +6,12 @@ import (
 
 type TssMessage struct {
 	MsgBytes    []byte `json:"msgBytes"`
-	From        string `json:"from"`
 	IsBroadcast bool   `json:"isBroadcast"`
 }
 
-func MarshalTssMessage(msgBytes []byte, isBroadcast bool, from string) ([]byte, error) {
+func MarshalTssMessage(msgBytes []byte, isBroadcast bool) ([]byte, error) {
 	tssMsg := &TssMessage{
 		IsBroadcast: isBroadcast,
-		From:        from,
 		MsgBytes:    msgBytes,
 	}
 

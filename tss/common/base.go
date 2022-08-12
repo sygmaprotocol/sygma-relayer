@@ -66,7 +66,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 						return
 					}
 
-					ok, err := b.Party.UpdateFromBytes(msg.MsgBytes, b.PartyStore[msg.From], msg.IsBroadcast)
+					ok, err := b.Party.UpdateFromBytes(msg.MsgBytes, b.PartyStore[wMsg.From.Pretty()], msg.IsBroadcast)
 					if !ok {
 						b.ErrChn <- err
 					}
@@ -94,7 +94,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					return
 				}
 
-				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast, routing.From.Id)
+				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
 				if err != nil {
 					b.ErrChn <- err
 					return
