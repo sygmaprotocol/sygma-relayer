@@ -112,19 +112,10 @@ func (s *Signing) Start(
 		err := s.Party.Start()
 		if err != nil {
 			s.ErrChn <- err
+			return
 		}
 
-		waitingFor := make([]*tss.PartyID, 0)
-		for {
-			time.Sleep(time.Minute)
-			if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
-				s.ErrChn <- &comm.CommunicationError{
-					Err: fmt.Errorf("waiting for peers %s", waitingFor),
-				}
-			}
-
-			waitingFor = s.Party.WaitingFor()
-		}
+		s.monitorSigning(ctx)
 	}()
 }
 
@@ -221,4 +212,30 @@ func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool 
 
 func (s *Signing) Retryable() bool {
 	return true
+}
+
+// monitorSigning checks if the process is stuck and waiting for peers and sends an error
+// if it is
+func (s *Signing) monitorSigning(ctx context.Context) {
+	waitingFor := make([]*tss.PartyID, 0)
+	ticker := time.NewTicker(time.Minute * 3)
+
+	for {
+		select {
+		case <-ticker.C:
+			{
+				if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
+					s.ErrChn <- &comm.CommunicationError{
+						Err: fmt.Errorf("waiting for peers %s", waitingFor),
+					}
+				}
+
+				waitingFor = s.Party.WaitingFor()
+			}
+		case <-ctx.Done():
+			{
+				return
+			}
+		}
+	}
 }
