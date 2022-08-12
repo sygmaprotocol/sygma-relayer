@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-core/chains/evm/listener"
 	"github.com/ChainSafe/sygma-core/relayer/message"
@@ -31,33 +30,33 @@ type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*hubEvents.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
-	FetchDepositEvent(event hubEvents.RetryEvent) (events.Deposit, error)
+	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error)
 }
 
 type RetryEventHandler struct {
-	client         calls.ClientDispatcher
-	eventListener  EventListener
-	depositHandler listener.DepositHandler
-	bridgeAddress  common.Address
-	bridgeABI      abi.ABI
-	domainID       uint8
+	eventListener      EventListener
+	depositHandler     listener.DepositHandler
+	bridgeAddress      common.Address
+	bridgeABI          abi.ABI
+	domainID           uint8
+	blockConfirmations *big.Int
 }
 
 func NewRetryEventHandler(
-	client calls.ClientDispatcher,
 	eventListener EventListener,
 	depositHandler listener.DepositHandler,
 	bridgeAddress common.Address,
 	domainID uint8,
+	blockConfirmations *big.Int,
 ) *RetryEventHandler {
 	bridgeABI, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &RetryEventHandler{
-		eventListener:  eventListener,
-		depositHandler: depositHandler,
-		bridgeAddress:  bridgeAddress,
-		client:         client,
-		bridgeABI:      bridgeABI,
-		domainID:       domainID,
+		eventListener:      eventListener,
+		depositHandler:     depositHandler,
+		bridgeAddress:      bridgeAddress,
+		bridgeABI:          bridgeABI,
+		domainID:           domainID,
+		blockConfirmations: blockConfirmations,
 	}
 }
 
@@ -66,27 +65,33 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 	if err != nil {
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
 	}
-	if len(retryEvents) == 0 {
-		return nil
-	}
 
 	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
-		depositEvent, err := eh.eventListener.FetchDepositEvent(event)
-		if err != nil {
-			return err
-		}
-		msg, err := eh.depositHandler.HandleDeposit(
-			eh.domainID, depositEvent.DestinationDomainID, depositEvent.DepositNonce,
-			depositEvent.ResourceID, depositEvent.Data, depositEvent.HandlerResponse,
-		)
-		if err != nil {
-			log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
-			continue
-		}
+		func(event hubEvents.RetryEvent) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Err(err).Msgf("panic occured while handling retry event %+v", event)
+				}
+			}()
 
-		log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
-		retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
+			d, err := eh.eventListener.FetchDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
+			if err != nil {
+				log.Error().Err(err).Msgf("Unable to fetch deposit event %+v", d)
+				return
+			}
+			msg, err := eh.depositHandler.HandleDeposit(
+				eh.domainID, d.DestinationDomainID, d.DepositNonce,
+				d.ResourceID, d.Data, d.HandlerResponse,
+			)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
+				return
+			}
+
+			log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+			retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
+		}(event)
 	}
 
 	for _, retries := range retriesByDomain {

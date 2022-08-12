@@ -19,6 +19,7 @@ import (
 type ChainClient interface {
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	WaitAndReturnTxReceipt(h common.Hash) (*ethTypes.Receipt, error)
+	LatestBlock() (*big.Int, error)
 }
 
 type Listener struct {
@@ -34,7 +35,7 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent) (events.Deposit, error) {
+func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error) {
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
 	if err != nil {
@@ -42,15 +43,30 @@ func (l *Listener) FetchDepositEvent(event RetryEvent) (events.Deposit, error) {
 			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
 		)
 	}
+	latestBlock, err := l.client.LatestBlock()
+	if err != nil {
+		return events.Deposit{}, err
+	}
+	if latestBlock.Cmp(receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations)) != 1 {
+		return events.Deposit{}, fmt.Errorf(
+			"latest block %s higher than receipt block number + block confirmations %s",
+			latestBlock,
+			receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations),
+		)
+	}
 
 	var depositEvent events.Deposit
 	for _, lg := range receipt.Logs {
+		if lg.Address != bridgeAddress {
+			continue
+		}
+
 		err := l.abi.UnpackIntoInterface(&depositEvent, "Deposit", lg.Data)
 		if err == nil {
-			break
+			return depositEvent, nil
 		}
 	}
-	return depositEvent, nil
+	return depositEvent, fmt.Errorf("no matching deposit event found for hash %s", retryDepositTxHash)
 }
 
 func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryEvent, error) {

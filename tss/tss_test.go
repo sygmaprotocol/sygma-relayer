@@ -164,8 +164,8 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	}
 	setupCommunication(communicationMap)
 
-	s.mockStorer.EXPECT().LockKeyshare().Times(3)
-	s.mockStorer.EXPECT().UnlockKeyshare().Times(3)
+	s.mockStorer.EXPECT().LockKeyshare().AnyTimes()
+	s.mockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	s.mockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
 	status := make(chan error, s.partyNumber)
 	ctx, cancel := context.WithCancel(context.Background())
