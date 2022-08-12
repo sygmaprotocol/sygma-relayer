@@ -177,8 +177,10 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 		Party:      s.mockParty,
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
+	peer, _ := peer.Decode(peerID)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
+		From:    peer,
 	}
 	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{})
 
@@ -203,8 +205,10 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 		Party:      s.mockParty,
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
+	peer, _ := peer.Decode(peerID)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
+		From:    peer,
 	}
 	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(true, nil).AnyTimes()
 
@@ -228,8 +232,10 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 		Party:      s.mockParty,
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
+	peer, _ := peer.Decode(peerID)
 	wrappedMsg := &comm.WrappedMessage{
 		Payload: msg,
+		From:    peer,
 	}
 	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{}).AnyTimes()
 
