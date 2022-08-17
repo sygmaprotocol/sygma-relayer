@@ -25,15 +25,7 @@ func (nt NetworkTopology) Hash() (string, error) {
 		return "", err
 	}
 
-	return strconv.FormatUint(hash, 10), nil
-}
-
-func (nt NetworkTopology) PeerIDS() peer.IDSlice {
-	peerIDS := make(peer.IDSlice, len(nt.Peers))
-	for i, peer := range nt.Peers {
-		peerIDS[i] = peer.ID
-	}
-	return peerIDS
+	return strconv.FormatUint(hash, 16), nil
 }
 
 func (nt NetworkTopology) IsAllowedPeer(peer peer.ID) bool {
