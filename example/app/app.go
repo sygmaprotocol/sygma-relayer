@@ -75,7 +75,9 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
+
+	connectionGate := p2p.NewConnectionGate(networkTopology)
+	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	if err != nil {
 		panic(err)
 	}

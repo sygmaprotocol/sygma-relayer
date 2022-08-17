@@ -105,7 +105,8 @@ func Run() error {
 	priv, err := crypto.UnmarshalPrivateKey(privBytes)
 	panicOnError(err)
 
-	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
+	connectionGate := p2p.NewConnectionGate(networkTopology)
+	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
 	comm := p2p.NewCommunication(host, "p2p/sygma")
