@@ -74,7 +74,8 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElec
 
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
-		newHost, _ := p2p.NewHost(privateKeys[i], topology, uint16(4000+s.portOffset+i))
+		connectionGate := p2p.NewConnectionGate(topology)
+		newHost, _ := p2p.NewHost(privateKeys[i], topology, connectionGate, uint16(4000+s.portOffset+i))
 		testHosts = append(testHosts, newHost)
 		allowedPeers = append(allowedPeers, newHost.ID())
 	}

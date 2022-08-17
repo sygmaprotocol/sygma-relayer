@@ -43,9 +43,10 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+		topology := topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
-		}, uint16(4000+i))
+		}
+		newHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4000+i))
 		s.testHosts = append(s.testHosts, newHost)
 	}
 
@@ -114,9 +115,10 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
 	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-	externalHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+	topology := topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
-	}, uint16(4005))
+	}
+	externalHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4005))
 
 	firstSubChannel := make(chan *comm.WrappedMessage)
 	s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)
