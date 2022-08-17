@@ -47,7 +47,6 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 		protocolID:                 s.testProtocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
 	}
 
 	testWrappedMsg := comm.WrappedMessage{
@@ -100,7 +99,6 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 		protocolID:                 s.testProtocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
 	}
 
 	mockStream := mock_network.NewMockStream(s.mockController)
@@ -117,31 +115,6 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	s.NotNil(err)
 }
 
-func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_SenderNotAllowed() {
-	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
-		h:                          s.mockHost,
-		protocolID:                 s.testProtocolID,
-		streamManager:              NewStreamManager(),
-		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
-	}
-
-	mockStream := mock_network.NewMockStream(s.mockController)
-
-	// mock for s.Conn().RemotePeer()
-	unknownSenderID, _ := peer.Decode("QmPHZnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
-	mockConn := mock_network.NewMockConn(s.mockController)
-	mockConn.EXPECT().RemotePeer().AnyTimes().Return(unknownSenderID)
-	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
-
-	messageFromStream, err := c.processMessageFromStream(mockStream)
-
-	s.Nil(messageFromStream)
-	s.NotNil(err)
-	s.EqualError(err, "message sent from peer QmPHZnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54 that is not allowed")
-}
-
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunction_ValidMessageWithSubscribers() {
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
@@ -149,7 +122,6 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 		protocolID:                 s.testProtocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
 	}
 
 	testWrappedMsg := comm.WrappedMessage{

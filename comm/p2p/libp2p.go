@@ -21,10 +21,9 @@ type Libp2pCommunication struct {
 	protocolID    protocol.ID
 	streamManager *StreamManager
 	logger        zerolog.Logger
-	allowedPeers  peer.IDSlice
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
 
 	c := Libp2pCommunication{
@@ -33,7 +32,6 @@ func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDS
 		protocolID:                 protocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     logger,
-		allowedPeers:               allowedPeers,
 	}
 
 	// start processing incoming messages
@@ -173,12 +171,6 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 
 func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	remotePeerID := s.Conn().RemotePeer()
-	if !c.isAllowedPeer(remotePeerID) {
-		return nil, fmt.Errorf(
-			"message sent from peer %s that is not allowed", s.Conn().RemotePeer().Pretty(),
-		)
-	}
-
 	msgBytes, err := ReadStream(s)
 	if err != nil {
 		c.streamManager.AddStream("UNKNOWN", s)
@@ -203,13 +195,4 @@ func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.W
 	)
 
 	return &wrappedMsg, nil
-}
-
-func (c Libp2pCommunication) isAllowedPeer(pID peer.ID) bool {
-	for _, allowedPeer := range c.allowedPeers {
-		if pID == allowedPeer {
-			return true
-		}
-	}
-	return false
 }
