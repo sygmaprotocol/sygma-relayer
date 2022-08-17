@@ -61,7 +61,11 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 		}
 	}
 }
-func (s *CoordinatorElectorTestSuite) TearDownTest() {}
+func (s *CoordinatorElectorTestSuite) TearDownTest() {
+	for _, testHost := range s.testHosts {
+		_ = testHost.Close()
+	}
+}
 
 func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
 	staticCommunicationCoordinator := NewCoordinatorElector("1")

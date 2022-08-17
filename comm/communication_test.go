@@ -40,44 +40,15 @@ func (s *CommunicationIntegrationTestSuite) TearDownSuite() {}
 func (s *CommunicationIntegrationTestSuite) SetupTest() {
 	s.mockController = gomock.NewController(s.T())
 
-	// create test hosts
-	for i := 0; i < numberOfTestHosts; i++ {
-		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
-			Peers: []*peer.AddrInfo{},
-		}, uint16(4000+i))
-		s.testHosts = append(s.testHosts, newHost)
-	}
-
-	// populate peerstores
-	peersAdrInfos := map[int][]*peer.AddrInfo{}
-	for i := 0; i < numberOfTestHosts; i++ {
-		for j := 0; j < numberOfTestHosts; j++ {
-			if i != j {
-				adrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
-					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, s.testHosts[j].ID().Pretty(),
-				))
-				s.testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
-				peersAdrInfos[i] = append(peersAdrInfos[i], adrInfoForHost)
-			}
-		}
-	}
-
-	for i := 0; i < numberOfTestHosts; i++ {
-		allowedPeers := peer.IDSlice{}
-		for _, pInfo := range peersAdrInfos[i] {
-			allowedPeers = append(allowedPeers, pInfo.ID)
-		}
-
-		com := p2p.NewCommunication(
-			s.testHosts[i],
-			s.testProtocolID,
-			allowedPeers,
-		)
-		s.testCommunications = append(s.testCommunications, com)
+	hosts, communications := InitializeHostsAndCommunications(numberOfTestHosts, s.testProtocolID)
+	s.testHosts = hosts
+	s.testCommunications = communications
+}
+func (s *CommunicationIntegrationTestSuite) TearDownTest() {
+	for _, testHost := range s.testHosts {
+		_ = testHost.Close()
 	}
 }
-func (s *CommunicationIntegrationTestSuite) TearDownTest() {}
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_SubscribersGotMessage() {
 	firstSubChannel := make(chan *comm.WrappedMessage)
@@ -219,4 +190,51 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		s.Equal(comm.CoordinatorPingMsg, msg.MessageType)
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
+}
+
+/**
+Util function used for setting tests with multiple communications
+*/
+func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID) ([]host.Host, []comm.Communication) {
+	var testHosts []host.Host
+	// create test hosts
+	for i := 0; i < numberOfActors; i++ {
+		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
+		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+			Peers: []*peer.AddrInfo{},
+		}, uint16(4000+i))
+		testHosts = append(testHosts, newHost)
+	}
+
+	// populate peerstores
+	peersAdrInfos := map[int][]*peer.AddrInfo{}
+	for i := 0; i < numberOfActors; i++ {
+		for j := 0; j < numberOfActors; j++ {
+			if i != j {
+				adrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
+					"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+j, testHosts[j].ID().Pretty(),
+				))
+				testHosts[i].Peerstore().AddAddr(adrInfoForHost.ID, adrInfoForHost.Addrs[0], peerstore.PermanentAddrTTL)
+				peersAdrInfos[i] = append(peersAdrInfos[i], adrInfoForHost)
+			}
+		}
+	}
+
+	// create communications
+	var testCommunications []comm.Communication
+	for i := 0; i < numberOfActors; i++ {
+		allowedPeers := peer.IDSlice{}
+		for _, pInfo := range peersAdrInfos[i] {
+			allowedPeers = append(allowedPeers, pInfo.ID)
+		}
+
+		com := p2p.NewCommunication(
+			testHosts[i],
+			protocolID,
+			allowedPeers,
+		)
+		testCommunications = append(testCommunications, com)
+	}
+
+	return testHosts, testCommunications
 }

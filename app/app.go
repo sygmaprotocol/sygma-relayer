@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma/comm"
 	"math/big"
 	"os"
 	"os/signal"
@@ -108,9 +109,12 @@ func Run() error {
 	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
-	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
+	healthComm := p2p.NewCommunication(host, "p2p/health", allowedPeers)
+	go comm.ExecuteCommHealthCheck(healthComm, allowedPeers)
+
+	communication := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
-	coordinator := tss.NewCoordinator(host, comm, electorFactory)
+	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
@@ -149,8 +153,8 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, comm, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, comm, keyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
@@ -158,7 +162,7 @@ func Run() error {
 				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
-				executor := executor.NewExecutor(host, comm, coordinator, mh, bridgeContract, keyshareStore)
+				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
 				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
 				chain := evm.NewEVMChain(*coreEvmChain, executor)
