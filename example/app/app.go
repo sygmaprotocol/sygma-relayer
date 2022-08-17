@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
@@ -62,11 +61,6 @@ func Run() error {
 		Threshold: "2",
 	})
 
-	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range networkTopology.Peers {
-		allowedPeers = append(allowedPeers, pAdrInfo.ID)
-	}
-
 	db, err := lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 	if err != nil {
 		panic(err)
@@ -85,7 +79,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	comm := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
+	comm := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, comm, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)

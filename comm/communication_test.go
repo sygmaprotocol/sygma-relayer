@@ -72,7 +72,6 @@ func (s *CommunicationIntegrationTestSuite) SetupTest() {
 		com := p2p.NewCommunication(
 			s.testHosts[i],
 			s.testProtocolID,
-			allowedPeers,
 		)
 		s.testCommunications = append(s.testCommunications, com)
 	}
