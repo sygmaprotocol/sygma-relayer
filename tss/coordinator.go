@@ -172,6 +172,7 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 		errChn <- err
 		return
 	}
+
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
 }
 
@@ -271,6 +272,15 @@ func (c *Coordinator) waitForStart(
 		case startMsg := <-startMsgChn:
 			{
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received start message from %s", startMsg.From)
+
+				if startMsg.From != coordinator {
+					errChn <- fmt.Errorf(
+						"start message received from peer %s that is not coordinator %s",
+						startMsg.From.Pretty(), coordinator.Pretty(),
+					)
+					return
+				}
+
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
 					errChn <- err
