@@ -273,7 +273,9 @@ func (c *Coordinator) waitForStart(
 			{
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received start message from %s", startMsg.From)
 
-				if startMsg.From != coordinator {
+				// having startMsg.From as "" is special case when peer is not selected in subset
+				// but should wait for start message if existing singing process fails
+				if coordinator != "" && startMsg.From != coordinator {
 					errChn <- fmt.Errorf(
 						"start message received from peer %s that is not coordinator %s",
 						startMsg.From.Pretty(), coordinator.Pretty(),

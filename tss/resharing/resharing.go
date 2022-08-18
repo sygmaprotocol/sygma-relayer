@@ -3,7 +3,7 @@ package resharing
 import (
 	"context"
 	"encoding/json"
-
+	"errors"
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/ChainSafe/sygma/tss/common"
@@ -152,7 +152,22 @@ func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error
 		return startParams, err
 	}
 
+	err = r.validateStartParams(startParams)
+	if err != nil {
+		return startParams, err
+	}
+
 	return startParams, nil
+}
+
+func (r *Resharing) validateStartParams(params startParams) error {
+	if params.OldThreshold <= 0 {
+		return errors.New("invalid old threshold in start params: threshold too small")
+	}
+	if len(params.OldSubset) < params.OldThreshold {
+		return errors.New("invalid old threshold in start params: threshold bigger then subset")
+	}
+	return nil
 }
 
 // processEndMessage routes signature to result channel.

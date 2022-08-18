@@ -355,3 +355,127 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	time.Sleep(time.Millisecond * 50)
 	cancel()
 }
+
+func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_LessThenZero() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber+1; i++ {
+		host, _ := newHost(i)
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+
+	for i, host := range hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		storer := keyshare.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		share, _ := storer.GetKeyshare()
+
+		// set old threshold to invalid value
+		share.Threshold = -1
+
+		s.mockStorer.EXPECT().LockKeyshare()
+		s.mockStorer.EXPECT().UnlockKeyshare()
+		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
+		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.mockStorer)
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		processes = append(processes, resharing)
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+	}
+
+	err := <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+
+	time.Sleep(time.Millisecond * 50)
+	cancel()
+}
+
+func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_BiggerThenSubsetLength() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	hosts := []host.Host{}
+	for i := 0; i < s.partyNumber+1; i++ {
+		host, _ := newHost(i)
+		hosts = append(hosts, host)
+	}
+	for _, host := range hosts {
+		for _, peer := range hosts {
+			host.Peerstore().AddAddr(peer.ID(), peer.Addrs()[0], peerstore.PermanentAddrTTL)
+		}
+	}
+
+	for i, host := range hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		storer := keyshare.NewKeyshareStore(fmt.Sprintf("./test/keyshares/%d.keyshare", i))
+		share, _ := storer.GetKeyshare()
+
+		// set old threshold to invalid value
+		share.Threshold = 314
+
+		s.mockStorer.EXPECT().LockKeyshare()
+		s.mockStorer.EXPECT().UnlockKeyshare()
+		s.mockStorer.EXPECT().GetKeyshare().Return(share, nil)
+		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.mockStorer)
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.bullyConfig)
+		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
+		processes = append(processes, resharing)
+	}
+	setupCommunication(communicationMap)
+
+	statusChn := make(chan error, s.partyNumber)
+	resultChn := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	for i, coordinator := range coordinators {
+		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+	}
+
+	err := <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	err = <-statusChn
+	s.NotNil(err)
+	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+
+	time.Sleep(time.Millisecond * 50)
+	cancel()
+}
