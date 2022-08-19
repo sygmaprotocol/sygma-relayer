@@ -1,18 +1,18 @@
-package p2p
+package p2p_test
 
 import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma/comm/p2p"
+	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
 	"testing"
 
-	"github.com/ChainSafe/sygma/comm"
 	mock_host "github.com/ChainSafe/sygma/comm/p2p/mock/host"
-	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,14 +41,9 @@ func (s *Libp2pCommunicationTestSuite) SetupTest() {
 func (s *Libp2pCommunicationTestSuite) TearDownTest() {}
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_ValidMessage() {
-	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
-		h:                          s.mockHost,
-		protocolID:                 s.testProtocolID,
-		streamManager:              NewStreamManager(),
-		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
-	}
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	testWrappedMsg := comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,
@@ -69,7 +64,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	// on first call return header representing length of the message
 	firstCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
 		length := uint32(len(bytes))
-		lengthBytes := make([]byte, LengthHeader)
+		lengthBytes := make([]byte, p2p.LengthHeader)
 		binary.LittleEndian.PutUint32(lengthBytes, length)
 
 		copy(p[:], lengthBytes)
@@ -82,7 +77,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	})
 	gomock.InOrder(firstCall, secondCall)
 
-	messageFromStream, err := c.processMessageFromStream(mockStream)
+	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
 
 	s.Nil(err)
 	s.NotNil(messageFromStream)
@@ -94,14 +89,9 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_FailOnReadingFromStream() {
-	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
-		h:                          s.mockHost,
-		protocolID:                 s.testProtocolID,
-		streamManager:              NewStreamManager(),
-		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
-	}
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
 	mockStream.EXPECT().Read(gomock.Any()).Times(1).Return(0, errors.New("error on reading from stream"))
@@ -111,21 +101,16 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	mockConn.EXPECT().RemotePeer().AnyTimes().Return(s.allowedPeers[0])
 	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
 
-	messageFromStream, err := c.processMessageFromStream(mockStream)
+	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
 
 	s.Nil(messageFromStream)
 	s.NotNil(err)
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_SenderNotAllowed() {
-	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
-		h:                          s.mockHost,
-		protocolID:                 s.testProtocolID,
-		streamManager:              NewStreamManager(),
-		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
-	}
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
 
@@ -135,7 +120,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	mockConn.EXPECT().RemotePeer().AnyTimes().Return(unknownSenderID)
 	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
 
-	messageFromStream, err := c.processMessageFromStream(mockStream)
+	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
 
 	s.Nil(messageFromStream)
 	s.NotNil(err)
@@ -143,14 +128,9 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunction_ValidMessageWithSubscribers() {
-	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
-		h:                          s.mockHost,
-		protocolID:                 s.testProtocolID,
-		streamManager:              NewStreamManager(),
-		logger:                     zerolog.Logger{},
-		allowedPeers:               s.allowedPeers,
-	}
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	testWrappedMsg := comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,
@@ -171,7 +151,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 	// on first call return header representing length of the message
 	firstCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
 		length := uint32(len(bytes))
-		lengthBytes := make([]byte, LengthHeader)
+		lengthBytes := make([]byte, p2p.LengthHeader)
 		binary.LittleEndian.PutUint32(lengthBytes, length)
 
 		copy(p[:], lengthBytes)
@@ -190,7 +170,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 	testSubChannelSecond := make(chan *comm.WrappedMessage)
 	c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelSecond)
 
-	go c.streamHandlerFunc(mockStream)
+	go c.StreamHandlerFunc(mockStream)
 
 	subMsgFirst := <-testSubChannelFirst
 	s.NotNil(subMsgFirst)
