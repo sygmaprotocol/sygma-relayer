@@ -26,9 +26,8 @@ type Libp2pCommunication struct {
 
 func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
-
 	c := Libp2pCommunication{
-		SessionSubscriptionManager: NewSessionSubscriptionManager(),
+		SessionSubscriptionManager: *NewSessionSubscriptionManager(),
 		h:                          h,
 		protocolID:                 protocolID,
 		streamManager:              NewStreamManager(),
@@ -84,7 +83,7 @@ func (c Libp2pCommunication) Subscribe(
 	msgType comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
-	subID := c.subscribe(sessionID, msgType, channel)
+	subID := c.Subscribe(sessionID, msgType, channel)
 	c.logger.Trace().Str(
 		"SessionID", sessionID).Msgf(
 		"subscribed to message type %s", msgType,
@@ -95,7 +94,7 @@ func (c Libp2pCommunication) Subscribe(
 func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
-	c.unSubscribe(subID)
+	c.UnSubscribe(subID)
 	c.logger.Trace().Str(
 		"SessionID", subID.SessionID()).Str(
 		"SubID", subID.SubscriptionIdentifier()).Msgf(
@@ -162,7 +161,7 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 		return
 	}
 
-	subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
+	subscribers := c.GetSubscribers(msg.SessionID, msg.MessageType)
 	for _, sub := range subscribers {
 		sub := sub
 		go func() {
