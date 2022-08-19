@@ -22,7 +22,7 @@ func NewSessionSubscriptionManager() SessionSubscriptionManager {
 	}
 }
 
-func (ms *SessionSubscriptionManager) getSubscribers(
+func (ms *SessionSubscriptionManager) GetSubscribers(
 	sessionID string,
 	msgType comm.MessageType,
 ) []chan *comm.WrappedMessage {
@@ -39,7 +39,7 @@ func (ms *SessionSubscriptionManager) getSubscribers(
 	return subsAsArray
 }
 
-func (ms *SessionSubscriptionManager) subscribe(
+func (ms *SessionSubscriptionManager) SubscribeTo(
 	sessionID string, msgType comm.MessageType, channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	ms.lock.Lock()
@@ -62,7 +62,7 @@ func (ms *SessionSubscriptionManager) subscribe(
 	return subID
 }
 
-func (ms *SessionSubscriptionManager) unSubscribe(
+func (ms *SessionSubscriptionManager) UnSubscribeFrom(
 	subscriptionID comm.SubscriptionID,
 ) {
 	ms.lock.Lock()
