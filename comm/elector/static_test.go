@@ -1,8 +1,9 @@
-package elector
+package elector_test
 
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma/comm/elector"
 	"testing"
 
 	"github.com/ChainSafe/sygma/comm/p2p"
@@ -64,7 +65,7 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 func (s *CoordinatorElectorTestSuite) TearDownTest() {}
 
 func (s *CoordinatorElectorTestSuite) TestStaticCommunicationCoordinator_GetCoordinator_Success() {
-	staticCommunicationCoordinator := NewCoordinatorElector("1")
+	staticCommunicationCoordinator := elector.NewCoordinatorElector("1")
 
 	coordinator1, err := staticCommunicationCoordinator.Coordinator(context.Background(), s.testPeers)
 	s.Nil(err)

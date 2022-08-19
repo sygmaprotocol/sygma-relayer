@@ -1,6 +1,7 @@
-package p2p
+package p2p_test
 
 import (
+	"github.com/ChainSafe/sygma/comm/p2p"
 	"testing"
 
 	comm "github.com/ChainSafe/sygma/comm"
@@ -23,42 +24,42 @@ func (s *SessionSubscriptionManagerTestSuite) SetupTest() {
 func (s *SessionSubscriptionManagerTestSuite) TearDownTest() {}
 
 func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_ManageSingleSubscribe_Success() {
-	subscriptionManager := NewSessionSubscriptionManager()
+	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sChannel := make(chan *comm.WrappedMessage)
-	subscriptionID := subscriptionManager.subscribe("1", comm.CoordinatorPingMsg, sChannel)
-	subscribers := subscriptionManager.getSubscribers("1", comm.CoordinatorPingMsg)
+	subscriptionID := subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sChannel)
+	subscribers := subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)
 
-	subscriptionManager.unSubscribe(subscriptionID)
-	subscribers = subscriptionManager.getSubscribers("1", comm.CoordinatorPingMsg)
+	subscriptionManager.UnSubscribeFrom(subscriptionID)
+	subscribers = subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 0)
 }
 
 func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_ManageMultipleSubscribe_Success() {
-	subscriptionManager := NewSessionSubscriptionManager()
+	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sub1Channel := make(chan *comm.WrappedMessage)
-	subscriptionID1 := subscriptionManager.subscribe("1", comm.CoordinatorPingMsg, sub1Channel)
+	subscriptionID1 := subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sub1Channel)
 
 	sub2Channel := make(chan *comm.WrappedMessage)
-	_ = subscriptionManager.subscribe("1", comm.CoordinatorPingMsg, sub2Channel)
+	_ = subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sub2Channel)
 
 	sub3Channel := make(chan *comm.WrappedMessage)
-	subscriptionID3 := subscriptionManager.subscribe("2", comm.CoordinatorPingMsg, sub3Channel)
+	subscriptionID3 := subscriptionManager.SubscribeTo("2", comm.CoordinatorPingMsg, sub3Channel)
 
-	subscribers := subscriptionManager.getSubscribers("1", comm.CoordinatorPingMsg)
+	subscribers := subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 2)
 
-	subscribers = subscriptionManager.getSubscribers("2", comm.CoordinatorPingMsg)
+	subscribers = subscriptionManager.GetSubscribers("2", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)
 
-	subscriptionManager.unSubscribe(subscriptionID1)
-	subscriptionManager.unSubscribe(subscriptionID3)
+	subscriptionManager.UnSubscribeFrom(subscriptionID1)
+	subscriptionManager.UnSubscribeFrom(subscriptionID3)
 
-	subscribers = subscriptionManager.getSubscribers("1", comm.CoordinatorPingMsg)
+	subscribers = subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)
 
-	subscribers = subscriptionManager.getSubscribers("2", comm.CoordinatorPingMsg)
+	subscribers = subscriptionManager.GetSubscribers("2", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 0)
 }
