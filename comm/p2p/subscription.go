@@ -13,8 +13,8 @@ type SessionSubscriptionManager struct {
 	subscribersMap map[string]map[comm.MessageType]map[string]chan *comm.WrappedMessage
 }
 
-func NewSessionSubscriptionManager() *SessionSubscriptionManager {
-	return &SessionSubscriptionManager{
+func NewSessionSubscriptionManager() SessionSubscriptionManager {
+	return SessionSubscriptionManager{
 		lock: &sync.Mutex{},
 		subscribersMap: make(
 			map[string]map[comm.MessageType]map[string]chan *comm.WrappedMessage,

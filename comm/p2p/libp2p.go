@@ -27,7 +27,7 @@ type Libp2pCommunication struct {
 func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
 	c := Libp2pCommunication{
-		SessionSubscriptionManager: *NewSessionSubscriptionManager(),
+		SessionSubscriptionManager: NewSessionSubscriptionManager(),
 		h:                          h,
 		protocolID:                 protocolID,
 		streamManager:              NewStreamManager(),
