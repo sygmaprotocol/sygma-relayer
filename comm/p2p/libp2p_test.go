@@ -41,6 +41,8 @@ func (s *Libp2pCommunicationTestSuite) SetupTest() {
 func (s *Libp2pCommunicationTestSuite) TearDownTest() {}
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_ValidMessage() {
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
 	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	testWrappedMsg := comm.WrappedMessage{
@@ -87,6 +89,8 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_FailOnReadingFromStream() {
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
 	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
@@ -104,6 +108,8 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_SenderNotAllowed() {
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
 	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
@@ -122,6 +128,8 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunction_ValidMessageWithSubscribers() {
+	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
+	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
 	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
 
 	testWrappedMsg := comm.WrappedMessage{
