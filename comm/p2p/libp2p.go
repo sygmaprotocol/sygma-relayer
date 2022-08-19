@@ -24,7 +24,7 @@ type Libp2pCommunication struct {
 	allowedPeers  peer.IDSlice
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) Libp2pCommunication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
@@ -36,7 +36,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDS
 	}
 
 	// start processing incoming messages
-	c.h.SetStreamHandler(c.protocolID, c.streamHandlerFunc)
+	c.h.SetStreamHandler(c.protocolID, c.StreamHandlerFunc)
 	return c
 }
 
@@ -154,8 +154,8 @@ func (c Libp2pCommunication) sendMessage(
 	return nil
 }
 
-func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
-	msg, err := c.processMessageFromStream(s)
+func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
+	msg, err := c.ProcessMessageFromStream(s)
 	if err != nil {
 		c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
 		return
@@ -170,7 +170,7 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 	}
 }
 
-func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	remotePeerID := s.Conn().RemotePeer()
 	if !c.isAllowedPeer(remotePeerID) {
 		return nil, fmt.Errorf(

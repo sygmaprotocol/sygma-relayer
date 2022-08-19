@@ -1,6 +1,7 @@
-package p2p
+package p2p_test
 
 import (
+	"github.com/ChainSafe/sygma/comm/p2p"
 	"testing"
 
 	comm "github.com/ChainSafe/sygma/comm"
@@ -23,7 +24,7 @@ func (s *SessionSubscriptionManagerTestSuite) SetupTest() {
 func (s *SessionSubscriptionManagerTestSuite) TearDownTest() {}
 
 func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_ManageSingleSubscribe_Success() {
-	subscriptionManager := NewSessionSubscriptionManager()
+	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sChannel := make(chan *comm.WrappedMessage)
 	subscriptionID := subscriptionManager.Subscribe("1", comm.CoordinatorPingMsg, sChannel)
@@ -36,7 +37,7 @@ func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_Man
 }
 
 func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_ManageMultipleSubscribe_Success() {
-	subscriptionManager := NewSessionSubscriptionManager()
+	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sub1Channel := make(chan *comm.WrappedMessage)
 	subscriptionID1 := subscriptionManager.Subscribe("1", comm.CoordinatorPingMsg, sub1Channel)
