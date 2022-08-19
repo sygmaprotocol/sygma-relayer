@@ -27,11 +27,11 @@ func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_Man
 	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sChannel := make(chan *comm.WrappedMessage)
-	subscriptionID := subscriptionManager.Subscribe("1", comm.CoordinatorPingMsg, sChannel)
+	subscriptionID := subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sChannel)
 	subscribers := subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)
 
-	subscriptionManager.UnSubscribe(subscriptionID)
+	subscriptionManager.UnSubscribeFrom(subscriptionID)
 	subscribers = subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 0)
 }
@@ -40,13 +40,13 @@ func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_Man
 	subscriptionManager := p2p.NewSessionSubscriptionManager()
 
 	sub1Channel := make(chan *comm.WrappedMessage)
-	subscriptionID1 := subscriptionManager.Subscribe("1", comm.CoordinatorPingMsg, sub1Channel)
+	subscriptionID1 := subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sub1Channel)
 
 	sub2Channel := make(chan *comm.WrappedMessage)
-	_ = subscriptionManager.Subscribe("1", comm.CoordinatorPingMsg, sub2Channel)
+	_ = subscriptionManager.SubscribeTo("1", comm.CoordinatorPingMsg, sub2Channel)
 
 	sub3Channel := make(chan *comm.WrappedMessage)
-	subscriptionID3 := subscriptionManager.Subscribe("2", comm.CoordinatorPingMsg, sub3Channel)
+	subscriptionID3 := subscriptionManager.SubscribeTo("2", comm.CoordinatorPingMsg, sub3Channel)
 
 	subscribers := subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 2)
@@ -54,8 +54,8 @@ func (s *SessionSubscriptionManagerTestSuite) TestSessionSubscriptionManager_Man
 	subscribers = subscriptionManager.GetSubscribers("2", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)
 
-	subscriptionManager.UnSubscribe(subscriptionID1)
-	subscriptionManager.UnSubscribe(subscriptionID3)
+	subscriptionManager.UnSubscribeFrom(subscriptionID1)
+	subscriptionManager.UnSubscribeFrom(subscriptionID3)
 
 	subscribers = subscriptionManager.GetSubscribers("1", comm.CoordinatorPingMsg)
 	s.Len(subscribers, 1)

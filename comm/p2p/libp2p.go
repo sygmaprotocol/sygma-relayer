@@ -83,7 +83,7 @@ func (c Libp2pCommunication) Subscribe(
 	msgType comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
-	subID := c.Subscribe(sessionID, msgType, channel)
+	subID := c.SubscribeTo(sessionID, msgType, channel)
 	c.logger.Trace().Str(
 		"SessionID", sessionID).Msgf(
 		"subscribed to message type %s", msgType,
@@ -94,7 +94,7 @@ func (c Libp2pCommunication) Subscribe(
 func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
-	c.UnSubscribe(subID)
+	c.UnSubscribeFrom(subID)
 	c.logger.Trace().Str(
 		"SessionID", subID.SessionID()).Str(
 		"SubID", subID.SubscriptionIdentifier()).Msgf(

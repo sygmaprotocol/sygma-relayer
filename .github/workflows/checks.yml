@@ -20,8 +20,6 @@ jobs:
       - name: Run linter
         run: golangci-lint run --timeout=10m
 
-
-
   vet-check:
     runs-on: ubuntu-latest
     steps:

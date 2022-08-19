@@ -39,7 +39,7 @@ func (ms *SessionSubscriptionManager) GetSubscribers(
 	return subsAsArray
 }
 
-func (ms *SessionSubscriptionManager) Subscribe(
+func (ms *SessionSubscriptionManager) SubscribeTo(
 	sessionID string, msgType comm.MessageType, channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
 	ms.lock.Lock()
@@ -62,7 +62,7 @@ func (ms *SessionSubscriptionManager) Subscribe(
 	return subID
 }
 
-func (ms *SessionSubscriptionManager) UnSubscribe(
+func (ms *SessionSubscriptionManager) UnSubscribeFrom(
 	subscriptionID comm.SubscriptionID,
 ) {
 	ms.lock.Lock()
