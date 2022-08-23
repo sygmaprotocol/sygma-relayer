@@ -235,11 +235,6 @@ func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID
 	// create communications
 	var testCommunications []comm.Communication
 	for i := 0; i < numberOfActors; i++ {
-		allowedPeers := peer.IDSlice{}
-		for _, pInfo := range peersAdrInfos[i] {
-			allowedPeers = append(allowedPeers, pInfo.ID)
-		}
-
 		com := p2p.NewCommunication(
 			testHosts[i],
 			protocolID,
