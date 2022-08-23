@@ -50,6 +50,20 @@ func (mr *MockTssProcessMockRecorder) Ready(readyMap, excludedPeers interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockTssProcess)(nil).Ready), readyMap, excludedPeers)
 }
 
+// Retryable mocks base method.
+func (m *MockTssProcess) Retryable() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Retryable")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Retryable indicates an expected call of Retryable.
+func (mr *MockTssProcessMockRecorder) Retryable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retryable", reflect.TypeOf((*MockTssProcess)(nil).Retryable))
+}
+
 // SessionID mocks base method.
 func (m *MockTssProcess) SessionID() string {
 	m.ctrl.T.Helper()

@@ -86,9 +86,10 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
 	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-	externalHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+	topology := topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
-	}, uint16(4005))
+	}
+	externalHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4005))
 
 	firstSubChannel := make(chan *comm.WrappedMessage)
 	s.testCommunications[0].Subscribe(s.testSessionID, comm.CoordinatorPingMsg, firstSubChannel)
@@ -198,11 +199,12 @@ Util function used for setting tests with multiple communications
 func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID) ([]host.Host, []comm.Communication) {
 	var testHosts []host.Host
 	// create test hosts
-	for i := 0; i < numberOfActors; i++ {
+	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+		topology := topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
-		}, uint16(4000+i))
+		}
+		newHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4000+i))
 		testHosts = append(testHosts, newHost)
 	}
 
@@ -231,7 +233,6 @@ func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID
 		com := p2p.NewCommunication(
 			testHosts[i],
 			protocolID,
-			allowedPeers,
 		)
 		testCommunications = append(testCommunications, com)
 	}

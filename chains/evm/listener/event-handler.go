@@ -30,7 +30,7 @@ type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*hubEvents.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
-	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error)
+	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 }
 
 type RetryEventHandler struct {
@@ -75,22 +75,25 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 				}
 			}()
 
-			d, err := eh.eventListener.FetchDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
+			deposits, err := eh.eventListener.FetchDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
 			if err != nil {
-				log.Error().Err(err).Msgf("Unable to fetch deposit event %+v", d)
-				return
-			}
-			msg, err := eh.depositHandler.HandleDeposit(
-				eh.domainID, d.DestinationDomainID, d.DepositNonce,
-				d.ResourceID, d.Data, d.HandlerResponse,
-			)
-			if err != nil {
-				log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
+				log.Error().Err(err).Msgf("Unable to fetch deposit events from event %+v", event)
 				return
 			}
 
-			log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
-			retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
+			for _, d := range deposits {
+				msg, err := eh.depositHandler.HandleDeposit(
+					eh.domainID, d.DestinationDomainID, d.DepositNonce,
+					d.ResourceID, d.Data, d.HandlerResponse,
+				)
+				if err != nil {
+					log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
+					continue
+				}
+
+				log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+				retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
+			}
 		}(event)
 	}
 
@@ -164,6 +167,7 @@ type RefreshEventHandler struct {
 	coordinator      *tss.Coordinator
 	host             host.Host
 	communication    comm.Communication
+	connectionGate   *p2p.ConnectionGate
 	storer           resharing.SaveDataStorer
 }
 
@@ -174,6 +178,7 @@ func NewRefreshEventHandler(
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
+	connectionGate *p2p.ConnectionGate,
 	storer resharing.SaveDataStorer,
 	bridgeAddress common.Address,
 ) *RefreshEventHandler {
@@ -185,6 +190,7 @@ func NewRefreshEventHandler(
 		host:             host,
 		communication:    communication,
 		storer:           storer,
+		connectionGate:   connectionGate,
 		bridgeAddress:    bridgeAddress,
 	}
 }
@@ -218,6 +224,7 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	if hash != expectedHash {
 		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
 	}
+	eh.connectionGate.SetTopology(topology)
 	p2p.LoadPeers(eh.host, topology.Peers)
 
 	resharing := resharing.NewResharing(eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer)

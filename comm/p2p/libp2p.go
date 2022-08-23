@@ -21,23 +21,20 @@ type Libp2pCommunication struct {
 	protocolID    protocol.ID
 	streamManager *StreamManager
 	logger        zerolog.Logger
-	allowedPeers  peer.IDSlice
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID, allowedPeers peer.IDSlice) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
-
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
 		h:                          h,
 		protocolID:                 protocolID,
 		streamManager:              NewStreamManager(),
 		logger:                     logger,
-		allowedPeers:               allowedPeers,
 	}
 
 	// start processing incoming messages
-	c.h.SetStreamHandler(c.protocolID, c.streamHandlerFunc)
+	c.h.SetStreamHandler(c.protocolID, c.StreamHandlerFunc)
 	return c
 }
 
@@ -84,7 +81,7 @@ func (c Libp2pCommunication) Subscribe(
 	msgType comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
-	subID := c.subscribe(sessionID, msgType, channel)
+	subID := c.SubscribeTo(sessionID, msgType, channel)
 	c.logger.Trace().Str(
 		"SessionID", sessionID).Msgf(
 		"subscribed to message type %s", msgType,
@@ -95,7 +92,7 @@ func (c Libp2pCommunication) Subscribe(
 func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
-	c.unSubscribe(subID)
+	c.UnSubscribeFrom(subID)
 	c.logger.Trace().Str(
 		"SessionID", subID.SessionID()).Str(
 		"SubID", subID.SubscriptionIdentifier()).Msgf(
@@ -155,14 +152,14 @@ func (c Libp2pCommunication) sendMessage(
 	return nil
 }
 
-func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
-	msg, err := c.processMessageFromStream(s)
+func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
+	msg, err := c.ProcessMessageFromStream(s)
 	if err != nil {
 		c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
 		return
 	}
 
-	subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
+	subscribers := c.GetSubscribers(msg.SessionID, msg.MessageType)
 	for _, sub := range subscribers {
 		sub := sub
 		go func() {
@@ -171,14 +168,8 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 	}
 }
 
-func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	remotePeerID := s.Conn().RemotePeer()
-	if !c.isAllowedPeer(remotePeerID) {
-		return nil, fmt.Errorf(
-			"message sent from peer %s that is not allowed", s.Conn().RemotePeer().Pretty(),
-		)
-	}
-
 	msgBytes, err := ReadStream(s)
 	if err != nil {
 		c.streamManager.AddStream("UNKNOWN", s)
@@ -203,13 +194,4 @@ func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.W
 	)
 
 	return &wrappedMsg, nil
-}
-
-func (c Libp2pCommunication) isAllowedPeer(pID peer.ID) bool {
-	for _, allowedPeer := range c.allowedPeers {
-		if pID == allowedPeer {
-			return true
-		}
-	}
-	return false
 }

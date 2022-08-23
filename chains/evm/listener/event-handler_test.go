@@ -59,8 +59,8 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return(coreEvents.Deposit{}, fmt.Errorf("error"))
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return(d, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{}, fmt.Errorf("error"))
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d.DestinationDomainID,
@@ -96,8 +96,8 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return(d1, nil)
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return(d2, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d1}, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d2}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -141,8 +141,8 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return(d1, nil)
-	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return(d2, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d1}, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d2}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -168,4 +168,48 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 
 	s.Nil(err)
 	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
+}
+
+func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
+	d1 := coreEvents.Deposit{
+		DepositNonce:        1,
+		DestinationDomainID: 2,
+		ResourceID:          types.ResourceID{},
+		HandlerResponse:     []byte{},
+		Data:                []byte{},
+	}
+	d2 := coreEvents.Deposit{
+		DepositNonce:        2,
+		DestinationDomainID: 2,
+		ResourceID:          types.ResourceID{},
+		HandlerResponse:     []byte{},
+		Data:                []byte{},
+	}
+	s.mockEventListener.EXPECT().FetchRetryEvents(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
+	s.mockEventListener.EXPECT().FetchDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]coreEvents.Deposit{d1, d2}, nil)
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d1.DestinationDomainID,
+		d1.DepositNonce,
+		d1.ResourceID,
+		d1.Data,
+		d1.HandlerResponse,
+	).Return(&message.Message{DepositNonce: 1}, nil)
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d2.DestinationDomainID,
+		d2.DepositNonce,
+		d2.ResourceID,
+		d2.Data,
+		d2.HandlerResponse,
+	).Return(&message.Message{DepositNonce: 2}, nil)
+
+	msgChan := make(chan []*message.Message, 2)
+	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	msgs := <-msgChan
+
+	s.Nil(err)
+	s.Equal(msgs, []*message.Message{{DepositNonce: 1}, {DepositNonce: 2}})
 }

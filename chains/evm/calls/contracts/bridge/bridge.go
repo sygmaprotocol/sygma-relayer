@@ -339,7 +339,7 @@ func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) 
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
 		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
 		Str("handler", p.HandlerAddress.String()).
-		Msg("Getting is proposal exectued")
+		Msg("Getting is proposal executed")
 	res, err := c.CallContract("isProposalExecuted", p.Source, big.NewInt(int64(p.DepositNonce)))
 	if err != nil {
 		return false, err

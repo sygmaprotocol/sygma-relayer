@@ -25,7 +25,17 @@ func (nt NetworkTopology) Hash() (string, error) {
 		return "", err
 	}
 
-	return strconv.FormatUint(hash, 10), nil
+	return strconv.FormatUint(hash, 16), nil
+}
+
+func (nt NetworkTopology) IsAllowedPeer(peer peer.ID) bool {
+	for _, p := range nt.Peers {
+		if p.ID == peer {
+			return true
+		}
+	}
+
+	return false
 }
 
 type NetworkTopologyProvider interface {

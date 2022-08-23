@@ -44,7 +44,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -80,11 +79,6 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range networkTopology.Peers {
-		allowedPeers = append(allowedPeers, pAdrInfo.ID)
-	}
-
 	// this is temporary solution related to specifics of aws deployment
 	// effectively it waits until old instance is killed
 	var db *lvldb.LVLDB
@@ -106,13 +100,14 @@ func Run() error {
 	priv, err := crypto.UnmarshalPrivateKey(privBytes)
 	panicOnError(err)
 
-	host, err := p2p.NewHost(priv, networkTopology, configuration.RelayerConfig.MpcConfig.Port)
+	connectionGate := p2p.NewConnectionGate(networkTopology)
+	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
 
-	healthComm := p2p.NewCommunication(host, "p2p/health", allowedPeers)
-	go comm.ExecuteCommHealthCheck(healthComm, allowedPeers)
+	healthComm := p2p.NewCommunication(host, "p2p/health")
+	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
 
-	communication := p2p.NewCommunication(host, "p2p/sygma", allowedPeers)
+	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
@@ -154,7 +149,7 @@ func Run() error {
 				eventHandlers := make([]coreListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
 
