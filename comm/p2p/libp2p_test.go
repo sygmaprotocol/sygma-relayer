@@ -4,10 +4,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/comm/p2p"
 	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
-	"testing"
 
 	mock_host "github.com/ChainSafe/sygma/comm/p2p/mock/host"
 	"github.com/golang/mock/gomock"
@@ -43,7 +44,7 @@ func (s *Libp2pCommunicationTestSuite) TearDownTest() {}
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_ValidMessage() {
 	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
 	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
-	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID)
 
 	testWrappedMsg := comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,
@@ -91,7 +92,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_FailOnReadingFromStream() {
 	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
 	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
-	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
 	mockStream.EXPECT().Read(gomock.Any()).Times(1).Return(0, errors.New("error on reading from stream"))
@@ -107,30 +108,10 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing
 	s.NotNil(err)
 }
 
-func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_SenderNotAllowed() {
-	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
-	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
-	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
-
-	mockStream := mock_network.NewMockStream(s.mockController)
-
-	// mock for s.Conn().RemotePeer()
-	unknownSenderID, _ := peer.Decode("QmPHZnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
-	mockConn := mock_network.NewMockConn(s.mockController)
-	mockConn.EXPECT().RemotePeer().AnyTimes().Return(unknownSenderID)
-	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
-
-	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
-
-	s.Nil(messageFromStream)
-	s.NotNil(err)
-	s.EqualError(err, "message sent from peer QmPHZnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54 that is not allowed")
-}
-
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunction_ValidMessageWithSubscribers() {
 	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
 	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
-	c := p2p.NewCommunication(s.mockHost, s.testProtocolID, s.allowedPeers)
+	c := p2p.NewCommunication(s.mockHost, s.testProtocolID)
 
 	testWrappedMsg := comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,

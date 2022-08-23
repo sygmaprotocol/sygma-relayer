@@ -16,7 +16,7 @@ import (
 )
 
 // NewHost creates new host.Host from private key and relayer configuration
-func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, port uint16) (host.Host, error) {
+func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, cg *ConnectionGate, port uint16) (host.Host, error) {
 	if privKey == nil {
 		return nil, errors.New("unable to create libp2p host: private key not defined")
 	}
@@ -26,6 +26,7 @@ func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, p
 		libp2p.Identity(privKey),
 		libp2p.DisableRelay(),
 		libp2p.Security(noise.ID, noise.New),
+		libp2p.ConnectionGater(cg),
 	}
 
 	h, err := libp2p.New(opts...)

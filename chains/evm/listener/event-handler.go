@@ -167,6 +167,7 @@ type RefreshEventHandler struct {
 	coordinator      *tss.Coordinator
 	host             host.Host
 	communication    comm.Communication
+	connectionGate   *p2p.ConnectionGate
 	storer           resharing.SaveDataStorer
 }
 
@@ -177,6 +178,7 @@ func NewRefreshEventHandler(
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
+	connectionGate *p2p.ConnectionGate,
 	storer resharing.SaveDataStorer,
 	bridgeAddress common.Address,
 ) *RefreshEventHandler {
@@ -188,6 +190,7 @@ func NewRefreshEventHandler(
 		host:             host,
 		communication:    communication,
 		storer:           storer,
+		connectionGate:   connectionGate,
 		bridgeAddress:    bridgeAddress,
 	}
 }
@@ -221,6 +224,7 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	if hash != expectedHash {
 		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
 	}
+	eh.connectionGate.SetTopology(topology)
 	p2p.LoadPeers(eh.host, topology.Peers)
 
 	resharing := resharing.NewResharing(eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer)

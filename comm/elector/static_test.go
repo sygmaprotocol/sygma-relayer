@@ -3,9 +3,9 @@ package elector_test
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma/comm/elector"
 	"testing"
 
+	"github.com/ChainSafe/sygma/comm/elector"
 	"github.com/ChainSafe/sygma/comm/p2p"
 	"github.com/ChainSafe/sygma/topology"
 	"github.com/golang/mock/gomock"
@@ -38,9 +38,10 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		newHost, _ := p2p.NewHost(privKeyForHost, topology.NetworkTopology{
+		topology := topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
-		}, uint16(4000+i))
+		}
+		newHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4000+i))
 		s.testHosts = append(s.testHosts, newHost)
 		peers = append(peers, newHost.ID())
 	}
