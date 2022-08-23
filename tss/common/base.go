@@ -14,6 +14,7 @@ import (
 type Party interface {
 	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error)
 	Start() *tss.Error
+	WaitingFor() []*tss.PartyID
 }
 
 // BaseTss contains common variables and methods to

@@ -144,3 +144,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 		}
 	}
 }
+
+func (k *Keygen) Retryable() bool {
+	return false
+}
