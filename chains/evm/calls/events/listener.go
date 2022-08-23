@@ -35,38 +35,40 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error) {
+func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
+	depositEvents := make([]events.Deposit, 0)
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
 	if err != nil {
-		return events.Deposit{}, fmt.Errorf(
+		return depositEvents, fmt.Errorf(
 			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
 		)
 	}
 	latestBlock, err := l.client.LatestBlock()
 	if err != nil {
-		return events.Deposit{}, err
+		return depositEvents, err
 	}
 	if latestBlock.Cmp(receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations)) != 1 {
-		return events.Deposit{}, fmt.Errorf(
+		return depositEvents, fmt.Errorf(
 			"latest block %s higher than receipt block number + block confirmations %s",
 			latestBlock,
 			receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations),
 		)
 	}
 
-	var depositEvent events.Deposit
 	for _, lg := range receipt.Logs {
 		if lg.Address != bridgeAddress {
 			continue
 		}
 
+		var depositEvent events.Deposit
 		err := l.abi.UnpackIntoInterface(&depositEvent, "Deposit", lg.Data)
 		if err == nil {
-			return depositEvent, nil
+			depositEvents = append(depositEvents, depositEvent)
 		}
 	}
-	return depositEvent, fmt.Errorf("no matching deposit event found for hash %s", retryDepositTxHash)
+
+	return depositEvents, nil
 }
 
 func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryEvent, error) {

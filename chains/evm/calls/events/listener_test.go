@@ -10,6 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
+	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma/chains/evm/calls/events"
 	mock_listener "github.com/ChainSafe/sygma/chains/evm/calls/events/mock"
 )
@@ -59,13 +60,14 @@ func (s *ListenerTestSuite) Test_FetchDepositEvent_NoDepositEvent() {
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
 
-	_, err := s.listener.FetchDepositEvent(
+	deposits, err := s.listener.FetchDepositEvent(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
 		common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
 		big.NewInt(5),
 	)
 
-	s.NotNil(err)
+	s.Nil(err)
+	s.Equal(deposits, []coreEvents.Deposit{})
 }
 
 func (s *ListenerTestSuite) Test_FetchDepositEvent_NoMatchingEvent() {
@@ -84,13 +86,14 @@ func (s *ListenerTestSuite) Test_FetchDepositEvent_NoMatchingEvent() {
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
 
-	_, err := s.listener.FetchDepositEvent(
+	deposits, err := s.listener.FetchDepositEvent(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
 		common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
 		big.NewInt(5),
 	)
 
-	s.NotNil(err)
+	s.Nil(err)
+	s.Equal(deposits, []coreEvents.Deposit{})
 }
 
 func (s *ListenerTestSuite) Test_FetchDepositEvent_ValidEvent() {
@@ -110,12 +113,12 @@ func (s *ListenerTestSuite) Test_FetchDepositEvent_ValidEvent() {
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
 
-	d, err := s.listener.FetchDepositEvent(
+	deposits, err := s.listener.FetchDepositEvent(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
 		common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
 		big.NewInt(5),
 	)
 
 	s.Nil(err)
-	s.Equal(d.DestinationDomainID, uint8(2))
+	s.Equal(deposits[0].DestinationDomainID, uint8(2))
 }

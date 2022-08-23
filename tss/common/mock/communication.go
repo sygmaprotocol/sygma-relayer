@@ -62,3 +62,17 @@ func (mr *MockPartyMockRecorder) UpdateFromBytes(wireBytes, from, isBroadcast in
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFromBytes", reflect.TypeOf((*MockParty)(nil).UpdateFromBytes), wireBytes, from, isBroadcast)
 }
+
+// WaitingFor mocks base method.
+func (m *MockParty) WaitingFor() []*tss.PartyID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitingFor")
+	ret0, _ := ret[0].([]*tss.PartyID)
+	return ret0
+}
+
+// WaitingFor indicates an expected call of WaitingFor.
+func (mr *MockPartyMockRecorder) WaitingFor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitingFor", reflect.TypeOf((*MockParty)(nil).WaitingFor))
+}

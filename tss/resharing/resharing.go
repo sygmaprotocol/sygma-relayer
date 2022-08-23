@@ -213,3 +213,7 @@ func (r *Resharing) sortParties(parties tss.SortedPartyIDs, oldParties tss.Sorte
 	}
 	return newParties
 }
+
+func (r *Resharing) Retryable() bool {
+	return false
+}

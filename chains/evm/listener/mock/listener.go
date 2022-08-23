@@ -40,10 +40,10 @@ func (m *MockEventListener) EXPECT() *MockEventListenerMockRecorder {
 }
 
 // FetchDepositEvent mocks base method.
-func (m *MockEventListener) FetchDepositEvent(event events0.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) (events.Deposit, error) {
+func (m *MockEventListener) FetchDepositEvent(event events0.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchDepositEvent", event, bridgeAddress, blockConfirmations)
-	ret0, _ := ret[0].(events.Deposit)
+	ret0, _ := ret[0].([]events.Deposit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
