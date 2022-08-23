@@ -197,14 +197,24 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 Util function used for setting tests with multiple communications
 */
 func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID) ([]host.Host, []comm.Communication) {
+	topology := topology.NetworkTopology{
+		Peers: []*peer.AddrInfo{},
+	}
+	privateKeys := []crypto.PrivKey{}
+	for i := 0; i < numberOfActors; i++ {
+		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
+		privateKeys = append(privateKeys, privKeyForHost)
+		peerID, _ := peer.IDFromPrivateKey(privKeyForHost)
+		addrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
+			"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+i, peerID.Pretty(),
+		))
+		topology.Peers = append(topology.Peers, addrInfoForHost)
+	}
+
 	var testHosts []host.Host
 	// create test hosts
-	for i := 0; i < numberOfTestHosts; i++ {
-		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		topology := topology.NetworkTopology{
-			Peers: []*peer.AddrInfo{},
-		}
-		newHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4000+i))
+	for i := 0; i < numberOfActors; i++ {
+		newHost, _ := p2p.NewHost(privateKeys[i], topology, p2p.NewConnectionGate(topology), uint16(4000+i))
 		testHosts = append(testHosts, newHost)
 	}
 
