@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 type startParams struct {
@@ -166,6 +167,12 @@ func (r *Resharing) validateStartParams(params startParams) error {
 	}
 	if len(params.OldSubset) < params.OldThreshold {
 		return errors.New("invalid old threshold in start params: threshold bigger then subset")
+	}
+
+	// if relayer is already part of the active subset, check if peer subset
+	// in starting params is same as one saved in keyshare
+	if len(r.key.Peers) != 0 && slices.Equal(params.OldSubset, r.key.Peers) {
+		return errors.New("invalid peers subset in start params")
 	}
 	return nil
 }

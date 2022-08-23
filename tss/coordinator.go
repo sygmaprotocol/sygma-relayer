@@ -279,7 +279,7 @@ func (c *Coordinator) waitForStart(
 						"start message received from peer %s that is not coordinator %s",
 						startMsg.From.Pretty(), coordinator.Pretty(),
 					)
-					return
+					break
 				}
 
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
