@@ -43,7 +43,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -77,11 +76,6 @@ func Run() error {
 
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
-	}
-
-	var allowedPeers peer.IDSlice
-	for _, pAdrInfo := range networkTopology.Peers {
-		allowedPeers = append(allowedPeers, pAdrInfo.ID)
 	}
 
 	// this is temporary solution related to specifics of aws deployment
