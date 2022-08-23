@@ -3,6 +3,7 @@ package elector_test
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma/comm/elector"
 	"testing"
 
 	"github.com/ChainSafe/sygma/comm/elector"

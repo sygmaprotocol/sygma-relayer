@@ -23,9 +23,8 @@ type Libp2pCommunication struct {
 	logger        zerolog.Logger
 }
 
-func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
+func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 	logger := log.With().Str("Module", "communication").Str("Peer", h.ID().Pretty()).Logger()
-
 	c := Libp2pCommunication{
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
 		h:                          h,
@@ -35,7 +34,7 @@ func NewCommunication(h host.Host, protocolID protocol.ID) comm.Communication {
 	}
 
 	// start processing incoming messages
-	c.h.SetStreamHandler(c.protocolID, c.streamHandlerFunc)
+	c.h.SetStreamHandler(c.protocolID, c.StreamHandlerFunc)
 	return c
 }
 
@@ -82,7 +81,7 @@ func (c Libp2pCommunication) Subscribe(
 	msgType comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
-	subID := c.subscribe(sessionID, msgType, channel)
+	subID := c.SubscribeTo(sessionID, msgType, channel)
 	c.logger.Trace().Str(
 		"SessionID", sessionID).Msgf(
 		"subscribed to message type %s", msgType,
@@ -93,7 +92,7 @@ func (c Libp2pCommunication) Subscribe(
 func (c Libp2pCommunication) UnSubscribe(
 	subID comm.SubscriptionID,
 ) {
-	c.unSubscribe(subID)
+	c.UnSubscribeFrom(subID)
 	c.logger.Trace().Str(
 		"SessionID", subID.SessionID()).Str(
 		"SubID", subID.SubscriptionIdentifier()).Msgf(
@@ -153,14 +152,14 @@ func (c Libp2pCommunication) sendMessage(
 	return nil
 }
 
-func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
-	msg, err := c.processMessageFromStream(s)
+func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
+	msg, err := c.ProcessMessageFromStream(s)
 	if err != nil {
 		c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
 		return
 	}
 
-	subscribers := c.getSubscribers(msg.SessionID, msg.MessageType)
+	subscribers := c.GetSubscribers(msg.SessionID, msg.MessageType)
 	for _, sub := range subscribers {
 		sub := sub
 		go func() {
@@ -169,7 +168,7 @@ func (c Libp2pCommunication) streamHandlerFunc(s network.Stream) {
 	}
 }
 
-func (c Libp2pCommunication) processMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
 	remotePeerID := s.Conn().RemotePeer()
 	msgBytes, err := ReadStream(s)
 	if err != nil {

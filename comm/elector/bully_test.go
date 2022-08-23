@@ -1,10 +1,12 @@
-package elector
+package elector_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/ChainSafe/sygma/comm/elector"
 
 	"github.com/ChainSafe/sygma/comm/p2p"
 	"github.com/ChainSafe/sygma/config/relayer"
@@ -50,11 +52,11 @@ func (s *BullyTestSuite) SetupSuite() {
 func (s *BullyTestSuite) TearDownSuite() {}
 func (s *BullyTestSuite) SetupTest()     {}
 
-func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElector, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
+func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]elector.CoordinatorElector, peer.ID, peer.ID, []host.Host, peer.IDSlice) {
 	s.mockController = gomock.NewController(s.T())
 	var testHosts []host.Host
-	var testBullyCoordinators []CoordinatorElector
 	allowedPeers := peer.IDSlice{}
+	var testBullyCoordinators []elector.CoordinatorElector
 
 	numberOfTestHosts := len(c.testRelayers)
 
@@ -100,7 +102,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]CoordinatorElec
 			testBullyCoordinators = append(testBullyCoordinators, nil)
 		} else {
 
-			b := NewBullyCoordinatorElector(s.testSessionID, testHosts[i], relayer.BullyConfig{
+			b := elector.NewBullyCoordinatorElector(s.testSessionID, testHosts[i], relayer.BullyConfig{
 				PingWaitTime:     1 * time.Second,
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
