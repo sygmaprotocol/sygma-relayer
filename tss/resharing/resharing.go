@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/keyshare"
 	"github.com/ChainSafe/sygma/tss/common"
@@ -163,10 +164,10 @@ func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error
 
 func (r *Resharing) validateStartParams(params startParams) error {
 	if params.OldThreshold <= 0 {
-		return errors.New("invalid old threshold in start params: threshold too small")
+		return errors.New("threshold too small")
 	}
 	if len(params.OldSubset) < params.OldThreshold {
-		return errors.New("invalid old threshold in start params: threshold bigger then subset")
+		return errors.New("threshold bigger then subset")
 	}
 
 	// if relayer is already part of the active subset, check if peer subset

@@ -403,16 +403,16 @@ func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_
 
 	err := <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	s.Equal("process failed with error: threshold too small", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	s.Equal("process failed with error: threshold too small", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	s.Equal("process failed with error: threshold too small", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold too small", err.Error())
+	s.Equal("process failed with error: threshold too small", err.Error())
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
@@ -465,16 +465,16 @@ func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_
 
 	err := <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	s.Equal("process failed with error: threshold bigger then subset", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	s.Equal("process failed with error: threshold bigger then subset", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	s.Equal("process failed with error: threshold bigger then subset", err.Error())
 	err = <-statusChn
 	s.NotNil(err)
-	s.Equal("invalid old threshold in start params: threshold bigger then subset", err.Error())
+	s.Equal("process failed with error: threshold bigger then subset", err.Error())
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
