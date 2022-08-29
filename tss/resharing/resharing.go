@@ -170,11 +170,14 @@ func (r *Resharing) validateStartParams(params startParams) error {
 		return errors.New("threshold bigger then subset")
 	}
 
+	slices.Sort(params.OldSubset)
+	slices.Sort(r.key.Peers)
 	// if relayer is already part of the active subset, check if peer subset
 	// in starting params is same as one saved in keyshare
-	if len(r.key.Peers) != 0 && slices.Equal(params.OldSubset, r.key.Peers) {
+	if len(r.key.Peers) != 0 && !slices.Equal(params.OldSubset, r.key.Peers) {
 		return errors.New("invalid peers subset in start params")
 	}
+
 	return nil
 }
 

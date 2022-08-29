@@ -79,7 +79,9 @@ type CoordinatorTestSuite struct {
 }
 
 func TestRunCoordinatorTestSuite(t *testing.T) {
-	suite.Run(t, new(CoordinatorTestSuite))
+	suite.Run(t, new(KeygenTestSuite))
+	suite.Run(t, new(SigningTestSuite))
+	suite.Run(t, new(ResharingTestSuite))
 }
 
 func (s *CoordinatorTestSuite) SetupTest() {
@@ -110,7 +112,11 @@ func (s *CoordinatorTestSuite) SetupTest() {
 	}
 }
 
-func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
+type KeygenTestSuite struct {
+	CoordinatorTestSuite
+}
+
+func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -145,7 +151,7 @@ func (s *CoordinatorTestSuite) Test_ValidKeygenProcess() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
+func (s *KeygenTestSuite) Test_KeygenTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -181,7 +187,11 @@ func (s *CoordinatorTestSuite) Test_KeygenTimeout() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
+type SigningTestSuite struct {
+	CoordinatorTestSuite
+}
+
+func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -222,7 +232,7 @@ func (s *CoordinatorTestSuite) Test_ValidSigningProcess() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_SigningTimeout() {
+func (s *SigningTestSuite) Test_SigningTimeout() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -267,7 +277,7 @@ func (s *CoordinatorTestSuite) Test_SigningTimeout() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
+func (s *SigningTestSuite) Test_PendingProcessExists() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -301,7 +311,11 @@ func (s *CoordinatorTestSuite) Test_PendingProcessExists() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
+type ResharingTestSuite struct {
+	CoordinatorTestSuite
+}
+
+func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -356,7 +370,7 @@ func (s *CoordinatorTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_LessThenZero() {
+func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_LessThenZero() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
@@ -418,7 +432,7 @@ func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_
 	cancel()
 }
 
-func (s *CoordinatorTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_BiggerThenSubsetLength() {
+func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_BiggerThenSubsetLength() {
 	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
