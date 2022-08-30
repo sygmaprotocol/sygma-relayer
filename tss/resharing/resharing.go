@@ -3,6 +3,7 @@ package resharing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/keyshare"
@@ -13,6 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slices"
 )
 
 type startParams struct {
@@ -152,7 +154,31 @@ func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error
 		return startParams, err
 	}
 
+	err = r.validateStartParams(startParams)
+	if err != nil {
+		return startParams, err
+	}
+
 	return startParams, nil
+}
+
+func (r *Resharing) validateStartParams(params startParams) error {
+	if params.OldThreshold <= 0 {
+		return errors.New("threshold too small")
+	}
+	if len(params.OldSubset) < params.OldThreshold {
+		return errors.New("threshold bigger then subset")
+	}
+
+	slices.Sort(params.OldSubset)
+	slices.Sort(r.key.Peers)
+	// if relayer is already part of the active subset, check if peer subset
+	// in starting params is same as one saved in keyshare
+	if len(r.key.Peers) != 0 && !slices.Equal(params.OldSubset, r.key.Peers) {
+		return errors.New("invalid peers subset in start params")
+	}
+
+	return nil
 }
 
 // processEndMessage routes signature to result channel.

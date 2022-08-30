@@ -83,12 +83,15 @@ func (bc *bullyCoordinatorElector) listen(ctx context.Context) {
 		case msg := <-bc.msgChan:
 			switch msg.MessageType {
 			case comm.CoordinatorAliveMsg:
-				select {
-				// waits for confirmation that elector is alive
-				case bc.electionChan <- msg:
-					break
-				case <-time.After(500 * time.Millisecond):
-					break
+				// check if peer that sent alive msg has higher order
+				if bc.isPeerIDHigher(bc.hostID, msg.From) {
+					select {
+					// waits for confirmation that elector is alive
+					case bc.electionChan <- msg:
+						break
+					case <-time.After(500 * time.Millisecond):
+						break
+					}
 				}
 			case comm.CoordinatorSelectMsg:
 				bc.receiveChan <- msg
