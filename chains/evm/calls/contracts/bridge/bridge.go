@@ -255,12 +255,12 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 		return []byte{}, err
 	}
 
-	formattedProps := make([]map[string]interface{}, len(proposals))
+	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
 		formattedProps[i] = map[string]interface{}{
-			"originDomainID": prop.Source,
-			"depositNonce":   prop.DepositNonce,
-			"resourceID":     prop.ResourceId,
+			"originDomainID": math.NewHexOrDecimal256(int64(prop.Source)),
+			"depositNonce":   math.NewHexOrDecimal256(int64(prop.DepositNonce)),
+			"resourceID":     hexutil.Encode(prop.ResourceId[:]),
 			"data":           prop.Data,
 		}
 	}
