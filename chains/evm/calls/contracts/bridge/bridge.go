@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -33,7 +34,7 @@ type BridgeProposal struct {
 
 type ChainClient interface {
 	calls.ContractCallerDispatcher
-	ChainID() (*big.Int, error)
+	ChainID(ctx context.Context) (*big.Int, error)
 }
 
 type BridgeContract struct {
@@ -249,7 +250,7 @@ func (c *BridgeContract) ExecuteProposals(
 }
 
 func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
-	chainID, err := c.client.ChainID()
+	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		return []byte{}, err
 	}
