@@ -254,6 +254,18 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 		return []byte{}, err
 	}
 
+	formattedProps := make([]map[string]interface{}, len(proposals))
+	for i, prop := range proposals {
+		formattedProps[i] = map[string]interface{}{
+			"originDomainID": prop.Source,
+			"depositNonce":   prop.DepositNonce,
+			"resourceID":     prop.ResourceId,
+			"data":           prop.Data,
+		}
+	}
+	message := apitypes.TypedDataMessage{
+		"proposals": formattedProps,
+	}
 	typedData := apitypes.TypedData{
 		Types: apitypes.Types{
 			"EIP712Domain": []apitypes.Type{
@@ -279,7 +291,7 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 			Version:           "3.1.0",
 			VerifyingContract: c.ContractAddress().Hex(),
 		},
-		Message: apitypes.TypedDataMessage{},
+		Message: message,
 	}
 
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
