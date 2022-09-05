@@ -1,6 +1,7 @@
 package deployutils
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-core/chains/evm/calls"
@@ -17,6 +18,7 @@ var BasicFee = big.NewInt(100000000000)
 type EVMClient interface {
 	calls.ContractCallerDispatcher
 	evmgaspricer.GasPriceClient
+	ChainID(ctx context.Context) (*big.Int, error)
 }
 
 type BridgeConfig struct {
