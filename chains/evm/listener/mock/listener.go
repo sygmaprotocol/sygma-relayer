@@ -10,7 +10,7 @@ import (
 	reflect "reflect"
 
 	events "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	events0 "github.com/ChainSafe/sygma/chains/evm/calls/events"
+	events0 "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"

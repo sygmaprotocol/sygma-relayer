@@ -3,7 +3,7 @@
 
 package main
 
-import "github.com/ChainSafe/sygma/cli"
+import "github.com/ChainSafe/sygma-relayer/cli"
 
 func main() {
 	cli.Execute()

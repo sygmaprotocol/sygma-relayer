@@ -1,4 +1,4 @@
-module github.com/ChainSafe/sygma
+module github.com/ChainSafe/sygma-relayer
 
 go 1.18
 

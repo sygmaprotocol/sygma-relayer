@@ -13,9 +13,9 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma/chains/evm/listener"
-	mock_listener "github.com/ChainSafe/sygma/chains/evm/listener/mock"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
+	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock"
 )
 
 type RetryEventHandlerTestSuite struct {

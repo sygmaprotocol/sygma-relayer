@@ -1,10 +1,10 @@
 package p2p_test
 
 import (
-	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"testing"
 
-	mock_network "github.com/ChainSafe/sygma/comm/p2p/mock/stream"
+	mock_network "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/stream"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )

@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"

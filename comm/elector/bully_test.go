@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/sygma/comm/elector"
+	"github.com/ChainSafe/sygma-relayer/comm/elector"
 
-	"github.com/ChainSafe/sygma/comm/p2p"
-	"github.com/ChainSafe/sygma/config/relayer"
-	"github.com/ChainSafe/sygma/topology"
-	"github.com/ChainSafe/sygma/tss/common"
+	"github.com/ChainSafe/sygma-relayer/comm/p2p"
+	"github.com/ChainSafe/sygma-relayer/config/relayer"
+	"github.com/ChainSafe/sygma-relayer/topology"
+	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"

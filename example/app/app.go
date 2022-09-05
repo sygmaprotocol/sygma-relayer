@@ -6,7 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma/comm"
+	"github.com/ChainSafe/sygma-relayer/comm"
 	"math/big"
 	"os"
 	"os/signal"
@@ -34,17 +34,17 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
 
-	"github.com/ChainSafe/sygma/chains/evm"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma/chains/evm/executor"
-	"github.com/ChainSafe/sygma/chains/evm/listener"
-	"github.com/ChainSafe/sygma/comm/elector"
-	"github.com/ChainSafe/sygma/comm/p2p"
-	"github.com/ChainSafe/sygma/config"
-	"github.com/ChainSafe/sygma/keyshare"
-	"github.com/ChainSafe/sygma/topology"
-	"github.com/ChainSafe/sygma/tss"
+	"github.com/ChainSafe/sygma-relayer/chains/evm"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
+	"github.com/ChainSafe/sygma-relayer/comm/elector"
+	"github.com/ChainSafe/sygma-relayer/comm/p2p"
+	"github.com/ChainSafe/sygma-relayer/config"
+	"github.com/ChainSafe/sygma-relayer/keyshare"
+	"github.com/ChainSafe/sygma-relayer/topology"
+	"github.com/ChainSafe/sygma-relayer/tss"
 )
 
 func Run() error {

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma/chains/evm/calls/events"
-	mock_listener "github.com/ChainSafe/sygma/chains/evm/calls/events/mock"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events/mock"
 )
 
 type ListenerTestSuite struct {

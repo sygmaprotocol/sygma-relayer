@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ChainSafe/sygma/config/relayer"
+	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

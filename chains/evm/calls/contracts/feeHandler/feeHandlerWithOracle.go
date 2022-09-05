@@ -13,7 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/types"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 )
 
 type FeeHandlerWithOracleContract struct {

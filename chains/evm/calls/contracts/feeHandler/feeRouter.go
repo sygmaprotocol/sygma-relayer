@@ -7,7 +7,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/types"
-	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -26,7 +26,7 @@ func NewFeeRouter(
 	return &FeeRouter{contracts.NewContract(feeRouterAddress, a, b, client, transactor)}
 }
 
-// AdminSetResourceHandler sets handler for provided domainID and resourceID. https://github.com/ChainSafe/sygma-solidity/blob/master/contracts/handlers/FeeHandlerRouter.sol#L54
+// AdminSetResourceHandler sets handler for provided domainID and resourceID. https://github.com/ChainSafe/sygma-relayer-solidity/blob/master/contracts/handlers/FeeHandlerRouter.sol#L54
 func (c *FeeRouter) AdminSetResourceHandler(destDomainID uint8, resourceID types.ResourceID, feeHandlerAddress common.Address, opts transactor.TransactOptions) (*common.Hash, error) {
 	return c.ExecuteTransaction(
 		"adminSetResourceHandler",

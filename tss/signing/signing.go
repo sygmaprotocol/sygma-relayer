@@ -15,10 +15,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 
-	"github.com/ChainSafe/sygma/comm"
-	"github.com/ChainSafe/sygma/keyshare"
-	errors "github.com/ChainSafe/sygma/tss"
-	"github.com/ChainSafe/sygma/tss/common"
+	"github.com/ChainSafe/sygma-relayer/comm"
+	"github.com/ChainSafe/sygma-relayer/keyshare"
+	errors "github.com/ChainSafe/sygma-relayer/tss"
+	"github.com/ChainSafe/sygma-relayer/tss/common"
 )
 
 type SaveDataFetcher interface {

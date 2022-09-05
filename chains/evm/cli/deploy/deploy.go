@@ -21,11 +21,11 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/utils"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/accessControlSegregator"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/generic"
-	"github.com/ChainSafe/sygma/chains/evm/calls/util"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/accessControlSegregator"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/generic"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/util"
 )
 
 var ErrNoDeploymentFlagsProvided = errors.New("provide at least one deployment flag. For help use --help")

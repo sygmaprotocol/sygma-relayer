@@ -6,7 +6,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma-relayer/topology"
 )
 
 // ConnectionGate implements libp2p ConnectionGater to prevent inbound and

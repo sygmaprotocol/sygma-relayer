@@ -3,8 +3,8 @@ package p2p_test
 import (
 	"testing"
 
-	"github.com/ChainSafe/sygma/comm/p2p"
-	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma-relayer/comm/p2p"
+	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"

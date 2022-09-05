@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/ChainSafe/sygma/example/cmd"
+	"github.com/ChainSafe/sygma-relayer/example/cmd"
 )
 
 func main() {

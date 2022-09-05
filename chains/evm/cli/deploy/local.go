@@ -6,7 +6,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/types"
-	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/deployutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )

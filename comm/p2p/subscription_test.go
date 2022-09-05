@@ -1,10 +1,10 @@
 package p2p_test
 
 import (
-	"github.com/ChainSafe/sygma/comm/p2p"
+	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"testing"
 
-	comm "github.com/ChainSafe/sygma/comm"
+	comm "github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/stretchr/testify/suite"
 )
 
