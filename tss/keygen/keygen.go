@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ChainSafe/sygma/comm"
-	"github.com/ChainSafe/sygma/keyshare"
-	"github.com/ChainSafe/sygma/tss/common"
+	"github.com/ChainSafe/sygma-relayer/comm"
+	"github.com/ChainSafe/sygma-relayer/keyshare"
+	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/ethereum/go-ethereum/crypto"

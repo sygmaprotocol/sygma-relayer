@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	coreRelayer "github.com/ChainSafe/sygma-core/config/relayer"
+	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
 
-	"github.com/ChainSafe/sygma/config"
-	"github.com/ChainSafe/sygma/config/relayer"
+	"github.com/ChainSafe/sygma-relayer/config"
+	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/stretchr/testify/suite"
 )
 

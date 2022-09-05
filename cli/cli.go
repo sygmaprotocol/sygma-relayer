@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"github.com/ChainSafe/sygma/chains/evm/cli"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/cli"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/sygma-core/flags"
+	"github.com/ChainSafe/chainbridge-core/flags"
 )
 
 var (

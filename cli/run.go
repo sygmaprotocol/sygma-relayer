@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/ChainSafe/sygma/app"
+	"github.com/ChainSafe/sygma-relayer/app"
 	"github.com/spf13/cobra"
 )
 

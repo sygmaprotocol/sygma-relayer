@@ -3,11 +3,11 @@ package deployutils
 import (
 	"math/big"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/feeHandler"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/feeHandler"
 
-	"github.com/ChainSafe/sygma/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ethereum/go-ethereum/common"
 )
 

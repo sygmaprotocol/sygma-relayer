@@ -1,7 +1,7 @@
 package deploy
 
 import (
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
 	"github.com/spf13/cobra"
 )
 

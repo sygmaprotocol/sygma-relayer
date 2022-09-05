@@ -4,13 +4,13 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor/signAndSend"
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/flags"
-	"github.com/ChainSafe/sygma-core/types"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
+	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 

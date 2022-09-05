@@ -1,9 +1,9 @@
 package cli
 
 import (
-	coreCLI "github.com/ChainSafe/sygma-core/chains/evm/cli"
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
-	"github.com/ChainSafe/sygma/chains/evm/cli/deploy"
+	coreCLI "github.com/ChainSafe/chainbridge-core/chains/evm/cli"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/cli/deploy"
 	"github.com/spf13/cobra"
 )
 

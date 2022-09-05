@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ChainSafe/sygma/topology"
+	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/suite"
 )
