@@ -3,9 +3,9 @@ package deploy
 import (
 	"errors"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/flags"
-	"github.com/ChainSafe/sygma-core/chains/evm/cli/logger"
-	"github.com/ChainSafe/sygma-core/util"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/flags"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/cli/logger"
+	"github.com/ChainSafe/chainbridge-core/util"
 	"github.com/ChainSafe/sygma/chains/evm/calls/deployutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"

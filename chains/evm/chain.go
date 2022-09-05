@@ -1,8 +1,8 @@
 package evm
 
 import (
-	"github.com/ChainSafe/sygma-core/chains/evm"
-	"github.com/ChainSafe/sygma-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/chains/evm"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/rs/zerolog/log"
 )
 

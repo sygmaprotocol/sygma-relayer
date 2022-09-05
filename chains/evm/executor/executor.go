@@ -15,9 +15,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/sygma-core/chains/evm/executor/proposal"
-	"github.com/ChainSafe/sygma-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
 
 	"github.com/ChainSafe/sygma/comm"
 	"github.com/ChainSafe/sygma/tss"

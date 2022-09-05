@@ -10,7 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
+	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma/chains/evm/calls/events"
 	mock_listener "github.com/ChainSafe/sygma/chains/evm/calls/events/mock"
 )

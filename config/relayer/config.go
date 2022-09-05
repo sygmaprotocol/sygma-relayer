@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/ChainSafe/sygma-core/config/relayer"
+	"github.com/ChainSafe/chainbridge-core/config/relayer"
 )
 
 type RelayerConfig struct {

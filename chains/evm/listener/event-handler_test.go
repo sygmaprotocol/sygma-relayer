@@ -9,9 +9,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	coreEvents "github.com/ChainSafe/sygma-core/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma-core/relayer/message"
-	"github.com/ChainSafe/sygma-core/types"
+	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/types"
 
 	"github.com/ChainSafe/sygma/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma/chains/evm/listener"

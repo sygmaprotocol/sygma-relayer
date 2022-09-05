@@ -3,10 +3,10 @@ package feeHandler
 import (
 	"strings"
 
-	"github.com/ChainSafe/sygma-core/chains/evm/calls"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/contracts"
-	"github.com/ChainSafe/sygma-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/sygma-core/types"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma/chains/evm/calls/consts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"

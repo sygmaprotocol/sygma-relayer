@@ -3,7 +3,7 @@ module github.com/ChainSafe/sygma
 go 1.18
 
 require (
-	github.com/ChainSafe/sygma-core v0.1.0
+	github.com/ChainSafe/chainbridge-core v0.2.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/creasty/defaults v1.6.0

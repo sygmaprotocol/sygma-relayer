@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	coreRelayer "github.com/ChainSafe/sygma-core/config/relayer"
+	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/sygma/config/relayer"
 )
 
