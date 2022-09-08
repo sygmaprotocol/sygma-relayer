@@ -9,11 +9,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+	"github.com/ChainSafe/chainbridge-core/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 )
@@ -55,5 +57,49 @@ func (b *BasicFeeHandlerContract) DistributeFee(
 		opts,
 		addrs,
 		amounts,
+	)
+}
+
+func (f *BasicFeeHandlerContract) CollectFee(
+	sender common.Address,
+	fromDomainID uint8,
+	destDomainID uint8,
+	resourceID types.ResourceID,
+	data []byte,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Collecting fee for deposit from sender: %s, from domain: %v, to domain: %v, for resourceID: %v", sender, fromDomainID, destDomainID, hexutil.Encode(resourceID[:]))
+	return f.ExecuteTransaction(
+		"collectFee",
+		opts,
+		sender,
+		fromDomainID,
+		destDomainID,
+		resourceID,
+		data,
+		feeData,
+	)
+}
+
+func (f *BasicFeeHandlerContract) CalculateFee(
+	sender common.Address,
+	fromDomainID uint8,
+	destDomainID uint8,
+	resourceID types.ResourceID,
+	data []byte,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Calculating fee for deposit from sender: %s, from domain: %v, to domain: %v, for resourceID: %v", sender, fromDomainID, destDomainID, hexutil.Encode(resourceID[:]))
+	return f.ExecuteTransaction(
+		"calculateFee",
+		opts,
+		sender,
+		fromDomainID,
+		destDomainID,
+		resourceID,
+		data,
+		feeData,
 	)
 }

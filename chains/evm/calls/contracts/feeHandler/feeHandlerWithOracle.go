@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
@@ -50,7 +51,7 @@ func (f *FeeHandlerWithOracleContract) SetFeeProperties(
 	feePercent uint16,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
-	log.Debug().Msgf("setting fee properties: gasUsed: %v, feePercent: %v", gasUsed, feePercent)
+	log.Debug().Msgf("setting fee properties: gasUsed: %v, feePercent: %v", gasUsed, float32(feePercent)/float32(100))
 	return f.ExecuteTransaction(
 		"setFeeProperties",
 		opts,
@@ -72,5 +73,49 @@ func (f *FeeHandlerWithOracleContract) DistributeFee(
 		resourceID,
 		addrs,
 		amounts,
+	)
+}
+
+func (f *FeeHandlerWithOracleContract) CollectFee(
+	sender common.Address,
+	fromDomainID uint8,
+	destDomainID uint8,
+	resourceID types.ResourceID,
+	data []byte,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Collecting fee for deposit from sender: %s, from domain: %v, to domain: %v, for resourceID: %v", sender, fromDomainID, destDomainID, hexutil.Encode(resourceID[:]))
+	return f.ExecuteTransaction(
+		"collectFee",
+		opts,
+		sender,
+		fromDomainID,
+		destDomainID,
+		resourceID,
+		data,
+		feeData,
+	)
+}
+
+func (f *FeeHandlerWithOracleContract) CalculateFee(
+	sender common.Address,
+	fromDomainID uint8,
+	destDomainID uint8,
+	resourceID types.ResourceID,
+	data []byte,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().Msgf("Calculating fee for deposit from sender: %s, from domain: %v, to domain: %v, for resourceID: %v", sender, fromDomainID, destDomainID, hexutil.Encode(resourceID[:]))
+	return f.ExecuteTransaction(
+		"calculateFee",
+		opts,
+		sender,
+		fromDomainID,
+		destDomainID,
+		resourceID,
+		data,
+		feeData,
 	)
 }
