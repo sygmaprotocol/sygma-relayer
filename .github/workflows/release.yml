@@ -1,0 +1,20 @@
+name: Create Sygma relayer release
+
+on:
+  push:
+    branches:
+      - mpetrun5/release-pipeline
+jobs:
+  release-please:
+    name: release
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
+    steps:
+        # you should probably do this after your regular CI checks passes
+      - uses: google-github-actions/release-please-action@v3 # it will analyze commits and create PR with new version and updated CHANGELOG:md file. On merging it will create github release page with changelog
+        id: release
+        with:
+          release-type: go
+          package-name: release-please-action
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false},{"type":"revert","hidden":true}]'
