@@ -3,17 +3,16 @@ name: Create Sygma relayer release
 on:
   push:
     branches:
-      - mpetrun5/release-pipeline
+      - main
 jobs:
   release-please:
     name: release
     runs-on: ubuntu-latest
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
 
       - uses: actions/checkout@v2
-      - uses: google-github-actions/release-please-action@v3 # it will analyze commits and create PR with new version and updated CHANGELOG:md file. On merging it will create github release page with changelog
+      - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           release-type: go
