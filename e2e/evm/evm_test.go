@@ -45,7 +45,7 @@ type TestClient interface {
 const ETHEndpoint1 = "ws://localhost:8546"
 const ETHEndpoint2 = "ws://localhost:8548"
 
-// Alice key is used by the relayer, Charlie key is used as admin and depositter
+// Alice key is used by the relayer, Charlie key is used as admin and depositer
 func Test_EVM2EVM(t *testing.T) {
 	config := deployutils.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235"),
@@ -66,8 +66,8 @@ func Test_EVM2EVM(t *testing.T) {
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x1C9D948eddE23f66f8c816241C7587bC2845fA7d"),
 
-		BasicFeeHandlerAddr:      common.HexToAddress("0xA81cC6305C6f62Ccd81fc7D1E2EC6F804aCB4512"),
-		FeeHandlerWithOracleAddr: common.HexToAddress("0xe69cCE3c1CE4A870810Bdefd64b735411D0Aa9ac"),
+		BasicFeeHandlerAddr:      common.HexToAddress("0x7ba8A49750Ea49783a456A71096923723E6566ee"),
+		FeeHandlerWithOracleAddr: common.HexToAddress("0xA81cC6305C6f62Ccd81fc7D1E2EC6F804aCB4512"),
 		FeeRouterAddress:         common.HexToAddress("0xA8254f6184b82D7307257966b95D7569BD751a90"),
 		BasicFee:                 deployutils.BasicFee,
 		OracleFee:                deployutils.OracleFee,
@@ -140,6 +140,11 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	log.Info().Msg("Bridge is set")
 }
 
+var amountToDeposit = big.NewInt(100)
+var oracleFeeInWei, _ = new(big.Int).SetString("63795456000000000000", 0)
+var amountToMint, _ = new(big.Int).SetString("5000000000000000000000", 0)
+var amountToApprove, _ = new(big.Int).SetString("10000000000000000000000", 0)
+
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
@@ -150,20 +155,44 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
 
+	_, err := erc20Contract1.MintTokens(s.config1.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+
+	_, err = erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
+
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
-
-	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	handlerBalanceBefore, err := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
 	s.Nil(err)
 
-	amountToDeposit := big.NewInt(1000000)
+	var feeOracleSignature = "2ecbfbc1db3c1976987a32c5cc3043a5fbe2468c86472ab0ac8ea9a3b97291e3585a655596580ad76a0c06eeb1ce71d75d6799dc34dce7cfeea3048351000acb1b"
+	var feeDataHash = "000000000000000000000000000000000000000000000000000194b9a2ecd000000000000000000000000000000000000000000000000000dd55bf4eab0400000000000000000000000000000000000000000000000000000000000077359400000000000000000000000000000000000000000000000000000000006918d61d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000"
+	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
-			Value:    s.config1.BasicFee,
 		})
 	s.Nil(err)
 
@@ -186,22 +215,21 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 
-	// Check that FeeHandler ETH balance increased
-	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	// Check that FeeHandler token balance increased
+	handlerBalanceAfter, _ := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
 	s.Nil(err)
-	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, s.config1.BasicFee))
-
+	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, oracleFeeInWei))
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
-	tokenId := big.NewInt(int64(rand.Int()))
+	tokenId := big.NewInt(int64(rand.Intn(1000)))
 	metadata := "metadata.url"
-
-	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
 	txOptions := transactor.TransactOptions{
 		Priority: uint8(2), // fast
 	}
+
+	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
 	// erc721 contract for evm1
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
@@ -228,9 +256,12 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	_, err = erc721Contract2.Owner(tokenId)
 	s.Error(err)
 
+	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	s.Nil(err)
+
 	depositTxHash, err := bridgeContract1.Erc721Deposit(
 		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
-			Value: big.NewInt(int64(s.config1.OracleFee)),
+			Value: s.config1.BasicFee,
 		},
 	)
 	s.Nil(err)
@@ -251,6 +282,11 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	owner, err := erc721Contract2.Owner(tokenId)
 	s.Nil(err)
 	s.Equal(dstAddr.String(), owner.String())
+
+	// Check that FeeHandler ETH balance increased
+	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
 }
 
 func (s *IntegrationTestSuite) Test_GenericDeposit() {
@@ -262,9 +298,11 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
 
+	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	s.Nil(err)
+
 	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
-		Priority: uint8(0), // slow
-		Value:    big.NewInt(int64(s.config1.OracleFee)),
+		Value: s.config1.BasicFee,
 	})
 	s.Nil(err)
 
@@ -279,14 +317,14 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
 	s.Nil(err)
 	s.Equal(true, exists)
+
+	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
 }
 
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
-
-	txOptions := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20LockReleaseAddr, transactor1)
@@ -295,34 +333,61 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
 
+	_, err := erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
+
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
+	handlerBalanceBefore, err := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
+	s.Nil(err)
 
-	amountToDeposit := big.NewInt(1000000)
+	var feeOracleSignature = "ba825f046f4a40bbe99d50e16a93afa99c524ad90cb64c0523d7fa79adb03b2705fd53a4af0f94ae6b2ea8da7f2b6497c41774e9f93a116cf40714553b53db511c"
+	var feeDataHash = "000000000000000000000000000000000000000000000000000194b9a2ecd000000000000000000000000000000000000000000000000000dd55bf4eab04000000000000000000000000000000000000000000000000000000000000773594000000000000000000000000000000000000000000000000000000000069191ba6000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000300"
+	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, feeData,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
-			Value:    s.config1.BasicFee,
 		})
 	s.Nil(err)
 
+	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
+
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
+
 	// check gas price of deposit tx - 140 gwei
 	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.NotNil(err)
 
-	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToDeposit, transactor.TransactOptions{})
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
 	if err != nil {
 		return
 	}
 
-	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, txOptions)
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
 	if err != nil {
 		return
 	}
@@ -340,32 +405,67 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+
+	// Check that FeeHandler token balance increased
+	handlerBalanceAfter, _ := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, handlerBalanceBefore.Add(handlerBalanceBefore, oracleFeeInWei))
 }
 
 func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
+
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
+
+	_, err := erc20Contract1.MintTokens(s.config1.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+
+	_, err = erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
+
+	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	s.Nil(err)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
-	amountToDeposit := big.NewInt(1000000)
+	handlerBalanceBefore, err := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
+	s.Nil(err)
+
+	var feeOracleSignature = "2ecbfbc1db3c1976987a32c5cc3043a5fbe2468c86472ab0ac8ea9a3b97291e3585a655596580ad76a0c06eeb1ce71d75d6799dc34dce7cfeea3048351000acb1b"
+	var feeDataHash = "000000000000000000000000000000000000000000000000000194b9a2ecd000000000000000000000000000000000000000000000000000dd55bf4eab0400000000000000000000000000000000000000000000000000000000000077359400000000000000000000000000000000000000000000000000000000006918d61d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000"
+	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
+
 	numOfDeposits := 25
-	amountBefore := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
-	amountAfter := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
+	totalDepositAmount := big.NewInt(0).Mul(amountToDeposit, big.NewInt(int64(numOfDeposits)))
 
 	var wg sync.WaitGroup
 	for i := 0; i < numOfDeposits; i++ {
 		go func() {
-			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
+			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
 				transactor.TransactOptions{
 					Priority: uint8(2), // fast
-					Value:    s.config1.BasicFee,
 				})
 			wg.Add(1)
 			defer wg.Done()
@@ -376,11 +476,20 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
-	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
-	s.Nil(err)
-	s.Equal(amountBefore, senderBalBefore.Sub(senderBalBefore, senderBalAfter))
+	totalFees := big.NewInt(0).Mul(oracleFeeInWei, big.NewInt(int64(numOfDeposits)))
 
 	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
-	s.Equal(amountAfter, destBalanceAfter.Sub(destBalanceAfter, destBalanceBefore))
+	//Balance has increased
+	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
+
+	senderBalAfter, err := erc20Contract1.GetBalance(s.client1.From())
+	s.Nil(err)
+	senderBalanceDifference := big.NewInt(0).Sub(senderBalBefore, senderBalAfter)
+	s.Equal(totalDepositAmount, big.NewInt(0).Sub(senderBalanceDifference, totalFees))
+
+	// Check that FeeHandler token balance increased
+	handlerBalanceAfter, _ := erc20Contract1.GetBalance(s.config1.FeeHandlerWithOracleAddr)
+	s.Nil(err)
+	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, totalFees))
 }
