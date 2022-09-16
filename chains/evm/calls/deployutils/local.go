@@ -18,7 +18,7 @@ import (
 
 var BasicFee = big.NewInt(100000000000)
 var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
-var GasUsed = uint32(100000)
+var GasUsed = uint32(2000000000)
 var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
 
 type EVMClient interface {
@@ -111,11 +111,13 @@ func SetupLocalSygmaRelayer(
 	if err != nil {
 		return nil, err
 	}
-	fh, err := DeployBasicFeeHandler(ethClient, t, bridgeContractAddress, *fr.ContractAddress())
+
+	fhwo, err := SetupFeeHandlerWithOracle(ethClient, t, bridgeContractAddress, *fr.ContractAddress(), FeeOracleAddress, GasUsed, OracleFee)
 	if err != nil {
 		return nil, err
 	}
-	fhwo, err := DeployFeeHandlerWithOracle(ethClient, t, bridgeContractAddress, *fr.ContractAddress())
+
+	fh, err := SetupFeeBasicHandler(ethClient, t, bridgeContractAddress, *fr.ContractAddress(), BasicFee)
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +126,7 @@ func SetupLocalSygmaRelayer(
 	if err != nil {
 		return nil, err
 	}
+
 	_, err = fr.AdminSetResourceHandler(destDomainID, erc721ResourceID, *fh.ContractAddress(), transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
@@ -157,10 +160,10 @@ func SetupLocalSygmaRelayer(
 		Erc721ResourceID:  erc721ResourceID,
 
 		BasicFeeHandlerAddr:      *fh.ContractAddress(),
-		FeeRouterAddress:         *fr.ContractAddress(),
 		FeeHandlerWithOracleAddr: *fhwo.ContractAddress(),
+		FeeRouterAddress:         *fr.ContractAddress(),
+		BasicFee:                 big.NewInt(100000000000),
 		OracleFee:                OracleFee,
-		BasicFee:                 BasicFee,
 	}
 
 	err = SetupERC20Handler(bridgeContract, erc20Contract, mintTo, conf)
@@ -184,10 +187,6 @@ func SetupLocalSygmaRelayer(
 	}
 
 	_, err = fh.ChangeFee(BasicFee, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
-	_, err = fhwo.SetFeeProperties(GasUsed, OracleFee, transactor.TransactOptions{GasLimit: 2000000})
 	if err != nil {
 		return nil, err
 	}
