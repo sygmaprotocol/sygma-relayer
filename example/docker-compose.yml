@@ -57,7 +57,7 @@ services:
     restart: "no"
 
   relayer1:
-    container_name: relayer1
+    container_name: example_relayer1
     build:
       context: ../.
       dockerfile: ./example/Dockerfile
@@ -73,7 +73,7 @@ services:
     restart: always
 
   relayer2:
-    container_name: relayer2
+    container_name: example_relayer2
     build:
       context: ../.
       dockerfile: ./example/Dockerfile
@@ -89,7 +89,7 @@ services:
     restart: always
 
   relayer3:
-    container_name: relayer3
+    container_name: example_relayer3
     build:
       context: ../.
       dockerfile: ./example/Dockerfile
@@ -105,8 +105,9 @@ services:
     restart: always
 
   fee-oracle:
-    image: "chainsafe/sygma-fee-oracle"
     container_name: fee-oracle
+    image: "ghcr.io/sygmaprotocol/sygma-fee-oracle:latest"
+    pull_policy: always
     command: go run main.go server -r ./fee-oracle-config/resource.json -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
     depends_on:
       - evm1-1
