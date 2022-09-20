@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var TestTimeout = time.Minute * 2
+var TestTimeout = time.Minute * 4
 var setupTimeout = time.Minute * 30
 
 type Client interface {
