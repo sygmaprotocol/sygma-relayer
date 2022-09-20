@@ -23,12 +23,6 @@ coverage:
 test:
 	./scripts/tests.sh
 
-unit-tests:
-	go test -timeout 30m -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep -v 'cbcli\|e2e\|tss')
-
-tss-tests:
-	go test -timeout 30m -p 1 -coverpkg=$CVPKG -coverprofile=cover.out -p=1 $(go list ./... | grep 'tss')
-
 genmocks:
 	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
 	mockgen -destination=./tss/common/mock/communication.go -source=./tss/common/base.go -package mock_tss
