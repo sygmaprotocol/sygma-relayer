@@ -142,8 +142,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 var amountToDeposit = big.NewInt(100)
 var oracleFeeInWei, _ = new(big.Int).SetString("63795456000000000000", 0)
-var amountToMint, _ = new(big.Int).SetString("5000000000000000000000", 0)
-var amountToApprove, _ = new(big.Int).SetString("10000000000000000000000", 0)
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
@@ -154,30 +152,6 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
-
-	_, err := erc20Contract1.MintTokens(s.config1.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-
-	_, err = erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
@@ -325,6 +299,7 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
+	amountToMint := big.NewInt(0).Mul(big.NewInt(250), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	erc20Contract1 := erc20.NewERC20Contract(s.client1, s.config1.Erc20LockReleaseAddr, transactor1)
@@ -332,23 +307,6 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
-
-	_, err := erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)
@@ -378,21 +336,23 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.NotNil(err)
 
-	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
+	go func() {
+		_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
+			Priority: uint8(2), // fast
+		})
+		if err != nil {
+			return
+		}
 
-	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-	s.Nil(err)
-	s.NotNil(retryTxHash)
+		retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
+			Priority: uint8(2), // fast
+		})
+		if err != nil {
+			return
+		}
+		s.Nil(err)
+		s.NotNil(retryTxHash)
+	}()
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -421,30 +381,6 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20Addr, transactor2)
-
-	_, err := erc20Contract1.MintTokens(s.config1.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-
-	_, err = erc20Contract1.MintTokens(s.client1.From(), amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	if err != nil {
-		return
-	}
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
-
-	_, err = erc20Contract1.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
-	s.Nil(err)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(deployutils.CharlieKp.CommonAddress())
 	s.Nil(err)

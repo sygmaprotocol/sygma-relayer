@@ -107,7 +107,6 @@ services:
   fee-oracle:
     container_name: fee-oracle
     image: "ghcr.io/sygmaprotocol/sygma-fee-oracle:latest"
-    pull_policy: always
     command: go run main.go server -r ./fee-oracle-config/resource.json -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
     depends_on:
       - evm1-1
