@@ -336,23 +336,21 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.NotNil(err)
 
-	go func() {
-		_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-			Priority: uint8(2), // fast
-		})
-		if err != nil {
-			return
-		}
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
 
-		retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
-			Priority: uint8(2), // fast
-		})
-		if err != nil {
-			return
-		}
-		s.Nil(err)
-		s.NotNil(retryTxHash)
-	}()
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
+		Priority: uint8(2), // fast
+	})
+	if err != nil {
+		return
+	}
+	s.Nil(err)
+	s.NotNil(retryTxHash)
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
