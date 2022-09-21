@@ -196,7 +196,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc721Deposit() {
-	tokenId := big.NewInt(int64(rand.Intn(1000)))
+	tokenId := big.NewInt(int64(rand.Int()))
 	metadata := "metadata.url"
 
 	txOptions := transactor.TransactOptions{
