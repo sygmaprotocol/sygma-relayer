@@ -36,4 +36,4 @@ jobs:
         if: always()
         run: |
           docker ps -a
-          docker logs relayer1
+          docker logs example_relayer1

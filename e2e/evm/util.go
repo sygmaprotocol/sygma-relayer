@@ -5,18 +5,19 @@ package evm
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"math/big"
 	"time"
 
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var TestTimeout = time.Minute * 2
+var TestTimeout = time.Minute * 4
 var setupTimeout = time.Minute * 30
 
 type Client interface {
@@ -94,4 +95,13 @@ func WaitUntilBridgeReady(client Client, feeHandlerAddress common.Address) error
 			return errors.New("test timed out waiting for bridge setup")
 		}
 	}
+}
+
+func ConstructFeeData(feeOracleSignature string, feeDataHash string, amountToDeposit *big.Int) []byte {
+	decodedFeeOracleSignature, _ := hex.DecodeString(feeOracleSignature)
+	decodedFeeData, _ := hex.DecodeString(feeDataHash)
+	amountToDepositBytes := calls.SliceTo32Bytes(common.LeftPadBytes(amountToDeposit.Bytes(), 32))
+	feeData := append(decodedFeeData, decodedFeeOracleSignature...)
+	feeData = append(feeData, amountToDepositBytes[:]...)
+	return feeData
 }
