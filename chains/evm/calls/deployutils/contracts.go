@@ -95,13 +95,22 @@ func SetupERC20Handler(
 		return err
 	}
 	// Minting tokens
-	tenTokens := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
-	_, err = erc20Contract.MintTokens(mintTo, tenTokens, transactor.TransactOptions{})
+	amountToMint := big.NewInt(0).Mul(big.NewInt(5000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	amountToApprove := big.NewInt(0).Mul(big.NewInt(10000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	_, err = erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = erc20Contract.MintTokens(conf.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		return err
 	}
 	// Approving tokens
-	_, err = erc20Contract.ApproveTokens(conf.Erc20HandlerAddr, tenTokens, transactor.TransactOptions{})
+	_, err = erc20Contract.ApproveTokens(conf.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = erc20Contract.ApproveTokens(conf.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		return err
 	}
@@ -127,19 +136,23 @@ func SetupERC20LockReleaseHandler(
 	if err != nil {
 		return err
 	}
-
-	tenTokens := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
-	_, err = erc20Contract.MintTokens(mintTo, tenTokens, transactor.TransactOptions{})
+	// Minting tokens
+	amountToMint := big.NewInt(0).Mul(big.NewInt(250), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	amountToApprove := big.NewInt(0).Mul(big.NewInt(500), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	_, err = erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		return err
 	}
 
 	// Approving tokens
-	_, err = erc20Contract.ApproveTokens(conf.Erc20HandlerAddr, tenTokens, transactor.TransactOptions{})
+	_, err = erc20Contract.ApproveTokens(conf.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		return err
 	}
-
+	_, err = erc20Contract.ApproveTokens(conf.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -181,6 +194,7 @@ var AliceKp = keystore.TestKeyRing.EthereumKeys[keystore.AliceKey]
 var BobKp = keystore.TestKeyRing.EthereumKeys[keystore.BobKey]
 var EveKp = keystore.TestKeyRing.EthereumKeys[keystore.EveKey]
 var CharlieKp = keystore.TestKeyRing.EthereumKeys[keystore.CharlieKey]
+var DaveKp = keystore.TestKeyRing.EthereumKeys[keystore.DaveKey]
 
 var (
 	MpcAddress = common.HexToAddress("0x1c5541A79AcC662ab2D2647F3B141a3B7Cdb2Ae4")

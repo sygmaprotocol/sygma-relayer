@@ -14,10 +14,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type FeeHandlerDeployResutls struct {
-	FeeRouter         *feeHandler.FeeRouter
-	FeeHandlerAddress common.Address
-	FeeRouterAddress  common.Address
+type FeeHandlerDeployResults struct {
+	FeeRouter                   *feeHandler.FeeRouter
+	BasicFeeHandlerAddress      common.Address
+	FeeHandlerWithOracleAddress common.Address
+	FeeRouterAddress            common.Address
 }
 
 func SetupFeeRouter(ethClient EVMClient, t transactor.Transactor, bridgeContract *bridge.BridgeContract) (*feeHandler.FeeRouter, error) {
@@ -32,8 +33,8 @@ func SetupFeeRouter(ethClient EVMClient, t transactor.Transactor, bridgeContract
 	return fr, nil
 }
 
-func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouter, oracleAddress common.Address, feeGas uint32, feePercent uint16) (*feeHandler.FeeHandlerWithOracleContract, error) {
-	fh, err := DeployFeeHandlerWithOracle(ethClient, t, bridgeContractAddress, feeRouter)
+func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress, oracleAddress common.Address, feeGas uint32, feePercent uint16) (*feeHandler.FeeHandlerWithOracleContract, error) {
+	fh, err := DeployFeeHandlerWithOracle(ethClient, t, bridgeContractAddress, feeRouterAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -50,16 +51,12 @@ func SetupFeeHandlerWithOracle(ethClient EVMClient, t transactor.Transactor, bri
 	return fh, nil
 }
 
-func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, feeRouter, bridgeContract common.Address, feeAmount *big.Int) (*feeHandler.BasicFeeHandlerContract, error) {
-	fh, err := DeployBasicFeeHandler(ethClient, t, bridgeContract, feeRouter)
+func SetupFeeBasicHandler(ethClient EVMClient, t transactor.Transactor, bridgeContractAddress, feeRouterAddress common.Address, feeAmount *big.Int) (*feeHandler.BasicFeeHandlerContract, error) {
+	fh, err := DeployBasicFeeHandler(ethClient, t, bridgeContractAddress, feeRouterAddress)
 	if err != nil {
 		return nil, err
 	}
-	_, err = fh.ChangeFee(feeAmount, transactor.TransactOptions{GasLimit: 2000000})
-	if err != nil {
-		return nil, err
-	}
-	return fh, nil
+	return fh, err
 }
 
 func DeployFeeRouter(
