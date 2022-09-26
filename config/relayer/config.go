@@ -37,6 +37,7 @@ type BullyConfig struct {
 }
 
 type TopologyConfiguration struct {
+	EncryptionKey  string `mapstructure:"EncryptionKey" json:"encryptionKey"`
 	AccessKey      string `mapstructure:"AccessKey" json:"accessKey"`
 	SecKey         string `mapstructure:"SecKey" json:"secKey"`
 	DocumentName   string `mapstructure:"DocumentName" default:"topology.json" json:"documentName"`
@@ -75,6 +76,9 @@ func (c *RawRelayerConfig) Validate() error {
 
 	if c.MpcConfig.TopologyConfiguration.SecKey == "" {
 		return errors.New("topology configuration secret key not provided")
+	}
+	if c.MpcConfig.TopologyConfiguration.EncryptionKey == "" {
+		return errors.New("topology configuration encryption key not provided")
 	}
 	return nil
 }
