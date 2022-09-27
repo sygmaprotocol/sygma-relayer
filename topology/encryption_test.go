@@ -17,7 +17,7 @@ type AESEncryptionTestSuite struct {
 }
 
 func TestRunAESEncryptionTestSuite(t *testing.T) {
-	suite.Run(t, new(TopologyStoreTestSuite))
+	suite.Run(t, new(AESEncryptionTestSuite))
 }
 
 func (s *AESEncryptionTestSuite) SetupTest() {
