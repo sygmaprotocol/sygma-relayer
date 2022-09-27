@@ -6,6 +6,7 @@ package topology
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/hex"
 )
 
 var IV = []byte("1234567812345678")
@@ -25,16 +26,17 @@ func NewAESEncryption(key []byte) (*AESEncryption, error) {
 	}, nil
 }
 
-func (ae *AESEncryption) Encrypt(data []byte) []byte {
+func (ae *AESEncryption) Encrypt(data []byte) string {
 	dst := make([]byte, len(data))
 	stream := cipher.NewCTR(ae.block, IV)
 	stream.XORKeyStream(dst, data)
-	return dst
+	return hex.EncodeToString(dst)
 }
 
-func (ae *AESEncryption) Decrypt(data []byte) []byte {
-	dst := make([]byte, len(data))
+func (ae *AESEncryption) Decrypt(data string) []byte {
 	stream := cipher.NewCTR(ae.block, IV)
-	stream.XORKeyStream(dst, data)
+	bytes, _ := hex.DecodeString(data)
+	dst := make([]byte, len(bytes))
+	stream.XORKeyStream(dst, bytes)
 	return dst
 }

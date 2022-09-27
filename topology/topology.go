@@ -78,8 +78,8 @@ type RawPeer struct {
 }
 
 type Encrypter interface {
-	Encrypt(data []byte) []byte
-	Decrypt(data []byte) []byte
+	Encrypt(data []byte) string
+	Decrypt(data string) []byte
 }
 
 type topologyProvider struct {
@@ -110,7 +110,7 @@ func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		log.Err(err).Msg("error on reading topology data")
 	}
 
-	data := t.encrypter.Decrypt(eData)
+	data := t.encrypter.Decrypt(string(eData))
 	rawTopology := &RawTopology{}
 	err = json.Unmarshal(data, rawTopology)
 	if err != nil {
