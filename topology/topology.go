@@ -55,7 +55,7 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 		return nil, err
 	}
 
-	encrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
+	decrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 		client:       *client,
 		documentName: config.DocumentName,
 		bucketName:   config.BucketName,
-		encrypter:    encrypter,
+		decrypter:    decrypter,
 	}, nil
 }
 
