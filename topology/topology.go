@@ -55,7 +55,7 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 		return nil, err
 	}
 
-	encrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
+	decrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTo
 		client:       *client,
 		documentName: config.DocumentName,
 		bucketName:   config.BucketName,
-		encrypter:    encrypter,
+		decrypter:    decrypter,
 	}, nil
 }
 
@@ -77,16 +77,15 @@ type RawPeer struct {
 	PeerAddress string `mapstructure:"PeerAddress" json:"peerAddress"`
 }
 
-type Encrypter interface {
-	Encrypt(data []byte) []byte
-	Decrypt(data []byte) []byte
+type Decrypter interface {
+	Decrypt(data string) []byte
 }
 
 type topologyProvider struct {
 	client       minio.Client
 	documentName string
 	bucketName   string
-	encrypter    Encrypter
+	decrypter    Decrypter
 }
 
 func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
@@ -110,7 +109,7 @@ func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		log.Err(err).Msg("error on reading topology data")
 	}
 
-	data := t.encrypter.Decrypt(eData)
+	data := t.decrypter.Decrypt(string(eData))
 	rawTopology := &RawTopology{}
 	err = json.Unmarshal(data, rawTopology)
 	if err != nil {
