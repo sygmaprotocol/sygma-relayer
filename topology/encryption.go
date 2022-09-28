@@ -9,8 +9,6 @@ import (
 	"encoding/hex"
 )
 
-var IV = []byte("1234567812345678")
-
 type AESEncryption struct {
 	block cipher.Block
 }
@@ -26,16 +24,11 @@ func NewAESEncryption(key []byte) (*AESEncryption, error) {
 	}, nil
 }
 
-func (ae *AESEncryption) Encrypt(data []byte) string {
-	dst := make([]byte, len(data))
-	stream := cipher.NewCTR(ae.block, IV)
-	stream.XORKeyStream(dst, data)
-	return hex.EncodeToString(dst)
-}
-
 func (ae *AESEncryption) Decrypt(data string) []byte {
-	stream := cipher.NewCTR(ae.block, IV)
 	bytes, _ := hex.DecodeString(data)
+	iv := bytes[:aes.BlockSize]
+	bytes = bytes[aes.BlockSize:]
+	stream := cipher.NewCTR(ae.block, iv)
 	dst := make([]byte, len(bytes))
 	stream.XORKeyStream(dst, bytes)
 	return dst
