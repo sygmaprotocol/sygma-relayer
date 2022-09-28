@@ -77,8 +77,7 @@ type RawPeer struct {
 	PeerAddress string `mapstructure:"PeerAddress" json:"peerAddress"`
 }
 
-type Encrypter interface {
-	Encrypt(data []byte) string
+type Decrypter interface {
 	Decrypt(data string) []byte
 }
 
@@ -86,7 +85,7 @@ type topologyProvider struct {
 	client       minio.Client
 	documentName string
 	bucketName   string
-	encrypter    Encrypter
+	decrypter    Decrypter
 }
 
 func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
@@ -110,7 +109,7 @@ func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		log.Err(err).Msg("error on reading topology data")
 	}
 
-	data := t.encrypter.Decrypt(string(eData))
+	data := t.decrypter.Decrypt(string(eData))
 	rawTopology := &RawTopology{}
 	err = json.Unmarshal(data, rawTopology)
 	if err != nil {
