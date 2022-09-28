@@ -66,8 +66,7 @@ func Run() error {
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
-	// topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
-	topologyProvider, err := topology.NewFixedNetworkTopologyProvider()
+	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
 	networkTopology, err := topologyStore.Topology()
