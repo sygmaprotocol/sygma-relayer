@@ -38,7 +38,7 @@ func (s *AESEncryptionTestSuite) Test_Decryption() {
 	decryptedData := s.aesEncryption.Decrypt(encryptedData)
 
 	decryptedTopology := topology.RawTopology{}
-	json.Unmarshal(decryptedData, &decryptedTopology)
+	_ = json.Unmarshal(decryptedData, &decryptedTopology)
 
 	s.Equal(expectedTopology, decryptedTopology)
 }
