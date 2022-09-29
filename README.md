@@ -22,7 +22,7 @@ Sygma bridge uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-co
 ## Local environment
 Run `make example` to start the local environment.
 
-_This will start two EVM networks, deploy and configure smart contracts, and start three preconfigured relayers._
+_This will start two EVM networks with configured smart contracts, and start three preconfigured relayers._
 
 &nbsp;
 
