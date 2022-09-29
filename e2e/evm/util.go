@@ -11,19 +11,57 @@ import (
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
+	"github.com/ChainSafe/chainbridge-core/types"
+
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	ethereumTypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 var TestTimeout = time.Minute * 4
-var setupTimeout = time.Minute * 30
+var BasicFee = big.NewInt(1000000000000000)
+var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
+var GasUsed = uint32(2000000000)
+var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
-	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
-	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
+	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- ethereumTypes.Log) (ethereum.Subscription, error)
+	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethereumTypes.Log, error)
+}
+
+type EVMClient interface {
+	calls.ContractCallerDispatcher
+	evmgaspricer.GasPriceClient
+	ChainID(ctx context.Context) (*big.Int, error)
+}
+
+type BridgeConfig struct {
+	BridgeAddr common.Address
+
+	Erc20Addr        common.Address
+	Erc20HandlerAddr common.Address
+	Erc20ResourceID  types.ResourceID
+
+	Erc20LockReleaseAddr        common.Address
+	Erc20LockReleaseHandlerAddr common.Address
+	Erc20LockReleaseResourceID  types.ResourceID
+
+	GenericHandlerAddr common.Address
+	AssetStoreAddr     common.Address
+	GenericResourceID  types.ResourceID
+
+	Erc721Addr        common.Address
+	Erc721HandlerAddr common.Address
+	Erc721ResourceID  types.ResourceID
+
+	BasicFeeHandlerAddr      common.Address
+	FeeRouterAddress         common.Address
+	FeeHandlerWithOracleAddr common.Address
+	BasicFee                 *big.Int
+	OracleFee                uint16
 }
 
 func WaitForProposalExecuted(client Client, bridge common.Address) error {
@@ -37,7 +75,7 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 		},
 	}
 	timeout := time.After(TestTimeout)
-	ch := make(chan types.Log)
+	ch := make(chan ethereumTypes.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, ch)
 	if err != nil {
 		return err
@@ -54,45 +92,6 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 			}
 		case <-timeout:
 			return errors.New("test timed out waiting for proposal execution event")
-		}
-	}
-}
-
-func WaitUntilBridgeReady(client Client, feeHandlerAddress common.Address) error {
-	startBlock, _ := client.LatestBlock()
-	logs, err := client.FetchEventLogs(context.Background(), feeHandlerAddress, string(events.FeeChangedSig), big.NewInt(1), startBlock)
-	if err != nil {
-		return err
-	}
-	if len(logs) > 0 {
-		return nil
-	}
-
-	query := ethereum.FilterQuery{
-		FromBlock: startBlock,
-		Addresses: []common.Address{feeHandlerAddress},
-		Topics: [][]common.Hash{
-			{events.FeeChangedSig.GetTopic()},
-		},
-	}
-	timeout := time.After(setupTimeout)
-
-	ch := make(chan types.Log)
-	sub, err := client.SubscribeFilterLogs(context.Background(), query, ch)
-	if err != nil {
-		return err
-	}
-	defer sub.Unsubscribe()
-	for {
-		select {
-		case <-ch:
-			return nil
-		case err := <-sub.Err():
-			if err != nil {
-				return err
-			}
-		case <-timeout:
-			return errors.New("test timed out waiting for bridge setup")
 		}
 	}
 }

@@ -31,12 +31,11 @@ import (
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/deployutils"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 )
 
 type TestClient interface {
-	deployutils.EVMClient
+	evm.EVMClient
 	LatestBlock() (*big.Int, error)
 	CodeAt(ctx context.Context, contractAddress common.Address, block *big.Int) ([]byte, error)
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
@@ -51,7 +50,7 @@ const ETHEndpoint2 = "ws://localhost:8547"
 // Alice key is used by the relayer, Charlie key is used as admin and depositer
 func Test_EVM2EVM(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	config := deployutils.BridgeConfig{
+	config := evm.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 
 		Erc20Addr:        common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
@@ -73,8 +72,8 @@ func Test_EVM2EVM(t *testing.T) {
 		BasicFeeHandlerAddr:      common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
 		FeeHandlerWithOracleAddr: common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
 		FeeRouterAddress:         common.HexToAddress("0x9275AC64D6556BE290dd878e5aAA3a5bae08ae0C"),
-		BasicFee:                 deployutils.BasicFee,
-		OracleFee:                deployutils.OracleFee,
+		BasicFee:                 evm.BasicFee,
+		OracleFee:                evm.OracleFee,
 	}
 
 	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
@@ -109,7 +108,7 @@ func NewEVM2EVMTestSuite(
 	fabric1, fabric2 calls.TxFabric,
 	client1, client2 TestClient,
 	gasPricer1, gasPricer2 calls.GasPricer,
-	config1, config2 deployutils.BridgeConfig,
+	config1, config2 evm.BridgeConfig,
 ) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
 		fabric1:    fabric1,
@@ -131,8 +130,8 @@ type IntegrationTestSuite struct {
 	gasPricer2 calls.GasPricer
 	fabric1    calls.TxFabric
 	fabric2    calls.TxFabric
-	config1    deployutils.BridgeConfig
-	config2    deployutils.BridgeConfig
+	config1    evm.BridgeConfig
+	config2    evm.BridgeConfig
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
