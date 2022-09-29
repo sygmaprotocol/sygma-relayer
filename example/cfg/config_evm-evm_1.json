@@ -16,29 +16,29 @@
       "id": 1,
       "name": "evm1",
       "type": "evm",
-      "endpoint": "ws://evm1-1:8546",
-      "bridge": "0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235",
-      "erc20Handler": "0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74",
-      "erc721Handler": "0x1cd88Fa5848389E4027d29B267BAB561300CEA2A",
-      "genericHandler": "0xf1a8fDee59ecc8bDbAAA7cC0757876177d0FB255",
+      "endpoint": "ws://evm1-1:8545",
+      "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
+      "erc20Handler": "0x1ED1d77911944622FCcDDEad8A731fd77E94173e",
+      "erc721Handler": "0x481f97f9C82a971B3844a422936a4d3c4082bF84",
+      "genericHandler": "0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "0000000000000000000000000000000000000000000000000000000000657665"
+      "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"
     },
     {
       "id": 2,
       "name": "evm2",
       "type": "evm",
-      "endpoint": "ws://evm2-1:8546",
-      "bridge": "0xF75ABb9ABED5975d1430ddCF420bEF954C8F5235",
-      "erc20Handler": "0x7ec51Af51bf6f6f4e3C2E87096381B2cf94f6d74",
-      "erc721Handler": "0x1cd88Fa5848389E4027d29B267BAB561300CEA2A",
-      "genericHandler": "0xf1a8fDee59ecc8bDbAAA7cC0757876177d0FB255",
+      "endpoint": "ws://evm2-1:8545",
+      "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
+      "erc20Handler": "0x1ED1d77911944622FCcDDEad8A731fd77E94173e",
+      "erc721Handler": "0x481f97f9C82a971B3844a422936a4d3c4082bF84",
+      "genericHandler": "0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "0000000000000000000000000000000000000000000000000000000000657665"
+      "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"
     }
   ]
 }

@@ -51,9 +51,8 @@ func NewBridgeContract(
 	transactor transactor.Transactor,
 ) *BridgeContract {
 	a, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
-	b := common.FromHex(consts.BridgeBin)
 	return &BridgeContract{
-		Contract: contracts.NewContract(bridgeContractAddress, a, b, client, transactor),
+		Contract: contracts.NewContract(bridgeContractAddress, a, nil, client, transactor),
 		client:   client,
 	}
 }

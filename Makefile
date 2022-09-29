@@ -39,4 +39,4 @@ e2e-test:
 	./scripts/e2e_tests.sh
 
 example:
-	docker-compose --file=./example/docker-compose.yml up
+	docker-compose --file=./example/docker-compose.yml up --build

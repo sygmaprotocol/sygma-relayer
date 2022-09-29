@@ -13,4 +13,4 @@ FROM debian:stretch-slim
 COPY --from=builder /bridge ./
 RUN chmod +x ./bridge
 
-ENTRYPOINT ["./bridge"]
+CMD ["./bridge"]

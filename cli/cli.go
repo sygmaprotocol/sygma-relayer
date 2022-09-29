@@ -4,7 +4,6 @@
 package cli
 
 import (
-	"github.com/ChainSafe/sygma-relayer/chains/evm/cli"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,7 +24,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, peerInfoCMD, cli.EVMRootCLI)
+	rootCMD.AddCommand(runCMD, peerInfoCMD)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}
