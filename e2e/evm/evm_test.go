@@ -329,8 +329,8 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	depositor := s.client1.From()
 	var metadata []byte
 	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
-	metadata = append(metadata, hash[:]...)
-	metadata = append(metadata, depositor.Bytes()...)
+	metadata = append(metadata, common.LeftPadBytes(hash[:], 32)...)
+	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 
 	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
 		Value: s.config1.BasicFee,
@@ -340,7 +340,6 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
-	// Asset hash sent is stored in centrifuge asset store contract
 	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
 	s.Nil(err)
 	s.Equal(true, exists)
