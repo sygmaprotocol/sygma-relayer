@@ -330,6 +330,7 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	var metadata []byte
 	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 	metadata = append(metadata, hash[:]...)
+	metadata = append(metadata, depositor.Bytes()...)
 
 	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
 		Value: s.config1.BasicFee,
