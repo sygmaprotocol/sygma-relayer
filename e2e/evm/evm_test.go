@@ -323,7 +323,7 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
-	functionSig := string(crypto.Keccak256([]byte(assetStoreContract2.ABI.Methods["store"].Sig))[:4])
+	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(bytes32,bytes32,bytes32)"))[:4])
 	contractAddress := assetStoreContract2.ContractAddress()
 	maxFee := big.NewInt(200000)
 	depositor := s.client1.From()
