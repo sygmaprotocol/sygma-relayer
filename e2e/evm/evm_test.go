@@ -69,11 +69,12 @@ func Test_EVM2EVM(t *testing.T) {
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 
-		PermissionlessGenericResourceID: calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
+		PermissionlessGenericHandlerAddr: common.HexToAddress("0x979C2e7347c9831E18870aB886f0101EBC771CeB"),
+		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
-		BasicFeeHandlerAddr:      common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
-		FeeHandlerWithOracleAddr: common.HexToAddress("0xA45E01c8D945D47ADa916828828B201d0815b83F"),
-		FeeRouterAddress:         common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
+		BasicFeeHandlerAddr:      common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
+		FeeHandlerWithOracleAddr: common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
+		FeeRouterAddress:         common.HexToAddress("0x9275AC64D6556BE290dd878e5aAA3a5bae08ae0C"),
 		BasicFee:                 evm.BasicFee,
 		OracleFee:                evm.OracleFee,
 	}
