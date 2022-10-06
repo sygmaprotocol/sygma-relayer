@@ -140,10 +140,12 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, gasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
+				pGenericHandler := chainConfig["permissionlessGenericHandler"].(string)
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
 				depositHandler.RegisterDepositHandler(config.Erc20Handler, coreListener.Erc20DepositHandler)
 				depositHandler.RegisterDepositHandler(config.Erc721Handler, coreListener.Erc721DepositHandler)
 				depositHandler.RegisterDepositHandler(config.GenericHandler, coreListener.GenericDepositHandler)
+				depositHandler.RegisterDepositHandler(pGenericHandler, listener.PermissionlessGenericDepositHandler)
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
@@ -157,6 +159,7 @@ func Run() error {
 				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
 				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
 				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
+				mh.RegisterMessageHandler(pGenericHandler, executor.PermissionlessGenericMessageHandler)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
 				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)

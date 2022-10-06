@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,7 +29,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/chainbridge-core/keystore"
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
@@ -68,6 +68,9 @@ func Test_EVM2EVM(t *testing.T) {
 		GenericHandlerAddr: common.HexToAddress("0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+
+		PermissionlessGenericHandlerAddr: common.HexToAddress("0x979C2e7347c9831E18870aB886f0101EBC771CeB"),
+		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
 		BasicFeeHandlerAddr:      common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
 		FeeHandlerWithOracleAddr: common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
@@ -310,6 +313,36 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
 	s.Nil(err)
 	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
+}
+
+func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
+
+	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
+	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
+
+	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
+	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(bytes32,bytes32,bytes32)"))[:4])
+	contractAddress := assetStoreContract2.ContractAddress()
+	maxFee := big.NewInt(200000)
+	depositor := s.client1.From()
+	var metadata []byte
+	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
+	metadata = append(metadata, common.LeftPadBytes(hash[:], 32)...)
+	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
+
+	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
+		Value: s.config1.BasicFee,
+	})
+	s.Nil(err)
+
+	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
+	s.Nil(err)
+
+	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
+	s.Nil(err)
+	s.Equal(true, exists)
 }
 
 func (s *IntegrationTestSuite) Test_RetryDeposit() {

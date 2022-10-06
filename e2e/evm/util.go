@@ -53,6 +53,9 @@ type BridgeConfig struct {
 	AssetStoreAddr     common.Address
 	GenericResourceID  types.ResourceID
 
+	PermissionlessGenericHandlerAddr common.Address
+	PermissionlessGenericResourceID  types.ResourceID
+
 	Erc721Addr        common.Address
 	Erc721HandlerAddr common.Address
 	Erc721ResourceID  types.ResourceID

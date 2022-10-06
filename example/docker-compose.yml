@@ -4,25 +4,21 @@ version: '3'
 
 services:
   evm1-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v1.0.2
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v1.1.0
     container_name: evm1-1
-    command: ganache-cli --chainId 1 -d --db data/ --blockTime 2
+    command: ganache-cli --chainId 1 -d --db data/ --blockTime 2 > /dev/null
     logging:
       driver: none
-    networks:
-      - evm1
     ports:
       - "8545:8545"
 
   # SECOND CHAIN
   evm2-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v1.0.2
-    command: ganache-cli --chainId 2 -d --db data/ --blockTime 2
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v1.1.0
+    command: ganache-cli --chainId 2 -d --db data/ --blockTime 2 > /dev/null
     container_name: evm2-1
     logging:
       driver: none
-    networks:
-      - evm2
     ports:
       - "8547:8545"
 
@@ -35,9 +31,6 @@ services:
     depends_on:
       - evm1-1
       - evm2-1
-    networks:
-      - evm1
-      - evm2
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -51,9 +44,6 @@ services:
     depends_on:
       - evm1-1
       - evm2-1
-    networks:
-      - evm1
-      - evm2
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -67,9 +57,6 @@ services:
     depends_on:
       - evm1-1
       - evm2-1
-    networks:
-      - evm1
-      - evm2
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -81,9 +68,6 @@ services:
     depends_on:
       - evm1-1
       - evm2-1
-    networks:
-      - evm1
-      - evm2
     volumes:
       - ./fee-oracle-config:/app/feeOracle/fee-oracle-config
     ports:
@@ -92,7 +76,3 @@ services:
       - APP_MODE=debug
       - IDENTITY_KEY=71aec985a12cfcbabc7969845215ceac56038e87477c8337e373eab7b15796cf
       - IDENTITY_KEY_TYPE=secp256k1
-
-networks:
-  evm2:
-  evm1:

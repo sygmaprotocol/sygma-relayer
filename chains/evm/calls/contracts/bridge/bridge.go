@@ -211,6 +211,36 @@ func (c *BridgeContract) GenericDeposit(
 	return txHash, err
 }
 
+func (c *BridgeContract) PermissionlessGenericDeposit(
+	metadata []byte,
+	executeFunctionSig string,
+	executeContractAddress *common.Address,
+	maxFee *big.Int,
+	resourceID types.ResourceID,
+	destDomainID uint8,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().
+		Str("resourceID", hexutil.Encode(resourceID[:])).
+		Uint8("destDomainID", destDomainID).
+		Hex("feeData", feeData).
+		Msgf("Permissionless Generic deposit")
+	data := ConstructPermissionlessGenericDepositData(metadata, []byte(executeFunctionSig), executeContractAddress.Bytes(), maxFee)
+	txHash, err := c.deposit(
+		resourceID,
+		destDomainID,
+		data,
+		feeData,
+		opts,
+	)
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
+	return txHash, err
+}
+
 func (c *BridgeContract) ExecuteProposal(
 	proposal *proposal.Proposal,
 	signature []byte,
