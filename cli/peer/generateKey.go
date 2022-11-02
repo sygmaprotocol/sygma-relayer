@@ -42,7 +42,6 @@ func generateKey(cmd *cobra.Command, args []string) error {
 	}
 	encPriv := base64.StdEncoding.EncodeToString(marshPriv)
 
-	fmt.Println(peerID)
 	fmt.Printf(`
 LibP2P peer identity: %s \n
 LibP2P private key: %s
