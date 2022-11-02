@@ -1,0 +1,94 @@
+name: Publish binaries
+
+on:
+  push:
+    tags:
+      - "*"
+
+publish:
+  name: publish
+  if: github.ref == 'refs/heads/main'
+  runs-on: ${{ ubuntu-latest }}
+
+  steps:
+    - name: Build
+      run: make build-all
+
+    - name: Archive Linux 64
+      uses: thedoctor0/zip-release@master
+      with:
+        filename: 'relayer-linux-amd64.zip'
+        directory: 'build/linux-amd64/'
+
+    - name: Archive Linux Arm
+      uses: thedoctor0/zip-release@master
+      with:
+        filename: 'relayer-linux-arm.zip'
+        directory: 'build/linux-arm/'
+
+    - name: Archive Darwin 64
+      uses: thedoctor0/zip-release@master
+      with:
+        filename: 'relayer-darwin-amd64.zip'
+        directory: 'build/darwin-amd64/'
+
+    - name: Archive Darwin Arm 64
+      uses: thedoctor0/zip-release@master
+      with:
+        filename: 'relayer-darwin-arm64.zip'
+        directory: 'build/darwin-arm64/'
+
+    - name: Upload Linux amd64
+      id: relayer-linux-amd64
+      uses: actions/upload-release-asset@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/linux-amd64/relayer-linux-amd64
+        tag: ${{ github.ref }}
+
+    - name: Upload Linux arm
+      id: relayer-linux-amd64
+      uses: actions/upload-release-asset@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/linux-arm/relayer-linux-arm
+        tag: ${{ github.ref }}
+
+    - name: Upload Darwin amd64
+      id: relayer-darwin-amd64
+      uses: actions/upload-release-asset@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/darwin-amd64/relayer-darwin-amd64
+        tag: ${{ github.ref }}
+
+    - name: Upload Darwin arm
+      id: relayer-darwin-arm64
+      uses: actions/upload-release-asset@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/darwin-arm64/relayer-darwin-arm64
+        tag: ${{ github.ref }}
+
+    #in case of failure
+    - name: Rollback on failure
+      if: failure()
+      uses: author/action-rollback@9ec72a6af74774e00343c6de3e946b0901c23013
+      with:
+        id: ${{ steps.create_release.outputs.id }}
+        tag: ${{ needs.tag.outputs.tag }}
+        delete_orphan_tag: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
