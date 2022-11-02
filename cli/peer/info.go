@@ -1,7 +1,7 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: BUSL-1.1
 
-package cli
+package peer
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 var (
 	peerInfoCMD = &cobra.Command{
-		Use:   "peer-info",
+		Use:   "info",
 		Short: "Calculate peer ID from private key",
 		Long:  "Calculate peer ID from private key",
 		RunE:  peerInfo,
