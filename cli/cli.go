@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ChainSafe/chainbridge-core/flags"
+	"github.com/ChainSafe/sygma-relayer/cli/peer"
 )
 
 var (
@@ -24,7 +25,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, peerInfoCMD)
+	rootCMD.AddCommand(runCMD, peer.PeerCLI)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}
