@@ -71,6 +71,9 @@ func (c *RawRelayerConfig) Validate() error {
 	if c.MpcConfig.TopologyConfiguration.Url == "" {
 		return errors.New("topology configuration url not provided")
 	}
+	if c.MpcConfig.TopologyConfiguration.Path == "" {
+		return errors.New("topology configuration path not provided")
+	}
 	return nil
 }
 
