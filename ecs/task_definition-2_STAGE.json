@@ -52,6 +52,10 @@
            {
              "name": "SYG_RELAYER_LOGLEVEL",
              "value": "debug"
+           },
+           {
+            "name": "SYG_RELAYER_TOPOLOGYCONFIGURATION_URL",
+            "value": "https://ipfs.io/ipns/k2k4r8nyq6nww4764krb5o3qddgm1f0nc62p9tw48s1m0hcw1fctrn2p"
            }
          ],
          "secrets": [
