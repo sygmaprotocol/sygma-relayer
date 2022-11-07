@@ -39,6 +39,7 @@ type BullyConfig struct {
 type TopologyConfiguration struct {
 	EncryptionKey string `mapstructure:"EncryptionKey" json:"encryptionKey"`
 	Url           string `mapstructure:"Url" json:"url"`
+	Path          string `mapstructure:"Path" json:"path"`
 }
 
 type RawRelayerConfig struct {
