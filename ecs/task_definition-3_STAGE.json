@@ -52,10 +52,6 @@
            {
              "name": "SYG_RELAYER_LOGLEVEL",
              "value": "debug"
-           },
-           {
-            "name": "SYG_RELAYER_TOPOLOGYCONFIGURATION_URL",
-            "value": "https://ipfs.io/ipns/k2k4r8nyq6nww4764krb5o3qddgm1f0nc62p9tw48s1m0hcw1fctrn2p"
            }
          ],
          "secrets": [
@@ -74,6 +70,10 @@
             {
                 "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH",
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
+            },
+            {
+                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL"
             },
             {
                 "name": "SYG_DOM_1",
