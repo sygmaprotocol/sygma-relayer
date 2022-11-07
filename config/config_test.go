@@ -47,6 +47,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_PORT", "9000")
 
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
+	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
 
 	// load from ENV
 	cnf, err := config.GetConfigFromENV()
@@ -64,6 +65,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
 					EncryptionKey: "test-enc-key",
+					Url:           "http://test.com",
 				},
 				Port:         9000,
 				KeysharePath: "/cfg/keyshares/0.keyshare",
@@ -136,6 +138,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port: "2020",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 					},
 					BullyConfig: relayer.RawBullyConfig{
@@ -160,6 +163,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 					},
 				},
@@ -182,6 +186,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 						Port: "2020",
 					},
@@ -231,6 +236,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 						// Port: use default value,
 					},
@@ -254,6 +260,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port: 9000,
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 					},
 					BullyConfig: relayer.BullyConfig{
@@ -282,6 +289,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 						Port:         "2020",
 						KeysharePath: "./share.key",
@@ -316,6 +324,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Key:          "./key.pk",
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
+							Url:           "url",
 						},
 					},
 					BullyConfig: relayer.BullyConfig{

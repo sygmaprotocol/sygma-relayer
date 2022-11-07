@@ -36,6 +36,7 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_PORT", "9000")
 
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-encryption-key")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "url")
 
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_PINGWAITTIME", "2s")
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_PINGBACKOFF", "2s")
@@ -59,6 +60,7 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 			Port:         "9000",
 			TopologyConfiguration: relayer.TopologyConfiguration{
 				EncryptionKey: "test-encryption-key",
+				Url:           "url",
 			},
 		},
 		BullyConfig: relayer.RawBullyConfig{
@@ -82,6 +84,7 @@ func (s *LoadFromEnvTestSuite) Test_ValidChainConfig() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_PORT", "9000")
 
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-encryption-key")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "url")
 
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_PINGWAITTIME", "2s")
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_PINGBACKOFF", "2s")
