@@ -46,8 +46,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_PORT", "9000")
 
-	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY", "test-access-key")
-	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY", "test-sec-key")
 	_ = os.Setenv("CBH_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
 
 	// load from ENV
@@ -65,13 +63,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
-					AccessKey:      "test-access-key",
-					SecKey:         "test-sec-key",
-					DocumentName:   "topology.json",
-					BucketRegion:   "us-east-1",
-					BucketName:     "mpc-topology",
-					ServiceAddress: "buckets.chainsafe.io",
-					EncryptionKey:  "test-enc-key",
+					EncryptionKey: "test-enc-key",
 				},
 				Port:         9000,
 				KeysharePath: "/cfg/keyshares/0.keyshare",
@@ -143,8 +135,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						Port: "2020",
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:     "access-key",
-							SecKey:        "sec-key",
 							EncryptionKey: "enc-key",
 						},
 					},
@@ -169,8 +159,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:     "access-key",
-							SecKey:        "sec-key",
 							EncryptionKey: "enc-key",
 						},
 					},
@@ -193,8 +181,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:     "access-key",
-							SecKey:        "sec-key",
 							EncryptionKey: "enc-key",
 						},
 						Port: "2020",
@@ -216,30 +202,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			outConfig:  config.Config{},
 		},
 		{
-			name: "invalid topology config",
-			inConfig: config.RawConfig{
-				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel: "info",
-					},
-					MpcConfig: relayer.RawMpcRelayerConfig{
-						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey: "access-key",
-							SecKey:    "",
-						},
-						Port: "2020",
-					},
-				},
-				ChainConfigs: []map[string]interface{}{{
-					"type": "evm",
-					"name": "chain1",
-				}},
-			},
-			shouldFail: true,
-			errorMsg:   "topology configuration secret key not provided",
-			outConfig:  config.Config{},
-		},
-		{
 			name: "missing encryption key",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
@@ -247,11 +209,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						LogLevel: "info",
 					},
 					MpcConfig: relayer.RawMpcRelayerConfig{
-						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey: "access-key",
-							SecKey:    "secret-key",
-						},
-						Port: "2020",
+						TopologyConfiguration: relayer.TopologyConfiguration{},
+						Port:                  "2020",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -271,8 +230,6 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					// LogFile: use default value
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:     "access-key",
-							SecKey:        "sec-key",
 							EncryptionKey: "enc-key",
 						},
 						// Port: use default value,
@@ -296,13 +253,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port: 9000,
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:      "access-key",
-							EncryptionKey:  "enc-key",
-							SecKey:         "sec-key",
-							DocumentName:   "topology.json",
-							BucketRegion:   "us-east-1",
-							BucketName:     "mpc-topology",
-							ServiceAddress: "buckets.chainsafe.io",
+							EncryptionKey: "enc-key",
 						},
 					},
 					BullyConfig: relayer.BullyConfig{
@@ -330,10 +281,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					HealthPort: "9002",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:     "access-key",
-							SecKey:        "sec-key",
 							EncryptionKey: "enc-key",
-							BucketName:    "test-mpc-bucket",
 						},
 						Port:         "2020",
 						KeysharePath: "./share.key",
@@ -367,13 +315,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						KeysharePath: "./share.key",
 						Key:          "./key.pk",
 						TopologyConfiguration: relayer.TopologyConfiguration{
-							AccessKey:      "access-key",
-							SecKey:         "sec-key",
-							EncryptionKey:  "enc-key",
-							DocumentName:   "topology.json",
-							BucketRegion:   "us-east-1",
-							BucketName:     "test-mpc-bucket",
-							ServiceAddress: "buckets.chainsafe.io",
+							EncryptionKey: "enc-key",
 						},
 					},
 					BullyConfig: relayer.BullyConfig{
