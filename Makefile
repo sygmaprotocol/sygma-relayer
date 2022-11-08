@@ -40,3 +40,14 @@ e2e-test:
 
 example:
 	docker-compose --file=./example/docker-compose.yml up --build
+
+PLATFORMS := linux/amd64 darwin/amd64 darwin/arm64 linux/arm
+
+temp = $(subst /, ,$@)
+os = $(word 1, $(temp))
+arch = $(word 2, $(temp))
+
+$(PLATFORMS):
+	GOOS=$(os) GOARCH=$(arch) go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" -o 'build/${os}-${arch}/relayer'; \
+
+build-all: $(PLATFORMS)
