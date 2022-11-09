@@ -292,7 +292,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
 }
 
-func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
+func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
 	d1 := &coreEvents.Deposit{
 		DepositNonce:        1,
 		DestinationDomainID: 2,
