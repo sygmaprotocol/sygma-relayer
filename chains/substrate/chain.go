@@ -16,8 +16,8 @@ type BatchProposalExecutor interface {
 	Execute(msgs []*message.Message) error
 }
 
-func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *config.SubstrateConfig) *SubstrateChain {
-	return &SubstrateChain{listener: listener, writer: writer, blockstore: blockstore, config: config}
+func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *config.SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
+	return &SubstrateChain{listener: listener, writer: writer, blockstore: blockstore, config: config, executor: executor}
 }
 
 type SubstrateChain struct {
