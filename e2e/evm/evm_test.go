@@ -337,7 +337,6 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	})
 	s.Nil(err)
 
-	time.Sleep(time.Second * 15)
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
