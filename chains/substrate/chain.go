@@ -9,22 +9,17 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/ChainSafe/sygma-relayer/config"
 )
 
 type BatchProposalExecutor interface {
 	Execute(msgs []*message.Message) error
 }
 
-func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *config.SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
-	return &SubstrateChain{listener: listener, writer: writer, blockstore: blockstore, config: config, executor: executor}
-}
-
 type SubstrateChain struct {
 	listener   EventListener
 	writer     ProposalExecutor
 	blockstore *store.BlockStore
-	config     *config.SubstrateConfig
+	config     *SubstrateConfig
 	executor   BatchProposalExecutor
 }
 
@@ -34,4 +29,8 @@ type EventListener interface {
 
 type ProposalExecutor interface {
 	Execute(message *message.Message) error
+}
+
+func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
+	return &SubstrateChain{listener: listener, writer: writer, blockstore: blockstore, config: config, executor: executor}
 }
