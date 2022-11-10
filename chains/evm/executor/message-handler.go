@@ -34,13 +34,18 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	}
 
 	data := bytes.Buffer{}
-	metadataLen := big.NewInt(int64(len(executionData) + 32)).Bytes()
-	data.Write(common.LeftPadBytes(metadataLen, 32))              // length of metadata (uint256)
-	data.Write(common.LeftPadBytes(executeFunctionSignature, 32)) // bytes4
-	data.Write(common.LeftPadBytes(executeContractAddress, 32))   // bytes32
-	data.Write(common.LeftPadBytes(maxFee, 32))                   // uint256
-	data.Write(common.LeftPadBytes(metadataDepositor, 32))        // bytes32
-	data.Write(executionData)                                     // bytes
+	data.Write(common.LeftPadBytes(maxFee, 32))
+
+	data.Write(common.LeftPadBytes(big.NewInt(int64(len(executeFunctionSignature))).Bytes(), 2))
+	data.Write(executeFunctionSignature)
+
+	data.Write([]byte{byte(len(executeFunctionSignature))})
+	data.Write(executeContractAddress)
+
+	data.Write([]byte{byte(len(metadataDepositor))})
+	data.Write(metadataDepositor)
+
+	data.Write(executionData)
 
 	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
 }
