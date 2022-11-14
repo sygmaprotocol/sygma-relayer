@@ -40,7 +40,7 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	data.Write(common.LeftPadBytes(big.NewInt(int64(len(executeFunctionSignature))).Bytes(), 2))
 	data.Write(executeFunctionSignature)
 
-	data.Write([]byte{byte(len(executeFunctionSignature))})
+	data.Write([]byte{byte(len(executeContractAddress))})
 	data.Write(executeContractAddress)
 
 	data.Write([]byte{byte(len(metadataDepositor))})

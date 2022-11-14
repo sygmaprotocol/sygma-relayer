@@ -37,6 +37,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		metadata,
 		functionSig,
 		contractAddress.Bytes(),
+		depositor.Bytes(),
 		maxFee,
 	)
 	depositLog := &events.Deposit{
