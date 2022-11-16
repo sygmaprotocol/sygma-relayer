@@ -5,8 +5,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/status-im/keycard-go/hexutils"
-
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 
@@ -19,35 +17,26 @@ var BlockRetryInterval = time.Second * 5
 
 var ErrBlockNotReady = errors.New("required result to be 32 bytes, but got 0")
 
-type SubstrateReader interface {
+type ChainClient interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash, target interface{}) error
 	UpdateMetatdata() error
 }
 
-type EventHandler func(uint8, interface{}) (*message.Message, error)
-
-func NewSubstrateListener(client SubstrateReader) *SubstrateListener {
+func NewSubstrateListener(client ChainClient, eventHandlers []events.EventHandler) *SubstrateListener {
 	return &SubstrateListener{
-		client: client,
+		client:        client,
+		eventHandlers: eventHandlers,
 	}
 }
 
 type SubstrateListener struct {
-	client        SubstrateReader
-	eventHandlers map[message.TransferType]EventHandler
+	client        ChainClient
+	eventHandlers []events.EventHandler
 }
 
-func (l *SubstrateListener) RegisterMessageHandler(tt message.TransferType, handler EventHandler) {
-	if l.eventHandlers == nil {
-		l.eventHandlers = make(map[message.TransferType]EventHandler)
-	}
-	l.eventHandlers[tt] = handler
-}
-
-func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, errChn chan<- error) <-chan *message.Message {
-	ch := make(chan *message.Message)
+func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message, errChn chan<- error) {
 	go func() {
 		for {
 			select {
@@ -85,14 +74,23 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					log.Error().Err(err).Msg("Failed to process events in block")
 					continue
 				}
-				msg, err := l.handleEvents(domainID, evts)
-				if err != nil {
-					log.Error().Err(err).Msg("Error handling substrate events")
+
+				for _, handler := range l.eventHandlers {
+					err := handler.HandleEvents(evts, msgChan)
+					if err != nil {
+						log.Error().Err(err).Msg("Error handling substrate events")
+						continue
+					}
 				}
-				for _, m := range msg {
-					log.Info().Uint8("chain", domainID).Uint8("destination", m.Destination).Str("ResourceId", hexutils.BytesToHex(m.ResourceId[:])).Msgf("Sending new message %+v", m)
-					ch <- m
+				if len(evts.System_CodeUpdated) > 0 {
+					err := l.client.UpdateMetatdata()
+					if err != nil {
+						log.Error().Err(err).Msg("Unable to update Metadata")
+						log.Error().Err(err).Msgf("%v", err)
+						return
+					}
 				}
+
 				if startBlock.Int64()%20 == 0 {
 					// Logging process every 20 blocks to exclude spam
 					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for deposit events")
@@ -105,5 +103,4 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 			}
 		}
 	}()
-	return ch
 }

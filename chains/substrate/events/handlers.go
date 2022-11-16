@@ -4,61 +4,43 @@
 package events
 
 import (
-	"fmt"
-
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/chainbridge-core/types"
 )
 
-func FungibleTransferHandler(sourceID uint8, evtI interface{}) (*message.Message, error) {
-	evt, ok := evtI.(EventFungibleTransfer)
-	if !ok {
-		return nil, fmt.Errorf("failed to cast EventFungibleTransfer type")
-	}
-	//recipient := []byte{evt.Recipient[:]}
-	return &message.Message{
-		Source:       sourceID,
-		Destination:  uint8(evt.Destination),
-		DepositNonce: uint64(evt.DepositNonce),
-		ResourceId:   types.ResourceID(evt.ResourceId),
-		Payload: []interface{}{
-			evt.Amount.Bytes(),
-			[]byte(evt.Recipient),
-		},
-	}, nil
+type EventHandler interface {
+	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
+}
+type NonFungibleTransfer struct {
+	eventHandler EventHandler
 }
 
-func NonFungibleTransferHandler(sourceID uint8, evtI interface{}) (*message.Message, error) {
-	evt, ok := evtI.(EventNonFungibleTransfer)
-	if !ok {
-		return nil, fmt.Errorf("failed to cast EventNonFungibleTransfer type")
+func NewNonFungibleTransferEventHandler(eventhandler EventHandler) *NonFungibleTransfer {
+	return &NonFungibleTransfer{
+		eventHandler: eventhandler,
 	}
+}
+func (eh *NonFungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
 
-	return &message.Message{
-		Source:       sourceID,
-		Destination:  uint8(evt.Destination),
-		DepositNonce: uint64(evt.DepositNonce),
-		ResourceId:   types.ResourceID(evt.ResourceId),
-		Payload: []interface{}{
-			[]byte(evt.TokenId),
-			[]byte(evt.Recipient),
-			[]byte(evt.Metadata),
-		},
-	}, nil
+type GenericTransfer struct {
+	eventHandler EventHandler
 }
 
-func GenericTransferHandler(sourceID uint8, evtI interface{}) (*message.Message, error) {
-	evt, ok := evtI.(EventGenericTransfer)
-	if !ok {
-		return nil, fmt.Errorf("failed to cast EventGenericTransfer type")
+func NewGenericTransferEventHandler(eventhandler EventHandler) *GenericTransfer {
+	return &GenericTransfer{
+		eventHandler: eventhandler,
 	}
-	return &message.Message{
-		Source:       sourceID,
-		Destination:  uint8(evt.Destination),
-		DepositNonce: uint64(evt.DepositNonce),
-		ResourceId:   types.ResourceID(evt.ResourceId),
-		Payload: []interface{}{
-			[]byte(evt.Metadata),
-		},
-	}, nil
+}
+func (eh *GenericTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
+
+type FungibleTransfer struct {
+	eventHandler EventHandler
+}
+
+func NewFungibleTransferEventHandler(eventhandler EventHandler) *FungibleTransfer {
+	return &FungibleTransfer{
+		eventHandler: eventhandler,
+	}
+}
+func (eh *FungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {
+
 }
