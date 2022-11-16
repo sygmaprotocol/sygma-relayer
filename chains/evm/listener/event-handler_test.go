@@ -19,12 +19,13 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock"
+	mock_coreListener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock/core"
 )
 
 type RetryEventHandlerTestSuite struct {
 	suite.Suite
 	retryEventHandler  *listener.RetryEventHandler
-	mockDepositHandler *mock_listener.MockDepositHandler
+	mockDepositHandler *mock_coreListener.MockDepositHandler
 	mockEventListener  *mock_listener.MockEventListener
 	domainID           uint8
 }
@@ -37,7 +38,7 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
-	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
+	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
 	s.retryEventHandler = listener.NewRetryEventHandler(s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5))
 }
 
@@ -220,8 +221,8 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 type DepositHandlerTestSuite struct {
 	suite.Suite
 	depositEventHandler *listener.DepositEventHandler
-	mockDepositHandler  *mock_listener.MockDepositHandler
-	mockEventListener   *mock_listener.MockDepositListener
+	mockDepositHandler  *mock_coreListener.MockDepositHandler
+	mockEventListener   *mock_coreListener.MockEventListener
 	domainID            uint8
 }
 
@@ -232,8 +233,8 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	s.mockEventListener = mock_listener.NewMockDepositListener(ctrl)
-	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
+	s.mockEventListener = mock_coreListener.NewMockEventListener(ctrl)
+	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
 	s.depositEventHandler = listener.NewDepositEventHandler(s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID)
 }
 

@@ -15,7 +15,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 
 	hubEvents "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -37,23 +36,15 @@ type EventListener interface {
 	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 }
 
-type DepositListener interface {
-	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
-}
-
-type DepositHandler interface {
-	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
-}
-
 type DepositEventHandler struct {
-	eventListener  DepositListener
-	depositHandler DepositHandler
+	eventListener  listener.EventListener
+	depositHandler listener.DepositHandler
 
 	bridgeAddress common.Address
 	domainID      uint8
 }
 
-func NewDepositEventHandler(eventListener DepositListener, depositHandler DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+func NewDepositEventHandler(eventListener listener.EventListener, depositHandler listener.DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
 	return &DepositEventHandler{
 		eventListener:  eventListener,
 		depositHandler: depositHandler,
