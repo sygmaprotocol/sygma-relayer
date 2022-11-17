@@ -17,6 +17,9 @@ var BlockRetryInterval = time.Second * 5
 
 var ErrBlockNotReady = errors.New("required result to be 32 bytes, but got 0")
 
+type EventHandler interface {
+	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
+}
 type ChainClient interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
@@ -24,7 +27,7 @@ type ChainClient interface {
 	UpdateMetatdata() error
 }
 
-func NewSubstrateListener(client ChainClient, eventHandlers []events.EventHandler) *SubstrateListener {
+func NewSubstrateListener(client ChainClient, eventHandlers []EventHandler) *SubstrateListener {
 	return &SubstrateListener{
 		client:        client,
 		eventHandlers: eventHandlers,
@@ -33,7 +36,7 @@ func NewSubstrateListener(client ChainClient, eventHandlers []events.EventHandle
 
 type SubstrateListener struct {
 	client        ChainClient
-	eventHandlers []events.EventHandler
+	eventHandlers []EventHandler
 }
 
 func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message, errChn chan<- error) {

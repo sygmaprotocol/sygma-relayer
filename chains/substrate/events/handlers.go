@@ -7,39 +7,25 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 )
 
-type EventHandler interface {
-	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
-}
 type NonFungibleTransfer struct {
-	eventHandler EventHandler
 }
 
-func NewNonFungibleTransferEventHandler(eventhandler EventHandler) *NonFungibleTransfer {
-	return &NonFungibleTransfer{
-		eventHandler: eventhandler,
-	}
+func NewNonFungibleTransferEventHandler() *NonFungibleTransfer {
+	return &NonFungibleTransfer{}
 }
 func (eh *NonFungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
 
-type GenericTransfer struct {
-	eventHandler EventHandler
-}
+type GenericTransfer struct{}
 
-func NewGenericTransferEventHandler(eventhandler EventHandler) *GenericTransfer {
-	return &GenericTransfer{
-		eventHandler: eventhandler,
-	}
+func NewGenericTransferEventHandler() *GenericTransfer {
+	return &GenericTransfer{}
 }
 func (eh *GenericTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
 
-type FungibleTransfer struct {
-	eventHandler EventHandler
-}
+type FungibleTransfer struct{}
 
-func NewFungibleTransferEventHandler(eventhandler EventHandler) *FungibleTransfer {
-	return &FungibleTransfer{
-		eventHandler: eventhandler,
-	}
+func NewFungibleTransferEventHandler() *FungibleTransfer {
+	return &FungibleTransfer{}
 }
 func (eh *FungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {
 
