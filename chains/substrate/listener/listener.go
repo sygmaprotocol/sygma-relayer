@@ -20,22 +20,21 @@ var ErrBlockNotReady = errors.New("required result to be 32 bytes, but got 0")
 type EventHandler interface {
 	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
 }
-type ChainClient interface {
+type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash, target interface{}) error
-	UpdateMetatdata() error
 }
 
-func NewSubstrateListener(client ChainClient, eventHandlers []EventHandler) *SubstrateListener {
+func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler) *SubstrateListener {
 	return &SubstrateListener{
-		client:        client,
+		conn:          connection,
 		eventHandlers: eventHandlers,
 	}
 }
 
 type SubstrateListener struct {
-	client        ChainClient
+	conn          ChainConnection
 	eventHandlers []EventHandler
 }
 
@@ -47,7 +46,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				return
 			default:
 				// retrieves the header of the latest block
-				finalizedHeader, err := l.client.GetHeaderLatest()
+				finalizedHeader, err := l.conn.GetHeaderLatest()
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to fetch finalized header")
 					time.Sleep(BlockRetryInterval)
@@ -62,7 +61,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					time.Sleep(BlockRetryInterval)
 					continue
 				}
-				hash, err := l.client.GetBlockHash(startBlock.Uint64())
+				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 				if err != nil && err.Error() == ErrBlockNotReady.Error() {
 					time.Sleep(BlockRetryInterval)
 					continue
@@ -72,7 +71,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					continue
 				}
 				evts := &events.Events{}
-				err = l.client.GetBlockEvents(hash, evts)
+				err = l.conn.GetBlockEvents(hash, evts)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to process events in block")
 					continue
@@ -83,14 +82,6 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					if err != nil {
 						log.Error().Err(err).Msg("Error handling substrate events")
 						continue
-					}
-				}
-				if len(evts.System_CodeUpdated) > 0 {
-					err := l.client.UpdateMetatdata()
-					if err != nil {
-						log.Error().Err(err).Msg("Unable to update Metadata")
-						log.Error().Err(err).Msgf("%v", err)
-						return
 					}
 				}
 

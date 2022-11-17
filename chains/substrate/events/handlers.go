@@ -5,28 +5,28 @@ package events
 
 import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/rs/zerolog/log"
 )
 
-type NonFungibleTransfer struct {
+type ChainConnection interface {
+	UpdateMetatdata() error
+}
+type SystemUpdateEventHandler struct {
+	conn ChainConnection
 }
 
-func NewNonFungibleTransferEventHandler() *NonFungibleTransfer {
-	return &NonFungibleTransfer{}
+func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler {
+	return &SystemUpdateEventHandler{
+		conn: conn,
+	}
 }
-func (eh *NonFungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
-
-type GenericTransfer struct{}
-
-func NewGenericTransferEventHandler() *GenericTransfer {
-	return &GenericTransfer{}
-}
-func (eh *GenericTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {}
-
-type FungibleTransfer struct{}
-
-func NewFungibleTransferEventHandler() *FungibleTransfer {
-	return &FungibleTransfer{}
-}
-func (eh *FungibleTransfer) HandleEvents(evtI interface{}, msgChan chan []*message.Message) {
-
+func (eh *SystemUpdateEventHandler) HandleEvents(evts Events, msgChan chan []*message.Message) {
+	if len(evts.System_CodeUpdated) > 0 {
+		err := eh.conn.UpdateMetatdata()
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to update Metadata")
+			log.Error().Err(err).Msgf("%v", err)
+			return
+		}
+	}
 }
