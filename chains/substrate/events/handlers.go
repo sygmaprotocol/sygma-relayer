@@ -11,6 +11,7 @@ import (
 type ChainConnection interface {
 	UpdateMetatdata() error
 }
+
 type SystemUpdateEventHandler struct {
 	conn ChainConnection
 }
@@ -20,13 +21,14 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 		conn: conn,
 	}
 }
-func (eh *SystemUpdateEventHandler) HandleEvents(evts Events, msgChan chan []*message.Message) {
+
+func (eh *SystemUpdateEventHandler) HandleEvents(evts Events, msgChan chan []*message.Message) error {
 	if len(evts.System_CodeUpdated) > 0 {
 		err := eh.conn.UpdateMetatdata()
 		if err != nil {
 			log.Error().Err(err).Msg("Unable to update Metadata")
-			log.Error().Err(err).Msgf("%v", err)
-			return
+			return err
 		}
 	}
+	return nil
 }
