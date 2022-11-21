@@ -1,7 +1,6 @@
 package listener
 
 import (
-	"errors"
 	"math/big"
 	"time"
 
@@ -14,8 +13,6 @@ import (
 )
 
 var BlockRetryInterval = time.Second * 5
-
-var ErrBlockNotReady = errors.New("required result to be 32 bytes, but got 0")
 
 type EventHandler interface {
 	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
@@ -38,7 +35,7 @@ type SubstrateListener struct {
 	eventHandlers []EventHandler
 }
 
-func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message, errChn chan<- error) {
+func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message) {
 	go func() {
 		for {
 			select {
@@ -62,10 +59,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					continue
 				}
 				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
-				if err != nil && err.Error() == ErrBlockNotReady.Error() {
-					time.Sleep(BlockRetryInterval)
-					continue
-				} else if err != nil {
+				if err != nil {
 					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
 					time.Sleep(BlockRetryInterval)
 					continue
@@ -85,10 +79,6 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					}
 				}
 
-				if startBlock.Int64()%20 == 0 {
-					// Logging process every 20 blocks to exclude spam
-					log.Debug().Str("block", startBlock.String()).Uint8("domainID", domainID).Msg("Queried block for deposit events")
-				}
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
