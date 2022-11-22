@@ -31,8 +31,9 @@ func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandl
 }
 
 type SubstrateListener struct {
-	conn          ChainConnection
-	eventHandlers []EventHandler
+	conn               ChainConnection
+	eventHandlers      []EventHandler
+	blockRetryInterval time.Duration
 }
 
 func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message) {
@@ -45,7 +46,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				finalizedHeader, err := l.conn.GetHeaderLatest()
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to fetch finalized header")
-					time.Sleep(l.BlockRetryInterval)
+					time.Sleep(l.blockRetryInterval)
 					continue
 				}
 
@@ -54,13 +55,13 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				}
 
 				if startBlock.Cmp(big.NewInt(0).SetUint64(uint64(finalizedHeader.Number))) == 1 {
-					time.Sleep(l.BlockRetryInterval)
+					time.Sleep(l.blockRetryInterval)
 					continue
 				}
 				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 				if err != nil {
 					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
-					time.Sleep(l.BlockRetryInterval)
+					time.Sleep(l.blockRetryInterval)
 					continue
 				}
 				evts := &events.Events{}
