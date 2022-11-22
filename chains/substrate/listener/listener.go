@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 
 	"github.com/ChainSafe/chainbridge-core/store"
@@ -12,10 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var BlockRetryInterval = time.Second * 5
-
 type EventHandler interface {
-	HandleEvents(evtI interface{}, msgChan chan []*message.Message) error
+	HandleEvents(evt interface{}, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
@@ -23,10 +22,11 @@ type ChainConnection interface {
 	GetBlockEvents(hash types.Hash, target interface{}) error
 }
 
-func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler) *SubstrateListener {
+func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {
 	return &SubstrateListener{
-		conn:          connection,
-		eventHandlers: eventHandlers,
+		conn:               connection,
+		eventHandlers:      eventHandlers,
+		blockRetryInterval: config.BlockRetryInterval,
 	}
 }
 
@@ -42,11 +42,10 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 			case <-stopChn:
 				return
 			default:
-				// retrieves the header of the latest block
 				finalizedHeader, err := l.conn.GetHeaderLatest()
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to fetch finalized header")
-					time.Sleep(BlockRetryInterval)
+					time.Sleep(l.BlockRetryInterval)
 					continue
 				}
 
@@ -55,13 +54,13 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				}
 
 				if startBlock.Cmp(big.NewInt(0).SetUint64(uint64(finalizedHeader.Number))) == 1 {
-					time.Sleep(BlockRetryInterval)
+					time.Sleep(l.BlockRetryInterval)
 					continue
 				}
 				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 				if err != nil {
 					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
-					time.Sleep(BlockRetryInterval)
+					time.Sleep(l.BlockRetryInterval)
 					continue
 				}
 				evts := &events.Events{}
