@@ -32,9 +32,12 @@ genmocks:
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 	mockgen -source=./chains/evm/listener/event-handler.go -destination=./chains/evm/listener/mock/listener.go
-	mockgen -destination=chains/evm/listener/mock/deposit-handler.go github.com/ChainSafe/chainbridge-core/chains/evm/listener DepositHandler
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
+<<<<<<< HEAD
 	mockgen -source=./chains/substrate/events/handlers.go -destination=./chains/substrate/events/mock/handlers.go
+=======
+	mockgen -destination=chains/evm/listener/mock/core/listener.go github.com/ChainSafe/chainbridge-core/chains/evm/listener EventListener,DepositHandler
+>>>>>>> 6933acb4b5d907bafca9f744a8d8de4bf26964b8
 
 
 e2e-test:

@@ -36,6 +36,62 @@ type EventListener interface {
 	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 }
 
+type DepositEventHandler struct {
+	eventListener  listener.EventListener
+	depositHandler listener.DepositHandler
+
+	bridgeAddress common.Address
+	domainID      uint8
+}
+
+func NewDepositEventHandler(eventListener listener.EventListener, depositHandler listener.DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+	return &DepositEventHandler{
+		eventListener:  eventListener,
+		depositHandler: depositHandler,
+		bridgeAddress:  bridgeAddress,
+		domainID:       domainID,
+	}
+}
+
+func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*message.Message) error {
+	deposits, err := eh.eventListener.FetchDeposits(context.Background(), eh.bridgeAddress, startBlock, endBlock)
+	if err != nil {
+		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
+	}
+
+	domainDeposits := make(map[uint8][]*message.Message)
+	for _, d := range deposits {
+		func(d *events.Deposit) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Err(err).Msgf("panic occured while handling deposit %+v", d)
+				}
+			}()
+
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
+			if err != nil {
+				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+				return
+			}
+
+			log.Debug().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+
+			if m.Type == PermissionlessGenericTransfer {
+				msgChan <- []*message.Message{m}
+				return
+			}
+
+			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+		}(d)
+	}
+
+	for _, deposits := range domainDeposits {
+		msgChan <- deposits
+	}
+
+	return nil
+}
+
 type RetryEventHandler struct {
 	eventListener      EventListener
 	depositHandler     listener.DepositHandler
