@@ -425,7 +425,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 		}()
 	}
 	wg.Wait()
-	time.Sleep(15 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
