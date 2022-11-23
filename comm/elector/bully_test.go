@@ -16,10 +16,10 @@ import (
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -1,5 +1,5 @@
 
-.PHONY: help run build install license example
+.PHONY: help run build install license example e2e-test
 all: help
 
 export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore

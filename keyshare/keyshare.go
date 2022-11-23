@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 // Keyshare stores key received from keygen or resharing

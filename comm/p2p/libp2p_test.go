@@ -15,8 +15,8 @@ import (
 
 	mock_host "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/host"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/stretchr/testify/suite"
 )
 

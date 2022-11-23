@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/topology"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/suite"
 )
 

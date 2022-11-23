@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/mitchellh/hashstructure/v2"
 )
 

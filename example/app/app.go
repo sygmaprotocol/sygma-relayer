@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +19,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
@@ -171,6 +173,10 @@ func Run() error {
 		syscall.SIGINT,
 		syscall.SIGHUP,
 		syscall.SIGQUIT)
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:6060", nil)
+	}()
 
 	select {
 	case err := <-errChn:
