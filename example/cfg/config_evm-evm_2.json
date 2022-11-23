@@ -5,8 +5,8 @@
       "keysharePath": "/cfg/keyshares/1.keyshare",
       "key": "CAASpwkwggSjAgEAAoIBAQC89zG/nTK/iWXllnMv65fyrhndM/hhe4IAUnC1kgdzazgUDRCsDHvmPOJ2TccgBjiuG5alxo+tw9y20PYJJoZB7ctDPxBKRJ/6l+0UrWUZE4LxxbKPW4RIRvosVr78OFTrRE63eTsJwUEDNj8EanN+biftSlSzN3DAh/ZSEZtqXUEul2ZxZcuSzgo7gjglGSqTlMLEMHhTu09ceXUECNeky2v6pAKQ/7khaMS96nYTBcyT5ZrEss0fQV13txHoMie+LbnjFM82ezZwcN4GGiHyxyU88/1WP/SKQhW6Ug5Zvd5kkDUuZzKMDRaj3gwDf47uYUGEGDMoL8m2r3OUIAVJAgMBAAECggEAIW3xxR5APhZGiolFM3MQXIRkWve4tzYsV3Y+LkD5RHfxYcq16loDCUY4Igm8cnPnTxXeXtFz1Z/SyhzJifDgy4UP8oOTlC/zxVdfP8s1GWyUO8Vnw2jDTC4SUAnAm8oza7OX4Wl3AlDH+ZN9LoDOkc1XDumZdmMWdVkYQIiQ4A30+AVcuKpfWZa+e034vtHV6/0Ys+zX/jbiRgw5bnZAsFiiy577V0RGzMqcILtrZfg9FHmyRhrfQH+Kh1HlYrHIUqaWaZHl8vROBHJs0ePqPoXmVSCu9dzJLtIzZlAtIUi7CX1SkIXFR4ZF+RORGQK3v0qNLQK55hPe/DndhpewoQKBgQDC4Y6vgbTLurYEgT4kDlrY0rZ1Yjkxi4LwpEfiEN/NHeO5IwePc4SwZ7y4JVNcN0KJFPlitdELXjKJJ9rjmvgUHJ2IQu1drEk5JJXdKq7s6lEROhggj1U+tRBc5znmOPd/PsFjETJ0ux4/vSBM6fQgWK+yGfL2QZdJbwZ7N8QtDQKBgQD4OrMz9G/GCdxnXbHnu+RTTYrHa6WrUBViRqUyy/PYnLD1TGvaARf64R7kHXrhIBZlLLjuiOq8VhVBD5jGpK798Egk52DoRPIRPYmhmGkg7iNj62MUrCk4BwVsgOBZjkvzb0iSIOh67ZpqR7p5iKhAkasaOLtR/ertAGjxSPICLQKBgQC2PMD2ZF+SKB5v5gAbLYVMvva6nEiJiUHAEI/b2hW+tRWvmg9G2Sqa39c9iEIEuPQyRnfTE9zROZweYDOzpcYY4I17z8IyV5r9obW25WRAzflTF7VaNU7s3drYVa3yGRFwX1nubzV0rUpjJlOfOSP+X5ClBtkJ6Vo05Gr2LLb5vQKBgE0wG6dtPBCN4m52ESspHw/UTfJDBAooZe3gX+BS0WmrF8+/Ss5Ihsdpl2yBykMU8kHVzU/HXY7hCczoZ65laVDnldd754NyZP99bj3EofQueOzKNk4oVszoSgR6cskGWZHCKgPencwT9G9WDKNcHk2tvlHyEDWnypSWCwv0jeSlAoGACso4W3vBXaXCUbNqOQ+T0GZGvbvGUDE5XC2Xe7rbZAsoAgrjInqZhwqqjnRV4QnjtdXrA+PjtubS9OKeU6aguFp0f/8VQzZ4lGKFHj+6Sa84+5pEvc+V9lRg1FKTLyDY8d8IXxjqc/IKfc+yosyXFdwkYwddSVmH5fjwHaH/bBg=",
       "topologyConfiguration": {
-        "accessKey": "test-access-key",
-        "secKey": "test-sec-key",
+        "path": ".",
+        "url": "test.url",
         "encryptionKey": "test-enc-key"
       }
     }

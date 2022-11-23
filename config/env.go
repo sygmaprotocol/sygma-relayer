@@ -45,6 +45,11 @@ func loadFromEnv() (RawConfig, error) {
 		index++
 	}
 
+	err = rawConfig.RelayerConfig.Validate()
+	if err != nil {
+		return RawConfig{}, err
+	}
+
 	return rawConfig, nil
 }
 

@@ -4,17 +4,15 @@
 package topology
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/mitchellh/hashstructure/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type NetworkTopology struct {
@@ -46,25 +44,14 @@ type NetworkTopologyProvider interface {
 }
 
 func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTopologyProvider, error) {
-	client, err := minio.New(config.ServiceAddress, &minio.Options{
-		Creds:  credentials.NewStaticV4(config.AccessKey, config.SecKey, ""),
-		Secure: true,
-		Region: config.BucketRegion,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	decrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
 	if err != nil {
 		return nil, err
 	}
 
 	return &topologyProvider{
-		client:       *client,
-		documentName: config.DocumentName,
-		bucketName:   config.BucketName,
-		decrypter:    decrypter,
+		decrypter: decrypter,
+		url:       config.Url,
 	}, nil
 }
 
@@ -82,38 +69,24 @@ type Decrypter interface {
 }
 
 type topologyProvider struct {
-	client       minio.Client
-	documentName string
-	bucketName   string
-	decrypter    Decrypter
+	url       string
+	decrypter Decrypter
 }
 
 func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
-	ctx := context.Background()
-
-	obj, err := t.client.GetObject(ctx, t.bucketName, t.documentName, minio.GetObjectOptions{})
+	resp, err := http.Get(t.url)
 	if err != nil {
-		log.Err(err).Msg("unable to get topology object")
 		return NetworkTopology{}, err
 	}
 
-	stat, err := obj.Stat()
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Err(err).Msg("unable to get topology object information")
 		return NetworkTopology{}, err
 	}
 
-	eData := make([]byte, stat.Size)
-	_, err = obj.Read(eData)
-	if err != nil {
-		log.Err(err).Msg("error on reading topology data")
-	}
-
-	data := t.decrypter.Decrypt(string(eData))
 	rawTopology := &RawTopology{}
-	err = json.Unmarshal(data, rawTopology)
+	err = json.Unmarshal(body, rawTopology)
 	if err != nil {
-		log.Err(err).Msg("unable to unmarshal topology data")
 		return NetworkTopology{}, err
 	}
 
