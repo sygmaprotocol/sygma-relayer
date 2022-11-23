@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -173,10 +171,6 @@ func Run() error {
 		syscall.SIGINT,
 		syscall.SIGHUP,
 		syscall.SIGQUIT)
-
-	go func() {
-		http.ListenAndServe("0.0.0.0:6060", nil)
-	}()
 
 	select {
 	case err := <-errChn:
