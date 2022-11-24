@@ -4,9 +4,10 @@
 package comm
 
 import (
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/rs/zerolog/log"
 	"time"
+
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
 )
 
 const HealthTimeout = 10 * time.Second

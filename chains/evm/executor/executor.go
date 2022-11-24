@@ -12,7 +12,7 @@ import (
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
-	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
