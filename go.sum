@@ -54,8 +54,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ChainSafe/chainbridge-core v0.2.1 h1:6BQ4I8CWzEt2g+B3VhiOyag2d3tWSSxYa3muxT5OIQA=
 github.com/ChainSafe/chainbridge-core v0.2.1/go.mod h1:j51yNYVujQPo0FkFj361cnNX0YjlBM+Qq9kvAudiKfU=
-github.com/ChainSafe/tss-lib v1.4.0 h1:Cz6TgNZI91CmwrCZRA1RmXqgDFXLYwYnezjaAQ4aHY0=
-github.com/ChainSafe/tss-lib v1.4.0/go.mod h1:goGkFwXMDrd2ZnrNyRKIQ6Z9HZbQqUE0ZIK3j8EdGkI=
+github.com/ChainSafe/tss-lib v1.4.1 h1:EHU9Y3/XURTHhmfzcK2shO+wIAtZMI04sGmHUTEAOEw=
+github.com/ChainSafe/tss-lib v1.4.1/go.mod h1:goGkFwXMDrd2ZnrNyRKIQ6Z9HZbQqUE0ZIK3j8EdGkI=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
