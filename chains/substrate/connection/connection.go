@@ -29,13 +29,12 @@ func NewSubstrateConnection(url string, name string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	chain := chain.NewChain(client)
-	c.Chain = chain
 	rpc, err := rpc.NewRPC(client)
 	if err != nil {
 		return nil, err
 	}
 	c.RPC = rpc
+	c.Chain = rpc.Chain
 
 	// Fetch metadata
 	meta, err := c.RPC.State.GetMetadataLatest()
@@ -70,6 +69,7 @@ func (c *Connection) UpdateMetatdata() error {
 	c.metaLock.Unlock()
 	return nil
 }
+
 func (c *Connection) GetBlockEvents(hash types.Hash, target events.Events) error {
 	meta := c.GetMetadata()
 	key, err := types.CreateStorageKey(&meta, "System", "Events", nil, nil)
