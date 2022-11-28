@@ -4,9 +4,10 @@
 package p2p
 
 import (
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/rs/zerolog/log"
 	"sync"
+
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/rs/zerolog/log"
 )
 
 // StreamManager manages instances of network.Stream

@@ -4,13 +4,14 @@
 package comm_test
 
 import (
+	"testing"
+
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type CommunicationHealthTestSuite struct {

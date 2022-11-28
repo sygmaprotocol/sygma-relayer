@@ -26,7 +26,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/resharing"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p/core/host"
 )
 
 type EventListener interface {

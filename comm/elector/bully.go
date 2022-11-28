@@ -11,8 +11,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/ChainSafe/sygma-relayer/tss/common"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 // bullyCoordinatorElector is used to execute bully coordinator discovery
