@@ -44,18 +44,6 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 
 /** Communication interface methods **/
 
-func (c Libp2pCommunication) InitiateSession(sessionID string, peers []peer.ID) {
-	for _, peerID := range peers {
-		stream, err := c.h.NewStream(context.TODO(), peerID, c.protocolID)
-		if err != nil {
-			log.Err(err).Msgf("Cannot open stream to peer %s", peerID.Pretty())
-			continue
-		}
-
-		c.streamManager.AddStream(sessionID, peerID, stream)
-	}
-}
-
 func (c Libp2pCommunication) CloseSession(sessionID string) {
 	c.streamManager.ReleaseStreams(sessionID)
 }
@@ -141,6 +129,7 @@ func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
 
 		var wrappedMsg comm.WrappedMessage
 		if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
+			fmt.Println(string(msgBytes[:]))
 			log.Err(err).Msg("Error unmarshaling message")
 			return
 		}
