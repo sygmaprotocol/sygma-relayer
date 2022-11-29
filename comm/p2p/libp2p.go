@@ -4,6 +4,7 @@
 package p2p
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -122,42 +123,41 @@ func (c Libp2pCommunication) UnSubscribe(
 /** Helper methods **/
 
 func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
-	msg, err := c.ProcessMessageFromStream(s)
-	if err != nil {
-		c.logger.Error().Err(err).Str("StreamID", s.ID()).Msg("unable to process message")
-		return
-	}
-
-	subscribers := c.GetSubscribers(msg.SessionID, msg.MessageType)
-	for _, sub := range subscribers {
-		sub := sub
-		go func() {
-			sub <- msg
-		}()
-	}
+	go c.ProcessMessagesFromStream(s)
 }
 
-func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.WrappedMessage, error) {
+func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
 	remotePeerID := s.Conn().RemotePeer()
-	msgBytes, err := ReadStream(s)
-	if err != nil {
-		return nil, err
+	r := bufio.NewReader(s)
+	for {
+		msgBytes, err := ReadStream(r)
+		if err != nil {
+			return
+		}
+
+		var wrappedMsg comm.WrappedMessage
+		if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
+			fmt.Println(string(msgBytes[:]))
+			log.Err(err).Msg("Error unmarshaling message")
+			return
+		}
+		wrappedMsg.From = remotePeerID
+
+		c.logger.Trace().Str(
+			"From", wrappedMsg.From.Pretty()).Str(
+			"MsgType", wrappedMsg.MessageType.String()).Str(
+			"SessionID", wrappedMsg.SessionID).Msg(
+			"processed message",
+		)
+
+		subscribers := c.GetSubscribers(wrappedMsg.SessionID, wrappedMsg.MessageType)
+		for _, sub := range subscribers {
+			sub := sub
+			go func() {
+				sub <- &wrappedMsg
+			}()
+		}
 	}
-
-	var wrappedMsg comm.WrappedMessage
-	if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
-		return nil, err
-	}
-	wrappedMsg.From = remotePeerID
-
-	c.logger.Trace().Str(
-		"From", wrappedMsg.From.Pretty()).Str(
-		"MsgType", wrappedMsg.MessageType.String()).Str(
-		"SessionID", wrappedMsg.SessionID).Msg(
-		"processed message",
-	)
-
-	return &wrappedMsg, nil
 }
 
 func (c Libp2pCommunication) sendMessage(
@@ -182,7 +182,7 @@ func (c Libp2pCommunication) sendMessage(
 		c.streamManager.AddStream(sessionID, to, stream)
 	}
 
-	err = WriteStream(msg, stream)
+	err = WriteStream(msg, bufio.NewWriter(stream))
 	if err != nil {
 		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
 		return err

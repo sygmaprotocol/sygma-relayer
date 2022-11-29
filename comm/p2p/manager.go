@@ -44,6 +44,8 @@ func (sm *StreamManager) ReleaseStreams(sessionID string) {
 			log.Err(err).Msgf("Cannot close stream to peer %s", peer.Pretty())
 		}
 	}
+
+	delete(sm.streamsBySessionID, sessionID)
 }
 
 // AddStream saves and maps provided stream to sessionID
