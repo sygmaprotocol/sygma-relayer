@@ -15,6 +15,10 @@ const HealthTimeout = 10 * time.Second
 func ExecuteCommHealthCheck(communication Communication, peers peer.IDSlice) []*CommunicationError {
 	errChan := make(chan error)
 	endTimer := time.NewTimer(HealthTimeout)
+	sessionID := "health-session"
+
+	communication.InitiateSession(sessionID, peers)
+	defer communication.CloseSession(sessionID)
 
 	communication.Broadcast(peers, []byte{}, Unknown, "health-session", errChan)
 

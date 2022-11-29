@@ -22,8 +22,8 @@ type Libp2pCommunication struct {
 	SessionSubscriptionManager
 	h             host.Host
 	protocolID    protocol.ID
-	streamManager *StreamManager
 	logger        zerolog.Logger
+	streamManager *StreamManager
 }
 
 func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
@@ -32,8 +32,8 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 		SessionSubscriptionManager: NewSessionSubscriptionManager(),
 		h:                          h,
 		protocolID:                 protocolID,
-		streamManager:              NewStreamManager(),
 		logger:                     logger,
+		streamManager:              NewStreamManager(),
 	}
 
 	// start processing incoming messages
@@ -42,6 +42,22 @@ func NewCommunication(h host.Host, protocolID protocol.ID) Libp2pCommunication {
 }
 
 /** Communication interface methods **/
+
+func (c Libp2pCommunication) InitiateSession(sessionID string, peers []peer.ID) {
+	for _, peerID := range peers {
+		stream, err := c.h.NewStream(context.TODO(), peerID, c.protocolID)
+		if err != nil {
+			log.Err(err).Msgf("Cannot open stream to peer %s", peerID.Pretty())
+			continue
+		}
+
+		c.streamManager.AddStream(sessionID, peerID, stream)
+	}
+}
+
+func (c Libp2pCommunication) CloseSession(sessionID string) {
+	c.streamManager.ReleaseStreams(sessionID)
+}
 
 func (c Libp2pCommunication) Broadcast(
 	peers peer.IDSlice,
@@ -105,56 +121,6 @@ func (c Libp2pCommunication) UnSubscribe(
 
 /** Helper methods **/
 
-func (c Libp2pCommunication) sendMessage(
-	to peer.ID,
-	msg []byte,
-	msgType comm.MessageType,
-	sessionID string,
-) error {
-	pi := c.h.Peerstore().PeerInfo(to)
-	resolver, err := madns.NewResolver()
-	if err != nil {
-		return err
-	}
-	if len(pi.Addrs) == 0 {
-		return fmt.Errorf("peer %s has no defined addresses", to)
-	}
-
-	addr, err := resolver.Resolve(context.Background(), pi.Addrs[0])
-	if err != nil {
-		return err
-	}
-	err = c.h.Connect(context.TODO(), peer.AddrInfo{
-		ID:    to,
-		Addrs: addr,
-	})
-	if err != nil {
-		return err
-	}
-
-	stream, err := c.h.NewStream(context.TODO(), to, c.protocolID)
-	if err != nil {
-		c.logger.Error().Err(err).Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msgf(
-			"unable to open stream toward %s", to.Pretty(),
-		)
-		return err
-	}
-
-	err = WriteStream(msg, stream)
-	if err != nil {
-		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
-		return err
-	}
-	c.logger.Trace().Str(
-		"To", to.Pretty()).Str(
-		"MsgType", msgType.String()).Str(
-		"SessionID", sessionID).Msg(
-		"message sent",
-	)
-	c.streamManager.AddStream(sessionID, stream)
-	return nil
-}
-
 func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
 	msg, err := c.ProcessMessageFromStream(s)
 	if err != nil {
@@ -175,19 +141,14 @@ func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.W
 	remotePeerID := s.Conn().RemotePeer()
 	msgBytes, err := ReadStream(s)
 	if err != nil {
-		c.streamManager.AddStream("UNKNOWN", s)
 		return nil, err
 	}
 
 	var wrappedMsg comm.WrappedMessage
 	if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
-		c.streamManager.AddStream("UNKNOWN", s)
 		return nil, err
 	}
-
 	wrappedMsg.From = remotePeerID
-
-	c.streamManager.AddStream(wrappedMsg.SessionID, s)
 
 	c.logger.Trace().Str(
 		"From", wrappedMsg.From.Pretty()).Str(
@@ -197,4 +158,65 @@ func (c Libp2pCommunication) ProcessMessageFromStream(s network.Stream) (*comm.W
 	)
 
 	return &wrappedMsg, nil
+}
+
+func (c Libp2pCommunication) sendMessage(
+	to peer.ID,
+	msg []byte,
+	msgType comm.MessageType,
+	sessionID string,
+) error {
+	err := c.resolveDNS(to)
+	if err != nil {
+		return err
+	}
+
+	var stream network.Stream
+	stream, err = c.streamManager.Stream(sessionID, to)
+	if err != nil {
+		// try to open the stream again if it failed the first time
+		stream, err = c.h.NewStream(context.TODO(), to, c.protocolID)
+		if err != nil {
+			return err
+		}
+		c.streamManager.AddStream(sessionID, to, stream)
+	}
+
+	err = WriteStream(msg, stream)
+	if err != nil {
+		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
+		return err
+	}
+	c.logger.Trace().Str(
+		"To", to.Pretty()).Str(
+		"MsgType", msgType.String()).Str(
+		"SessionID", sessionID).Msg(
+		"message sent",
+	)
+	return nil
+}
+
+func (c Libp2pCommunication) resolveDNS(peerID peer.ID) error {
+	pi := c.h.Peerstore().PeerInfo(peerID)
+	resolver, err := madns.NewResolver()
+	if err != nil {
+		return err
+	}
+	if len(pi.Addrs) == 0 {
+		return fmt.Errorf("peer %s has no defined addresses", peerID.Pretty())
+	}
+
+	addr, err := resolver.Resolve(context.Background(), pi.Addrs[0])
+	if err != nil {
+		return err
+	}
+	err = c.h.Connect(context.TODO(), peer.AddrInfo{
+		ID:    peerID,
+		Addrs: addr,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

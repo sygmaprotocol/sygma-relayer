@@ -76,6 +76,9 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		return
 	}
 
+	c.communication.InitiateSession(sessionID, c.host.Peerstore().Peers())
+	defer c.communication.CloseSession(sessionID)
+
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	defer func() { c.retriedProcesses[sessionID] = false }()
