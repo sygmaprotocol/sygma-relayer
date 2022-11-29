@@ -17,8 +17,6 @@ type WrappedMessage struct {
 
 // Communication defines methods for communicating between peers
 type Communication interface {
-	// InitiateSession creates a stream for every peer participating in that session
-	InitiateSession(sessionID string, peers []peer.ID)
 	// CloseSession closes and removes all streams for that session
 	CloseSession(sessionID string)
 	// Broadcast sends message to provided peers
