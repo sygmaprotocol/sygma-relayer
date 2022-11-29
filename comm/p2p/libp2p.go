@@ -123,7 +123,11 @@ func (c Libp2pCommunication) UnSubscribe(
 /** Helper methods **/
 
 func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
-	go c.ProcessMessagesFromStream(s)
+	c.ProcessMessagesFromStream(s)
+	err := s.Close()
+	if err != nil {
+		log.Err(err).Msg("Error closing incoming stream")
+	}
 }
 
 func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
@@ -137,7 +141,6 @@ func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
 
 		var wrappedMsg comm.WrappedMessage
 		if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
-			fmt.Println(string(msgBytes[:]))
 			log.Err(err).Msg("Error unmarshaling message")
 			return
 		}
