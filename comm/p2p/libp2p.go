@@ -118,7 +118,7 @@ func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
 	c.ProcessMessagesFromStream(s)
 	err := s.Close()
 	if err != nil {
-		log.Err(err).Msg("Error closing incoming stream")
+		log.Warn().Msgf("Error closing incoming stream because of: %s", err.Error())
 	}
 }
 
