@@ -68,6 +68,9 @@ func (sm *StreamManager) AddStream(sessionID string, peerID peer.ID, stream netw
 
 // Stream fetches stream by peer and session ID
 func (sm *StreamManager) Stream(sessionID string, peerID peer.ID) (network.Stream, error) {
+	sm.streamLocker.Lock()
+	defer sm.streamLocker.Unlock()
+
 	stream, ok := sm.streamsBySessionID[sessionID][peerID]
 	if !ok {
 		return nil, fmt.Errorf("no stream for peerID %s", peerID)
