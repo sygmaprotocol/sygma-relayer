@@ -9,12 +9,12 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 
 	"github.com/ChainSafe/chainbridge-core/store"
-	"github.com/centrifuge/go-substrate-rpc-client/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 )
 
 type EventHandler interface {
-	HandleEvents(evt interface{}, msgChan chan []*message.Message) error
+	HandleEvents(evt *events.Events, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
