@@ -12,10 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-const (
-	MaxPayload = 20000000 // 20M
-)
-
 // ReadStream reads data from the given stream
 func ReadStream(r *bufio.Reader) ([]byte, error) {
 	msg, err := r.ReadString('\n')
