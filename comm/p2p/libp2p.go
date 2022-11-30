@@ -19,6 +19,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	defaultBufferSize = 20480
+)
+
 type Libp2pCommunication struct {
 	SessionSubscriptionManager
 	h             host.Host
@@ -129,7 +133,6 @@ func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
 
 		var wrappedMsg comm.WrappedMessage
 		if err := json.Unmarshal(msgBytes, &wrappedMsg); nil != err {
-			fmt.Println(string(msgBytes[:]))
 			log.Err(err).Msg("Error unmarshaling message")
 			return
 		}
@@ -174,7 +177,7 @@ func (c Libp2pCommunication) sendMessage(
 		c.streamManager.AddStream(sessionID, to, stream)
 	}
 
-	err = WriteStream(msg, bufio.NewWriter(stream))
+	err = WriteStream(msg, bufio.NewWriterSize(stream, defaultBufferSize))
 	if err != nil {
 		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
 		return err

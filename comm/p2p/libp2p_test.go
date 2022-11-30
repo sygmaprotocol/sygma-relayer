@@ -12,7 +12,11 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	mock_host "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/host"
 	mock_network "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/stream"
+	"github.com/ChainSafe/sygma-relayer/topology"
+	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/golang/mock/gomock"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/stretchr/testify/suite"
@@ -133,4 +137,58 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 
 	c.UnSubscribe(subID1)
 	c.UnSubscribe(subID2)
+}
+
+func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessage() {
+	var testHosts []host.Host
+	var communications []p2p.Libp2pCommunication
+	numberOfTestHosts := 2
+	portOffset := 0
+	protocolID := "/p2p/test"
+
+	topology := topology.NetworkTopology{
+		Peers: []*peer.AddrInfo{},
+	}
+
+	privateKeys := []crypto.PrivKey{}
+	for i := 0; i < numberOfTestHosts; i++ {
+		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
+		privateKeys = append(privateKeys, privKeyForHost)
+		peerID, _ := peer.IDFromPrivateKey(privKeyForHost)
+		addrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
+			"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+portOffset+i, peerID.Pretty(),
+		))
+		topology.Peers = append(topology.Peers, addrInfoForHost)
+	}
+
+	for i := 0; i < numberOfTestHosts; i++ {
+		connectionGate := p2p.NewConnectionGate(topology)
+		newHost, _ := p2p.NewHost(privateKeys[i], topology, connectionGate, uint16(4000+portOffset+i))
+		testHosts = append(testHosts, newHost)
+		communications = append(communications, p2p.NewCommunication(newHost, protocol.ID(protocolID)))
+	}
+
+	msgChn := make(chan *comm.WrappedMessage)
+	communications[1].SubscribeTo("1", comm.CoordinatorPingMsg, msgChn)
+	communications[1].SubscribeTo("2", comm.TssKeySignMsg, msgChn)
+
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1", nil)
+	msgBytes, _ := common.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2", nil)
+
+	pingMsg := <-msgChn
+	largeMsg := <-msgChn
+
+	s.Equal(pingMsg, &comm.WrappedMessage{
+		MessageType: comm.CoordinatorPingMsg,
+		SessionID:   "1",
+		Payload:     []byte{},
+		From:        testHosts[0].ID(),
+	})
+	s.Equal(largeMsg, &comm.WrappedMessage{
+		MessageType: comm.TssKeySignMsg,
+		SessionID:   "2",
+		Payload:     msgBytes,
+		From:        testHosts[0].ID(),
+	})
 }
