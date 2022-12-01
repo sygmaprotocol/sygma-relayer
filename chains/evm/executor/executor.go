@@ -160,10 +160,11 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 }
 
 func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*ethCommon.Hash, error) {
-	sig := signatureData.Signature.R
-	sig = append(sig[:], signatureData.Signature.S[:]...)
+	sig := []byte{}
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.R, 32)...)
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.S, 32)...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-	sig[64] += 27 // Transform V from 0/1 to 27/28
+	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
 	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{})
 	if err != nil {
