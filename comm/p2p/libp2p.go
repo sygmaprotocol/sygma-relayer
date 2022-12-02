@@ -115,11 +115,13 @@ func (c Libp2pCommunication) UnSubscribe(
 /** Helper methods **/
 
 func (c Libp2pCommunication) StreamHandlerFunc(s network.Stream) {
+	defer func() {
+		err := s.Close()
+		if err != nil {
+			log.Warn().Msgf("Error closing incoming stream because of: %s", err.Error())
+		}
+	}()
 	c.ProcessMessagesFromStream(s)
-	err := s.Close()
-	if err != nil {
-		log.Warn().Msgf("Error closing incoming stream because of: %s", err.Error())
-	}
 }
 
 func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
