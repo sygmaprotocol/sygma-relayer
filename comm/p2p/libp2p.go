@@ -141,7 +141,7 @@ func (c Libp2pCommunication) ProcessMessagesFromStream(s network.Stream) {
 		wrappedMsg.From = remotePeerID
 
 		c.logger.Trace().Str(
-			"From", wrappedMsg.From.Pretty()).Str(
+			"From", wrappedMsg.From.String()).Str(
 			"MsgType", wrappedMsg.MessageType.String()).Str(
 			"SessionID", wrappedMsg.SessionID).Msg(
 			"processed message",
