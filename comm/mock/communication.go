@@ -47,6 +47,18 @@ func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID, errChan)
 }
 
+// CloseSession mocks base method.
+func (m *MockCommunication) CloseSession(sessionID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseSession", sessionID)
+}
+
+// CloseSession indicates an expected call of CloseSession.
+func (mr *MockCommunicationMockRecorder) CloseSession(sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSession", reflect.TypeOf((*MockCommunication)(nil).CloseSession), sessionID)
+}
+
 // Subscribe mocks base method.
 func (m *MockCommunication) Subscribe(sessionID string, msgType comm.MessageType, channel chan *comm.WrappedMessage) comm.SubscriptionID {
 	m.ctrl.T.Helper()
