@@ -20,11 +20,10 @@ type Connection struct {
 	meta        types.Metadata // Latest chain metadata
 	metaLock    sync.RWMutex   // Lock metadata for updates, allows concurrent reads
 	genesisHash types.Hash     // Chain genesis hash
-	name        string         // Chain name
 }
 
-func NewSubstrateConnection(url string, name string) (*Connection, error) {
-	c := &Connection{name: name}
+func NewSubstrateConnection(url string) (*Connection, error) {
+	c := &Connection{}
 	client, err := client.Connect(url)
 	if err != nil {
 		return nil, err

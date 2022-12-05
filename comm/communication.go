@@ -4,7 +4,7 @@
 package comm
 
 import (
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 // WrappedMessage is a structure representing a raw message that is sent trough Communication
@@ -17,6 +17,8 @@ type WrappedMessage struct {
 
 // Communication defines methods for communicating between peers
 type Communication interface {
+	// CloseSession closes and removes all streams for that session
+	CloseSession(sessionID string)
 	// Broadcast sends message to provided peers
 	// If error has occurred on sending any message, broadcast will be aborted and error will be sent to errChan
 	Broadcast(peers peer.IDSlice, msg []byte, msgType MessageType, sessionID string, errChan chan error)

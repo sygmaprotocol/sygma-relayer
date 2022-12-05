@@ -12,8 +12,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/binance-chain/tss-lib/tss"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 )
@@ -79,6 +79,8 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	c.pendingProcesses[sessionID] = true
 	defer func() { c.pendingProcesses[sessionID] = false }()
 	defer func() { c.retriedProcesses[sessionID] = false }()
+	defer c.communication.CloseSession(sessionID)
+
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
 	log.Info().Msgf("Starting process %s with coordinator %s", tssProcess.SessionID(), coordinator.Pretty())

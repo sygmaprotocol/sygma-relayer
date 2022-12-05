@@ -4,19 +4,21 @@
 package p2p_test
 
 import (
-	"encoding/binary"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/comm"
+	comm "github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
-	mock_network "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/stream"
-
 	mock_host "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/host"
+	mock_network "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/stream"
+	"github.com/ChainSafe/sygma-relayer/topology"
+	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,78 +39,49 @@ func (s *Libp2pCommunicationTestSuite) SetupSuite() {
 	s.allowedPeers = []peer.ID{pid}
 	s.testProtocolID = "test/protocol"
 }
-func (s *Libp2pCommunicationTestSuite) TearDownSuite() {}
 func (s *Libp2pCommunicationTestSuite) SetupTest() {
 	s.mockController = gomock.NewController(s.T())
 	s.mockHost = mock_host.NewMockHost(s.mockController)
 }
-func (s *Libp2pCommunicationTestSuite) TearDownTest() {}
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_ValidMessage() {
 	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
 	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
 	c := p2p.NewCommunication(s.mockHost, s.testProtocolID)
 
+	msgChannel := make(chan *comm.WrappedMessage)
+	c.Subscribe("1", comm.CoordinatorPingMsg, msgChannel)
+
 	testWrappedMsg := comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,
 		SessionID:   "1",
 		Payload:     nil,
 	}
-
 	bytes, _ := json.Marshal(testWrappedMsg)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
-
-	// mock for s.Conn().RemotePeer()
 	mockConn := mock_network.NewMockConn(s.mockController)
 	mockConn.EXPECT().RemotePeer().Return(s.allowedPeers[0])
 	mockStream.EXPECT().Conn().Return(mockConn)
 
-	// mock stream reading
-	// on first call return header representing length of the message
 	firstCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
-		length := uint32(len(bytes))
-		lengthBytes := make([]byte, p2p.LengthHeader)
-		binary.LittleEndian.PutUint32(lengthBytes, length)
-
-		copy(p[:], lengthBytes)
-		return 4, nil
+		copy(p[:], []byte(fmt.Sprintf("%s \n", string(bytes[:]))))
+		return len(bytes), nil
 	})
-	// on second call return message bytes
 	secondCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
-		copy(p[:], bytes)
+		copy(p[:], []byte("\n"))
 		return len(bytes), nil
 	})
 	gomock.InOrder(firstCall, secondCall)
 
-	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
+	c.ProcessMessagesFromStream(mockStream)
 
-	s.Nil(err)
-	s.NotNil(messageFromStream)
+	msg := <-msgChannel
 
-	s.Equal(s.allowedPeers[0], messageFromStream.From)
-	s.Equal(testWrappedMsg.MessageType, messageFromStream.MessageType)
-	s.Equal(testWrappedMsg.SessionID, messageFromStream.SessionID)
-	s.Nil(messageFromStream.Payload)
-}
-
-func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_MessageProcessing_FailOnReadingFromStream() {
-	s.mockHost.EXPECT().ID().Return(s.allowedPeers[0])
-	s.mockHost.EXPECT().SetStreamHandler(s.testProtocolID, gomock.Any()).Return()
-	c := p2p.NewCommunication(s.mockHost, s.testProtocolID)
-
-	mockStream := mock_network.NewMockStream(s.mockController)
-	mockStream.EXPECT().Read(gomock.Any()).Times(1).Return(0, errors.New("error on reading from stream"))
-
-	// mock for s.Conn().RemotePeer()
-	mockConn := mock_network.NewMockConn(s.mockController)
-	mockConn.EXPECT().RemotePeer().AnyTimes().Return(s.allowedPeers[0])
-	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
-
-	messageFromStream, err := c.ProcessMessageFromStream(mockStream)
-
-	s.Nil(messageFromStream)
-	s.NotNil(err)
+	s.Equal(s.allowedPeers[0], msg.From)
+	s.Equal(testWrappedMsg.MessageType, msg.MessageType)
+	s.Equal(testWrappedMsg.SessionID, msg.SessionID)
+	s.Nil(msg.Payload)
 }
 
 func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunction_ValidMessageWithSubscribers() {
@@ -125,34 +98,26 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 	bytes, _ := json.Marshal(testWrappedMsg)
 
 	mockStream := mock_network.NewMockStream(s.mockController)
-
-	// mock for s.Conn().RemotePeer()
 	mockConn := mock_network.NewMockConn(s.mockController)
 	mockConn.EXPECT().RemotePeer().AnyTimes().Return(s.allowedPeers[0])
 	mockStream.EXPECT().Conn().AnyTimes().Return(mockConn)
+	mockStream.EXPECT().Close()
 
-	// mock stream reading
-	// on first call return header representing length of the message
 	firstCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
-		length := uint32(len(bytes))
-		lengthBytes := make([]byte, p2p.LengthHeader)
-		binary.LittleEndian.PutUint32(lengthBytes, length)
-
-		copy(p[:], lengthBytes)
-		return 4, nil
+		copy(p[:], []byte(fmt.Sprintf("%s \n", string(bytes[:]))))
+		return len(bytes), nil
 	})
-	// on second call return message bytes
 	secondCall := mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (n int, err error) {
-		copy(p[:], bytes)
+		copy(p[:], []byte("\n"))
 		return len(bytes), nil
 	})
 	gomock.InOrder(firstCall, secondCall)
 
 	testSubChannelFirst := make(chan *comm.WrappedMessage)
-	c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelFirst)
+	subID1 := c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelFirst)
 
 	testSubChannelSecond := make(chan *comm.WrappedMessage)
-	c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelSecond)
+	subID2 := c.Subscribe("1", comm.CoordinatorPingMsg, testSubChannelSecond)
 
 	go c.StreamHandlerFunc(mockStream)
 
@@ -169,4 +134,61 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_StreamHandlerFunc
 	s.Equal(testWrappedMsg.MessageType, subMsgSecond.MessageType)
 	s.Equal(testWrappedMsg.SessionID, subMsgSecond.SessionID)
 	s.Nil(subMsgSecond.Payload)
+
+	c.UnSubscribe(subID1)
+	c.UnSubscribe(subID2)
+}
+
+func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessage() {
+	var testHosts []host.Host
+	var communications []p2p.Libp2pCommunication
+	numberOfTestHosts := 2
+	portOffset := 0
+	protocolID := "/p2p/test"
+
+	topology := topology.NetworkTopology{
+		Peers: []*peer.AddrInfo{},
+	}
+
+	privateKeys := []crypto.PrivKey{}
+	for i := 0; i < numberOfTestHosts; i++ {
+		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
+		privateKeys = append(privateKeys, privKeyForHost)
+		peerID, _ := peer.IDFromPrivateKey(privKeyForHost)
+		addrInfoForHost, _ := peer.AddrInfoFromString(fmt.Sprintf(
+			"/ip4/127.0.0.1/tcp/%d/p2p/%s", 4000+portOffset+i, peerID.Pretty(),
+		))
+		topology.Peers = append(topology.Peers, addrInfoForHost)
+	}
+
+	for i := 0; i < numberOfTestHosts; i++ {
+		connectionGate := p2p.NewConnectionGate(topology)
+		newHost, _ := p2p.NewHost(privateKeys[i], topology, connectionGate, uint16(4000+portOffset+i))
+		testHosts = append(testHosts, newHost)
+		communications = append(communications, p2p.NewCommunication(newHost, protocol.ID(protocolID)))
+	}
+
+	msgChn := make(chan *comm.WrappedMessage)
+	communications[1].SubscribeTo("1", comm.CoordinatorPingMsg, msgChn)
+	communications[1].SubscribeTo("2", comm.TssKeySignMsg, msgChn)
+
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1", nil)
+	pingMsg := <-msgChn
+
+	msgBytes, _ := common.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2", nil)
+	largeMsg := <-msgChn
+
+	s.Equal(pingMsg, &comm.WrappedMessage{
+		MessageType: comm.CoordinatorPingMsg,
+		SessionID:   "1",
+		Payload:     []byte{},
+		From:        testHosts[0].ID(),
+	})
+	s.Equal(largeMsg, &comm.WrappedMessage{
+		MessageType: comm.TssKeySignMsg,
+		SessionID:   "2",
+		Payload:     msgBytes,
+		From:        testHosts[0].ID(),
+	})
 }

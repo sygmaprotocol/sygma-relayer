@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 type Receiver interface {
@@ -60,3 +60,5 @@ func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string) {
 	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }
+
+func (ts *TestCommunication) CloseSession(sessionID string) {}
