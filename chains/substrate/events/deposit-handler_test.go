@@ -6,15 +6,17 @@ package events_test
 import (
 	"errors"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	core_types "github.com/ChainSafe/chainbridge-core/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/stretchr/testify/suite"
 	"math/big"
 	"testing"
 )
 
 var errIncorrectdeposit_dataLen = errors.New("invalid calldata length: less than 84 bytes")
+var errNoCorrespondingDepositHandler = errors.New("no corresponding deposit handler for this transfer type exists")
 
 type Erc20HandlerTestSuite struct {
 	suite.Suite
@@ -30,7 +32,10 @@ func (s *Erc20HandlerTestSuite) SetupTest()     {}
 func (s *Erc20HandlerTestSuite) TearDownTest()  {}
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
-	sender := []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
+	// Alice
+	sender, _ := types.NewAccountIDFromHexString("0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+
+	// Bob
 	recipientByteSlice := []byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}
 	var calldata []byte
 	amount, _ := types.BigIntToIntBytes(big.NewInt(2), 32)
@@ -43,7 +48,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
-		SenderAddress:       sender,
+		SenderAddress:       *sender,
 		Data:                calldata,
 		HandlerResponse:     []byte{},
 	}
@@ -72,7 +77,10 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 }
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
-	sender := []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
+	// Alice
+	sender, _ := types.NewAccountIDFromHexString("0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
+
+	//Bob
 	recipientByteSlice := []byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}
 	priority := uint8(1)
 	var calldata []byte
@@ -89,7 +97,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
-		SenderAddress:       sender,
+		SenderAddress:       *sender,
 		Data:                calldata,
 		HandlerResponse:     []byte{},
 	}
@@ -111,9 +119,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 			amountParsed,
 			recipientAddressParsed,
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	message, err := events.FungibleTransferHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -124,7 +130,8 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 }
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
-	sender := []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
+	// Alice
+	sender, _ := types.NewAccountIDFromHexString("0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 
 	metadeposit_data := []byte("0xdeadbeef")
 	metadeposit_dataLen, _ := (types.BigIntToIntBytes(big.NewInt(int64(len(metadeposit_data))), 32))
@@ -137,7 +144,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
-		SenderAddress:       sender,
+		SenderAddress:       *sender,
 		Data:                calldata,
 		HandlerResponse:     []byte{},
 	}
@@ -148,4 +155,37 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 
 	s.Nil(message)
 	s.EqualError(err, errIncorrectdeposit_dataLen.Error())
+}
+
+func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler() {
+	recipientByteSlice := []byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}
+	// Create calldata
+	var calldata []byte
+	amount, _ := types.BigIntToIntBytes(big.NewInt(2), 32)
+	calldata = append(calldata, amount...)
+	recipientLen, _ := (types.BigIntToIntBytes(big.NewInt(int64(len(recipientByteSlice))), 32))
+	calldata = append(calldata, recipientLen...)
+	calldata = append(calldata, types.Bytes(recipientByteSlice)...)
+
+	d1 := &events.Deposit{
+		DepositNonce:        1,
+		DestinationDomainID: 2,
+		ResourceID:          core_types.ResourceID{},
+		DepositType:         message.FungibleTransfer,
+		HandlerResponse:     []byte{},
+		Data:                calldata,
+	}
+
+	depositHandler := events.NewSubstrateDepositHandler()
+	// Register FungibleTransferHandler function
+	depositHandler.RegisterDepositHandler(message.FungibleTransfer, events.FungibleTransferHandler)
+	message1, err1 := depositHandler.HandleDeposit(1, d1.DestinationDomainID, d1.DepositNonce, d1.ResourceID, d1.Data, d1.DepositType, d1.HandlerResponse)
+	s.Nil(err1)
+	s.NotNil(message1)
+
+	// Use unregistered transfer type
+	message2, err2 := depositHandler.HandleDeposit(1, d1.DestinationDomainID, d1.DepositNonce, d1.ResourceID, d1.Data, message.NonFungibleTransfer, d1.HandlerResponse)
+	s.Nil(message2)
+	s.NotNil(err2)
+	s.EqualError(err2, errNoCorrespondingDepositHandler.Error())
 }

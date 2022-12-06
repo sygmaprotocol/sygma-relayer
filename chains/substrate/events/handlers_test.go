@@ -182,7 +182,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2.DepositNonce,
 		d2.ResourceID,
 		d2.Data,
-		d1.DepositType,
+		d2.DepositType,
 		d2.HandlerResponse,
 	).Return(
 		&message.Message{DepositNonce: 2},
@@ -203,4 +203,61 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 
 	s.Nil(err)
 	s.Equal(msgs, []*message.Message{{DepositNonce: 1}, {DepositNonce: 2}})
+}
+
+func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
+	d1 := &events.Deposit{
+		DepositNonce:        1,
+		DestinationDomainID: 2,
+		ResourceID:          types.ResourceID{},
+		DepositType:         message.FungibleTransfer,
+		HandlerResponse:     []byte{},
+		Data:                []byte{},
+	}
+	d2 := &events.Deposit{
+		DepositNonce:        2,
+		DestinationDomainID: 2,
+		ResourceID:          types.ResourceID{},
+		DepositType:         message.FungibleTransfer,
+		HandlerResponse:     []byte{},
+		Data:                []byte{},
+	}
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d1.DestinationDomainID,
+		d1.DepositNonce,
+		d1.ResourceID,
+		d1.Data,
+		d1.DepositType,
+		d1.HandlerResponse,
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse interface{}) {
+		panic("error")
+	})
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d2.DestinationDomainID,
+		d2.DepositNonce,
+		d2.ResourceID,
+		d2.Data,
+		d2.DepositType,
+		d2.HandlerResponse,
+	).Return(
+		&message.Message{DepositNonce: 2},
+		nil,
+	)
+
+	msgChan := make(chan []*message.Message, 2)
+	evtsRec := substrate_types.EventRecords{
+		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	}
+	evts := events.Events{evtsRec,
+		[]events.Deposit{
+			*d1, *d2,
+		},
+	}
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	msgs := <-msgChan
+
+	s.Nil(err)
+	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
 }
