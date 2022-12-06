@@ -55,6 +55,12 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts Events, msgChan chan [
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range evts.Deposit {
 		func(d Deposit) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Msgf("panic occured while handling deposit %+v", d)
+				}
+			}()
+
 			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.DepositType, d.HandlerResponse)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
