@@ -2,7 +2,6 @@ package events
 
 import (
 	"errors"
-	"math/big"
 
 	"github.com/rs/zerolog/log"
 
@@ -14,20 +13,14 @@ import (
 type DepositHandlers map[message.TransferType]DepositHandlerFunc
 type DepositHandlerFunc func(sourceID, destId uint8, nonce uint64, resourceID core_types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error)
 
-type HandlerMatcher interface {
-	GetTransferTypeForResourceID(resourceID core_types.ResourceID) (message.TransferType, error)
-}
-
 type SubstrateDepositHandler struct {
-	handlerMatcher  HandlerMatcher
 	depositHandlers DepositHandlers
 }
 
 // NewSubstrateDepositHandler creates an instance of SubstrateDepositHandler that contains
 // handler functions for processing deposit events
-func NewSubstrateDepositHandler(handlerMatcher HandlerMatcher) *SubstrateDepositHandler {
+func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 	return &SubstrateDepositHandler{
-		handlerMatcher:  handlerMatcher,
 		depositHandlers: make(map[message.TransferType]DepositHandlerFunc),
 	}
 }
@@ -45,7 +38,7 @@ func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID uint8, de
 func (e *SubstrateDepositHandler) matchTransferTypeHandlerFunc(transferType message.TransferType) (DepositHandlerFunc, error) {
 	hf, ok := e.depositHandlers[transferType]
 	if !ok {
-		return nil, errors.New("no corresponding deposit handler for this address exists")
+		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
 	}
 	return hf, nil
 }
@@ -67,7 +60,7 @@ func FungibleTransferHandler(sourceID uint8, destId uint8, nonce uint64, resourc
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
 	}
-	// @dev
+
 	// amount: first 32 bytes of calldata
 	amount := calldata[:32]
 
@@ -83,14 +76,7 @@ func FungibleTransferHandler(sourceID uint8, destId uint8, nonce uint64, resourc
 		recipientAddress,
 	}
 
-	// arbitrary metadata that will be most likely be used by the relayer
-	var metadata message.Metadata
-	if 64+recipientAddressLength.Int64() < int64(len(calldata)) {
-		priorityLength := big.NewInt(0).SetBytes(calldata[(64 + recipientAddressLength.Int64()):((64 + recipientAddressLength.Int64()) + 1)])
+	metadata := message.Metadata{}
 
-		// (64 + recipient address length + 1) - ((64 + recipient address length + 1) + priority length) is priority data
-		priority := calldata[(64 + recipientAddressLength.Int64() + 1):((64 + recipientAddressLength.Int64()) + 1 + priorityLength.Int64())]
-		metadata.Priority = priority[0]
-	}
 	return message.NewMessage(uint8(sourceID), uint8(destId), uint64(nonce), core_types.ResourceID(resourceID), message.FungibleTransfer, payload, metadata), nil
 }
