@@ -14,7 +14,7 @@ type Deposit struct {
 	ResourceID          core_types.ResourceID
 	DepositNonce        uint64
 	DepositType         message.TransferType
-	SenderAddress       []byte
+	SenderAddress       types.AccountID
 	Data                []byte
 	HandlerResponse     []byte
 }
