@@ -165,8 +165,14 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[64] += 27 // Transform V from 0/1 to 27/28
 
+	var fee uint64
+	maxFee, ok := proposals[0].Metadata.Data["fee"]
+	if ok {
+		fee = maxFee.(uint64)
+	}
+
 	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
-		GasLimit: proposals[0].Metadata.Fee.Uint64(),
+		GasLimit: fee,
 	})
 	if err != nil {
 		return nil, err

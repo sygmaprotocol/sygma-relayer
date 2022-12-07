@@ -35,7 +35,6 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 
 	data := bytes.Buffer{}
 	data.Write(common.LeftPadBytes(maxFee, 32))
-	msg.Metadata.Fee = big.NewInt(0).SetBytes(maxFee)
 
 	data.Write(common.LeftPadBytes(big.NewInt(int64(len(executeFunctionSignature))).Bytes(), 2))
 	data.Write(executeFunctionSignature)
