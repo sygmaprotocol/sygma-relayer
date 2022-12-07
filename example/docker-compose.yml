@@ -22,6 +22,14 @@ services:
     ports:
       - "8547:8545"
 
+  # Substrate pallet node
+  substrate-pallet:
+    container_name: substrate-pallet
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:latest"
+    command: --dev --ws-external
+    ports:
+      - "9944:9944"
+
   relayer1:
     container_name: example_relayer1
     build:
