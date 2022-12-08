@@ -323,16 +323,15 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
-	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(bytes32,bytes32,bytes32)"))[:4])
+	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(address,bytes32,address)"))[:4])
 	contractAddress := assetStoreContract2.ContractAddress()
 	maxFee := big.NewInt(200000)
 	depositor := s.client1.From()
 	var metadata []byte
-	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 	metadata = append(metadata, common.LeftPadBytes(hash[:], 32)...)
 	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 
-	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
+	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, &depositor, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
 		Value: s.config1.BasicFee,
 	})
 	s.Nil(err)
