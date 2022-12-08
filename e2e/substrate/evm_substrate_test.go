@@ -95,8 +95,8 @@ type IntegrationTestSuite struct {
 
 func (s *IntegrationTestSuite) SetupSuite() {
 	// EVM side preparation
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor1)
+	evmTransactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
+	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, evmTransactor)
 	mintTo := s.evmClient.From()
 	amountToMint := big.NewInt(0).Mul(big.NewInt(50000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
@@ -118,7 +118,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	erc20LRContract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
+	erc20LRContract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, evmTransactor)
 	_, err = erc20LRContract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
@@ -130,11 +130,11 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 
 	// Substrate side preparation
-	// 1. change fungible asset ResourceId on pallet to be 0000000000000000000000000000000000000000000000000000000000000000, which is matching with Erc20ResourceID
-	// 2. change DestVerifyingContractAddress on pallet to be deployed bridge address, assuming both source and dest bridge address in e2e test are the same
-	// 3. set mpc key in pallet
-	// 4. set basic fee in pallet
-	// 5. make sure pallet is unpaused
+	// 1. On pallet, change fungible asset ResourceId on pallet to be 0000000000000000000000000000000000000000000000000000000000000000, which is matching with Erc20ResourceID
+	// 2. On pallet, change DestVerifyingContractAddress on pallet to be deployed bridge address, assuming both source and dest bridge address in e2e test are the same
+	// 3. On E2E test, set mpc key in pallet -- sygmaBridge -> setMpcKey extrinsic
+	// 4. On E2E test, set basic fee in pallet -- sygmaBridgeBasicFeeHandler -> setFee extrinsic
+	// 5. On E2E test, make sure pallet is unpaused by chain state query -- sygmaBridge -> isPaused
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
