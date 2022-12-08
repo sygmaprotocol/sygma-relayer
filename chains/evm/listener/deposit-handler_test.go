@@ -2,7 +2,6 @@ package listener_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -29,10 +28,14 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	contractAddress := common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90")
 	depositor := common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b")
 	maxFee := big.NewInt(200000)
-	var metadata []byte
-	metadata = append(metadata, hash[:]...)
+	var executionData []byte
+	executionData = append(executionData, common.LeftPadBytes(depositor.Bytes(), 32)...)
+	executionData = append(executionData, hash[:]...)
+	metadata := make(map[string]interface{})
+	metadata["fee"] = uint64(200000)
+
 	calldata := bridge.ConstructPermissionlessGenericDepositData(
-		metadata,
+		hash[:],
 		functionSig,
 		contractAddress.Bytes(),
 		depositor.Bytes(),
@@ -58,8 +61,10 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 			functionSig,
 			contractAddress.Bytes(),
 			common.LeftPadBytes(maxFee.Bytes(), 32),
-			depositor.Bytes(),
-			hash,
+			executionData,
+		},
+		Metadata: message.Metadata{
+			Data: metadata,
 		},
 	}
 
@@ -71,8 +76,6 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		depositLog.Data,
 		depositLog.HandlerResponse,
 	)
-
-	fmt.Println(expected.Payload)
 
 	s.Nil(err)
 	s.NotNil(message)

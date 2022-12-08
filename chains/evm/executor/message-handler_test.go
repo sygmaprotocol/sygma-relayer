@@ -71,7 +71,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		bridgeAddr,
 	)
 
-	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000030d4000001402091eeff969b33a5ce8a729dae325879bf76f90145c1f5961696bad2e73f73417f07ef55c62a2dc5b307868617368")
+	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000030d4000001402091eeff969b33a5ce8a729dae325879bf76f90145c1f5961696bad2e73f73417f07ef55c62a2dc5b")
 	expected := proposal.NewProposal(
 		message.Source,
 		message.Destination,
