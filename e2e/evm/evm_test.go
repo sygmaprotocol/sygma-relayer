@@ -53,28 +53,28 @@ func Test_EVM2EVM(t *testing.T) {
 	config := evm.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 
-		Erc20Addr:        common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
-		Erc20HandlerAddr: common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
+		Erc20Addr:        common.HexToAddress("0x1D20a9AcDBE9466E7C07859Cf17fB3A93f010c8D"),
+		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
+		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-		Erc721Addr:        common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),
-		Erc721HandlerAddr: common.HexToAddress("0x481f97f9C82a971B3844a422936a4d3c4082bF84"),
+		Erc721Addr:        common.HexToAddress("0x38aAe0b0bC78c44fBA12B1A546954C9bD0F6d5E6"),
+		Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-		GenericHandlerAddr: common.HexToAddress("0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46"),
+		GenericHandlerAddr: common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+		AssetStoreAddr:     common.HexToAddress("0x6f3738a81316cc1ae0dd9c6dc2e64cc294cde781"),
 
-		PermissionlessGenericHandlerAddr: common.HexToAddress("0x979C2e7347c9831E18870aB886f0101EBC771CeB"),
+		PermissionlessGenericHandlerAddr: common.HexToAddress("0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"),
 		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
-		BasicFeeHandlerAddr:      common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
-		FeeHandlerWithOracleAddr: common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
-		FeeRouterAddress:         common.HexToAddress("0x9275AC64D6556BE290dd878e5aAA3a5bae08ae0C"),
+		BasicFeeHandlerAddr:      common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),
+		FeeHandlerWithOracleAddr: common.HexToAddress("0x30d704A60037DfE54e7e4D242Ea0cBC6125aE497"),
+		FeeRouterAddress:         common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
 		BasicFee:                 evm.BasicFee,
 		OracleFee:                evm.OracleFee,
 	}
@@ -139,14 +139,18 @@ type IntegrationTestSuite struct {
 
 func (s *IntegrationTestSuite) SetupSuite() {
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
+	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
 	mintTo := s.client1.From()
 	amountToMint := big.NewInt(0).Mul(big.NewInt(50000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	_, err := erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+
 	if err != nil {
 		panic(err)
 	}
+
 	_, err = erc20Contract.MintTokens(s.config1.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
@@ -166,6 +170,13 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
+
+	erc20LRContract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
+	_, err = erc20LRContract2.MintTokens(s.config2.Erc20LockReleaseHandlerAddr, amountToMint.Mul(amountToMint, big.NewInt(10000)), transactor.TransactOptions{})
+	if err != nil {
+		panic(err)
+	}
+
 	// Approving tokens
 	_, err = erc20LRContract.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
