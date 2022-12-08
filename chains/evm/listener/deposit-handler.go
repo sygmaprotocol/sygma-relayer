@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -13,6 +14,12 @@ const (
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
 func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("recovered from ", r)
+		}
+	}()
+
 	maxFee := calldata[:32]
 
 	functionSigLen := big.NewInt(0).SetBytes(calldata[32:34])
@@ -23,21 +30,18 @@ func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, r
 	contractAddressEnd := functionSigEnd + 1 + contractAddressLen.Int64()
 	contractAddress := calldata[functionSigEnd+1 : contractAddressEnd]
 
-	depositorLen := big.NewInt(0).SetBytes(calldata[contractAddressEnd : contractAddressEnd+1])
-	depositorEnd := contractAddressEnd + 1 + depositorLen.Int64()
-	depositor := calldata[contractAddressEnd+1 : depositorEnd]
-
-	executionData := calldata[depositorEnd:]
+	executionData := calldata[contractAddressEnd+1:]
 
 	payload := []interface{}{
 		functionSig,
 		contractAddress,
 		maxFee,
-		depositor,
 		executionData,
 	}
 
-	metadata := message.Metadata{}
+	metadata := message.Metadata{
+		Data: make(map[string]interface{}),
+	}
 	metadata.Data["fee"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
 
 	return message.NewMessage(sourceID, destId, nonce, resourceID, PermissionlessGenericTransfer, payload, metadata), nil
