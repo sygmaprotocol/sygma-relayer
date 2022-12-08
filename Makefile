@@ -1,5 +1,5 @@
 
-.PHONY: help run build install license example
+.PHONY: help run build install license example e2e-test
 all: help
 
 export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore
@@ -32,8 +32,10 @@ genmocks:
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 	mockgen -source=./chains/evm/listener/event-handler.go -destination=./chains/evm/listener/mock/listener.go
-	mockgen -destination=chains/evm/listener/mock/deposit-handler.go github.com/ChainSafe/chainbridge-core/chains/evm/listener DepositHandler
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
+	mockgen -source=./chains/substrate/events/handlers.go -destination=./chains/substrate/events/mock/handlers.go
+	mockgen -destination=chains/evm/listener/mock/core/listener.go github.com/ChainSafe/chainbridge-core/chains/evm/listener EventListener,DepositHandler
+
 
 e2e-test:
 	./scripts/e2e_tests.sh

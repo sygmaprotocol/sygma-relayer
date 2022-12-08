@@ -9,7 +9,7 @@ import (
 
 	comm "github.com/ChainSafe/sygma-relayer/comm"
 	gomock "github.com/golang/mock/gomock"
-	peer "github.com/libp2p/go-libp2p-core/peer"
+	peer "github.com/libp2p/go-libp2p/core/peer"
 )
 
 // MockCommunication is a mock of Communication interface.
@@ -45,6 +45,18 @@ func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType co
 func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID, errChan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID, errChan)
+}
+
+// CloseSession mocks base method.
+func (m *MockCommunication) CloseSession(sessionID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseSession", sessionID)
+}
+
+// CloseSession indicates an expected call of CloseSession.
+func (mr *MockCommunicationMockRecorder) CloseSession(sessionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseSession", reflect.TypeOf((*MockCommunication)(nil).CloseSession), sessionID)
 }
 
 // Subscribe mocks base method.

@@ -15,7 +15,7 @@ import (
 	mock_tss "github.com/ChainSafe/sygma-relayer/tss/common/mock"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/suite"
 )
 

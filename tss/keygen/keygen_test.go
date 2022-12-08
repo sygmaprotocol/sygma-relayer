@@ -11,7 +11,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/keygen"
 	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/suite"
 )
 

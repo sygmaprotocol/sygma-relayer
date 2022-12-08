@@ -12,7 +12,7 @@ import (
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
 	ethCommon "github.com/ethereum/go-ethereum/common"
-	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
@@ -160,10 +160,11 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 }
 
 func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*ethCommon.Hash, error) {
-	sig := signatureData.Signature.R
-	sig = append(sig[:], signatureData.Signature.S[:]...)
+	sig := []byte{}
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.R, 32)...)
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.S, 32)...)
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
-	sig[64] += 27 // Transform V from 0/1 to 27/28
+	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
 	var fee uint64
 	maxFee, ok := proposals[0].Metadata.Data["fee"]

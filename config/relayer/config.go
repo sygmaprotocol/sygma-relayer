@@ -37,14 +37,9 @@ type BullyConfig struct {
 }
 
 type TopologyConfiguration struct {
-	EncryptionKey  string `mapstructure:"EncryptionKey" json:"encryptionKey"`
-	AccessKey      string `mapstructure:"AccessKey" json:"accessKey"`
-	SecKey         string `mapstructure:"SecKey" json:"secKey"`
-	DocumentName   string `mapstructure:"DocumentName" default:"topology.json" json:"documentName"`
-	BucketRegion   string `mapstructure:"BucketRegion" default:"us-east-1" json:"bucketRegion"`
-	BucketName     string `mapstructure:"BucketName" default:"mpc-topology" json:"bucketName"`
-	ServiceAddress string `mapstructure:"ServiceAddress" default:"buckets.chainsafe.io" json:"serviceAddress"`
-	Path           string `mapstructure:"Path" json:"path"`
+	EncryptionKey string `mapstructure:"EncryptionKey" json:"encryptionKey"`
+	Url           string `mapstructure:"Url" json:"url"`
+	Path          string `mapstructure:"Path" json:"path"`
 }
 
 type RawRelayerConfig struct {
@@ -70,15 +65,14 @@ type RawBullyConfig struct {
 }
 
 func (c *RawRelayerConfig) Validate() error {
-	if c.MpcConfig.TopologyConfiguration.AccessKey == "" {
-		return errors.New("topology configuration access key not provided")
-	}
-
-	if c.MpcConfig.TopologyConfiguration.SecKey == "" {
-		return errors.New("topology configuration secret key not provided")
-	}
 	if c.MpcConfig.TopologyConfiguration.EncryptionKey == "" {
 		return errors.New("topology configuration encryption key not provided")
+	}
+	if c.MpcConfig.TopologyConfiguration.Url == "" {
+		return errors.New("topology configuration url not provided")
+	}
+	if c.MpcConfig.TopologyConfiguration.Path == "" {
+		return errors.New("topology configuration path not provided")
 	}
 	return nil
 }

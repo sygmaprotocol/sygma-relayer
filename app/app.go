@@ -44,7 +44,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ethereum/go-ethereum/common"
 	secp256k1 "github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -149,7 +149,7 @@ func Run() error {
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))

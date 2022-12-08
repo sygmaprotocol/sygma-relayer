@@ -64,20 +64,16 @@
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_KEYSHAREPATH"
             },
             {
-                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY",
-                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_SECKEY"
-            },
-            {
-                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY",
-                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ACCESSKEY"
+                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY"
             },
             {
                 "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH",
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
             },
             {
-                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY",
-                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY"
+                "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL"
             },
             {
                 "name": "SYG_DOM_1",
