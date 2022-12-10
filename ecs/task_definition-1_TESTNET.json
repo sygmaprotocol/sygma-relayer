@@ -1,13 +1,13 @@
 {
   "containerDefinitions": [
     {
-      "name": "relayer-0-container-PROD",
+      "name": "relayer-1-container-TESTNET",
       "essential": true,
       "image": "852551629426.dkr.ecr.us-east-2.amazonaws.com/relayer-0:stable",
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/relayer-0-PROD",
+          "awslogs-group": "/ecs/relayer-1-TESTNET",
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -15,8 +15,8 @@
       "command": [
         "run",
         "--config=env",
-        "--name=R0",
-        "--blockstore=/mount/relayer0/lvldbdata"
+        "--name=R1",
+        "--blockstore=/mount/relayer1/lvldbdata"
       ],
       "portMappings": [
         {
@@ -38,7 +38,7 @@
       ],
       "environment": [
         {
-          "value": "relayer-0",
+          "value": "relayer-1",
           "name": "DD_SERVICE"
         },
         {
@@ -49,11 +49,11 @@
       "secrets": [
         {
           "name": "SYG_RELAYER_MPCCONFIG_KEY",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_RELAYER_MPCCONFIG_KEY"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_KEY"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_KEYSHAREPATH",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_RELAYER_MPCCONFIG_KEYSHAREPATH"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_KEYSHAREPATH"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY",
@@ -61,7 +61,7 @@
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL",
@@ -69,15 +69,15 @@
         },
         {
           "name": "SYG_DOM_1",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_DOM_1"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_DOM_1"
         },
         {
           "name": "SYG_DOM_2",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_DOM_2"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_DOM_2"
         },
         {
           "name": "SYG_DOM_3",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_DOM_3"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-1/SYG_DOM_3"
         }
       ]
     },
@@ -88,7 +88,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/relayer-0-PROD",
+          "awslogs-group": "/ecs/relayer-1-TESTNET",
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -113,7 +113,7 @@
         },
         {
           "name": "DD_TAGS",
-          "value": "env:PROD,project:relayer-0"
+          "value": "env:TESTNET,project:relayer-1"
         },
         {
           "name": "ECS_FARGATE",
@@ -121,7 +121,7 @@
         },
         {
           "name": "ENV",
-          "value": "PROD"
+          "value": "TESTNET"
         }
       ],
       "secrets": [
@@ -146,7 +146,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/relayer-0-PROD",
+          "awslogs-group": "/ecs/relayer-1-TESTNET",
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -162,8 +162,8 @@
   ],
   "cpu": "1024",
   "memory": "2048",
-  "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-0-ecsTaskExecutionRole",
-  "family": "relayer-0-container-PROD",
+  "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-1-ecsTaskExecutionRole",
+  "family": "relayer-1-container-TESTNET",
   "networkMode": "awsvpc",
   "runtimePlatform": {
     "operatingSystemFamily": "LINUX"

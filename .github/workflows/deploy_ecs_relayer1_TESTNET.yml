@@ -4,14 +4,14 @@
 name: Deploy ECS relayer 1
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types:
+      - published
 
 env:
   AWS_REGION: "us-east-2"
   ECR_REPOSITORY: relayer-0
-  ENVIRONMENT: PROD
+  ENVIRONMENT: TESTNET
 
 jobs:
   deploy:
