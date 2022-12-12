@@ -167,7 +167,7 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
 	var fee uint64
-	maxFee, ok := proposals[0].Metadata.Data["fee"]
+	maxFee, ok := proposals[0].Metadata.Data["gasLimit"]
 	if ok {
 		fee = maxFee.(uint64)
 	}

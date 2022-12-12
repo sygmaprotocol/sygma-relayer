@@ -32,7 +32,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	executionData = append(executionData, common.LeftPadBytes(depositor.Bytes(), 32)...)
 	executionData = append(executionData, hash[:]...)
 	metadata := make(map[string]interface{})
-	metadata["fee"] = uint64(200000)
+	metadata["gasLimit"] = uint64(200000)
 
 	calldata := bridge.ConstructPermissionlessGenericDepositData(
 		hash[:],

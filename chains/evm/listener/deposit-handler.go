@@ -42,7 +42,7 @@ func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, r
 	metadata := message.Metadata{
 		Data: make(map[string]interface{}),
 	}
-	metadata.Data["fee"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
+	metadata.Data["gasLimit"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
 
 	return message.NewMessage(sourceID, destId, nonce, resourceID, PermissionlessGenericTransfer, payload, metadata), nil
 }
