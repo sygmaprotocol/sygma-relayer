@@ -215,6 +215,7 @@ func (c *BridgeContract) PermissionlessGenericDeposit(
 	metadata []byte,
 	executeFunctionSig string,
 	executeContractAddress *common.Address,
+	depositor *common.Address,
 	maxFee *big.Int,
 	resourceID types.ResourceID,
 	destDomainID uint8,
@@ -226,7 +227,7 @@ func (c *BridgeContract) PermissionlessGenericDeposit(
 		Uint8("destDomainID", destDomainID).
 		Hex("feeData", feeData).
 		Msgf("Permissionless Generic deposit")
-	data := ConstructPermissionlessGenericDepositData(metadata, []byte(executeFunctionSig), executeContractAddress.Bytes(), maxFee)
+	data := ConstructPermissionlessGenericDepositData(metadata, []byte(executeFunctionSig), executeContractAddress.Bytes(), depositor.Bytes(), maxFee)
 	txHash, err := c.deposit(
 		resourceID,
 		destDomainID,
