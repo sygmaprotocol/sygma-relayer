@@ -3,7 +3,6 @@
 
 package evm_test
 
-
 import (
 	"context"
 	"math/big"
@@ -143,7 +142,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract := erc20.NewERC20Contract(s.client1, s.config1.Erc20Addr, transactor1)
 	mintTo := s.client1.From()
-	amountToMint := big.NewInt(0).Mul(big.NewInt(50000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	amountToMint := big.NewInt(0).Mul(big.NewInt(5000000000000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	_, err := erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
