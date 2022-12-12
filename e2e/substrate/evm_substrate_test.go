@@ -130,11 +130,12 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 
 	// Substrate side preparation
-	// 1. On pallet, change fungible asset ResourceId on pallet to be 0000000000000000000000000000000000000000000000000000000000000000, which is matching with Erc20ResourceID
-	// 2. On pallet, change DestVerifyingContractAddress on pallet to be deployed bridge address, assuming both source and dest bridge address in e2e test are the same
-	// 3. On E2E test, set mpc key in pallet -- sygmaBridge -> setMpcKey extrinsic
-	// 4. On E2E test, set basic fee in pallet -- sygmaBridgeBasicFeeHandler -> setFee extrinsic
-	// 5. On E2E test, make sure pallet is unpaused by chain state query -- sygmaBridge -> isPaused
+	// 1. On pallet, change fungible asset ResourceId on pallet to be 0000000000000000000000000000000000000000000000000000000000000000, which is matching with Erc20ResourceID(DONE)
+	// 2. On pallet, change DestVerifyingContractAddress on pallet to be deployed bridge address, assuming both source and dest bridge address in e2e test are the same(DONE)
+	// 3. On E2E test, set method access -- sygmaAccessSegregator -> grantAccess extrinsic(this PR is WIP on pallet)(TODO)
+	// 4. On E2E test, set mpc key in pallet -- sygmaBridge -> setMpcKey extrinsic(TODO)
+	// 4. On E2E test, set basic fee in pallet -- sygmaBridgeBasicFeeHandler -> setFee extrinsic(TODO)
+	// 5. On E2E test, make sure pallet is unpaused by chain state query -- sygmaBridge -> isPaused(TODO)
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
