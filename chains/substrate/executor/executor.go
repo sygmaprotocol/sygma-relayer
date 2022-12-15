@@ -77,7 +77,6 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		}
 
 		isExecuted := e.bridge.IsProposalExecuted(prop)
-
 		if isExecuted {
 			continue
 		}
