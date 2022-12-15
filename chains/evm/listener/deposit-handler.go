@@ -1,7 +1,6 @@
 package listener
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -14,12 +13,6 @@ const (
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
 func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("recovered from ", r)
-		}
-	}()
-
 	maxFee := calldata[:32]
 
 	functionSigLen := big.NewInt(0).SetBytes(calldata[32:34])
