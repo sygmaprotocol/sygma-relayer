@@ -4,7 +4,6 @@
 package bridge
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math/big"
@@ -55,63 +54,6 @@ func NewBridgeContract(
 		Contract: contracts.NewContract(bridgeContractAddress, a, nil, client, transactor),
 		client:   client,
 	}
-}
-
-func (c *BridgeContract) AdminSetGenericResource(
-	handler common.Address,
-	rID types.ResourceID,
-	addr common.Address,
-	depositFunctionSig [4]byte,
-	depositerOffset *big.Int,
-	executeFunctionSig [4]byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting generic resource %s", hexutil.Encode(rID[:]))
-	return c.ExecuteTransaction(
-		"adminSetGenericResource",
-		opts,
-		handler, rID, addr, depositFunctionSig, depositerOffset, executeFunctionSig,
-	)
-}
-
-func (c *BridgeContract) AdminSetResource(
-	handlerAddr common.Address,
-	rID types.ResourceID,
-	targetContractAddr common.Address,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting resource %s", hexutil.Encode(rID[:]))
-	return c.ExecuteTransaction(
-		"adminSetResource",
-		opts,
-		handlerAddr, rID, targetContractAddr,
-	)
-}
-
-func (c *BridgeContract) SetDepositNonce(
-	domainId uint8,
-	depositNonce uint64,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting deposit nonce %d for %d", depositNonce, domainId)
-	return c.ExecuteTransaction(
-		"adminSetDepositNonce",
-		opts,
-		domainId, depositNonce,
-	)
-}
-
-func (c *BridgeContract) SetBurnableInput(
-	handlerAddr common.Address,
-	tokenContractAddr common.Address,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting burnable input for %s", tokenContractAddr.String())
-	return c.ExecuteTransaction(
-		"adminSetBurnable",
-		opts,
-		handlerAddr, tokenContractAddr,
-	)
 }
 
 func (c *BridgeContract) deposit(
@@ -342,50 +284,6 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 	return crypto.Keccak256(rawData), nil
 }
 
-func (c *BridgeContract) Pause(opts transactor.TransactOptions) (*common.Hash, error) {
-	log.Debug().Msg("Pause transfers")
-	return c.ExecuteTransaction(
-		"adminPauseTransfers",
-		opts,
-	)
-}
-
-func (c *BridgeContract) Unpause(opts transactor.TransactOptions) (*common.Hash, error) {
-	log.Debug().Msg("Unpause transfers")
-	return c.ExecuteTransaction(
-		"adminUnpauseTransfers",
-		opts,
-	)
-}
-
-func (c *BridgeContract) EndKeygen(mpcAddress common.Address, opts transactor.TransactOptions) (*common.Hash, error) {
-	log.Debug().Msg("Ending keygen process")
-	return c.ExecuteTransaction(
-		"endKeygen",
-		opts,
-		mpcAddress,
-	)
-}
-
-func (c *BridgeContract) Withdraw(
-	handlerAddress,
-	tokenAddress,
-	recipientAddress common.Address,
-	amountOrTokenId *big.Int,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	// @dev withdrawal data should include:
-	// tokenAddress
-	// recipientAddress
-	// realAmount
-	data := bytes.Buffer{}
-	data.Write(common.LeftPadBytes(tokenAddress.Bytes(), 32))
-	data.Write(common.LeftPadBytes(recipientAddress.Bytes(), 32))
-	data.Write(common.LeftPadBytes(amountOrTokenId.Bytes(), 32))
-
-	return c.ExecuteTransaction("adminWithdraw", opts, handlerAddress, data.Bytes())
-}
-
 func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
@@ -410,18 +308,6 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	}
 	out := *abi.ConvertType(res[0], new(common.Address)).(*common.Address)
 	return out, nil
-}
-
-func (c *BridgeContract) AdminChangeFeeHandler(
-	feeHandlerAddr common.Address,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().Msgf("Setting fee handler %s", feeHandlerAddr.String())
-	return c.ExecuteTransaction(
-		"adminChangeFeeHandler",
-		opts,
-		feeHandlerAddr,
-	)
 }
 
 func (c *BridgeContract) Retry(hash common.Hash, opts transactor.TransactOptions) (*common.Hash, error) {
