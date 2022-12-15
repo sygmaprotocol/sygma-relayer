@@ -12,7 +12,6 @@ var errIncorrectFungibleTransferPayloadLen = errors.New("malformed payload. Len 
 var errIncorrectAmount = errors.New("wrong payload amount format")
 var errIncorrectRecipient = errors.New("wrong payload recipient format")
 
-//FungibleTransfer
 type FungibleTransferHandlerTestSuite struct {
 	suite.Suite
 }
