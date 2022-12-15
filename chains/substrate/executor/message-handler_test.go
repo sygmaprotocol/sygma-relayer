@@ -21,11 +21,6 @@ func TestRunFungibleTransferHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(FungibleTransferHandlerTestSuite))
 }
 
-func (s *FungibleTransferHandlerTestSuite) SetupSuite()    {}
-func (s *FungibleTransferHandlerTestSuite) TearDownSuite() {}
-func (s *FungibleTransferHandlerTestSuite) SetupTest()     {}
-func (s *FungibleTransferHandlerTestSuite) TearDownTest()  {}
-
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	message := &message.Message{
 		Source:       1,
