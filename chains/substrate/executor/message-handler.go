@@ -28,7 +28,6 @@ func NewSubstrateMessageHandler() *SubstrateMessageHandler {
 }
 
 func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.Proposal, error) {
-
 	// Based on handler that registered on BridgeContract
 	handleMessage, err := mh.matchTransferTypeHandlerFunc(m.Type)
 	if err != nil {
