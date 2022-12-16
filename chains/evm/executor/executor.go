@@ -80,6 +80,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			return err
 		}
 		if isExecuted {
+			log.Info().Msgf("Prop %p already executed", prop)
 			continue
 		}
 
