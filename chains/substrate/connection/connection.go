@@ -19,7 +19,7 @@ type Connection struct {
 	*rpc.RPC
 	meta        types.Metadata // Latest chain metadata
 	metaLock    sync.RWMutex   // Lock metadata for updates, allows concurrent reads
-	genesisHash types.Hash     // Chain genesis hash
+	GenesisHash types.Hash     // Chain genesis hash
 }
 
 func NewSubstrateConnection(url string) (*Connection, error) {
@@ -46,7 +46,7 @@ func NewSubstrateConnection(url string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.genesisHash = genesisHash
+	c.GenesisHash = genesisHash
 	return c, nil
 }
 
