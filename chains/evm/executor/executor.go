@@ -129,7 +129,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 					return err
 				}
 
-				log.Info().Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case err := <-statusChn:
 			{
@@ -145,7 +145,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 						continue
 					}
 
-					log.Info().Msgf("Successfully executed proposal %v", prop)
+					log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposal %v", prop)
 				}
 
 				if allExecuted {
