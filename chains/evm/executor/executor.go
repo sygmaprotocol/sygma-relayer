@@ -80,6 +80,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			return err
 		}
 		if isExecuted {
+			log.Info().Msgf("Prop %p already executed", prop)
 			continue
 		}
 
@@ -166,7 +167,15 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{})
+	var gasLimit uint64
+	l, ok := proposals[0].Metadata.Data["gasLimit"]
+	if ok {
+		gasLimit = l.(uint64)
+	}
+
+	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
+		GasLimit: gasLimit,
+	})
 	if err != nil {
 		return nil, err
 	}
