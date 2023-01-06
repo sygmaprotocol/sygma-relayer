@@ -25,17 +25,17 @@ func Test_EVMSubstrate(t *testing.T) {
 	evmConfig := evm.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 
-		Erc20Addr:        common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
-		Erc20HandlerAddr: common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
+		Erc20Addr:        common.HexToAddress("0x1D20a9AcDBE9466E7C07859Cf17fB3A93f010c8D"),
+		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-		Erc20LockReleaseAddr:        common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
+		Erc20LockReleaseAddr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
+		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-		BasicFeeHandlerAddr:      common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
-		FeeHandlerWithOracleAddr: common.HexToAddress("0x6A7f23450c9Fc821Bb42Fb9FE77a09aC4b05b026"),
-		FeeRouterAddress:         common.HexToAddress("0x9275AC64D6556BE290dd878e5aAA3a5bae08ae0C"),
+		BasicFeeHandlerAddr:      common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),
+		FeeHandlerWithOracleAddr: common.HexToAddress("0x30d704A60037DfE54e7e4D242Ea0cBC6125aE497"),
+		FeeRouterAddress:         common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
 		BasicFee:                 evm.BasicFee,
 		OracleFee:                evm.OracleFee,
 	}
@@ -98,7 +98,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	evmTransactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, evmTransactor)
 	mintTo := s.evmClient.From()
-	amountToMint := big.NewInt(0).Mul(big.NewInt(50000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	amountToMint := big.NewInt(0).Mul(big.NewInt(5000000000000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	_, err := erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
 	if err != nil {
