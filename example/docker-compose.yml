@@ -25,8 +25,7 @@ services:
   # Substrate pallet node
   substrate-pallet:
     container_name: substrate-pallet
-    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:latest"
-    command: --dev --ws-external
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:e2e-latest"
     ports:
       - "9944:9944"
 
