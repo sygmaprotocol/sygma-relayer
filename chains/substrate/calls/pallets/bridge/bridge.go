@@ -119,13 +119,15 @@ func (p *BridgePallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, er
 	return crypto.Keccak256(rawData), nil
 }
 
-func (p *BridgePallet) IsProposalExecuted(prop *proposal.Proposal) bool {
+func (p *BridgePallet) IsProposalExecuted(prop *proposal.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(prop.DepositNonce, 10)).
 		Str("resourceID", hexutil.Encode(prop.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	p.client.Call(res, "is_proposal_executed", big.NewInt(int64(prop.DepositNonce)))
-
-	return res
+	err := p.client.Call(res, "is_proposal_executed", big.NewInt(int64(prop.DepositNonce)))
+	if err != nil {
+		return false, err
+	}
+	return res, nil
 }
