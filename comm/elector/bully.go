@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/common"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
 )
 
 // bullyCoordinatorElector is used to execute bully coordinator discovery
@@ -52,6 +53,8 @@ func NewBullyCoordinatorElector(
 // Coordinator starts coordinator discovery using bully algorithm and returns current leader
 // Bully coordination is executed on provided peers
 func (bc *bullyCoordinatorElector) Coordinator(ctx context.Context, peers peer.IDSlice) (peer.ID, error) {
+	log.Info().Str("SessionID", bc.sessionID).Msgf("Starting bully process")
+
 	ctx, cancel := context.WithCancel(ctx)
 	go bc.listen(ctx)
 	defer cancel()
