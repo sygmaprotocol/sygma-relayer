@@ -6,7 +6,6 @@ import (
 )
 
 func NewProposal(source, destination uint8, depositNonce uint64, resourceId types.ResourceID, data []byte) *Proposal {
-
 	return &Proposal{
 		Source:       source,
 		Destination:  destination,
