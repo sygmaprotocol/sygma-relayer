@@ -83,7 +83,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
-	log.Info().Msgf("Starting process %s with coordinator %s", tssProcess.SessionID(), coordinator.Pretty())
+	log.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.Pretty())
 	errChn := make(chan error)
 	go c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
 
@@ -126,7 +126,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					statusChn <- nil
 					return
 				}
-				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 
 				if !tssProcess.Retryable() {
 					statusChn <- fmt.Errorf("process failed with error: %+v", err)
@@ -143,15 +142,19 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 				switch err := err.(type) {
 				case *CoordinatorError:
 					{
+						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
+
 						excludedPeers := []peer.ID{err.Peer}
 						go c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers)
 					}
 				case *comm.CommunicationError:
 					{
+						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 						go c.retry(ctx, tssProcess, resultChn, errChn, []peer.ID{})
 					}
 				case *tss.Error:
 					{
+						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 						excludedPeers, err := common.PeersFromParties(err.Culprits())
 						if err != nil {
 							statusChn <- err
@@ -166,6 +169,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				default:
 					{
+						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 						statusChn <- err
 						return
 					}
