@@ -74,7 +74,7 @@ func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 				return
 			}
 
-			log.Debug().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+			log.Info().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
 
 			if m.Type == PermissionlessGenericTransfer {
 				msgChan <- []*message.Message{m}

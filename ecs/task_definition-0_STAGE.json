@@ -78,8 +78,90 @@
         {
           "name": "SYG_DOM_3",
           "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_DOM_3"
+        },
+        {
+          "name": "SYG_DOM_4",
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-0/SYG_DOM_4"
         }
       ]
+    },
+    {
+      "name": "datadog-agent",
+      "image": "gcr.io/datadoghq/agent:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/relayer-0-STAGE",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": 8126,
+          "protocol": "tcp",
+          "containerPort": 8126
+        }
+      ],
+      "command": [],
+      "cpu": 0,
+      "environment": [
+        {
+          "name": "DD_APM_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "DD_APM_NON_LOCAL_TRAFFIC",
+          "value": "true"
+        },
+        {
+          "name": "DD_TAGS",
+          "value": "env:STAGE,project:relayer-0"
+        },
+        {
+          "name": "ECS_FARGATE",
+          "value": "true"
+        },
+        {
+          "name": "ENV",
+          "value": "STAGE"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DD_API_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/common/datadog/key"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": []
+    },
+    {
+      "name": "log_router",
+      "image": "906394416424.dkr.ecr.us-east-2.amazonaws.com/aws-for-fluent-bit:latest",
+      "essential": true,
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true"
+        }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/relayer-0-STAGE",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "portMappings": [],
+      "command": [],
+      "cpu": 0,
+      "environment": [],
+      "mountPoints": [],
+      "user": "0",
+      "volumesFrom": []
     }
   ],
   "cpu": "1024",

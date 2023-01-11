@@ -86,6 +86,10 @@
             {
                 "name": "SYG_DOM_3",
                 "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_DOM_3"
+            },
+            {
+                "name": "SYG_DOM_4",
+                "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-4/SYG_DOM_4"
             }
          ]
       },
