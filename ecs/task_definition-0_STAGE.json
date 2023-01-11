@@ -88,7 +88,7 @@
     {
       "name": "datadog-agent",
       "image": "gcr.io/datadoghq/agent:latest",
-      "essential": true,
+      "essential": false,
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -140,7 +140,7 @@
     {
       "name": "log_router",
       "image": "906394416424.dkr.ecr.us-east-2.amazonaws.com/aws-for-fluent-bit:latest",
-      "essential": true,
+      "essential": false,
       "firelensConfiguration": {
         "type": "fluentbit",
         "options": {
