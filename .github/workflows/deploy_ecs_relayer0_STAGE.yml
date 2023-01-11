@@ -47,6 +47,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }}
 
   deploy:
+    needs: push
     name: deploy relayer
     runs-on: ubuntu-18.04
     strategy:
