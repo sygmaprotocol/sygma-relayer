@@ -84,90 +84,12 @@
           "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-2/SYG_DOM_4"
         }
       ]
-    },
-    {
-      "name": "datadog-agent",
-      "image": "gcr.io/datadoghq/agent:latest",
-      "essential": false,
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/relayer-2-STAGE",
-          "awslogs-region": "us-east-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "portMappings": [
-        {
-          "hostPort": 8126,
-          "protocol": "tcp",
-          "containerPort": 8126
-        }
-      ],
-      "command": [],
-      "cpu": 0,
-      "environment": [
-        {
-          "name": "DD_APM_ENABLED",
-          "value": "true"
-        },
-        {
-          "name": "DD_APM_NON_LOCAL_TRAFFIC",
-          "value": "true"
-        },
-        {
-          "name": "DD_TAGS",
-          "value": "env:STAGE,project:relayer-2"
-        },
-        {
-          "name": "ECS_FARGATE",
-          "value": "true"
-        },
-        {
-          "name": "ENV",
-          "value": "STAGE"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "DD_API_KEY",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/common/datadog/key"
-        }
-      ],
-      "mountPoints": [],
-      "volumesFrom": []
-    },
-    {
-      "name": "log_router",
-      "image": "906394416424.dkr.ecr.us-east-2.amazonaws.com/aws-for-fluent-bit:latest",
-      "essential": false,
-      "firelensConfiguration": {
-        "type": "fluentbit",
-        "options": {
-          "enable-ecs-log-metadata": "true"
-        }
-      },
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/relayer-2-STAGE",
-          "awslogs-region": "us-east-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "portMappings": [],
-      "command": [],
-      "cpu": 0,
-      "environment": [],
-      "mountPoints": [],
-      "user": "0",
-      "volumesFrom": []
     }
   ],
   "cpu": "1024",
+  "memory": "2048",
   "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-2-ecsTaskExecutionRole",
   "family": "relayer-container-STAGE",
-  "memory": "2048",
   "networkMode": "awsvpc",
   "runtimePlatform": {
     "operatingSystemFamily": "LINUX"
