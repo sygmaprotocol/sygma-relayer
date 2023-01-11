@@ -4,9 +4,9 @@
 name: sygma/deploy/testnet
 
 on:
-  push:
-    branches:
-      - 'feat/deploy-production-on-release' # this is temporary, so we don't need to release everytime a change is made
+#  push:
+#    branches:
+#      - 'feat/deploy-production-on-release' # this is temporary, so we don't need to release everytime a change is made
   release:
     types:
       - published
