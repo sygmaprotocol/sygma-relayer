@@ -12,20 +12,18 @@ on:
       - published
 
 env:
-  AWS_REGION: "us-east-2"
-  ENVIRONMENT: TESTNET
+  AWS_REGION: 'us-east-2'
+  ENVIRONMENT: 'TESTNET'
+  TAG: 'stable'
 
 jobs:
-  deploy:
-    name: Deploy
+  push:
+    name: push
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        relayer_id: [0, 1, 2, 3, 4]
 
     permissions:
-      contents: read
-      id-token: write
+        contents: read
+        id-token: write
 
     steps:
       - name: checkout the source code
@@ -45,10 +43,32 @@ jobs:
       - name: build / tag / push docker image into ecr
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPOSITORY: 'relayer-${{ matrix.relayer_id }}'
+          ECR_REPOSITORY: relayer
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:stable .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:stable
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }}
+
+  deploy:
+    name: deploy
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        relayer_id: [0, 1, 2, 3, 4]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::852551629426:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GithubActions
 
       - name: deploy task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
