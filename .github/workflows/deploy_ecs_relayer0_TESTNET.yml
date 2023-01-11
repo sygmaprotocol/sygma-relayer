@@ -1,52 +1,59 @@
 # The Licensed Work is (c) 2022 Sygma
 # SPDX-License-Identifier: BUSL-1.1
 
-name: Deploy ECS relayer 0
+name: sygma/deploy/testnet
 
 on:
+  push:
+    branches:
+      - 'feat/deploy-production-on-release' # this is temporary, so we don't need to release everytime a change is made
   release:
     types:
       - published
 
 env:
   AWS_REGION: "us-east-2"
-  ECR_REPOSITORY: relayer-0
   ENVIRONMENT: TESTNET
 
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        relayer_id: [0, 1, 2, 3, 4]
 
     permissions:
       contents: read
       id-token: write
 
     steps:
-      - uses: actions/checkout@v2
-      - run: sleep 5
-      - name: Configure AWS Credentials
+      - name: checkout the source code
+        uses: actions/checkout@v2
+
+      - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::852551629426:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GithubActions
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: login to ecr
+        id: ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: build / tag / push docker image into ecr
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ECR_REPOSITORY: 'relayer-${{ matrix.relayer_id }}'
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:stable .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:stable
 
-      - name: Deploy to Amazon ECS - Relayer 0
+      - name: deploy task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ecs/task_definition-0_${{ env.ENVIRONMENT }}.json
-          service: relayer-0-service-${{ env.ENVIRONMENT }}
-          cluster: relayer-${{ env.ENVIRONMENT }}
+          task-definition: 'ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
