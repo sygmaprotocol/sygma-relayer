@@ -94,7 +94,7 @@
     {
       "name": "efs",
       "efsVolumeConfiguration": {
-        "fileSystemId": "fs-0c20812e9a3c5dfc4",
+        "fileSystemId": "fs-09c1965b8491ce80b",
         "transitEncryption": "ENABLED"
       }
     }
