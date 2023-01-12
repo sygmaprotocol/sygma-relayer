@@ -85,7 +85,7 @@
   "cpu": "1024",
   "memory": "2048",
   "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-0-ecsTaskExecutionRole",
-  "family": "relayer-0-container-TESTNET",
+  "family": "relayer-container-TESTNET",
   "networkMode": "awsvpc",
   "runtimePlatform": {
     "operatingSystemFamily": "LINUX"
