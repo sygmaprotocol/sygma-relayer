@@ -1,7 +1,7 @@
 {
   "containerDefinitions": [
     {
-      "name": "relayer-0-container-TESTNET",
+      "name": "relayer-container-TESTNET",
       "essential": true,
       "image": "852551629426.dkr.ecr.us-east-2.amazonaws.com/relayer:stable",
       "logConfiguration": {
