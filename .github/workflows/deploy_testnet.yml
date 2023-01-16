@@ -4,9 +4,6 @@
 name: sygma/deploy/testnet
 
 on:
-  push:
-    branches:
-      - 'feat/deploy-production-on-release'
   release:
     types:
       - published
