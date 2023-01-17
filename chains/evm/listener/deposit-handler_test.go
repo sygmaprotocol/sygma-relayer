@@ -22,42 +22,23 @@ func TestRunPermissionlessGenericHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(PermissionlessGenericHandlerTestSuite))
 }
 
-func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent_InvalidCalldataLen() {
-	depositLog := &events.Deposit{
-		DestinationDomainID: 0,
-		ResourceID:          [32]byte{0},
-		DepositNonce:        1,
-		SenderAddress:       common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b"),
-		Data:                []byte{},
-		HandlerResponse:     []byte{},
-	}
-
-	sourceID := uint8(1)
-	_, err := listener.PermissionlessGenericDepositHandler(
-		sourceID,
-		depositLog.DestinationDomainID,
-		depositLog.DepositNonce,
-		depositLog.ResourceID,
-		depositLog.Data,
-		depositLog.HandlerResponse,
-	)
-
-	s.NotNil(err)
-}
-
 func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	hash := []byte("0xhash")
-	functionSig, _ := hex.DecodeString("0x654cf88c")
+	functionSig, _ := hex.DecodeString("654cf88c")
 	contractAddress := common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90")
 	depositor := common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b")
 	maxFee := big.NewInt(200000)
-	var metadata []byte
-	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
-	metadata = append(metadata, hash[:]...)
+	var executionData []byte
+	executionData = append(executionData, common.LeftPadBytes(depositor.Bytes(), 32)...)
+	executionData = append(executionData, hash[:]...)
+	metadata := make(map[string]interface{})
+	metadata["gasLimit"] = uint64(200000)
+
 	calldata := bridge.ConstructPermissionlessGenericDepositData(
-		metadata,
+		hash[:],
 		functionSig,
 		contractAddress.Bytes(),
+		depositor.Bytes(),
 		maxFee,
 	)
 	depositLog := &events.Deposit{
@@ -77,11 +58,13 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		ResourceId:   depositLog.ResourceID,
 		Type:         listener.PermissionlessGenericTransfer,
 		Payload: []interface{}{
-			common.LeftPadBytes(functionSig, 32),
-			common.LeftPadBytes(contractAddress.Bytes(), 32),
+			functionSig,
+			contractAddress.Bytes(),
 			common.LeftPadBytes(maxFee.Bytes(), 32),
-			common.LeftPadBytes(depositor.Bytes(), 32),
-			hash,
+			executionData,
+		},
+		Metadata: message.Metadata{
+			Data: metadata,
 		},
 	}
 

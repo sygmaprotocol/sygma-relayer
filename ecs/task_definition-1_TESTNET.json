@@ -1,13 +1,13 @@
 {
   "containerDefinitions": [
     {
-      "name": "relayer-3-container-STAGE",
+      "name": "relayer-container-TESTNET",
       "essential": true,
-      "image": "852551629426.dkr.ecr.us-east-2.amazonaws.com/relayer:latest",
+      "image": "852551629426.dkr.ecr.us-east-2.amazonaws.com/relayer:stable",
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/relayer-3-STAGE",
+          "awslogs-group": "/ecs/relayer-1-TESTNET",
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -15,8 +15,8 @@
       "command": [
         "run",
         "--config=env",
-        "--name=R3",
-        "--blockstore=/mount/relayer3/lvldbdata"
+        "--name=R1",
+        "--blockstore=/mount/relayer1/lvldbdata"
       ],
       "portMappings": [
         {
@@ -38,7 +38,7 @@
       ],
       "environment": [
         {
-          "value": "relayer-3",
+          "value": "relayer-1",
           "name": "DD_SERVICE"
         },
         {
@@ -49,47 +49,43 @@
       "secrets": [
         {
           "name": "SYG_RELAYER_MPCCONFIG_KEY",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_KEY"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_KEY"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_KEYSHAREPATH",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_KEYSHAREPATH"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_KEYSHAREPATH"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-0/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH"
         },
         {
           "name": "SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-0/SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL"
         },
         {
           "name": "SYG_DOM_1",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_DOM_1"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_DOM_1"
         },
         {
           "name": "SYG_DOM_2",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_DOM_2"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_DOM_2"
         },
         {
           "name": "SYG_DOM_3",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_DOM_3"
-        },
-        {
-          "name": "SYG_DOM_4",
-          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/chainbridge/relayers/relayer-3/SYG_DOM_4"
+          "valueFrom": "arn:aws:ssm:us-east-2:852551629426:parameter/sygma/testnet/relayers/relayer-1/SYG_DOM_3"
         }
       ]
     }
   ],
   "cpu": "1024",
   "memory": "2048",
-  "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-3-ecsTaskExecutionRole",
-  "family": "relayer-container-STAGE",
+  "executionRoleArn": "arn:aws:iam::852551629426:role/relayer-1-ecsTaskExecutionRole",
+  "family": "relayer-container-TESTNET",
   "networkMode": "awsvpc",
   "runtimePlatform": {
     "operatingSystemFamily": "LINUX"

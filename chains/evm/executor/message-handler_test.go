@@ -31,12 +31,12 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	depositor := common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b")
 	maxFee := big.NewInt(200000)
 	var metadata []byte
-	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 	metadata = append(metadata, hash[:]...)
 	calldata := bridge.ConstructPermissionlessGenericDepositData(
 		metadata,
 		functionSig,
 		contractAddress.Bytes(),
+		depositor.Bytes(),
 		maxFee,
 	)
 	depositLog := &events.Deposit{
@@ -55,10 +55,10 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		ResourceId:   depositLog.ResourceID,
 		Type:         listener.PermissionlessGenericTransfer,
 		Payload: []interface{}{
-			common.LeftPadBytes(functionSig, 32),
-			common.LeftPadBytes(contractAddress.Bytes(), 32),
+			functionSig,
+			contractAddress.Bytes(),
 			common.LeftPadBytes(maxFee.Bytes(), 32),
-			common.LeftPadBytes(depositor.Bytes(), 32),
+			depositor.Bytes(),
 			hash,
 		},
 	}
@@ -71,7 +71,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		bridgeAddr,
 	)
 
-	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000026000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002091eeff969b33a5ce8a729dae325879bf76f900000000000000000000000000000000000000000000000000000000000030d400000000000000000000000005c1f5961696bad2e73f73417f07ef55c62a2dc5b307868617368")
+	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000030d4000001402091eeff969b33a5ce8a729dae325879bf76f90145c1f5961696bad2e73f73417f07ef55c62a2dc5b")
 	expected := proposal.NewProposal(
 		message.Source,
 		message.Destination,
