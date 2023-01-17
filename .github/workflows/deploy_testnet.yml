@@ -61,7 +61,13 @@ jobs:
 
     steps:
       - name: checkout the source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: ChainSafe/DevOps
+          token: ${{ secrets.DV_PAT }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
