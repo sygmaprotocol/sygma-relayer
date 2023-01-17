@@ -28,6 +28,6 @@ func NewEVMChain(evmChain evm.EVMChain, executor BatchProposalExecutor) *EVMChai
 func (c *EVMChain) Write(msgs []*message.Message) {
 	err := c.executor.Execute(msgs)
 	if err != nil {
-		log.Err(err).Msgf("error writing messages %+v", msgs)
+		log.Err(err).Msgf("error writing messages %+v on network %d", msgs, c.DomainID())
 	}
 }
