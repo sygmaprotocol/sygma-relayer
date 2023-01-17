@@ -1,0 +1,79 @@
+# The Licensed Work is (c) 2022 Sygma
+# SPDX-License-Identifier: BUSL-1.1
+
+name: sygma/deploy/stage
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: '${{ secrets.AWS_REGION }}'
+  ENVIRONMENT: STAGE
+  AWS_STAGE: '${{ secrets.AWS_ARN }}'
+  TAG: 'latest'
+  OS: 'ubuntu-latest'
+
+jobs:
+  push:
+    name: push
+    runs-on: ${{ env.OS }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GithubActions
+
+      - name: login to ecr
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: build / tag / push docker image into ecr
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ECR_REPOSITORY: relayer
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }}
+
+  deploy:
+    needs: push
+    name: deploy
+    runs-on: ${{ env.OS }}
+    strategy:
+      matrix:
+        relayer_id: [0, 1, 2, 3, 4]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v2
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
