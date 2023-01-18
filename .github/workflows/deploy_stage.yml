@@ -12,6 +12,7 @@ env:
   AWS_REGION: '${{ secrets.AWS_REGION }}'
   ENVIRONMENT: STAGE
   AWS_STAGE: '${{ secrets.AWS_ARN }}'
+  REGISTRY: 'ghcr.io'
   TAG: 'latest'
   OS: 'ubuntu-latest'
 
@@ -26,26 +27,27 @@ jobs:
 
     steps:
       - name: checkout the source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: login to ghcr
+        id: ghcr
+        uses: docker/login-action@v2
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GithubActions
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: login to ecr
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: build / tag / push docker image into ghcr
+        id: build-and-push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
 
-      - name: build / tag / push docker image into ecr
-        env:
-          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPOSITORY: relayer
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }} .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.TAG }}
 
   deploy:
     needs: push
@@ -66,7 +68,7 @@ jobs:
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
-          repository: ChainSafe/DevOps
+          repository: sygmaprotocol/devops
           token: ${{ secrets.DV_PAT }}
 
 
