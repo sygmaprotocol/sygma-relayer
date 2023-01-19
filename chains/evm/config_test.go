@@ -78,7 +78,6 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 			Id:       id,
 		},
 		Bridge:             "bridgeAddress",
-		Handlers:           []evm.HandlerConfig{},
 		GasLimit:           big.NewInt(2000000),
 		MaxGasPrice:        big.NewInt(20000000000),
 		GasMultiplier:      big.NewFloat(1),
