@@ -51,7 +51,7 @@ jobs:
   deploy:
     needs: push
     name: deploy
-    runs-on: ${{ env.OS }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         relayer_id: [0, 1, 2, 3, 4]
