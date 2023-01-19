@@ -4,6 +4,8 @@
 name: sygma/deploy/testnet
 
 on:
+  pull_request:
+    
   release:
     types:
       - published
@@ -37,7 +39,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: build / tag / push docker image into ghcr
         id: build-and-push
