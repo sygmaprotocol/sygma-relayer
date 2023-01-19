@@ -4,7 +4,10 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/creasty/defaults"
 
@@ -19,7 +22,7 @@ type Config struct {
 
 type RawConfig struct {
 	RelayerConfig relayer.RawRelayerConfig `mapstructure:"relayer" json:"relayer"`
-	ChainConfigs  []map[string]interface{} `mapstructure:"chains" json:"chains"`
+	ChainConfigs  []map[string]interface{} `mapstructure:"chains" json:"domains"`
 }
 
 // GetConfigFromENV reads config from ENV variables, validates it and parses
@@ -36,18 +39,18 @@ type RawConfig struct {
 // Each ChainConfig is defined as one ENV variable, where its content is JSON configuration for one chain/domain.
 // Variables are named like this: CBH_DOM_X where X is domain id.
 //
-func GetConfigFromENV() (Config, error) {
+func GetConfigFromENV(config *Config) (*Config, error) {
 	rawConfig, err := loadFromEnv()
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
-	return processRawConfig(rawConfig)
+	return processRawConfig(rawConfig, config)
 }
 
 // GetConfigFromFile reads config from file, validates it and parses
 // it into config suitable for application
-func GetConfigFromFile(path string) (Config, error) {
+func GetConfigFromFile(path string, config *Config) (*Config, error) {
 	rawConfig := RawConfig{}
 
 	viper.SetConfigFile(path)
@@ -55,22 +58,42 @@ func GetConfigFromFile(path string) (Config, error) {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
 	err = viper.Unmarshal(&rawConfig)
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
-	return processRawConfig(rawConfig)
+	return processRawConfig(rawConfig, config)
 }
 
-func processRawConfig(rawConfig RawConfig) (Config, error) {
-	config := Config{}
+// GetConfigFromNetwork fetches config from URL and parses and validates it.
+func GetConfigFromNetwork(url string, config *Config) (*Config, error) {
+	rawConfig := RawConfig{}
 
+	resp, err := http.Get(url)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	err = json.Unmarshal(body, &rawConfig)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	return processRawConfig(rawConfig, config)
+}
+
+func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	if err := defaults.Set(&rawConfig); err != nil {
-		return Config{}, err
+		return config, err
 	}
 
 	relayerConfig, err := relayer.NewRelayerConfig(rawConfig.RelayerConfig)
