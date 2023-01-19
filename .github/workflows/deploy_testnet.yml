@@ -13,13 +13,12 @@ env:
   ENVIRONMENT: 'TESTNET'
   REGISTRY: 'ghcr.io'
   TAG: 'stable'
-  OS: 'ubuntu-latest'
   AWS_TESTNET: '${{ secrets.AWS_ARN }}'
 
 jobs:
   push:
     name: push
-    runs-on: ${{ env.OS }}
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read

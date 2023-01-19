@@ -14,12 +14,11 @@ env:
   AWS_STAGE: '${{ secrets.AWS_ARN }}'
   REGISTRY: 'ghcr.io'
   TAG: 'latest'
-  OS: 'ubuntu-latest'
 
 jobs:
   push:
     name: push
-    runs-on: ${{ env.OS }}
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
