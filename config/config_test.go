@@ -25,22 +25,15 @@ func TestRunGetConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(GetConfigTestSuite))
 }
 
-func (s *GetConfigTestSuite) SetupSuite()    {}
-func (s *GetConfigTestSuite) TearDownSuite() {}
-func (s *GetConfigTestSuite) SetupTest() {
-	os.Clearenv()
-}
-func (s *GetConfigTestSuite) TearDownTest() {}
-
 func (s *GetConfigTestSuite) Test_GetConfigFromFile_InvalidPath() {
-	_, err := config.GetConfigFromFile("invalid")
+	_, err := config.GetConfigFromFile("invalid", &config.Config{})
 
 	s.NotNil(err)
 }
 
 func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
-	_ = os.Setenv("SYG_DOM_1", "{\n      \"id\": 1,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm1\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm1-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n      \"gasLimit\": 9000000,\n      \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
-	_ = os.Setenv("SYG_DOM_2", "{\n      \"id\": 2,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm2\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm2-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n      \"gasLimit\": 9000000,\n      \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
+	_ = os.Setenv("SYG_DOM_1", "{\n      \"id\": 1,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm1\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm1-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n        \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
+	_ = os.Setenv("SYG_DOM_2", "{\n      \"id\": 2,\n      \"from\": \"0xff93B45308FD417dF303D6515aB04D9e89a750Ca\",\n      \"name\": \"evm2\",\n      \"type\": \"evm\",\n      \"endpoint\": \"ws://evm2-1:8546\",\n      \"bridge\": \"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66\",\n      \"erc20Handler\": \"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e\",\n      \"erc721Handler\": \"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b\",\n      \"genericHandler\": \"0xe1588E2c6a002AE93AeD325A910Ed30961874109\",\n       \"maxGasPrice\": 20000000000,\n      \"blockConfirmations\": 2\n    }")
 
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
@@ -51,7 +44,13 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
 
 	// load from ENV
-	cnf, err := config.GetConfigFromENV()
+	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
+		"blockConfirmations": 5,
+		"gasLimit":           500,
+	}, {
+		"blockConfirmations": 3,
+		"gasLimit":           300,
+	}}})
 
 	s.Nil(err)
 	s.Equal(config.Config{
@@ -85,7 +84,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				"type":               "evm",
 				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
 				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
-				"gasLimit":           9e+06,
+				"gasLimit":           500,
 				"maxGasPrice":        2e+10,
 				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
 				"name":               "evm1",
@@ -99,7 +98,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				"type":               "evm",
 				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
 				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
-				"gasLimit":           9e+06,
+				"gasLimit":           300,
 				"maxGasPrice":        2e+10,
 				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
 				"name":               "evm2",
@@ -109,7 +108,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				"blockConfirmations": float64(2),
 			},
 		},
-	}, cnf)
+	}, *cnf)
 }
 
 type ConfigTestCase struct {
@@ -355,7 +354,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			file, _ := json.Marshal(t.inConfig)
 			_ = ioutil.WriteFile("test.json", file, 0644)
 
-			conf, err := config.GetConfigFromFile("test.json")
+			conf, err := config.GetConfigFromFile("test.json", &config.Config{ChainConfigs: []map[string]interface{}{{}}})
 
 			_ = os.Remove("test.json")
 
@@ -364,7 +363,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 				s.Equal(t.errorMsg, err.Error())
 			} else {
 				s.Nil(err)
-				s.Equal(t.outConfig, conf)
+				s.Equal(t.outConfig, *conf)
 			}
 		})
 	}

@@ -23,7 +23,7 @@ type Config struct {
 
 type RawConfig struct {
 	RelayerConfig relayer.RawRelayerConfig `mapstructure:"relayer" json:"relayer"`
-	ChainConfigs  []map[string]interface{} `mapstructure:"chains" json:"domains"`
+	ChainConfigs  []map[string]interface{} `mapstructure:"domains" json:"domains"`
 }
 
 // GetConfigFromENV reads config from ENV variables, validates it and parses
