@@ -104,7 +104,11 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	}
 
 	for i, chain := range rawConfig.ChainConfigs {
-		mergo.Merge(&chain, config.ChainConfigs[i])
+		err := mergo.Merge(&chain, config.ChainConfigs[i])
+		if err != nil {
+			return config, err
+		}
+
 		if chain["type"] == "" || chain["type"] == nil {
 			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
