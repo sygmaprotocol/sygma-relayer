@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/creasty/defaults"
+	"github.com/imdario/mergo"
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/spf13/viper"
@@ -69,7 +70,7 @@ func GetConfigFromFile(path string, config *Config) (*Config, error) {
 	return processRawConfig(rawConfig, config)
 }
 
-// GetConfigFromNetwork fetches config from URL and parses and validates it.
+// GetConfigFromNetwork fetches shared configuration from URL and parses it.
 func GetConfigFromNetwork(url string, config *Config) (*Config, error) {
 	rawConfig := RawConfig{}
 
@@ -88,7 +89,8 @@ func GetConfigFromNetwork(url string, config *Config) (*Config, error) {
 		return &Config{}, err
 	}
 
-	return processRawConfig(rawConfig, config)
+	config.ChainConfigs = rawConfig.ChainConfigs
+	return config, err
 }
 
 func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
@@ -101,14 +103,15 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 		return config, err
 	}
 
-	for _, chain := range rawConfig.ChainConfigs {
+	for i, chain := range rawConfig.ChainConfigs {
+		mergo.Merge(&chain, config.ChainConfigs[i])
 		if chain["type"] == "" || chain["type"] == nil {
 			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
+
+		config.ChainConfigs[i] = chain
 	}
 
 	config.RelayerConfig = relayerConfig
-	config.ChainConfigs = rawConfig.ChainConfigs
-
 	return config, nil
 }
