@@ -25,6 +25,10 @@ func TestRunGetConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(GetConfigTestSuite))
 }
 
+func (s *GetConfigTestSuite) TearDownTest() {
+	os.Clearenv()
+}
+
 func (s *GetConfigTestSuite) Test_GetConfigFromFile_InvalidPath() {
 	_, err := config.GetConfigFromFile("invalid", &config.Config{})
 
@@ -53,6 +57,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	}}})
 
 	s.Nil(err)
+
 	s.Equal(config.Config{
 		RelayerConfig: relayer.RelayerConfig{
 			RelayerConfig: coreRelayer.RelayerConfig{
