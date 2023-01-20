@@ -359,7 +359,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			file, _ := json.Marshal(t.inConfig)
 			_ = ioutil.WriteFile("test.json", file, 0644)
 
-			conf, err := config.GetConfigFromFile("test.json", &config.Config{ChainConfigs: []map[string]interface{}{{}}})
+			conf, err := config.GetConfigFromFile("test.json", &config.Config{})
 
 			_ = os.Remove("test.json")
 
