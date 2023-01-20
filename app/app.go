@@ -56,7 +56,7 @@ func Run() error {
 
 	configuration := &config.Config{}
 	if configURL != "" {
-		configuration, err = config.GetConfigFromNetwork(configURL, configuration)
+		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
 		panicOnError(err)
 	}
 

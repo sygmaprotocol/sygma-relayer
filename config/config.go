@@ -70,8 +70,8 @@ func GetConfigFromFile(path string, config *Config) (*Config, error) {
 	return processRawConfig(rawConfig, config)
 }
 
-// GetConfigFromNetwork fetches shared configuration from URL and parses it.
-func GetConfigFromNetwork(url string, config *Config) (*Config, error) {
+// GetSharedConfigFromNetwork fetches shared configuration from URL and parses it.
+func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
 	rawConfig := RawConfig{}
 
 	resp, err := http.Get(url)
