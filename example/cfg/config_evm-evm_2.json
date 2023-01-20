@@ -11,7 +11,7 @@
       }
     }
   },
-  "chains": [
+  "domains": [
     {
       "id": 1,
       "name": "evm1",
