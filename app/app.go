@@ -23,7 +23,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
@@ -51,18 +50,26 @@ import (
 
 func Run() error {
 	var err error
-	var configuration config.Config
 
 	configFlag := viper.GetString(flags.ConfigFlagName)
+	configURL := viper.GetString("config-url")
+
+	configuration := &config.Config{}
+	if configURL != "" {
+		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
+		panicOnError(err)
+	}
+
 	if strings.ToLower(configFlag) == "env" {
-		configuration, err = config.GetConfigFromENV()
+		configuration, err = config.GetConfigFromENV(configuration)
 		panicOnError(err)
 	} else {
-		configuration, err = config.GetConfigFromFile(configFlag)
+		configuration, err = config.GetConfigFromFile(configFlag, configuration)
 		panicOnError(err)
 	}
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
+
 	log.Info().Msg("Successfully loaded configuration")
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
@@ -122,7 +129,7 @@ func Run() error {
 		switch chainConfig["type"] {
 		case "evm":
 			{
-				config, err := chain.NewEVMConfig(chainConfig)
+				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
@@ -145,12 +152,32 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, gasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				pGenericHandler := chainConfig["permissionlessGenericHandler"].(string)
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
-				depositHandler.RegisterDepositHandler(config.Erc20Handler, coreListener.Erc20DepositHandler)
-				depositHandler.RegisterDepositHandler(config.Erc721Handler, coreListener.Erc721DepositHandler)
-				depositHandler.RegisterDepositHandler(config.GenericHandler, coreListener.GenericDepositHandler)
-				depositHandler.RegisterDepositHandler(pGenericHandler, listener.PermissionlessGenericDepositHandler)
+				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
+				for _, handler := range config.Handlers {
+					switch handler.Type {
+					case "erc20":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc20DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC20MessageHandler)
+						}
+					case "permissionedGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.GenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.GenericMessageHandler)
+						}
+					case "permissionlessGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, executor.PermissionlessGenericMessageHandler)
+						}
+					case "erc721":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
+						}
+					}
+				}
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
@@ -158,16 +185,10 @@ func Run() error {
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
-				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
-
-				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
-				mh.RegisterMessageHandler(pGenericHandler, executor.PermissionlessGenericMessageHandler)
+				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
-				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
+				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, *config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
 				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
