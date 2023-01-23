@@ -63,6 +63,7 @@ func Run() error {
 	}
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
+	log.Info().Msg("Successfully loaded configuration")
 
 	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
@@ -72,12 +73,14 @@ func Run() error {
 	networkTopology, err := topologyStore.Topology()
 	// if topology is not already in file, read from provider
 	if err != nil {
+		log.Debug().Msg("Reading topology from provider")
 		networkTopology, err = topologyProvider.NetworkTopology()
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
 	}
+	log.Info().Msg("Successfully loaded topology")
 
 	// this is temporary solution related to specifics of aws deployment
 	// effectively it waits until old instance is killed
@@ -85,6 +88,7 @@ func Run() error {
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 		if err != nil {
+			log.Info().Msg("Unable to connect to blockstore file, retry in 5 seconds")
 			time.Sleep(5 * time.Second)
 		} else {
 			log.Info().Msg("Successfully connected to blockstore file")
@@ -103,6 +107,7 @@ func Run() error {
 	connectionGate := p2p.NewConnectionGate(networkTopology)
 	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
+	log.Info().Str("peerID", host.ID().String()).Msg("Successfully created libp2p host")
 
 	healthComm := p2p.NewCommunication(host, "p2p/health")
 	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
