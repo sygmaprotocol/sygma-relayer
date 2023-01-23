@@ -4,6 +4,9 @@
 name: sygma/deploy/testnet
 
 on:
+  push:
+    branches:
+      - 'feat/datadog-integration-testnet'
   release:
     types:
       - published
