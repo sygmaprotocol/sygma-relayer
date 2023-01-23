@@ -107,7 +107,7 @@ func Run() error {
 	connectionGate := p2p.NewConnectionGate(networkTopology)
 	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
-	log.Info().Str("peerID", host.ID().String()).Msgf("Successfully created libp2p host")
+	log.Info().Str("peerID", host.ID().String()).Msg("Successfully created libp2p host")
 
 	healthComm := p2p.NewCommunication(host, "p2p/health")
 	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
