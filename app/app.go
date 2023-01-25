@@ -95,7 +95,7 @@ func Run() error {
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 		if err != nil {
-			log.Info().Msg("Unable to connect to blockstore file, retry in 5 seconds")
+			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 5 seconds")
 			time.Sleep(5 * time.Second)
 		} else {
 			log.Info().Msg("Successfully connected to blockstore file")
