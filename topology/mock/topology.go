@@ -12,42 +12,42 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockNetworkTopologyProvider is a mock of NetworkTopologyProvider interface.
-type MockNetworkTopologyProvider struct {
+// MockFetcher is a mock of Fetcher interface.
+type MockFetcher struct {
 	ctrl     *gomock.Controller
-	recorder *MockNetworkTopologyProviderMockRecorder
+	recorder *MockFetcherMockRecorder
 }
 
-// MockNetworkTopologyProviderMockRecorder is the mock recorder for MockNetworkTopologyProvider.
-type MockNetworkTopologyProviderMockRecorder struct {
-	mock *MockNetworkTopologyProvider
+// MockFetcherMockRecorder is the mock recorder for MockFetcher.
+type MockFetcherMockRecorder struct {
+	mock *MockFetcher
 }
 
-// NewMockNetworkTopologyProvider creates a new mock instance.
-func NewMockNetworkTopologyProvider(ctrl *gomock.Controller) *MockNetworkTopologyProvider {
-	mock := &MockNetworkTopologyProvider{ctrl: ctrl}
-	mock.recorder = &MockNetworkTopologyProviderMockRecorder{mock}
+// NewMockFetcher creates a new mock instance.
+func NewMockFetcher(ctrl *gomock.Controller) *MockFetcher {
+	mock := &MockFetcher{ctrl: ctrl}
+	mock.recorder = &MockFetcherMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockNetworkTopologyProvider) EXPECT() *MockNetworkTopologyProviderMockRecorder {
+func (m *MockFetcher) EXPECT() *MockFetcherMockRecorder {
 	return m.recorder
 }
 
-// NetworkTopology mocks base method.
-func (m *MockNetworkTopologyProvider) NetworkTopology() (topology.NetworkTopology, error) {
+// Get mocks base method.
+func (m *MockFetcher) Get(url string) (*http.Response, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkTopology")
-	ret0, _ := ret[0].(topology.NetworkTopology)
+	ret := m.ctrl.Call(m, "Get", url)
+	ret0, _ := ret[0].(*http.Response)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// NetworkTopology indicates an expected call of NetworkTopology.
-func (mr *MockNetworkTopologyProviderMockRecorder) NetworkTopology() *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockFetcherMockRecorder) Get(url interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkTopology", reflect.TypeOf((*MockNetworkTopologyProvider)(nil).NetworkTopology))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockFetcher)(nil).Get), url)
 }
 
 // MockDecrypter is a mock of Decrypter interface.
@@ -87,40 +87,40 @@ func (mr *MockDecrypterMockRecorder) Decrypt(data interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decrypt", reflect.TypeOf((*MockDecrypter)(nil).Decrypt), data)
 }
 
-// MockFetcher is a mock of Fetcher interface.
-type MockFetcher struct {
+// MockNetworkTopologyProvider is a mock of NetworkTopologyProvider interface.
+type MockNetworkTopologyProvider struct {
 	ctrl     *gomock.Controller
-	recorder *MockFetcherMockRecorder
+	recorder *MockNetworkTopologyProviderMockRecorder
 }
 
-// MockFetcherMockRecorder is the mock recorder for MockFetcher.
-type MockFetcherMockRecorder struct {
-	mock *MockFetcher
+// MockNetworkTopologyProviderMockRecorder is the mock recorder for MockNetworkTopologyProvider.
+type MockNetworkTopologyProviderMockRecorder struct {
+	mock *MockNetworkTopologyProvider
 }
 
-// NewMockFetcher creates a new mock instance.
-func NewMockFetcher(ctrl *gomock.Controller) *MockFetcher {
-	mock := &MockFetcher{ctrl: ctrl}
-	mock.recorder = &MockFetcherMockRecorder{mock}
+// NewMockNetworkTopologyProvider creates a new mock instance.
+func NewMockNetworkTopologyProvider(ctrl *gomock.Controller) *MockNetworkTopologyProvider {
+	mock := &MockNetworkTopologyProvider{ctrl: ctrl}
+	mock.recorder = &MockNetworkTopologyProviderMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockFetcher) EXPECT() *MockFetcherMockRecorder {
+func (m *MockNetworkTopologyProvider) EXPECT() *MockNetworkTopologyProviderMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method.
-func (m *MockFetcher) Get(url string) (*http.Response, error) {
+// NetworkTopology mocks base method.
+func (m *MockNetworkTopologyProvider) NetworkTopology() (topology.NetworkTopology, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", url)
-	ret0, _ := ret[0].(*http.Response)
+	ret := m.ctrl.Call(m, "NetworkTopology")
+	ret0, _ := ret[0].(topology.NetworkTopology)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get.
-func (mr *MockFetcherMockRecorder) Get(url interface{}) *gomock.Call {
+// NetworkTopology indicates an expected call of NetworkTopology.
+func (mr *MockNetworkTopologyProviderMockRecorder) NetworkTopology() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockFetcher)(nil).Get), url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkTopology", reflect.TypeOf((*MockNetworkTopologyProvider)(nil).NetworkTopology))
 }
