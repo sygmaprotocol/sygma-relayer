@@ -70,6 +70,16 @@ jobs:
           repository: sygmaprotocol/devops
           token: ${{ secrets.GHCR_TOKEN }}
 
+      - name: render jinja2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ env.AWS_REGION }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
