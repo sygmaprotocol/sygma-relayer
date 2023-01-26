@@ -91,7 +91,7 @@ jobs:
       - name: deploy task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: 'ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
