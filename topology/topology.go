@@ -39,22 +39,6 @@ func (nt NetworkTopology) IsAllowedPeer(peer peer.ID) bool {
 	return false
 }
 
-type NetworkTopologyProvider interface {
-	NetworkTopology() (NetworkTopology, error)
-}
-
-func NewNetworkTopologyProvider(config relayer.TopologyConfiguration) (NetworkTopologyProvider, error) {
-	decrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
-	if err != nil {
-		return nil, err
-	}
-
-	return &topologyProvider{
-		decrypter: decrypter,
-		url:       config.Url,
-	}, nil
-}
-
 type RawTopology struct {
 	Peers     []RawPeer `mapstructure:"Peers" json:"peers"`
 	Threshold string    `mapstructure:"Threshold" json:"threshold"`
@@ -63,18 +47,39 @@ type RawTopology struct {
 type RawPeer struct {
 	PeerAddress string `mapstructure:"PeerAddress" json:"peerAddress"`
 }
+type Fetcher interface {
+	Get(url string) (*http.Response, error)
+}
 
 type Decrypter interface {
 	Decrypt(data string) []byte
 }
 
-type topologyProvider struct {
-	url       string
-	decrypter Decrypter
+type NetworkTopologyProvider interface {
+	NetworkTopology() (NetworkTopology, error)
 }
 
-func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
-	resp, err := http.Get(t.url)
+func NewNetworkTopologyProvider(config relayer.TopologyConfiguration, fetcher Fetcher) (NetworkTopologyProvider, error) {
+	decrypter, err := NewAESEncryption([]byte(config.EncryptionKey))
+	if err != nil {
+		return nil, err
+	}
+
+	return &TopologyProvider{
+		decrypter: decrypter,
+		url:       config.Url,
+		fetcher:   fetcher,
+	}, nil
+}
+
+type TopologyProvider struct {
+	url       string
+	decrypter Decrypter
+	fetcher   Fetcher
+}
+
+func (t *TopologyProvider) NetworkTopology() (NetworkTopology, error) {
+	resp, err := t.fetcher.Get(t.url)
 	if err != nil {
 		return NetworkTopology{}, err
 	}
