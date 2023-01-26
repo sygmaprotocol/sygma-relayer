@@ -84,8 +84,9 @@ func (t *topologyProvider) NetworkTopology() (NetworkTopology, error) {
 		return NetworkTopology{}, err
 	}
 
+	unecryptedBody := t.decrypter.Decrypt(string(body))
 	rawTopology := &RawTopology{}
-	err = json.Unmarshal(body, rawTopology)
+	err = json.Unmarshal(unecryptedBody, rawTopology)
 	if err != nil {
 		return NetworkTopology{}, err
 	}
