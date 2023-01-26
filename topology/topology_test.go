@@ -70,7 +70,7 @@ func (s *TopologyTestSuite) Test_ProcessRawTopology_InvalidThreshold() {
 
 	rt.Threshold = "1"
 	_, err = topology.ProcessRawTopology(rt)
-	s.NotNil(err)
+	s.Nil(err)
 }
 
 type NetworkTopologyTestSuite struct {

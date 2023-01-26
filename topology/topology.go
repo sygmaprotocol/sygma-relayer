@@ -107,8 +107,8 @@ func ProcessRawTopology(rawTopology *RawTopology) (NetworkTopology, error) {
 	if err != nil {
 		return NetworkTopology{}, fmt.Errorf("unable to parse mpc threshold from topology %v", err)
 	}
-	if threshold <= 1 {
-		return NetworkTopology{}, fmt.Errorf("mpc threshold must be bigger then 1 %v", err)
+	if threshold < 1 {
+		return NetworkTopology{}, fmt.Errorf("mpc threshold must be bigger then 0 %v", err)
 	}
 	return NetworkTopology{Peers: peers, Threshold: int(threshold)}, nil
 }
