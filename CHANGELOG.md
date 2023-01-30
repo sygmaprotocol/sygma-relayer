@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.0...v1.1.1) (2023-01-30)
+
+
+### Bug Fixes
+
+* fix topology resolution ([#92](https://github.com/sygmaprotocol/sygma-relayer/issues/92)) ([fefefbe](https://github.com/sygmaprotocol/sygma-relayer/commit/fefefbe3afaca68f07092af0fdee3f11aa9195ab))
+* health endpoint not starting ([#95](https://github.com/sygmaprotocol/sygma-relayer/issues/95)) ([2957ab0](https://github.com/sygmaprotocol/sygma-relayer/commit/2957ab0c9f9f13261404e521f7deafa273bdff49))
+
+
+### Miscellaneous
+
+* add explicit error log to lvlDB connection ([#87](https://github.com/sygmaprotocol/sygma-relayer/issues/87)) ([80f0c65](https://github.com/sygmaprotocol/sygma-relayer/commit/80f0c658f7c648ac386c7eb7a001509af1183128))
+* added jinja2 render ([#89](https://github.com/sygmaprotocol/sygma-relayer/issues/89)) ([2731c1c](https://github.com/sygmaprotocol/sygma-relayer/commit/2731c1c7defe6fb37627913595717e9188ff8bc1))
+* execute health check when health endpoint called ([#94](https://github.com/sygmaprotocol/sygma-relayer/issues/94)) ([84cb3e5](https://github.com/sygmaprotocol/sygma-relayer/commit/84cb3e5dc2a6d6f047c1e55bec43fd4815eaa5b1))
+* fix ref error ([#90](https://github.com/sygmaprotocol/sygma-relayer/issues/90)) ([dc79c6e](https://github.com/sygmaprotocol/sygma-relayer/commit/dc79c6ed8f32aa10dac02af9cf6e1329ec857612))
+
 ## [1.1.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.0.0...v1.1.0) (2023-01-23)
 
 
