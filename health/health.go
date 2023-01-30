@@ -19,6 +19,7 @@ func StartHealthEndpoint(port uint16, c comm.Communication, h host.Host) {
 		go comm.ExecuteCommHealthCheck(c, h.Peerstore().Peers())
 		_, _ = w.Write([]byte("ok"))
 	})
+
 	_ = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	log.Info().Msgf("started /health endpoint on port %d", port)
 }
