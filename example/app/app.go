@@ -11,8 +11,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ChainSafe/sygma-relayer/comm"
-
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -83,9 +81,6 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-
-	healthComm := p2p.NewCommunication(host, "p2p/health")
-	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
 
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
