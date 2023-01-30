@@ -85,22 +85,6 @@ func Run() error {
 	}
 	log.Info().Msg("Successfully loaded topology")
 
-	// this is temporary solution related to specifics of aws deployment
-	// effectively it waits until old instance is killed
-	var db *lvldb.LVLDB
-	for {
-		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
-		if err != nil {
-			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 5 seconds")
-			time.Sleep(5 * time.Second)
-		} else {
-			log.Info().Msg("Successfully connected to blockstore file")
-			break
-		}
-	}
-
-	blockstore := store.NewBlockStore(db)
-
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
 
@@ -119,6 +103,21 @@ func Run() error {
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+
+	// this is temporary solution related to specifics of aws deployment
+	// effectively it waits until old instance is killed
+	var db *lvldb.LVLDB
+	for {
+		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 5 seconds")
+			time.Sleep(5 * time.Second)
+		} else {
+			log.Info().Msg("Successfully connected to blockstore file")
+			break
+		}
+	}
+	blockstore := store.NewBlockStore(db)
 
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
