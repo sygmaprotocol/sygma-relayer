@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -69,8 +70,8 @@ func Run() error {
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
 	log.Info().Msg("Successfully loaded configuration")
-
-	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+  
+	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration, http.DefaultClient)
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
 	networkTopology, err := topologyStore.Topology()
