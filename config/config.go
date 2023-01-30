@@ -104,7 +104,7 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	}
 
 	for i, chain := range rawConfig.ChainConfigs {
-		if len(config.ChainConfigs) < len(rawConfig.ChainConfigs) {
+		if i >= len(config.ChainConfigs) {
 			config.ChainConfigs = append(config.ChainConfigs, chain)
 		} else {
 			err := mergo.Merge(&chain, config.ChainConfigs[i])
