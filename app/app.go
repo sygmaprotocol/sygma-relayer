@@ -14,8 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/comm"
-
 	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
@@ -72,9 +70,7 @@ func Run() error {
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
 	log.Info().Msg("Successfully loaded configuration")
-
-	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
-
+  
 	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration, http.DefaultClient)
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
@@ -118,7 +114,7 @@ func Run() error {
 	log.Info().Str("peerID", host.ID().String()).Msg("Successfully created libp2p host")
 
 	healthComm := p2p.NewCommunication(host, "p2p/health")
-	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort, healthComm, host)
 
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
