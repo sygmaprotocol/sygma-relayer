@@ -19,6 +19,7 @@ type RelayerConfig struct {
 	HealthPort  uint16
 	MpcConfig   MpcRelayerConfig
 	BullyConfig BullyConfig
+	CronJobs    []CronJob
 }
 
 type MpcRelayerConfig struct {
@@ -36,6 +37,11 @@ type BullyConfig struct {
 	BullyWaitTime    time.Duration
 }
 
+type CronJob struct {
+	Id        string `mapstructure:"Id" json:"id"`
+	Frequency string `mapstructure:"Frequency" json:"frequency"`
+}
+
 type TopologyConfiguration struct {
 	EncryptionKey string `mapstructure:"EncryptionKey" json:"encryptionKey"`
 	Url           string `mapstructure:"Url" json:"url"`
@@ -47,6 +53,7 @@ type RawRelayerConfig struct {
 	HealthPort               string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
 	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
+	CronJobs                 []CronJob           `mapstructure:"CronJobs" json:"cronJobs"`
 }
 
 type RawMpcRelayerConfig struct {
@@ -111,6 +118,8 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 		return RelayerConfig{}, err
 	}
 	config.BullyConfig = bullyConfig
+
+	config.CronJobs = rawConfig.CronJobs
 
 	return config, nil
 }

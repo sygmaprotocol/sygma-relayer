@@ -7,16 +7,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ChainSafe/sygma-relayer/comm"
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 )
 
 // StartHealthEndpoint starts /health endpoint on provided port that returns ok on invocation
-func StartHealthEndpoint(port uint16, c comm.Communication, h host.Host) {
+func StartHealthEndpoint(port uint16) {
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		log.Debug().Msg("Health endpoint called")
-		go comm.ExecuteCommHealthCheck(c, h.Peerstore().Peers())
+		// log.Debug().Msg("Health endpoint called")
 		_, _ = w.Write([]byte("ok"))
 	})
 
