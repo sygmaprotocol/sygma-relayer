@@ -9,7 +9,13 @@
         "url": "test.url",
         "encryptionKey": "test-enc-key"
       }
-    }
+    },
+    "cronJobs": [
+      {
+        "id": "communication-health",
+        "frequency": "skip"
+      }
+    ]
   },
   "domains": [
     {

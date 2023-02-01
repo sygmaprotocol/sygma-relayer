@@ -17,6 +17,11 @@ var defaultJobs = map[string]string{
 func CreateCronJobs(jobs []relayer.CronJob, h host.Host) *cron.Cron {
 	c := cron.New()
 	for id, frequency := range SetDefaultJobs(jobs) {
+
+		if frequency == "skip" {
+			continue
+		}
+
 		var err error
 		switch id {
 		case "communication-health":
