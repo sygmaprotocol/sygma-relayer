@@ -22,7 +22,7 @@ func (s *CronJobsTestSuite) Test_CreateCronJobs_CommunicationHealth() {
 	}{
 		{
 			configJobs: []relayer.CronJob{
-				{"communication-health", "*/10 * * * *"},
+				{Id: "communication-health", Frequency: "*/10 * * * *"},
 			},
 			expected: map[string]string{
 				"communication-health": "*/10 * * * *",
@@ -30,7 +30,7 @@ func (s *CronJobsTestSuite) Test_CreateCronJobs_CommunicationHealth() {
 		},
 		{
 			configJobs: []relayer.CronJob{
-				{"communication-health", ""},
+				{Id: "communication-health", Frequency: ""},
 			},
 			expected: map[string]string{
 				"communication-health": "*/5 * * * *",
