@@ -8,10 +8,10 @@ import (
 	"time"
 )
 
-func StartCommunicationHealthCheckJob(h host.Host) {
+func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration) {
 	healthComm := p2p.NewCommunication(h, "p2p/health")
 	for {
-		time.Sleep(5 * time.Minute)
+		time.Sleep(interval)
 		log.Info().Msg("Starting communication health check")
 		communicationErrors := comm.ExecuteCommHealthCheck(healthComm, h.Peerstore().Peers())
 		for _, cerr := range communicationErrors {

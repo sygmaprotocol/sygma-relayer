@@ -111,7 +111,7 @@ func Run() error {
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 		if err != nil {
-			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 5 seconds")
+			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 10 seconds")
 			time.Sleep(10 * time.Second)
 		} else {
 			log.Info().Msg("Successfully connected to blockstore file")
@@ -194,7 +194,7 @@ func Run() error {
 		}
 	}
 
-	go jobs.StartCommunicationHealthCheckJob(host)
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval)
 
 	r := relayer.NewRelayer(
 		chains,
