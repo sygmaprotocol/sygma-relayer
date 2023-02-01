@@ -85,6 +85,8 @@ func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 		}(d)
 	}
 
+	log.Debug().Msgf("Processed %d deposits in blocks: %s to %s", len(deposits), startBlock.String(), endBlock.String())
+
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
@@ -156,6 +158,8 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 		}(event)
 	}
 
+	log.Debug().Msgf("Processed %d retries in blocks: %s to %s", len(retryEvents), startBlock.String(), endBlock.String())
+
 	for _, retries := range retriesByDomain {
 		msgChan <- retries
 	}
@@ -210,6 +214,8 @@ func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
+
+	log.Debug().Msgf("Processed %d keygens in blocks: %s to %s", len(keygenEvents), startBlock.String(), endBlock.String())
 
 	return nil
 }
@@ -288,6 +294,8 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 
 	resharing := resharing.NewResharing(eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
+
+	log.Debug().Msgf("Processed %d refresh in blocks: %s to %s", len(refreshEvents), startBlock.String(), endBlock.String())
 
 	return nil
 }

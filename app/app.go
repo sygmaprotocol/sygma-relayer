@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma-relayer/jobs"
 	"math/big"
 	"net/http"
 	"os"
@@ -70,7 +71,7 @@ func Run() error {
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
 	log.Info().Msg("Successfully loaded configuration")
-  
+
 	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration, http.DefaultClient)
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
@@ -97,8 +98,7 @@ func Run() error {
 	panicOnError(err)
 	log.Info().Str("peerID", host.ID().String()).Msg("Successfully created libp2p host")
 
-	healthComm := p2p.NewCommunication(host, "p2p/health")
-	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort, healthComm, host)
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
@@ -111,8 +111,8 @@ func Run() error {
 	for {
 		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
 		if err != nil {
-			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 5 seconds")
-			time.Sleep(5 * time.Second)
+			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 10 seconds")
+			time.Sleep(10 * time.Second)
 		} else {
 			log.Info().Msg("Successfully connected to blockstore file")
 			break
@@ -193,6 +193,8 @@ func Run() error {
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
+
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval)
 
 	r := relayer.NewRelayer(
 		chains,
