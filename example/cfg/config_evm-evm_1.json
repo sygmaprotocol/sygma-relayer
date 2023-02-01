@@ -8,14 +8,9 @@
         "path": ".",
         "url": "test.url",
         "encryptionKey": "test-enc-key"
-      }
-    },
-    "cronJobs": [
-      {
-        "id": "communication-health",
-        "frequency": "skip"
-      }
-    ]
+      },
+      "commHealthCheckInterval": "24h"
+    }
   },
   "domains": [
     {

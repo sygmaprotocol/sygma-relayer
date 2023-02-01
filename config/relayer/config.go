@@ -19,14 +19,14 @@ type RelayerConfig struct {
 	HealthPort  uint16
 	MpcConfig   MpcRelayerConfig
 	BullyConfig BullyConfig
-	CronJobs    []CronJob
 }
 
 type MpcRelayerConfig struct {
-	TopologyConfiguration TopologyConfiguration
-	Port                  uint16
-	KeysharePath          string
-	Key                   string
+	TopologyConfiguration   TopologyConfiguration
+	Port                    uint16
+	KeysharePath            string
+	Key                     string
+	CommHealthCheckInterval time.Duration
 }
 
 type BullyConfig struct {
@@ -35,11 +35,6 @@ type BullyConfig struct {
 	PingInterval     time.Duration
 	ElectionWaitTime time.Duration
 	BullyWaitTime    time.Duration
-}
-
-type CronJob struct {
-	Id        string `mapstructure:"Id" json:"id"`
-	Frequency string `mapstructure:"Frequency" json:"frequency"`
 }
 
 type TopologyConfiguration struct {
@@ -53,14 +48,14 @@ type RawRelayerConfig struct {
 	HealthPort               string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
 	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
-	CronJobs                 []CronJob           `mapstructure:"CronJobs" json:"cronJobs"`
 }
 
 type RawMpcRelayerConfig struct {
-	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
-	Key                   string                `mapstructure:"Key" json:"key"`
-	Port                  string                `mapstructure:"Port" json:"port" default:"9000"`
-	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
+	KeysharePath            string                `mapstructure:"KeysharePath" json:"keysharePath"`
+	Key                     string                `mapstructure:"Key" json:"key"`
+	Port                    string                `mapstructure:"Port" json:"port" default:"9000"`
+	TopologyConfiguration   TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
+	CommHealthCheckInterval string                `mapstructure:"CommHealthCheckInterval" json:"commHealthCheckInterval" default:"5m"`
 }
 
 type RawBullyConfig struct {
@@ -119,8 +114,6 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	}
 	config.BullyConfig = bullyConfig
 
-	config.CronJobs = rawConfig.CronJobs
-
 	return config, nil
 }
 
@@ -136,6 +129,12 @@ func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
 	mpcConfig.Key = rawConfig.MpcConfig.Key
+
+	duration, err := time.ParseDuration(rawConfig.MpcConfig.CommHealthCheckInterval)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse communication health check interval time: %w", err)
+	}
+	mpcConfig.CommHealthCheckInterval = duration
 
 	return mpcConfig, nil
 }

@@ -194,9 +194,7 @@ func Run() error {
 		}
 	}
 
-	c := jobs.CreateCronJobs(configuration.RelayerConfig.CronJobs, host)
-	c.Start()
-	defer c.Stop()
+	go jobs.StartCommunicationHealthCheckJob(host)
 
 	r := relayer.NewRelayer(
 		chains,
