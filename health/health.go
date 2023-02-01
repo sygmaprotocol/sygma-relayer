@@ -13,7 +13,6 @@ import (
 // StartHealthEndpoint starts /health endpoint on provided port that returns ok on invocation
 func StartHealthEndpoint(port uint16) {
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		// log.Debug().Msg("Health endpoint called")
 		_, _ = w.Write([]byte("ok"))
 	})
 
