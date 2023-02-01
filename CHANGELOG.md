@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.1...v1.1.2) (2023-02-01)
+
+
+### Miscellaneous
+
+* refactor communication health check ([#97](https://github.com/sygmaprotocol/sygma-relayer/issues/97)) ([a8039a2](https://github.com/sygmaprotocol/sygma-relayer/commit/a8039a201f78bf9648c442e5bc573398e241699f))
+
 ## [1.1.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.0...v1.1.1) (2023-01-30)
 
 
