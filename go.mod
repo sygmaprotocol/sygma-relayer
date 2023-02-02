@@ -3,7 +3,7 @@ module github.com/ChainSafe/sygma-relayer
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v1.0.0
+	github.com/ChainSafe/chainbridge-core v1.1.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.9

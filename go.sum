@@ -52,8 +52,8 @@ dmitri.shuralyov.com/state v0.0.0-20180228185332-28bcc343414c/go.mod h1:0PRwlb0D
 git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/ChainSafe/chainbridge-core v1.0.0 h1:fYZzrhppE8o/ytl1tq8RJL+aBAquWd1fJpB4b+L06RU=
-github.com/ChainSafe/chainbridge-core v1.0.0/go.mod h1:j51yNYVujQPo0FkFj361cnNX0YjlBM+Qq9kvAudiKfU=
+github.com/ChainSafe/chainbridge-core v1.1.0 h1:UhsB3Jarnl+RmbkrbpbUNFVNiH8rwuAq6sAoSqzDmBg=
+github.com/ChainSafe/chainbridge-core v1.1.0/go.mod h1:j51yNYVujQPo0FkFj361cnNX0YjlBM+Qq9kvAudiKfU=
 github.com/ChainSafe/go-schnorrkel v1.0.0 h1:3aDA67lAykLaG1y3AOjs88dMxC88PgUuHRrLeDnvGIM=
 github.com/ChainSafe/go-schnorrkel v1.0.0/go.mod h1:dpzHYVxLZcp8pjlV+O+UR8K0Hp/z7vcchBSbMBEhCw4=
 github.com/ChainSafe/tss-lib v1.4.0 h1:Cz6TgNZI91CmwrCZRA1RmXqgDFXLYwYnezjaAQ4aHY0=
