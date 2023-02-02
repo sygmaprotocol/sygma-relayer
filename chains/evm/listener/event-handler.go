@@ -29,29 +29,10 @@ import (
 )
 
 type EventListener interface {
-	FetchKeygenEvents(
-		ctx context.Context,
-		address common.Address,
-		startBlock *big.Int,
-		endBlock *big.Int,
-	) ([]ethTypes.Log, error)
-	FetchRefreshEvents(
-		ctx context.Context,
-		address common.Address,
-		startBlock *big.Int,
-		endBlock *big.Int,
-	) ([]*hubEvents.Refresh, error)
-	FetchRetryEvents(
-		ctx context.Context,
-		contractAddress common.Address,
-		startBlock *big.Int,
-		endBlock *big.Int,
-	) ([]hubEvents.RetryEvent, error)
-	FetchDepositEvent(
-		event hubEvents.RetryEvent,
-		bridgeAddress common.Address,
-		blockConfirmations *big.Int,
-	) ([]events.Deposit, error)
+	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*hubEvents.Refresh, error)
+	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
+	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 }
 
 type DepositEventHandler struct {
