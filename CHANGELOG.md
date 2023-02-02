@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.2...v1.1.3) (2023-02-02)
+
+
+### Miscellaneous
+
+* bump core version ([#101](https://github.com/sygmaprotocol/sygma-relayer/issues/101)) ([70a6d85](https://github.com/sygmaprotocol/sygma-relayer/commit/70a6d85bf25c99da9fd7bd100aa49aaeb17695d6))
+* refactor event handler logging ([#99](https://github.com/sygmaprotocol/sygma-relayer/issues/99)) ([d47ccc1](https://github.com/sygmaprotocol/sygma-relayer/commit/d47ccc1403d1090cf0ffd5af3932c40e6b92d3b1))
+
 ## [1.1.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.1...v1.1.2) (2023-02-01)
 
 
