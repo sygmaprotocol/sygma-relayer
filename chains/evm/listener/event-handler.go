@@ -6,16 +6,15 @@ package listener
 import (
 	"context"
 	"fmt"
+	"github.com/rs/zerolog"
 	"math/big"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	hubEvents "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -37,6 +36,7 @@ type EventListener interface {
 }
 
 type DepositEventHandler struct {
+	log            zerolog.Logger
 	eventListener  listener.EventListener
 	depositHandler listener.DepositHandler
 
@@ -44,8 +44,9 @@ type DepositEventHandler struct {
 	domainID      uint8
 }
 
-func NewDepositEventHandler(eventListener listener.EventListener, depositHandler listener.DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+func NewDepositEventHandler(logC zerolog.Context, eventListener listener.EventListener, depositHandler listener.DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
 	return &DepositEventHandler{
+		log:            logC.Logger(),
 		eventListener:  eventListener,
 		depositHandler: depositHandler,
 		bridgeAddress:  bridgeAddress,
@@ -59,22 +60,24 @@ func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
 	}
 
+	eh.log.Debug().Msgf("Processing %d deposit events in blocks: %s to %s", len(deposits), startBlock.String(), endBlock.String())
+
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range deposits {
 		func(d *events.Deposit) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error().Err(err).Msgf("panic occured while handling deposit %+v", d)
+					eh.log.Error().Err(err).Msgf("panic occured while handling deposit %+v", d)
 				}
 			}()
 
 			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
 			if err != nil {
-				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+				eh.log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
 				return
 			}
 
-			log.Info().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+			eh.log.Info().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
 
 			if m.Type == PermissionlessGenericTransfer {
 				msgChan <- []*message.Message{m}
@@ -85,8 +88,6 @@ func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 		}(d)
 	}
 
-	log.Debug().Msgf("Processed %d deposits in blocks: %s to %s", len(deposits), startBlock.String(), endBlock.String())
-
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
@@ -95,6 +96,7 @@ func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 }
 
 type RetryEventHandler struct {
+	log                zerolog.Logger
 	eventListener      EventListener
 	depositHandler     listener.DepositHandler
 	bridgeAddress      common.Address
@@ -103,15 +105,10 @@ type RetryEventHandler struct {
 	blockConfirmations *big.Int
 }
 
-func NewRetryEventHandler(
-	eventListener EventListener,
-	depositHandler listener.DepositHandler,
-	bridgeAddress common.Address,
-	domainID uint8,
-	blockConfirmations *big.Int,
-) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, eventListener EventListener, depositHandler listener.DepositHandler, bridgeAddress common.Address, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
 	bridgeABI, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &RetryEventHandler{
+		log:                logC.Logger(),
 		eventListener:      eventListener,
 		depositHandler:     depositHandler,
 		bridgeAddress:      bridgeAddress,
@@ -127,18 +124,20 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
 	}
 
+	eh.log.Debug().Msgf("Processing %d retry events in blocks: %s to %s", len(retryEvents), startBlock.String(), endBlock.String())
+
 	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
 		func(event hubEvents.RetryEvent) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error().Err(err).Msgf("panic occured while handling retry event %+v", event)
+					eh.log.Error().Err(err).Msgf("panic occured while handling retry event %+v", event)
 				}
 			}()
 
 			deposits, err := eh.eventListener.FetchDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
 			if err != nil {
-				log.Error().Err(err).Msgf("Unable to fetch deposit events from event %+v", event)
+				eh.log.Error().Err(err).Msgf("Unable to fetch deposit events from event %+v", event)
 				return
 			}
 
@@ -148,17 +147,15 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 					d.ResourceID, d.Data, d.HandlerResponse,
 				)
 				if err != nil {
-					log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
+					eh.log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
 					continue
 				}
 
-				log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+				eh.log.Debug().Msgf("Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
 				retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
 			}
 		}(event)
 	}
-
-	log.Debug().Msgf("Processed %d retries in blocks: %s to %s", len(retryEvents), startBlock.String(), endBlock.String())
 
 	for _, retries := range retriesByDomain {
 		msgChan <- retries
@@ -168,6 +165,7 @@ func (eh *RetryEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int,
 }
 
 type KeygenEventHandler struct {
+	log           zerolog.Logger
 	eventListener EventListener
 	coordinator   *tss.Coordinator
 	host          host.Host
@@ -177,16 +175,9 @@ type KeygenEventHandler struct {
 	threshold     int
 }
 
-func NewKeygenEventHandler(
-	eventListener EventListener,
-	coordinator *tss.Coordinator,
-	host host.Host,
-	communication comm.Communication,
-	storer keygen.SaveDataStorer,
-	bridgeAddress common.Address,
-	threshold int,
-) *KeygenEventHandler {
+func NewKeygenEventHandler(logC zerolog.Context, eventListener EventListener, coordinator *tss.Coordinator, host host.Host, communication comm.Communication, storer keygen.SaveDataStorer, bridgeAddress common.Address, threshold int) *KeygenEventHandler {
 	return &KeygenEventHandler{
+		log:           logC.Logger(),
 		eventListener: eventListener,
 		coordinator:   coordinator,
 		host:          host,
@@ -207,6 +198,9 @@ func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
+
+	eh.log.Debug().Msgf("Processing %d keygen events in blocks: %s to %s", len(keygenEvents), startBlock.String(), endBlock.String())
+
 	if len(keygenEvents) == 0 {
 		return nil
 	}
@@ -214,8 +208,6 @@ func (eh *KeygenEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
-
-	log.Debug().Msgf("Processed %d keygens in blocks: %s to %s", len(keygenEvents), startBlock.String(), endBlock.String())
 
 	return nil
 }
@@ -225,6 +217,7 @@ func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
 }
 
 type RefreshEventHandler struct {
+	log              zerolog.Logger
 	topologyProvider topology.NetworkTopologyProvider
 	topologyStore    *topology.TopologyStore
 	eventListener    EventListener
@@ -236,18 +229,9 @@ type RefreshEventHandler struct {
 	storer           resharing.SaveDataStorer
 }
 
-func NewRefreshEventHandler(
-	topologyProvider topology.NetworkTopologyProvider,
-	topologyStore *topology.TopologyStore,
-	eventListener EventListener,
-	coordinator *tss.Coordinator,
-	host host.Host,
-	communication comm.Communication,
-	connectionGate *p2p.ConnectionGate,
-	storer resharing.SaveDataStorer,
-	bridgeAddress common.Address,
-) *RefreshEventHandler {
+func NewRefreshEventHandler(logC zerolog.Context, topologyProvider topology.NetworkTopologyProvider, topologyStore *topology.TopologyStore, eventListener EventListener, coordinator *tss.Coordinator, host host.Host, communication comm.Communication, connectionGate *p2p.ConnectionGate, storer resharing.SaveDataStorer, bridgeAddress common.Address) *RefreshEventHandler {
 	return &RefreshEventHandler{
+		log:              logC.Logger(),
 		topologyProvider: topologyProvider,
 		topologyStore:    topologyStore,
 		eventListener:    eventListener,
@@ -267,6 +251,9 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
+
+	eh.log.Debug().Msgf("Processing %d refresh events in blocks: %s to %s", len(refreshEvents), startBlock.String(), endBlock.String())
+
 	if len(refreshEvents) == 0 {
 		return nil
 	}
@@ -294,8 +281,6 @@ func (eh *RefreshEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.In
 
 	resharing := resharing.NewResharing(eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer)
 	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
-
-	log.Debug().Msgf("Processed %d refresh in blocks: %s to %s", len(refreshEvents), startBlock.String(), endBlock.String())
 
 	return nil
 }
