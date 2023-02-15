@@ -5,15 +5,17 @@ package events_test
 
 import (
 	"fmt"
+
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
 	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events/mock"
+
+	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	substrate_types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type SystemUpdateHandlerTestSuite struct {
@@ -38,7 +40,8 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
+	evts := &events.Events{
+		evtsRec,
 		[]events.Deposit{},
 	}
 	msgChan := make(chan []*message.Message, 1)

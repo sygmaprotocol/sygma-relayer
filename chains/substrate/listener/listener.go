@@ -14,7 +14,7 @@ import (
 )
 
 type EventHandler interface {
-	HandleEvents(evt *events.Events, msgChan chan []*message.Message) error
+	HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
@@ -27,6 +27,8 @@ func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandl
 		conn:               connection,
 		eventHandlers:      eventHandlers,
 		blockRetryInterval: config.BlockRetryInterval,
+		blockInterval:      config.BlockInterval,
+		blockConfirmations: config.BlockConfirmations,
 	}
 }
 
@@ -34,16 +36,20 @@ type SubstrateListener struct {
 	conn               ChainConnection
 	eventHandlers      []EventHandler
 	blockRetryInterval time.Duration
+	blockInterval      *big.Int
+	blockConfirmations *big.Int
 }
 
 func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message) {
+	endBlock := big.NewInt(0)
+
 	go func() {
 		for {
 			select {
 			case <-stopChn:
 				return
 			default:
-				finalizedHeader, err := l.conn.GetHeaderLatest()
+				head, err := l.conn.GetHeaderLatest()
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to fetch finalized header")
 					time.Sleep(l.blockRetryInterval)
@@ -51,23 +57,19 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				}
 
 				if startBlock == nil {
-					startBlock = big.NewInt(int64(finalizedHeader.Number))
+					startBlock = big.NewInt(int64(head.Number))
+				}
+				endBlock.Add(startBlock, l.blockInterval)
+
+				// Sleep if the difference is less than needed block confirmations; (latest - current) < BlockDelay
+				if new(big.Int).Sub(new(big.Int).SetInt64(int64(head.Number)), endBlock).Cmp(l.blockConfirmations) == -1 {
+					time.Sleep(l.blockRetryInterval)
+					continue
 				}
 
-				if startBlock.Cmp(big.NewInt(0).SetUint64(uint64(finalizedHeader.Number))) == 1 {
-					time.Sleep(l.blockRetryInterval)
-					continue
-				}
-				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
+				evts, err := l.fetchEvents(startBlock, endBlock)
 				if err != nil {
-					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
 					time.Sleep(l.blockRetryInterval)
-					continue
-				}
-				evts := &events.Events{}
-				err = l.conn.GetBlockEvents(hash, evts)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to process events in block")
 					continue
 				}
 
@@ -83,8 +85,28 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 				}
-				startBlock.Add(startBlock, big.NewInt(1))
+				startBlock.Add(startBlock, l.blockInterval)
 			}
 		}
 	}()
+}
+
+func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*events.Events, error) {
+	evts := make([]*events.Events, 0)
+	for ; startBlock.Cmp(endBlock) == -1; startBlock.Add(startBlock, big.NewInt(1)) {
+		hash, err := l.conn.GetBlockHash(startBlock.Uint64())
+		if err != nil {
+			return nil, err
+		}
+
+		var evt *events.Events
+		err = l.conn.GetBlockEvents(hash, evt)
+		if err != nil {
+			return nil, err
+		}
+
+		evts = append(evts, evt)
+	}
+
+	return evts, nil
 }
