@@ -42,7 +42,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 		[]events.Deposit{},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -51,7 +51,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
 	evts := events.Events{}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -67,7 +67,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 		[]events.Deposit{},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -140,7 +140,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			*d1, *d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -198,7 +198,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 			*d1, *d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -255,7 +255,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 			*d1, *d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)

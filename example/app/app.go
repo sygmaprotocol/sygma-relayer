@@ -24,6 +24,9 @@ import (
 	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
@@ -36,6 +39,14 @@ import (
 	"github.com/ChainSafe/chainbridge-core/store"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	substrate_bridge "github.com/ChainSafe/sygma-relayer/chains/substrate/calls/pallets/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
+	substrate_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
@@ -49,6 +60,12 @@ import (
 )
 
 func Run() error {
+	var TestKeyringPairAlice = signature.KeyringPair{
+		URI:       "//Alice",
+		PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
+		Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+	}
+
 	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName))
 	if err != nil {
 		panic(err)
@@ -93,6 +110,8 @@ func Run() error {
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
+	fmt.Println("cCCCCConfig\nnn\nn")
+	fmt.Println(configuration.ChainConfigs)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -149,6 +168,50 @@ func Run() error {
 				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
+			}
+		case "substrate":
+			{
+				fmt.Println("U substrateuuuu\nnnnn\nnsdasdasd")
+				config, err := substrate.NewSubstrateConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice)
+				if err != nil {
+					panic(err)
+				}
+				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
+				// startBlock % blockConfirmations == 0
+				if mod.Cmp(big.NewInt(0)) != 0 {
+					config.StartBlock.Sub(config.StartBlock, mod)
+				}
+
+				// dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
+				// t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
+				bridgePallet := substrate_bridge.NewBridgePallet(client)
+
+				depositHandler := substrate_events.NewSubstrateDepositHandler()
+				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_events.FungibleTransferHandler)
+				eventHandlers := make([]substrate_listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrate_events.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
+				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
+
+				mh := substrateExecutor.NewSubstrateMessageHandler()
+				mh.RegisterMessageHandler(message.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
+
+				executor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
+
+				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
+
+				chains = append(chains, substrateChain)
+				fmt.Println("jeaaaaaa gotovoooooo substrateuuuu\nnnnn\nnsdasdasd")
+
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))

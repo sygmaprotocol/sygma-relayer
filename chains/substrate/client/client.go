@@ -8,6 +8,8 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
+
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
@@ -34,12 +36,36 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 		return nil, err
 	}
 	c.Client = client
+	c.ChainID, _ = new(big.Int).SetString("6277101735386680764176071790128604879584176795969512275969", 10)
 	return c, nil
+
 }
 
 // SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
 func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
-	return c.Author.SubmitExtrinsic(ext)
+	fmt.Println("sendrawtrannsssss")
+	enc, err := codec.EncodeToHex(ext)
+
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	var res string
+	err = c.Call(&res, "author_submitExtrinsic", enc)
+	fmt.Println("erererer")
+	fmt.Println(err)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	return types.NewHashFromHexString(res)
+	/* 	hsh, err := c.Author.SubmitExtrinsic(ext)
+	   	fmt.Println(err)
+	   	fmt.Println(hsh)
+	   	if err != nil {
+	   		return types.Hash{}, err
+	   	}
+	   	return hsh, nil */
 }
 
 func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
@@ -50,6 +76,7 @@ func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ex
 		return types.Hash{}, err
 	}
 	hash, err := c.sendRawTransaction(ext)
+
 	if err != nil {
 		return types.Hash{}, err
 	}
@@ -64,6 +91,9 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	meta := conn.GetMetadata()
 
 	// Create call and extrinsic
+	fmt.Println("MethooooooodddddddddddddddddddSUbbBBBBBstrateeeeee\nn")
+	fmt.Println(method)
+	fmt.Println(args...)
 	call, err := types.NewCall(
 		&meta,
 		method,

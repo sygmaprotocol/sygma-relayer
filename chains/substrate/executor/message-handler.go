@@ -1,13 +1,19 @@
 package executor
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
+	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -60,6 +66,12 @@ func (mh *SubstrateMessageHandler) RegisterMessageHandler(transferType message.T
 	mh.handlers[transferType] = handler
 }
 
+var substratePK = signature.KeyringPair{
+	URI:       "//Alice",
+	PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
+	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+}
+
 func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, error) {
 	if len(m.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
@@ -68,14 +80,38 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	if !ok {
 		return nil, errors.New("wrong payload amount format")
 	}
-	recipient, ok := m.Payload[1].([]byte)
+	reciever, ok := m.Payload[1].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload recipient format")
 	}
 	var data []byte
 	data = append(data, common.LeftPadBytes(amount, 32)...) // amount (uint256)
-	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
-	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
-	data = append(data, recipient...)                             // recipient ([]byte)
+	acc := *(*[]types.U8)(unsafe.Pointer(&reciever))
+	recipient := types.MultiLocationV1{
+		Parents: 0,
+		Interior: types.JunctionsV1{
+			IsX1: true,
+			X1: types.JunctionV1{
+				IsAccountID32: true,
+				AccountID32NetworkID: types.NetworkID{
+					IsAny: true,
+				},
+				AccountID: acc,
+			},
+		},
+	}
+
+	bt := bytes.NewBuffer([]byte{})
+	encoder := scale.NewEncoder(bt)
+	_ = recipient.Encode(*encoder)
+
+	bites := bt.Bytes()
+	var rec []byte
+	rec = append(rec, bites[:4]...) // recipient ([]byte)
+	rec = append(rec, bites[5:]...) // recipient ([]byte)
+
+	recipientLen := big.NewInt(int64(len(bt.Bytes())) - 1).Bytes()
+	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
+	data = append(data, rec...) // recipient ([]byte)
 	return proposal.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
 }

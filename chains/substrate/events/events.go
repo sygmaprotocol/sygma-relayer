@@ -4,22 +4,72 @@
 package events
 
 import (
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	core_types "github.com/ChainSafe/chainbridge-core/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-type Deposit struct {
-	DestinationDomainID uint8
-	ResourceID          core_types.ResourceID
-	DepositNonce        uint64
-	DepositType         message.TransferType
-	SenderAddress       types.AccountID
-	Data                []byte
-	HandlerResponse     []byte
-}
-
 type Events struct {
 	types.EventRecords
-	Deposit []Deposit
+	SygmaBridge_Deposit         []EventDeposit
+	SygmaBasicFeeHandler_FeeSet []EventFeeSet
+
+	SygmaBridge_ProposalExecution      []EventProposalExecution
+	SygmaBridge_FailedHandlerExecution []EventFailedHandlerExecution
+	SygmaBridge_Retry                  []EventRetry
+	SygmaBridge_BridgePaused           []EventBridgePaused
+	SygmaBridge_BridgeUnpaused         []EventBridgeUnpaused
+}
+type EventDeposit struct {
+	Phase        types.Phase
+	DestDomainId types.U8
+	ResourceID   types.Bytes32
+	DepositNonce types.U64
+	Sender       types.AccountID
+	TransferType [1]byte
+	CallData     []byte
+	Handler      [1]byte
+	Topics       []types.Hash
+}
+
+type EventFeeSet struct {
+	Phase    types.Phase
+	DomainID types.U8
+	Asset    types.U32
+	Amount   types.U64
+	Topics   []types.Hash
+}
+
+type EventProposalExecution struct {
+	Phase          types.Phase
+	OriginDomainID types.U8
+	DepositNonce   types.U64
+	DataHash       types.Bytes32
+	Topics         []types.Hash
+}
+
+type EventFailedHandlerExecution struct {
+	Phase          types.Phase
+	Error          []byte
+	OriginDomainID types.U8
+	DepositNonce   types.U64
+	Topics         []types.Hash
+}
+
+type EventRetry struct {
+	Phase                 types.Phase
+	DepositOnBlockHeight  types.U64
+	DepositExtrinsicIndex types.U64
+	Sender                types.AccountID
+	Topics                []types.Hash
+}
+
+type EventBridgePaused struct {
+	Phase        types.Phase
+	DestDomainId types.U8
+	Topics       []types.Hash
+}
+
+type EventBridgeUnpaused struct {
+	Phase        types.Phase
+	DestDomainId types.U8
+	Topics       []types.Hash
 }
