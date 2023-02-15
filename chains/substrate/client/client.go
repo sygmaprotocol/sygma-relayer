@@ -83,7 +83,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 		return nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
 
-	log.Debug().Msgf("Extinsic call succededed... method %s, sender %s, nonce %d", method, c.key.Address)
+	log.Debug().Msgf("Extinsic call succededed... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
 	c.nonce = nonce + 1
 
 	return &h, nil
