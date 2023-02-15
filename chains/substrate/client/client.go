@@ -37,33 +37,13 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 	return c, nil
 }
 
-// SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
-func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
-	return c.Author.SubmitExtrinsic(ext)
-}
-
-func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
-
-	err := ext.Sign(*c.key, opts)
-	if err != nil {
-		c.nonceLock.Unlock()
-		return types.Hash{}, err
-	}
-	hash, err := c.sendRawTransaction(ext)
-	if err != nil {
-		return types.Hash{}, err
-	}
-	return hash, nil
-}
-
 // Transact constructs and submits an extrinsic to call the method with the given arguments.
 // All args are passed directly into GSRPC. GSRPC types are recommended to avoid serialization inconsistencies.
 func (c *SubstrateClient) Transact(conn *connection.Connection, method string, args ...interface{}) (*types.Hash, error) {
 	log.Debug().Msgf("Submitting substrate call... method %s, sender %s", method, c.key.Address)
 
-	meta := conn.GetMetadata()
-
 	// Create call and extrinsic
+	meta := conn.GetMetadata()
 	call, err := types.NewCall(
 		&meta,
 		method,
@@ -72,8 +52,8 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct call: %w", err)
 	}
-	ext := types.NewExtrinsic(call)
 
+	ext := types.NewExtrinsic(call)
 	// Get latest runtime version
 	rv, err := conn.RPC.State.GetRuntimeVersionLatest()
 	if err != nil {
@@ -81,26 +61,11 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	}
 
 	c.nonceLock.Lock()
+	defer c.nonceLock.Unlock()
 
-	key, err := types.CreateStorageKey(&meta, "System", "Account", c.key.PublicKey, nil)
+	nonce, err := c.nextNonce(conn, &meta)
 	if err != nil {
 		return nil, err
-	}
-	var latestNonce types.U32
-	var acct types.AccountInfo
-	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
-	if err != nil {
-		c.nonceLock.Unlock()
-		return nil, err
-	}
-	if !exists {
-		latestNonce = 0
-	} else {
-		latestNonce = acct.Nonce
-	}
-
-	if latestNonce > c.nonce {
-		c.nonce = latestNonce
 	}
 
 	// Sign the extrinsic
@@ -113,14 +78,57 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 		Tip:                types.NewUCompactFromUInt(0),
 		TransactionVersion: rv.TransactionVersion,
 	}
-
 	h, err := c.signAndSendTransaction(o, ext)
-	c.nonce++
-	c.nonceLock.Unlock()
 	if err != nil {
 		return nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
-	log.Trace().Msg("Extrinsic submission succeeded")
+
+	log.Debug().Msgf("Extinsic call succededed... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
+	c.nonce = nonce + 1
 
 	return &h, nil
+}
+
+func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Metadata) (types.U32, error) {
+	key, err := types.CreateStorageKey(meta, "System", "Account", c.key.PublicKey, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var latestNonce types.U32
+	var acct types.AccountInfo
+	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
+	if err != nil {
+		return 0, err
+	}
+
+	if !exists {
+		latestNonce = 0
+	} else {
+		latestNonce = acct.Nonce
+	}
+
+	if latestNonce < c.nonce {
+		return c.nonce, nil
+	}
+
+	return latestNonce, nil
+}
+
+func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
+	err := ext.Sign(*c.key, opts)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	hash, err := c.sendRawTransaction(ext)
+	if err != nil {
+		return types.Hash{}, err
+	}
+	return hash, nil
+}
+
+// sendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
+func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
+	return c.Author.SubmitExtrinsic(ext)
 }
