@@ -42,6 +42,7 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 func (c *SubstrateClient) Transact(conn *connection.Connection, method string, args ...interface{}) (*types.Hash, error) {
 	log.Debug().Msgf("Submitting substrate call... method %s, sender %s", method, c.key.Address)
 
+
 	// Create call and extrinsic
 	meta := conn.GetMetadata()
 	call, err := types.NewCall(
@@ -51,7 +52,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct call: %w", err)
-	}
+
 
 	ext := types.NewExtrinsic(call)
 	// Get latest runtime version
