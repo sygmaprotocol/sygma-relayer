@@ -14,7 +14,7 @@ services:
       
   substrate-pallet:
     container_name: substrate-pallet
-    image: "sygma_substrate_pallets_e2e_preconfigured:latest"
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:e2e-latest"
     ports:
       - "9944:9944"
 
