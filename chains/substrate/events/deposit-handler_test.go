@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectdeposit_dataLen = errors.New("invalid calldata length: less than 84 bytes")
 var errNoCorrespondingDepositHandler = errors.New("no corresponding deposit handler for this transfer type exists")
 
 type Erc20HandlerTestSuite struct {
