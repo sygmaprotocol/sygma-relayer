@@ -3,7 +3,6 @@ package substrate_test
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
@@ -80,7 +79,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	}
 	gasPricer := dummy.NewStaticGasPriceDeterminant(ethClient, nil)
 
-	substrateClient, err := client.NewSubstrateClient(SubstrateEndpoint, &substratePK)
+	substrateClient, err := client.NewSubstrateClient(SubstrateEndpoint, &substratePK, big.NewInt(5))
 	if err != nil {
 		panic(err)
 	}
@@ -171,7 +170,6 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 
 	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
 	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
-	fmt.Println(dstAddr)
 	transactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 
 	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor)
@@ -179,8 +177,6 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	destBalanceBefore, err := erc20Contract.GetBalance(dstAddr)
 	s.Nil(err)
 
-	res := common.Hex2Bytes("0x95ECF5ae000e0fe0e0dE63aDE9b7D82a372038b4")
-	fmt.Println(res)
 	assetLocation := [3]substrateTypes.JunctionV1{
 		substrateTypes.JunctionV1{
 			IsParachain: true,
@@ -224,17 +220,15 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 			GeneralIndex:   substrateTypes.NewUCompact(big.NewInt(1)),
 		},
 	}
-	dest := MultiLocationV1{
+	destinationLocation := MultiLocationV1{
 		Parents: 0,
 		Interior: JunctionsV1{
 			IsX2: true,
 			X2:   dst,
 		},
 	}
-	hsh, err := s.substrateClient.Transact(s.substrateConnection, "SygmaBridge.deposit", multiAsset, dest)
+	_, err = s.substrateClient.Transact(s.substrateConnection, "SygmaBridge.deposit", multiAsset, destinationLocation)
 	s.Nil(err)
-	fmt.Println("hshshhshs")
-	fmt.Println(hsh.Hex())
 	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)
 	s.Nil(err)
 
@@ -370,7 +364,7 @@ type JunctionV1 struct {
 	PalletIndex      substrateTypes.U8
 
 	IsGeneralIndex bool
-	GeneralIndex   substrateTypes.UCompact // in the original package this is wrong type (U128)
+	GeneralIndex   substrateTypes.UCompact
 
 	IsGeneralKey bool
 	GeneralKey   []substrateTypes.U8

@@ -2,7 +2,6 @@ package listener
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -60,8 +59,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
-				fmt.Println("getblockhash of block:\nn ")
-				fmt.Println((startBlock.Uint64()))
+
 				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 				if err != nil {
 					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
@@ -81,7 +79,6 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 						continue
 					}
 				}
-				fmt.Println("dosao sam do spremanja bloka\nnn\nn")
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")

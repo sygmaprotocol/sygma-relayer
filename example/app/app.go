@@ -110,8 +110,6 @@ func Run() error {
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	chains := []relayer.RelayedChain{}
-	fmt.Println("cCCCCConfig\nnn\nn")
-	fmt.Println(configuration.ChainConfigs)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -171,7 +169,6 @@ func Run() error {
 			}
 		case "substrate":
 			{
-				fmt.Println("U substrateuuuu\nnnnn\nnsdasdasd")
 				config, err := substrate.NewSubstrateConfig(chainConfig)
 				if err != nil {
 					panic(err)
@@ -182,7 +179,7 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice)
+				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice, config.ChainID)
 				if err != nil {
 					panic(err)
 				}
@@ -192,8 +189,6 @@ func Run() error {
 					config.StartBlock.Sub(config.StartBlock, mod)
 				}
 
-				// dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
-				// t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
 				bridgePallet := substrate_bridge.NewBridgePallet(client)
 
 				depositHandler := substrate_events.NewSubstrateDepositHandler()
@@ -210,7 +205,6 @@ func Run() error {
 				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
 
 				chains = append(chains, substrateChain)
-				fmt.Println("jeaaaaaa gotovoooooo substrateuuuu\nnnnn\nnsdasdasd")
 
 			}
 		default:

@@ -4,8 +4,6 @@
 package events
 
 import (
-	"fmt"
-
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
@@ -53,8 +51,6 @@ func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandl
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(evts *Events, msgChan chan []*message.Message) error {
-	fmt.Println("evtsssssssssssssssssssssssss\nqnn\nn")
-	fmt.Println(evts)
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range evts.SygmaBridge_Deposit {
 		func(d EventDeposit) {
@@ -64,7 +60,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts *Events, msgChan chan 
 				}
 			}()
 
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainId, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
 				return

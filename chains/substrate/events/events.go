@@ -20,7 +20,7 @@ type Events struct {
 }
 type EventDeposit struct {
 	Phase        types.Phase
-	DestDomainId types.U8
+	DestDomainID types.U8
 	ResourceID   types.Bytes32
 	DepositNonce types.U64
 	Sender       types.AccountID
@@ -64,12 +64,12 @@ type EventRetry struct {
 
 type EventBridgePaused struct {
 	Phase        types.Phase
-	DestDomainId types.U8
+	DestDomainID types.U8
 	Topics       []types.Hash
 }
 
 type EventBridgeUnpaused struct {
 	Phase        types.Phase
-	DestDomainId types.U8
+	DestDomainID types.U8
 	Topics       []types.Hash
 }

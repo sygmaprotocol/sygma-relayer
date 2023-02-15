@@ -2,7 +2,6 @@ package events
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/rs/zerolog/log"
 
@@ -27,7 +26,6 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 }
 
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType [1]byte) (*message.Message, error) {
-	fmt.Println("handlamdeposit\nnn\nnhandlam")
 	var depositType message.TransferType
 	switch transferType[0] {
 	case 0:
@@ -69,8 +67,6 @@ func (e *SubstrateDepositHandler) RegisterDepositHandler(transferType message.Tr
 //FungibleTransferHandler converts data pulled from event logs into message
 // handlerResponse can be an empty slice
 func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte) (*message.Message, error) {
-	fmt.Println("fungibletransferdepositusam\nnn\nnn")
-
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -93,6 +89,5 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 
 	metadata := message.Metadata{}
 
-	fmt.Println("ovdjesamalnejdedalje\nnnn\n\nn")
 	return message.NewMessage(uint8(sourceID), uint8(destId), uint64(nonce), core_types.ResourceID(resourceID), message.FungibleTransfer, payload, metadata), nil
 }

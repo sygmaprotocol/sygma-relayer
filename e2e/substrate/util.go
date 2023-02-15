@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -42,7 +41,6 @@ type EVMClient interface {
 }
 
 func WaitForProposalExecuted(connection *connection.Connection, beforeBalance substrateTypes.U128, key []byte) error {
-	fmt.Println("ovdjeeeeeeeeeeeeeee\nn\ns")
 	timeout := time.After(TestTimeout)
 	ticker := time.NewTicker(5 * time.Second)
 
@@ -72,10 +70,6 @@ func checkBalance(beforeBalance substrateTypes.U128, connection *connection.Conn
 	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, key)
 	connection.RPC.State.GetStorageLatest(key, &acc)
 	destBalanceAfter := acc.Balance
-	fmt.Println(destBalanceAfter)
-	fmt.Println(beforeBalance)
-
-	fmt.Println(destBalanceAfter.Int.Cmp(beforeBalance.Int) == 1)
 	if destBalanceAfter.Int.Cmp(beforeBalance.Int) == 1 {
 		return true
 	} else {

@@ -27,7 +27,7 @@ type SubstrateClient struct {
 	nonce     types.U32  // Latest account nonce
 }
 
-func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClient, error) {
+func NewSubstrateClient(url string, key *signature.KeyringPair, chainID *big.Int) (*SubstrateClient, error) {
 	c := &SubstrateClient{
 		key: key,
 	}
@@ -36,36 +36,24 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 		return nil, err
 	}
 	c.Client = client
-	c.ChainID, _ = new(big.Int).SetString("6277101735386680764176071790128604879584176795969512275969", 10)
+	c.ChainID = chainID
 	return c, nil
-
 }
 
 // SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
 func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
-	fmt.Println("sendrawtrannsssss")
 	enc, err := codec.EncodeToHex(ext)
 
 	if err != nil {
 		return types.Hash{}, err
 	}
-
 	var res string
 	err = c.Call(&res, "author_submitExtrinsic", enc)
-	fmt.Println("erererer")
-	fmt.Println(err)
 	if err != nil {
 		return types.Hash{}, err
 	}
 
 	return types.NewHashFromHexString(res)
-	/* 	hsh, err := c.Author.SubmitExtrinsic(ext)
-	   	fmt.Println(err)
-	   	fmt.Println(hsh)
-	   	if err != nil {
-	   		return types.Hash{}, err
-	   	}
-	   	return hsh, nil */
 }
 
 func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
@@ -91,9 +79,6 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	meta := conn.GetMetadata()
 
 	// Create call and extrinsic
-	fmt.Println("MethooooooodddddddddddddddddddSUbbBBBBBstrateeeeee\nn")
-	fmt.Println(method)
-	fmt.Println(args...)
 	call, err := types.NewCall(
 		&meta,
 		method,

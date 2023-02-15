@@ -54,9 +54,6 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 		return
 	}
 
-	/* 	startBlock := big.NewInt(238)
-	   	fmt.Println("startammmmblooookkkkkkkkk\nqnqnqnqnm")
-	   	fmt.Println(startBlock) */
 	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore, msgChan)
 }
 

@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	message "github.com/ChainSafe/chainbridge-core/relayer/message"
-	types "github.com/ChainSafe/chainbridge-core/types"
+	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -73,16 +73,16 @@ func (m *MockDepositHandler) EXPECT() *MockDepositHandlerMockRecorder {
 }
 
 // HandleDeposit mocks base method.
-func (m *MockDepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata []byte, depositType message.TransferType, handlerResponse []byte) (*message.Message, error) {
+func (m *MockDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType [1]byte) (*message.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse)
+	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, transferType)
 	ret0, _ := ret[0].(*message.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleDeposit indicates an expected call of HandleDeposit.
-func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse interface{}) *gomock.Call {
+func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, transferType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, transferType)
 }

@@ -73,14 +73,12 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
-	fmt.Println("uSubstrateexecutoruuu\nqn\n\n\n\nuuu\nn")
 	proposals := make([]*proposal.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
 			return err
 		}
-		fmt.Println("isproposalexecuteddddddddddddd\nqnnnn\nn")
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil {
 			return err

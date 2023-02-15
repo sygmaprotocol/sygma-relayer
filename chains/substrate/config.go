@@ -16,6 +16,7 @@ import (
 
 type RawSubstrateConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
+	ChainID                  int64  `mapstructure:"chainID"`
 	StartBlock               int64  `mapstructure:"startBlock"`
 	BlockConfirmations       int64  `mapstructure:"blockConfirmations" default:"10"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
@@ -24,6 +25,7 @@ type RawSubstrateConfig struct {
 
 type SubstrateConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
+	ChainID            *big.Int
 	StartBlock         *big.Int
 	BlockConfirmations *big.Int
 	BlockInterval      *big.Int
@@ -63,6 +65,7 @@ func NewSubstrateConfig(chainConfig map[string]interface{}) (*SubstrateConfig, e
 	c.GeneralChainConfig.ParseFlags()
 	config := &SubstrateConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
+		ChainID:            big.NewInt(c.ChainID),
 		BlockRetryInterval: time.Duration(c.BlockRetryInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockConfirmations: big.NewInt(c.BlockConfirmations),
