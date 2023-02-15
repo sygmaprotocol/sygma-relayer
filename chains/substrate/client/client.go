@@ -37,24 +37,6 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 	return c, nil
 }
 
-// SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
-func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
-	return c.Author.SubmitExtrinsic(ext)
-}
-
-func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
-	err := ext.Sign(*c.key, opts)
-	if err != nil {
-		return types.Hash{}, err
-	}
-
-	hash, err := c.sendRawTransaction(ext)
-	if err != nil {
-		return types.Hash{}, err
-	}
-	return hash, nil
-}
-
 // Transact constructs and submits an extrinsic to call the method with the given arguments.
 // All args are passed directly into GSRPC. GSRPC types are recommended to avoid serialization inconsistencies.
 func (c *SubstrateClient) Transact(conn *connection.Connection, method string, args ...interface{}) (*types.Hash, error) {
@@ -131,4 +113,22 @@ func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Met
 	}
 
 	return latestNonce, nil
+}
+
+func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
+	err := ext.Sign(*c.key, opts)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	hash, err := c.sendRawTransaction(ext)
+	if err != nil {
+		return types.Hash{}, err
+	}
+	return hash, nil
+}
+
+// sendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
+func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
+	return c.Author.SubmitExtrinsic(ext)
 }
