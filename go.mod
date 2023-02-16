@@ -6,7 +6,7 @@ require (
 	github.com/ChainSafe/chainbridge-core v1.1.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.9
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/golang/mock v1.6.0

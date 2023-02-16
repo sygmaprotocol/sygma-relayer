@@ -11,6 +11,16 @@ services:
       driver: none
     ports:
       - "8545:8545"
+
+  # SECOND CHAIN
+  evm2-1:
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.0.0
+    command: ganache-cli --chainId 1338 -d --db data/ --blockTime 2 > /dev/null
+    container_name: evm2-1
+    logging:
+      driver: none
+    ports:
+      - "8547:8545"
       
   substrate-pallet:
     container_name: substrate-pallet
