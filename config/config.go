@@ -4,9 +4,13 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/creasty/defaults"
+	"github.com/imdario/mergo"
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/spf13/viper"
@@ -19,7 +23,7 @@ type Config struct {
 
 type RawConfig struct {
 	RelayerConfig relayer.RawRelayerConfig `mapstructure:"relayer" json:"relayer"`
-	ChainConfigs  []map[string]interface{} `mapstructure:"chains" json:"chains"`
+	ChainConfigs  []map[string]interface{} `mapstructure:"domains" json:"domains"`
 }
 
 // GetConfigFromENV reads config from ENV variables, validates it and parses
@@ -36,18 +40,18 @@ type RawConfig struct {
 // Each ChainConfig is defined as one ENV variable, where its content is JSON configuration for one chain/domain.
 // Variables are named like this: CBH_DOM_X where X is domain id.
 //
-func GetConfigFromENV() (Config, error) {
+func GetConfigFromENV(config *Config) (*Config, error) {
 	rawConfig, err := loadFromEnv()
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
-	return processRawConfig(rawConfig)
+	return processRawConfig(rawConfig, config)
 }
 
 // GetConfigFromFile reads config from file, validates it and parses
 // it into config suitable for application
-func GetConfigFromFile(path string) (Config, error) {
+func GetConfigFromFile(path string, config *Config) (*Config, error) {
 	rawConfig := RawConfig{}
 
 	viper.SetConfigFile(path)
@@ -55,22 +59,43 @@ func GetConfigFromFile(path string) (Config, error) {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
 	err = viper.Unmarshal(&rawConfig)
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
-	return processRawConfig(rawConfig)
+	return processRawConfig(rawConfig, config)
 }
 
-func processRawConfig(rawConfig RawConfig) (Config, error) {
-	config := Config{}
+// GetSharedConfigFromNetwork fetches shared configuration from URL and parses it.
+func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
+	rawConfig := RawConfig{}
 
+	resp, err := http.Get(url)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	err = json.Unmarshal(body, &rawConfig)
+	if err != nil {
+		return &Config{}, err
+	}
+
+	config.ChainConfigs = rawConfig.ChainConfigs
+	return config, err
+}
+
+func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	if err := defaults.Set(&rawConfig); err != nil {
-		return Config{}, err
+		return config, err
 	}
 
 	relayerConfig, err := relayer.NewRelayerConfig(rawConfig.RelayerConfig)
@@ -78,14 +103,23 @@ func processRawConfig(rawConfig RawConfig) (Config, error) {
 		return config, err
 	}
 
-	for _, chain := range rawConfig.ChainConfigs {
+	for i, chain := range rawConfig.ChainConfigs {
+		if i >= len(config.ChainConfigs) {
+			config.ChainConfigs = append(config.ChainConfigs, chain)
+		} else {
+			err := mergo.Merge(&chain, config.ChainConfigs[i])
+			if err != nil {
+				return config, err
+			}
+
+			config.ChainConfigs[i] = chain
+		}
+
 		if chain["type"] == "" || chain["type"] == nil {
 			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
 	}
 
 	config.RelayerConfig = relayerConfig
-	config.ChainConfigs = rawConfig.ChainConfigs
-
 	return config, nil
 }

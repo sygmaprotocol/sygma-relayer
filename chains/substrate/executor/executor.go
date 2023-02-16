@@ -114,7 +114,6 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	sigChn := make(chan interface{})
 	statusChn := make(chan error)
 	ctx, cancel := context.WithCancel(context.Background())
-
 	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
 
 	ticker := time.NewTicker(executionCheckPeriod)

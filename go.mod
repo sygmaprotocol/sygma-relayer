@@ -3,13 +3,14 @@ module github.com/ChainSafe/sygma-relayer
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v0.3.0
+	github.com/ChainSafe/chainbridge-core v1.1.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.9
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/golang/mock v1.6.0
+	github.com/imdario/mergo v0.3.12
 	github.com/libp2p/go-libp2p v0.23.4
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mitchellh/mapstructure v1.4.2
@@ -64,7 +65,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
-	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/ipfs/go-log v1.0.4 // indirect

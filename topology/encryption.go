@@ -25,10 +25,10 @@ func NewAESEncryption(key []byte) (*AESEncryption, error) {
 }
 
 func (ae *AESEncryption) Decrypt(data string) []byte {
-	bytes, _ := hex.DecodeString(data)
-	iv := bytes[:aes.BlockSize]
-	bytes = bytes[aes.BlockSize:]
-	stream := cipher.NewCTR(ae.block, iv)
+	iv := data[:aes.BlockSize]
+	bytes, _ := hex.DecodeString(data[aes.BlockSize:])
+
+	stream := cipher.NewCTR(ae.block, []byte(iv))
 	dst := make([]byte, len(bytes))
 	stream.XORKeyStream(dst, bytes)
 	return dst

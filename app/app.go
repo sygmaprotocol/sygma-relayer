@@ -6,14 +6,14 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/sygma-relayer/jobs"
 	"math/big"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/ChainSafe/sygma-relayer/comm"
 
 	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -23,7 +23,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
@@ -51,48 +50,42 @@ import (
 
 func Run() error {
 	var err error
-	var configuration config.Config
 
 	configFlag := viper.GetString(flags.ConfigFlagName)
+	configURL := viper.GetString("config-url")
+
+	configuration := &config.Config{}
+	if configURL != "" {
+		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
+		panicOnError(err)
+	}
+
 	if strings.ToLower(configFlag) == "env" {
-		configuration, err = config.GetConfigFromENV()
+		configuration, err = config.GetConfigFromENV(configuration)
 		panicOnError(err)
 	} else {
-		configuration, err = config.GetConfigFromFile(configFlag)
+		configuration, err = config.GetConfigFromFile(configFlag, configuration)
 		panicOnError(err)
 	}
 
 	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
-	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
+	log.Info().Msg("Successfully loaded configuration")
 
-	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration)
+	topologyProvider, err := topology.NewNetworkTopologyProvider(configuration.RelayerConfig.MpcConfig.TopologyConfiguration, http.DefaultClient)
 	panicOnError(err)
 	topologyStore := topology.NewTopologyStore(configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Path)
 	networkTopology, err := topologyStore.Topology()
 	// if topology is not already in file, read from provider
 	if err != nil {
+		log.Debug().Msg("Reading topology from provider")
 		networkTopology, err = topologyProvider.NetworkTopology()
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
 	}
-
-	// this is temporary solution related to specifics of aws deployment
-	// effectively it waits until old instance is killed
-	var db *lvldb.LVLDB
-	for {
-		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
-		if err != nil {
-			time.Sleep(5 * time.Second)
-		} else {
-			log.Info().Msg("Successfully connected to blockstore file")
-			break
-		}
-	}
-
-	blockstore := store.NewBlockStore(db)
+	log.Info().Msg("Successfully loaded topology")
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
@@ -103,21 +96,36 @@ func Run() error {
 	connectionGate := p2p.NewConnectionGate(networkTopology)
 	host, err := p2p.NewHost(priv, networkTopology, connectionGate, configuration.RelayerConfig.MpcConfig.Port)
 	panicOnError(err)
+	log.Info().Str("peerID", host.ID().String()).Msg("Successfully created libp2p host")
 
-	healthComm := p2p.NewCommunication(host, "p2p/health")
-	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
+	go health.StartHealthEndpoint(configuration.RelayerConfig.HealthPort)
 
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
+	// this is temporary solution related to specifics of aws deployment
+	// effectively it waits until old instance is killed
+	var db *lvldb.LVLDB
+	for {
+		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 10 seconds")
+			time.Sleep(10 * time.Second)
+		} else {
+			log.Info().Msg("Successfully connected to blockstore file")
+			break
+		}
+	}
+	blockstore := store.NewBlockStore(db)
+
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
 			{
-				config, err := chain.NewEVMConfig(chainConfig)
+				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
 				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
@@ -140,29 +148,44 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, gasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				pGenericHandler := chainConfig["permissionlessGenericHandler"].(string)
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
-				depositHandler.RegisterDepositHandler(config.Erc20Handler, coreListener.Erc20DepositHandler)
-				depositHandler.RegisterDepositHandler(config.Erc721Handler, coreListener.Erc721DepositHandler)
-				depositHandler.RegisterDepositHandler(config.GenericHandler, coreListener.GenericDepositHandler)
-				depositHandler.RegisterDepositHandler(pGenericHandler, listener.PermissionlessGenericDepositHandler)
+				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
+				for _, handler := range config.Handlers {
+					switch handler.Type {
+					case "erc20":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc20DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC20MessageHandler)
+						}
+					case "permissionedGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.GenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.GenericMessageHandler)
+						}
+					case "permissionlessGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, executor.PermissionlessGenericMessageHandler)
+						}
+					case "erc721":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
+						}
+					}
+				}
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
-				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
-
-				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
-				mh.RegisterMessageHandler(pGenericHandler, executor.PermissionlessGenericMessageHandler)
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"]))
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(l, depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
-				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
+				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, *config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
 				chain := evm.NewEVMChain(*coreEvmChain, executor)
 
 				chains = append(chains, chain)
@@ -171,6 +194,8 @@ func Run() error {
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
+
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval)
 
 	r := relayer.NewRelayer(
 		chains,
