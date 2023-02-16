@@ -17,6 +17,10 @@ type LoadFromEnvTestSuite struct {
 	suite.Suite
 }
 
+func (s *LoadFromEnvTestSuite) TearDownTest() {
+	os.Clearenv()
+}
+
 func TestRunLoadFromEnvTestSuite(t *testing.T) {
 	suite.Run(t, new(LoadFromEnvTestSuite))
 }

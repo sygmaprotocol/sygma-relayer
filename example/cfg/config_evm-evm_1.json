@@ -8,20 +8,35 @@
         "path": ".",
         "url": "test.url",
         "encryptionKey": "test-enc-key"
-      }
+      },
+      "commHealthCheckInterval": "24h"
     }
   },
-  "chains": [
+  "domains": [
     {
       "id": 1,
       "name": "evm1",
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
-      "erc20Handler": "0x02091EefF969b33A5CE8A729DaE325879bf76f90",
-      "erc721Handler": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760",
-      "genericHandler": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66",
-      "permissionlessGenericHandler": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e",
+      "handlers": [
+        {
+          "type": "erc20",
+          "address": "0x02091EefF969b33A5CE8A729DaE325879bf76f90"
+        },
+        {
+          "type": "erc721",
+          "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
+        },
+        {
+         "type": "permissionedGeneric",
+         "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+        },
+        {
+          "type": "permissionlessGeneric",
+          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+        }
+      ],
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
@@ -33,10 +48,24 @@
       "type": "evm",
       "endpoint": "ws://evm2-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
-      "erc20Handler": "0x02091EefF969b33A5CE8A729DaE325879bf76f90",
-      "erc721Handler": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760",
-      "genericHandler": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66",
-      "permissionlessGenericHandler": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e",
+      "handlers": [
+        {
+          "type": "erc20",
+          "address": "0x02091EefF969b33A5CE8A729DaE325879bf76f90"
+        },
+        {
+          "type": "erc721",
+          "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
+        },
+        {
+         "type": "permissionedGeneric",
+         "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+        },
+        {
+          "type": "permissionlessGeneric",
+          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+        }
+      ],
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,

@@ -14,5 +14,5 @@ jobs:
             fix
             feat
             chore
-          validateSingleCommit: true
+          validateSingleCommit: false
           validateSingleCommitMatchesPrTitle: false
