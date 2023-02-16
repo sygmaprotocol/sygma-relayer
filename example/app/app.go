@@ -63,7 +63,6 @@ func Run() error {
 		Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 	}
 
-	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName))
 	configuration := &config.Config{}
 	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName), configuration)
 	if err != nil {
