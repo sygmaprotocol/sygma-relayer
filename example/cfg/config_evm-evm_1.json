@@ -77,7 +77,7 @@
       "chainID": 5,
       "name": "substrate1",
       "type": "substrate",
-      "startBlock": 425,
+      "startBlock": 50,
       "endpoint":"ws://substrate-pallet:9944",
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
