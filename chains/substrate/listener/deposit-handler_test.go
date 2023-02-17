@@ -29,11 +29,6 @@ func TestRunErc20HandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(Erc20HandlerTestSuite))
 }
 
-func (s *Erc20HandlerTestSuite) SetupSuite()    {}
-func (s *Erc20HandlerTestSuite) TearDownSuite() {}
-func (s *Erc20HandlerTestSuite) SetupTest()     {}
-func (s *Erc20HandlerTestSuite) TearDownTest()  {}
-
 func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	// Alice
 	var substratePK = signature.KeyringPair{

@@ -103,7 +103,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 			err := func(er events.EventRetry) error {
 				defer func() {
 					if r := recover(); r != nil {
-						log.Error().Msgf("panic occured while handling retry event %+v", evt)
+						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
 
