@@ -149,13 +149,18 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
+	var assetId uint32 = 2000
+	var accountInfo1 substrate.Account
+
+	assetIdSerialized := make([]byte, 4)
+	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
 	meta := s.substrateConnection.GetMetadata()
-	key, _ := substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
-	var accountInfo1 substrateTypes.AccountInfo
+
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
 	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
 	s.Nil(err)
 
-	senderBalanceBefore := accountInfo1.Data.Free
+	senderBalanceBefore := accountInfo1.Balance
 
 	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
 	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
@@ -222,13 +227,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	s.Nil(err)
 
 	meta = s.substrateConnection.GetMetadata()
-	key, _ = substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
-	var accountInfo2 substrateTypes.AccountInfo
-
+	var accountInfo2 substrate.Account
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
 	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
 	s.Nil(err)
 
-	senderBalanceAfter := accountInfo2.Data.Free
+	senderBalanceAfter := accountInfo2.Balance
 
 	// balance of sender has decreased
 	s.Equal(1, senderBalanceBefore.Int.Cmp(senderBalanceAfter.Int))

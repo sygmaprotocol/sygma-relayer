@@ -96,28 +96,11 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	}
 
 	c.nonceLock.Lock()
-
-	key, err := types.CreateStorageKey(&meta, "System", "Account", c.key.PublicKey, nil)
+	defer c.nonceLock.Unlock()
+	err = c.nextNonce(conn, &meta)
 	if err != nil {
 		return nil, err
 	}
-	var latestNonce types.U32
-	var acct types.AccountInfo
-	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
-	if err != nil {
-		c.nonceLock.Unlock()
-		return nil, err
-	}
-	if !exists {
-		latestNonce = 0
-	} else {
-		latestNonce = acct.Nonce
-	}
-
-	if latestNonce > c.nonce {
-		c.nonce = latestNonce
-	}
-
 	// Sign the extrinsic
 	o := types.SignatureOptions{
 		BlockHash:          conn.GenesisHash,
@@ -131,11 +114,34 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 
 	h, err := c.signAndSendTransaction(o, ext)
 	c.nonce++
-	c.nonceLock.Unlock()
 	if err != nil {
 		return nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
 	log.Trace().Msg("Extrinsic submission succeeded")
 
 	return &h, nil
+}
+
+func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Metadata) error {
+	key, err := types.CreateStorageKey(meta, "System", "Account", c.key.PublicKey, nil)
+	if err != nil {
+		return err
+	}
+	var latestNonce types.U32
+	var acct types.AccountInfo
+	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
+	if err != nil {
+		c.nonceLock.Unlock()
+		return err
+	}
+	if !exists {
+		latestNonce = 0
+	} else {
+		latestNonce = acct.Nonce
+	}
+
+	if latestNonce > c.nonce {
+		c.nonce = latestNonce
+	}
+	return nil
 }
