@@ -55,11 +55,9 @@ type EventFailedHandlerExecution struct {
 }
 
 type EventRetry struct {
-	Phase                 types.Phase
-	DepositOnBlockHeight  types.U64
-	DepositExtrinsicIndex types.U64
-	Sender                types.AccountID
-	Topics                []types.Hash
+	Phase       types.Phase
+	BlockNumber types.U64
+	Topics      []types.Hash
 }
 
 type EventBridgePaused struct {

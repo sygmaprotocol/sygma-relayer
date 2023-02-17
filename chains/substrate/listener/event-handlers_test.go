@@ -1,13 +1,14 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: BUSL-1.1
 
-package events_test
+package listener_test
 
 import (
 	"fmt"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events/mock"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/listener/mock"
 
 	"testing"
 
@@ -20,7 +21,7 @@ import (
 type SystemUpdateHandlerTestSuite struct {
 	suite.Suite
 	conn                *mock_events.MockChainConnection
-	systemUpdateHandler *events.SystemUpdateEventHandler
+	systemUpdateHandler *listener.SystemUpdateEventHandler
 }
 
 func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
 func (s *SystemUpdateHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.conn = mock_events.NewMockChainConnection(ctrl)
-	s.systemUpdateHandler = events.NewSystemUpdateEventHandler(s.conn)
+	s.systemUpdateHandler = listener.NewSystemUpdateEventHandler(s.conn)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
@@ -40,15 +41,15 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{
-		evtsRec,
-		[]events.EventDeposit{},
-		[]events.EventFeeSet{},
+		EventRecords:                evtsRec,
+		SygmaBridge_Deposit:         []events.EventDeposit{},
+		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.EventRetry{},
+		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -72,15 +73,15 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.EventDeposit{},
-		[]events.EventFeeSet{},
+	evts := events.Events{EventRecords: evtsRec,
+		SygmaBridge_Deposit:         []events.EventDeposit{},
+		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.EventRetry{},
+		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -91,7 +92,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 
 type DepositHandlerTestSuite struct {
 	suite.Suite
-	depositEventHandler *events.FungibleTransferEventHandler
+	depositEventHandler *listener.FungibleTransferEventHandler
 	mockDepositHandler  *mock_events.MockDepositHandler
 	domainID            uint8
 }
@@ -104,7 +105,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockDepositHandler = mock_events.NewMockDepositHandler(ctrl)
-	s.depositEventHandler = events.NewFungibleTransferEventHandler(s.domainID, s.mockDepositHandler)
+	s.depositEventHandler = listener.NewFungibleTransferEventHandler(s.domainID, s.mockDepositHandler)
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
@@ -149,17 +150,17 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+	evts := events.Events{EventRecords: evtsRec,
+		SygmaBridge_Deposit: []events.EventDeposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.EventRetry{},
+		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -212,17 +213,17 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+	evts := events.Events{EventRecords: evtsRec,
+		SygmaBridge_Deposit: []events.EventDeposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.EventRetry{},
+		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -274,17 +275,17 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+	evts := events.Events{EventRecords: evtsRec,
+		SygmaBridge_Deposit: []events.EventDeposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.EventRetry{},
+		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
