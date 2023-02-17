@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -15,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
-	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
@@ -131,37 +129,26 @@ type IntegrationTestSuite struct {
 func (s *IntegrationTestSuite) SetupSuite() {
 	// EVM side preparation
 	evmTransactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, evmTransactor)
 	mintTo := s.evmClient.From()
 	amountToMint := big.NewInt(0).Mul(big.NewInt(5000000000000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
-	_, err := erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	_, err = erc20Contract.MintTokens(s.evmConfig.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	// Approving tokens
-	_, err = erc20Contract.ApproveTokens(s.evmConfig.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	_, err = erc20Contract.ApproveTokens(s.evmConfig.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
 
 	erc20LRContract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, evmTransactor)
-	_, err = erc20LRContract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+	_, err := erc20LRContract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+	if err != nil {
+		panic(err)
+	}
+	_, err = erc20LRContract.MintTokens(s.evmConfig.Erc20LockReleaseHandlerAddr, amountToMint, transactor.TransactOptions{})
+	if err != nil {
+		panic(err)
+	}
+	_, err = erc20LRContract.ApproveTokens(s.evmConfig.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
-
 	meta := s.substrateConnection.GetMetadata()
 	key, _ := substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
 	var accountInfo1 substrateTypes.AccountInfo
@@ -255,7 +242,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	dstAddr := substratePK.PublicKey
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor1)
+	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
 	bridgeContract1 := bridge.NewBridgeContract(s.evmClient, s.evmConfig.BridgeAddr, transactor1)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(crypto.PubkeyToAddress(pk.PublicKey))
@@ -272,27 +259,10 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	destBalanceBefore := acc.Balance
 	s.Nil(err)
 
-	var feeOracleSignature = "8167ba25cf7a08a43aae68576b71f0e42b6281a379a245a8be016c5b16d6227d3941da8f50c7b99763493d6e6f4f36e290ecd9bacca927a2f1b5f157cbe67b171b"
-	var feeDataHash = "00000000000000000000000000000000000000000000000000011f667bbfc00000000000000000000000000000000000000000000000000006bb5a99744a9000000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000698d283a0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
-	dt := deposit.ConstructErc20DepositData(dstAddr, amountToDeposit)
-
-	opts := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
-	depositTxHash, err := bridgeContract1.ExecuteTransaction(
-		"deposit",
-		opts,
-		uint8(2), s.evmConfig.Erc20ResourceID, dt, feeData,
-	)
+	_, err = bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
+		Value: s.evmConfig.BasicFee,
+	})
 	s.Nil(err)
-
-	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
-
-	depositTx, _, err := s.evmClient.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore, dstAddr)
 	s.Nil(err)

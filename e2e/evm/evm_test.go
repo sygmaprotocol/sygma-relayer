@@ -206,7 +206,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	var feeDataHash = "00000000000000000000000000000000000000000000000000011f667bbfc00000000000000000000000000000000000000000000000000006bb5a99744a9000000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000698d283a0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
 		})
@@ -368,7 +368,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
+	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
 		transactor.TransactOptions{
 			Priority: uint8(2), // fast
 			Value:    s.config1.BasicFee,
@@ -425,7 +425,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	var wg sync.WaitGroup
 	for i := 0; i < numOfDeposits; i++ {
 		go func() {
-			_, err := bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
+			_, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
 				transactor.TransactOptions{
 					Priority: uint8(2), // fast
 				})
