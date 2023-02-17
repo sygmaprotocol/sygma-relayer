@@ -103,6 +103,21 @@ func (mr *MockChainConnectionMockRecorder) GetBlockHash(blockNumber interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHash", reflect.TypeOf((*MockChainConnection)(nil).GetBlockHash), blockNumber)
 }
 
+// GetBlockLatest mocks base method.
+func (m *MockChainConnection) GetBlockLatest() (*types.SignedBlock, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockLatest")
+	ret0, _ := ret[0].(*types.SignedBlock)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockLatest indicates an expected call of GetBlockLatest.
+func (mr *MockChainConnectionMockRecorder) GetBlockLatest() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockLatest", reflect.TypeOf((*MockChainConnection)(nil).GetBlockLatest))
+}
+
 // GetHeaderLatest mocks base method.
 func (m *MockChainConnection) GetHeaderLatest() (*types.Header, error) {
 	m.ctrl.T.Helper()

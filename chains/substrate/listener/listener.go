@@ -22,6 +22,7 @@ type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash) (*events.Events, error)
+	GetBlockLatest() (*types.SignedBlock, error)
 }
 
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {

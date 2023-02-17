@@ -55,9 +55,10 @@ type EventFailedHandlerExecution struct {
 }
 
 type EventRetry struct {
-	Phase       types.Phase
-	BlockNumber types.U64
-	Topics      []types.Hash
+	Phase                types.Phase
+	DepositOnBlockHeight types.U128
+	DestDomainID         types.U8
+	Topics               []types.Hash
 }
 
 type EventBridgePaused struct {

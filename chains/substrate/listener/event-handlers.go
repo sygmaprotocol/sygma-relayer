@@ -7,7 +7,6 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
@@ -76,15 +75,18 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts *events.Events, msgCha
 }
 
 type RetryEventHandler struct {
-	conn               *connection.Connection
+	conn               ChainConnection
 	domainID           uint8
 	blockConfirmations *big.Int
 	depositHandler     DepositHandler
 }
 
-func NewRetryEventHandler(depositHandler DepositHandler) *FungibleTransferEventHandler {
-	return &FungibleTransferEventHandler{
-		depositHandler: depositHandler,
+func NewRetryEventHandler(conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
+	return &RetryEventHandler{
+		depositHandler:     depositHandler,
+		domainID:           domainID,
+		blockConfirmations: blockConfirmations,
+		conn:               conn,
 	}
 }
 
@@ -105,12 +107,12 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 					}
 				}()
 
-				if new(big.Int).Sub(latestBlockNumber, big.NewInt(int64(er.BlockNumber))).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
-					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.BlockNumber)
+				if new(big.Int).Sub(latestBlockNumber, er.DepositOnBlockHeight.Int).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
+					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
 				}
 
-				bh, err := rh.conn.GetBlockHash(uint64(er.BlockNumber))
+				bh, err := rh.conn.GetBlockHash(er.DepositOnBlockHeight.Uint64())
 				if err != nil {
 					return err
 				}
