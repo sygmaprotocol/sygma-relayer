@@ -81,6 +81,7 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	data = append(data, common.LeftPadBytes(amount, 32)...) // amount (uint256)
 	acc := *(*[]types.U8)(unsafe.Pointer(&reciever))
 	recipient := constructRecipientData((acc))
+
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
@@ -110,6 +111,8 @@ func constructRecipientData(recipient []types.U8) []byte {
 	var finalRecipient []byte
 
 	// remove accountID size data
+	// this is a fix because the substrate decoder is not able to parse the data with extra data
+	// that represents size of the recipient byte array
 	finalRecipient = append(finalRecipient, recipientBytes[:4]...)
 	finalRecipient = append(finalRecipient, recipientBytes[5:]...)
 
