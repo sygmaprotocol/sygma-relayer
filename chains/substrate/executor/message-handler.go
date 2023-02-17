@@ -80,7 +80,15 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	var data []byte
 	data = append(data, common.LeftPadBytes(amount, 32)...) // amount (uint256)
 	acc := *(*[]types.U8)(unsafe.Pointer(&reciever))
-	recipient := types.MultiLocationV1{
+	recipient := constructRecipientData((acc))
+	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
+	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
+	data = append(data, recipient...)
+	return proposal.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
+}
+
+func constructRecipientData(recipient []types.U8) []byte {
+	rec := types.MultiLocationV1{
 		Parents: 0,
 		Interior: types.JunctionsV1{
 			IsX1: true,
@@ -89,14 +97,14 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 				AccountID32NetworkID: types.NetworkID{
 					IsAny: true,
 				},
-				AccountID: acc,
+				AccountID: recipient,
 			},
 		},
 	}
 
 	encodedRecipient := bytes.NewBuffer([]byte{})
 	encoder := scale.NewEncoder(encodedRecipient)
-	_ = recipient.Encode(*encoder)
+	_ = rec.Encode(*encoder)
 
 	recipientBytes := encodedRecipient.Bytes()
 	var finalRecipient []byte
@@ -105,8 +113,5 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	finalRecipient = append(finalRecipient, recipientBytes[:4]...)
 	finalRecipient = append(finalRecipient, recipientBytes[5:]...)
 
-	recipientLen := big.NewInt(int64(len(finalRecipient))).Bytes()
-	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
-	data = append(data, finalRecipient...)
-	return proposal.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
+	return finalRecipient
 }
