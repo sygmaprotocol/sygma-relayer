@@ -41,14 +41,14 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	}
 	evts := events.Events{
 		evtsRec,
-		[]events.EventDeposit{},
-		[]events.EventFeeSet{},
+		[]events.Deposit{},
+		[]events.FeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -73,14 +73,14 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{evtsRec,
-		[]events.EventDeposit{},
-		[]events.EventFeeSet{},
+		[]events.Deposit{},
+		[]events.FeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -108,7 +108,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -116,7 +116,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -150,16 +150,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+		[]events.Deposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		[]events.FeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -169,7 +169,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 }
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -177,7 +177,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -213,16 +213,16 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+		[]events.Deposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		[]events.FeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -232,7 +232,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -240,7 +240,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -275,16 +275,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{evtsRec,
-		[]events.EventDeposit{
+		[]events.Deposit{
 			*d1, *d2,
 		},
-		[]events.EventFeeSet{},
+		[]events.FeeSet{},
 
-		[]events.EventProposalExecution{},
-		[]events.EventFailedHandlerExecution{},
-		[]events.EventRetry{},
-		[]events.EventBridgePaused{},
-		[]events.EventBridgeUnpaused{},
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan

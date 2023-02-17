@@ -53,7 +53,7 @@ func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandl
 func (eh *FungibleTransferEventHandler) HandleEvents(evts *Events, msgChan chan []*message.Message) error {
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range evts.SygmaBridge_Deposit {
-		func(d EventDeposit) {
+		func(d Deposit) {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Error().Msgf("panic occured while handling deposit %+v", d)
