@@ -152,14 +152,16 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	meta := s.substrateConnection.GetMetadata()
 	key, _ := substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
 	var accountInfo1 substrateTypes.AccountInfo
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
+	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
+	s.Nil(err)
+
 	senderBalanceBefore := accountInfo1.Data.Free
 
 	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
 	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
 	transactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 
-	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor)
+	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor)
 
 	destBalanceBefore, err := erc20Contract.GetBalance(dstAddr)
 	s.Nil(err)
@@ -197,19 +199,19 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 		},
 	}
 	reciever := []substrateTypes.U8{92, 31, 89, 97, 105, 107, 173, 46, 115, 247, 52, 23, 240, 126, 245, 92, 98, 162, 220, 91}
-	dst := [2]JunctionV1{
-		JunctionV1{
+	dst := [2]substrateTypes.JunctionV1{
+		substrateTypes.JunctionV1{
 			IsGeneralKey: true,
 			GeneralKey:   reciever,
 		},
-		JunctionV1{
-			IsGeneralIndex: true,
-			GeneralIndex:   substrateTypes.NewUCompact(big.NewInt(1)),
+		substrateTypes.JunctionV1{
+			IsGeneralKey: true,
+			GeneralKey:   []substrateTypes.U8{1},
 		},
 	}
-	destinationLocation := MultiLocationV1{
+	destinationLocation := substrateTypes.MultiLocationV1{
 		Parents: 0,
-		Interior: JunctionsV1{
+		Interior: substrateTypes.JunctionsV1{
 			IsX2: true,
 			X2:   dst,
 		},
@@ -223,7 +225,9 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	key, _ = substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
 	var accountInfo2 substrateTypes.AccountInfo
 
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
+	s.Nil(err)
+
 	senderBalanceAfter := accountInfo2.Data.Free
 
 	// balance of sender has decreased
@@ -249,15 +253,16 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	s.Nil(err)
 
 	meta := s.substrateConnection.GetMetadata()
-	var acc Account
+	var acc substrate.Account
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)
 	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
 
 	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
-	destBalanceBefore := acc.Balance
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
 	s.Nil(err)
+
+	destBalanceBefore := acc.Balance
 
 	_, err = bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
 		Value: s.evmConfig.BasicFee,
@@ -271,77 +276,11 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
 
 	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	s.Nil(err)
+
 	destBalanceAfter := acc.Balance
 
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Int.Cmp(destBalanceBefore.Int))
-}
-
-type Account struct {
-	Balance substrateTypes.U128
-}
-
-type MultiLocationV1 struct {
-	Parents  substrateTypes.U8
-	Interior JunctionsV1
-}
-type JunctionsV1 struct {
-	IsHere bool
-
-	IsX1 bool
-	X1   JunctionV1
-
-	IsX2 bool
-	X2   [2]JunctionV1
-
-	IsX3 bool
-	X3   [3]JunctionV1
-
-	IsX4 bool
-	X4   [4]JunctionV1
-
-	IsX5 bool
-	X5   [5]JunctionV1
-
-	IsX6 bool
-	X6   [6]JunctionV1
-
-	IsX7 bool
-	X7   [7]JunctionV1
-
-	IsX8 bool
-	X8   [8]JunctionV1
-}
-
-type JunctionV1 struct {
-	IsParachain bool
-	ParachainID substrateTypes.UCompact
-
-	IsAccountID32        bool
-	AccountID32NetworkID substrateTypes.NetworkID
-	AccountID            []substrateTypes.U8
-
-	IsAccountIndex64        bool
-	AccountIndex64NetworkID substrateTypes.NetworkID
-	AccountIndex            substrateTypes.U64
-
-	IsAccountKey20        bool
-	AccountKey20NetworkID substrateTypes.NetworkID
-	AccountKey            []substrateTypes.U8
-
-	IsPalletInstance bool
-	PalletIndex      substrateTypes.U8
-
-	IsGeneralIndex bool
-	GeneralIndex   substrateTypes.UCompact
-
-	IsGeneralKey bool
-	GeneralKey   []substrateTypes.U8
-
-	IsOnlyChild bool
-
-	IsPlurality bool
-	BodyID      substrateTypes.BodyID
-	BodyPart    substrateTypes.BodyPart
 }
