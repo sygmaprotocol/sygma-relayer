@@ -82,6 +82,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 		"id":                 1,
 		"endpoint":           "ws://domain.com",
 		"name":               "substrate1",
+		"chainID":            5,
 		"startBlock":         1000,
 		"blockConfirmations": 10,
 		"blockRetryInterval": 10,
@@ -99,6 +100,8 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 			Endpoint: "ws://domain.com",
 			Id:       id,
 		},
+		ChainID: big.NewInt(5),
+
 		StartBlock:         big.NewInt(1000),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(2),
