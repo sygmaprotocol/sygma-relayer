@@ -21,6 +21,7 @@ type RawSubstrateConfig struct {
 	BlockConfirmations       int64  `mapstructure:"blockConfirmations" default:"10"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
+	SubstrateNetwork         int64  `mapstructure:"substrateNetwork"`
 }
 
 type SubstrateConfig struct {
@@ -30,6 +31,7 @@ type SubstrateConfig struct {
 	BlockConfirmations *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
+	SubstrateNetwork   uint8
 }
 
 func (c *RawSubstrateConfig) Validate() error {
@@ -70,6 +72,7 @@ func NewSubstrateConfig(chainConfig map[string]interface{}) (*SubstrateConfig, e
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockConfirmations: big.NewInt(c.BlockConfirmations),
 		BlockInterval:      big.NewInt(c.BlockInterval),
+		SubstrateNetwork:   uint8(c.SubstrateNetwork),
 	}
 
 	return config, nil

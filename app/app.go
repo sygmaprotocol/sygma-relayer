@@ -6,7 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma-relayer/jobs"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,16 +25,27 @@ import (
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	substrate_bridge "github.com/ChainSafe/sygma-relayer/chains/substrate/calls/pallets/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
+	substrate_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/ChainSafe/sygma-relayer/config"
 	"github.com/ChainSafe/sygma-relayer/health"
+	"github.com/ChainSafe/sygma-relayer/jobs"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -183,6 +193,43 @@ func Run() error {
 				)
 
 				chains = append(chains, chain)
+			}
+		case "substrate":
+			{
+				config, err := substrate.NewSubstrateConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, config.SubstrateNetwork)
+				if err != nil {
+					panic(err)
+				}
+				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &keyPair, config.ChainID)
+				if err != nil {
+					panic(err)
+				}
+
+				bridgePallet := substrate_bridge.NewBridgePallet(client)
+
+				depositHandler := substrate_events.NewSubstrateDepositHandler()
+				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_events.FungibleTransferHandler)
+				eventHandlers := make([]substrate_listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrate_events.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
+				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
+
+				mh := substrateExecutor.NewSubstrateMessageHandler()
+				mh.RegisterMessageHandler(message.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
+
+				executor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
+
+				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
+
+				chains = append(chains, substrateChain)
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))

@@ -56,12 +56,6 @@ import (
 )
 
 func Run() error {
-	var TestKeyringPairAlice = signature.KeyringPair{
-		URI:       "//Alice",
-		PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
-		Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-	}
-
 	configuration := &config.Config{}
 	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName), configuration)
 	if err != nil {
@@ -190,7 +184,12 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice, config.ChainID)
+				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, config.SubstrateNetwork)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &keyPair, config.ChainID)
 				if err != nil {
 					panic(err)
 				}

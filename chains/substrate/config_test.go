@@ -52,10 +52,11 @@ func (s *NewSubstrateConfigTestSuite) Test_InvalidBlockConfirmation() {
 
 func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
-		"id":       1,
-		"chainID":  5,
-		"endpoint": "ws://domain.com",
-		"name":     "substrate1",
+		"id":               1,
+		"chainID":          5,
+		"substrateNetwork": 0,
+		"endpoint":         "ws://domain.com",
+		"name":             "substrate1",
 	}
 
 	actualConfig, err := NewSubstrateConfig(rawConfig)
@@ -71,6 +72,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 		},
 		StartBlock:         big.NewInt(0),
 		ChainID:            big.NewInt(5),
+		SubstrateNetwork:   uint8(0),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(5),
 		BlockRetryInterval: time.Duration(5) * time.Second,
@@ -83,6 +85,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 		"endpoint":           "ws://domain.com",
 		"name":               "substrate1",
 		"chainID":            5,
+		"substrateNetwork":   0,
 		"startBlock":         1000,
 		"blockConfirmations": 10,
 		"blockRetryInterval": 10,
@@ -100,8 +103,8 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 			Endpoint: "ws://domain.com",
 			Id:       id,
 		},
-		ChainID: big.NewInt(5),
-
+		ChainID:            big.NewInt(5),
+		SubstrateNetwork:   uint8(0),
 		StartBlock:         big.NewInt(1000),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(2),
