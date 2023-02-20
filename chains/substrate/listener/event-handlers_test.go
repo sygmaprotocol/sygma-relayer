@@ -15,7 +15,6 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	substrate_types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,8 +38,8 @@ func (s *SystemUpdateHandlerTestSuite) SetupTest() {
 func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	s.conn.EXPECT().UpdateMetatdata().Return(fmt.Errorf("error"))
 
-	evtsRec := substrate_types.EventRecords{
-		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	evtsRec := types.EventRecords{
+		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{
 		EventRecords:                evtsRec,
@@ -72,8 +71,8 @@ func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
 func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	s.conn.EXPECT().UpdateMetatdata().Return(nil)
 
-	evtsRec := substrate_types.EventRecords{
-		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	evtsRec := types.EventRecords{
+		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
 		SygmaBridge_Deposit:         []events.Deposit{},
@@ -114,7 +113,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -122,7 +121,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -149,8 +148,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := substrate_types.EventRecords{
-		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	evtsRec := types.EventRecords{
+		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
 		SygmaBridge_Deposit: []events.Deposit{
@@ -175,7 +174,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -183,7 +182,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -212,8 +211,8 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := substrate_types.EventRecords{
-		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	evtsRec := types.EventRecords{
+		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
 		SygmaBridge_Deposit: []events.Deposit{
@@ -238,7 +237,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -246,7 +245,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -274,8 +273,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := substrate_types.EventRecords{
-		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	evtsRec := types.EventRecords{
+		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
 		SygmaBridge_Deposit: []events.Deposit{
@@ -435,7 +434,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -443,7 +442,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -507,7 +506,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
@@ -515,7 +514,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
-		ResourceID:   substrate_types.Bytes32{1},
+		ResourceID:   types.Bytes32{1},
 		TransferType: [1]byte{0},
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
