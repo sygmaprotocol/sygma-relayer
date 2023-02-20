@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.3...v1.1.4) (2023-02-17)
+
+
+### Bug Fixes
+
+* starting block with latest flag ([#104](https://github.com/sygmaprotocol/sygma-relayer/issues/104)) ([72907dc](https://github.com/sygmaprotocol/sygma-relayer/commit/72907dc1c2f2c2c922ac7042c57a1bf26b3e0ccd))
+
 ## [1.1.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.2...v1.1.3) (2023-02-02)
 
 

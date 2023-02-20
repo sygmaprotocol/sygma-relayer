@@ -79,5 +79,5 @@ func (s *CommunicationHealthTestSuite) TestCommHealth_AllPeersOffline() {
 	)
 
 	s.NotEmpty(errors)
-	s.Equal(len(errors), 2)
+	s.Equal(2, len(errors))
 }
