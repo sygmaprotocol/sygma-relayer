@@ -49,8 +49,8 @@ func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 		return nil, err
 	}
 
-	// @dev
 	// amount: first 32 bytes of calldata
+	// handlerResponse: 32 bytes amount if handler converted amounts
 	var amount []byte
 	if len(handlerResponse) > 0 {
 		amount = handlerResponse[:32]
@@ -58,18 +58,8 @@ func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 		amount = calldata[:32]
 	}
 
-	// lenRecipientAddress: second 32 bytes of calldata [32:64]
-	// does not need to be derived because it is being calculated
-	// within ERC20MessageHandler
-	// https://github.com/ChainSafe/chainbridge-core/blob/main/chains/evm/voter/message-handler.go#L108
-
-	// 32-64 is recipient address length
 	recipientAddressLength := big.NewInt(0).SetBytes(calldata[32:64])
-
-	// 64 - (64 + recipient address length) is recipient address
 	recipientAddress := calldata[64:(64 + recipientAddressLength.Int64())]
-
-	// if there is priority data, parse it and use it
 	payload := []interface{}{
 		amount,
 		recipientAddress,
