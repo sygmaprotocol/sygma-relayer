@@ -67,7 +67,7 @@ func Test_EVM2EVM(t *testing.T) {
 
 		GenericHandlerAddr: common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0x6f3738a81316cc1ae0dd9c6dc2e64cc294cde781"),
+		AssetStoreAddr:     common.HexToAddress("0xaa0F0edf48bEac732e2c2d8B40F02c232622926D"),
 
 		PermissionlessGenericHandlerAddr: common.HexToAddress("0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"),
 		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
