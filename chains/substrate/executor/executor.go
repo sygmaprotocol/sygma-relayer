@@ -183,5 +183,5 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 }
 
 func (e *Executor) sessionID(hash []byte) string {
-	return fmt.Sprintf("signing-%s", types.NewHash(hash))
+	return fmt.Sprintf("signing-%s", ethCommon.Bytes2Hex(hash))
 }
