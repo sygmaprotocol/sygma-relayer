@@ -18,7 +18,7 @@
       "name": "evm1",
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
-      
+
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
       "handlers": [
         {
@@ -71,7 +71,7 @@
       "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"
+      "key": "266aafa561c7a5329d8075521c5cf6a94253d4280b33b0a9c5135aaccdc2f3d3"
     },
     {
       "id": 3,
@@ -83,7 +83,7 @@
       "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"
+      "key": "266aafa561c7a5329d8075521c5cf6a94253d4280b33b0a9c5135aaccdc2f3d3"
     }
   ]
 }
