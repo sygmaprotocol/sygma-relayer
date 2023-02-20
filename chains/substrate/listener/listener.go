@@ -70,6 +70,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 
 				evts, err := l.fetchEvents(startBlock, endBlock)
 				if err != nil {
+					log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
@@ -92,8 +93,10 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 }
 
 func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*events.Events, error) {
+	log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
+
 	evts := make([]*events.Events, 0)
-	for ; startBlock.Cmp(endBlock) == -1; startBlock.Add(startBlock, big.NewInt(1)) {
+	for ; startBlock.Cmp(endBlock) == -1; new(big.Int).Add(startBlock, big.NewInt(1)) {
 		hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 		if err != nil {
 			return nil, err
