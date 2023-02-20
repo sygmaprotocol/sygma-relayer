@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"math/big"
 	"time"
 
@@ -40,7 +41,7 @@ type SubstrateListener struct {
 	blockConfirmations *big.Int
 }
 
-func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message) {
+func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore store.BlockStore, msgChan chan []*message.Message) {
 	endBlock := big.NewInt(0)
 
 	go func() {

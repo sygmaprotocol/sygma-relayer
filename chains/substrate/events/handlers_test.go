@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-core/types"
 	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events/mock"
 
 	"testing"
@@ -43,9 +42,16 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	evts := []*events.Events{{
 		evtsRec,
 		[]events.Deposit{},
+		[]events.FeeSet{},
+
+		[]events.ProposalExecution{},
+		[]events.FailedHandlerExecution{},
+		[]events.Retry{},
+		[]events.BridgePaused{},
+		[]events.BridgeUnpaused{},
 	}}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -63,7 +69,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_NoEvents() {
 func (s *SystemUpdateHandlerTestSuite) Test_NoMetadatUpdate() {
 	evts := []*events.Events{{}}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -82,7 +88,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 		},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -154,16 +160,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			[]events.Deposit{
 				*d1, *d2,
 			},
-		},
-		[]events.FeeSet{},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -220,16 +226,16 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 			[]events.Deposit{
 				*d1, *d2,
 			},
-		},
-		[]events.FeeSet{},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -285,16 +291,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 			[]events.Deposit{
 				*d1, *d2,
 			},
-		},
-		[]events.FeeSet{},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -303,61 +309,55 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit_MultipleBlocks() {
 	d1 := &events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          types.ResourceID{},
-		DepositType:         message.FungibleTransfer,
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
+		DepositNonce: 1,
+		DestDomainID: 2,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
 	}
 	d2 := &events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          types.ResourceID{},
-		DepositType:         message.FungibleTransfer,
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
+		DepositNonce: 2,
+		DestDomainID: 2,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
 	}
 	d3 := &events.Deposit{
-		DepositNonce:        3,
-		DestinationDomainID: 3,
-		ResourceID:          types.ResourceID{},
-		DepositType:         message.FungibleTransfer,
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
+		DepositNonce: 3,
+		DestDomainID: 3,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
 	}
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestinationDomainID,
+		d1.DestDomainID,
 		d1.DepositNonce,
 		d1.ResourceID,
-		d1.Data,
-		d1.DepositType,
-		d1.HandlerResponse,
+		d1.CallData,
+		d1.TransferType,
 	).Return(
 		&message.Message{DepositNonce: 1},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestinationDomainID,
+		d2.DestDomainID,
 		d2.DepositNonce,
 		d2.ResourceID,
-		d2.Data,
-		d2.DepositType,
-		d2.HandlerResponse,
+		d2.CallData,
+		d2.TransferType,
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d3.DestinationDomainID,
+		d3.DestDomainID,
 		d3.DepositNonce,
 		d3.ResourceID,
-		d3.Data,
-		d3.DepositType,
-		d3.HandlerResponse,
+		d3.CallData,
+		d3.TransferType,
 	).Return(
 		&message.Message{DepositNonce: 3},
 		nil,
@@ -373,16 +373,37 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit_MultipleBlocks() 
 			[]events.Deposit{
 				*d1, *d2,
 			},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
 		},
 		{
 			evtsRec,
 			[]events.Deposit{},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
 		},
 		{
 			evtsRec,
 			[]events.Deposit{
 				*d3,
 			},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
 		},
 	}
 	err := s.depositEventHandler.HandleEvents(evts, msgChan)
