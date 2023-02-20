@@ -6,13 +6,14 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/ChainSafe/sygma-relayer/jobs"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/ChainSafe/sygma-relayer/jobs"
 
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
@@ -146,7 +147,7 @@ func Run() error {
 					switch handler.Type {
 					case "erc20":
 						{
-							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc20DepositHandler)
+							depositHandler.RegisterDepositHandler(handler.Address, listener.Erc20DepositHandler)
 							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC20MessageHandler)
 						}
 					case "permissionedGeneric":

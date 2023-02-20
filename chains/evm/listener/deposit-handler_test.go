@@ -2,15 +2,18 @@ package listener_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"math/big"
 	"testing"
 
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -80,4 +83,114 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	s.Nil(err)
 	s.NotNil(message)
 	s.Equal(message, expected)
+}
+
+var errIncorrectDataLen = errors.New("invalid calldata length: less than 84 bytes")
+
+type Erc20HandlerTestSuite struct {
+	suite.Suite
+}
+
+func TestRunErc20HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(Erc20HandlerTestSuite))
+}
+
+func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
+	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
+	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
+
+	calldata := deposit.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
+	depositLog := &events.Deposit{
+		DestinationDomainID: 0,
+		ResourceID:          [32]byte{0},
+		DepositNonce:        1,
+		SenderAddress:       common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"),
+		Data:                calldata,
+		HandlerResponse:     []byte{},
+	}
+
+	sourceID := uint8(1)
+	amountParsed := calldata[:32]
+	recipientAddressParsed := calldata[64:]
+
+	expected := &message.Message{
+		Source:       sourceID,
+		Destination:  depositLog.DestinationDomainID,
+		DepositNonce: depositLog.DepositNonce,
+		ResourceId:   depositLog.ResourceID,
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			amountParsed,
+			recipientAddressParsed,
+		},
+	}
+
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+
+	s.Nil(err)
+	s.NotNil(message)
+	s.Equal(message, expected)
+}
+
+func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectDataLen() {
+	metadata := []byte("0xdeadbeef")
+
+	var calldata []byte
+	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 32)...)
+	calldata = append(calldata, metadata...)
+
+	depositLog := &events.Deposit{
+		DestinationDomainID: 0,
+		ResourceID:          [32]byte{0},
+		DepositNonce:        1,
+		SenderAddress:       common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"),
+		Data:                calldata,
+		HandlerResponse:     []byte{},
+	}
+
+	sourceID := uint8(1)
+
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+
+	s.Nil(message)
+	s.EqualError(err, errIncorrectDataLen.Error())
+}
+
+func (s *Erc20HandlerTestSuite) TestErc20HandleEventAlternativeAmount() {
+	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
+	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
+
+	var handlerResponse []byte
+	handlerResponse = append(handlerResponse, math.PaddedBigBytes(big.NewInt(200), 32)...) // Amount (ERC20)
+	calldata := deposit.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
+	depositLog := &events.Deposit{
+		DestinationDomainID: 0,
+		ResourceID:          [32]byte{0},
+		DepositNonce:        1,
+		SenderAddress:       common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"),
+		Data:                calldata,
+		HandlerResponse:     handlerResponse,
+	}
+
+	sourceID := uint8(1)
+	recipientAddressParsed := calldata[64:]
+
+	expected := &message.Message{
+		Source:       sourceID,
+		Destination:  depositLog.DestinationDomainID,
+		DepositNonce: depositLog.DepositNonce,
+		ResourceId:   depositLog.ResourceID,
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			handlerResponse[:32],
+			recipientAddressParsed,
+		},
+	}
+
+	message, err := listener.Erc20DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+
+	s.Nil(err)
+	s.NotNil(message)
+	s.Equal(message, expected)
+	s.Equal(big.NewInt(200), new(big.Int).SetBytes(message.Payload[0].([]byte)))
 }
