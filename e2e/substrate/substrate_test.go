@@ -146,7 +146,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
-	s.pk = 
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
