@@ -46,7 +46,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	calldata = append(calldata, types.Bytes(recipientByteSlice)...)
 
 	sender, _ := types.NewAccountID(substratePK.PublicKey)
-	depositLog := &events.EventDeposit{
+	depositLog := &events.Deposit{
 		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
@@ -96,7 +96,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 	calldata = append(calldata, metadeposit_data...)
 
 	sender, _ := types.NewAccountID(substratePK.PublicKey)
-	depositLog := &events.EventDeposit{
+	depositLog := &events.Deposit{
 		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
@@ -148,7 +148,7 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 	calldata = append(calldata, types.Bytes(recipientByteSlice)...)
 	sender, _ := types.NewAccountID(substratePK.PublicKey)
 
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},

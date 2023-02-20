@@ -52,7 +52,7 @@ func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandl
 func (eh *FungibleTransferEventHandler) HandleEvents(evts *events.Events, msgChan chan []*message.Message) error {
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range evts.SygmaBridge_Deposit {
-		func(d events.EventDeposit) {
+		func(d events.Deposit) {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Error().Msgf("panic occured while handling deposit %+v", d)
@@ -100,7 +100,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, evt := range evts {
 		for _, r := range evt.SygmaBridge_Retry {
-			err := func(er events.EventRetry) error {
+			err := func(er events.Retry) error {
 				defer func() {
 					if r := recover(); r != nil {
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)

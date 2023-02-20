@@ -44,14 +44,14 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	}
 	evts := events.Events{
 		EventRecords:                evtsRec,
-		SygmaBridge_Deposit:         []events.EventDeposit{},
-		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
+		SygmaBridge_Deposit:         []events.Deposit{},
+		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.EventRetry{},
-		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.Retry{},
+		SygmaBridge_BridgePaused:           []events.BridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -76,14 +76,14 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit:         []events.EventDeposit{},
-		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
+		SygmaBridge_Deposit:         []events.Deposit{},
+		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.EventRetry{},
-		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.Retry{},
+		SygmaBridge_BridgePaused:           []events.BridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -111,7 +111,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -119,7 +119,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -153,16 +153,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
-		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.EventRetry{},
-		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.Retry{},
+		SygmaBridge_BridgePaused:           []events.BridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -172,7 +172,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 }
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -180,7 +180,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -216,16 +216,16 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
-		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.EventRetry{},
-		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.Retry{},
+		SygmaBridge_BridgePaused:           []events.BridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -235,7 +235,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -243,7 +243,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -278,16 +278,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
 	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
-		SygmaBasicFeeHandler_FeeSet: []events.EventFeeSet{},
+		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.EventProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.EventFailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.EventRetry{},
-		SygmaBridge_BridgePaused:           []events.EventBridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.EventBridgeUnpaused{},
+		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+		SygmaBridge_Retry:                  []events.Retry{},
+		SygmaBridge_BridgePaused:           []events.BridgePaused{},
+		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -335,7 +335,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(110)),
 				},
@@ -360,7 +360,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},
@@ -386,7 +386,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},
@@ -412,7 +412,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},
@@ -432,7 +432,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		},
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -440,7 +440,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -449,7 +449,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		CallData:     []byte{},
 	}
 	blockEvts := &events.Events{
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
 	}
@@ -481,7 +481,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	msgChan := make(chan []*message.Message, 2)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},
@@ -504,7 +504,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	d1 := &events.EventDeposit{
+	d1 := &events.Deposit{
 		DepositNonce: 1,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -512,7 +512,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		Handler:      [1]byte{0},
 		CallData:     []byte{},
 	}
-	d2 := &events.EventDeposit{
+	d2 := &events.Deposit{
 		DepositNonce: 2,
 		DestDomainID: 2,
 		ResourceID:   substrate_types.Bytes32{1},
@@ -521,12 +521,12 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		CallData:     []byte{},
 	}
 	blockEvts1 := &events.Events{
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d1,
 		},
 	}
 	blockEvts2 := &events.Events{
-		SygmaBridge_Deposit: []events.EventDeposit{
+		SygmaBridge_Deposit: []events.Deposit{
 			*d2,
 		},
 	}
@@ -558,14 +558,14 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	msgChan := make(chan []*message.Message, 1)
 	evts := []*events.Events{
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},
 			},
 		},
 		{
-			SygmaBridge_Retry: []events.EventRetry{
+			SygmaBridge_Retry: []events.Retry{
 				{
 					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
 				},

@@ -197,8 +197,8 @@ func Run() error {
 
 				bridgePallet := substrate_bridge.NewBridgePallet(client)
 
-				depositHandler := substrate_events.NewSubstrateDepositHandler()
-				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_events.FungibleTransferHandler)
+				depositHandler := substrate_listener.NewSubstrateDepositHandler()
+				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrate_events.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
