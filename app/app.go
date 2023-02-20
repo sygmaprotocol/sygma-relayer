@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChainSafe/sygma-relayer/jobs"
-	"math/big"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
@@ -134,12 +132,6 @@ func Run() error {
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
 
-				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
-				// startBlock % blockConfirmations == 0
-				if mod.Cmp(big.NewInt(0)) != 0 {
-					config.StartBlock.Sub(config.StartBlock, mod)
-				}
-
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
 					UpperLimitFeePerGas: config.MaxGasPrice,
@@ -185,8 +177,10 @@ func Run() error {
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
-				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, *config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
-				chain := evm.NewEVMChain(*coreEvmChain, executor)
+				chain := evm.NewEVMChain(
+					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
+					config.BlockInterval, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart,
+				)
 
 				chains = append(chains, chain)
 			}
