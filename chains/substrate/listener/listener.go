@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"math/big"
 	"time"
 
@@ -19,7 +20,7 @@ type EventHandler interface {
 type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
-	GetBlockEvents(hash types.Hash, target interface{}) error
+	GetBlockEvents(hash types.Hash) (*events.Events, error)
 }
 
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {
@@ -36,11 +37,11 @@ type SubstrateListener struct {
 	blockRetryInterval time.Duration
 }
 
-func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, blockstore store.BlockStore, stopChn <-chan struct{}, msgChan chan []*message.Message) {
+func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore store.BlockStore, msgChan chan []*message.Message) {
 	go func() {
 		for {
 			select {
-			case <-stopChn:
+			case <-ctx.Done():
 				return
 			default:
 				finalizedHeader, err := l.conn.GetHeaderLatest()
@@ -58,14 +59,14 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
+
 				hash, err := l.conn.GetBlockHash(startBlock.Uint64())
 				if err != nil {
 					log.Error().Err(err).Str("block", startBlock.String()).Msg("Failed to query latest block")
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
-				evts := &events.Events{}
-				err = l.conn.GetBlockEvents(hash, evts)
+				evts, err := l.conn.GetBlockEvents(hash)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to process events in block")
 					continue
@@ -78,7 +79,6 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 						continue
 					}
 				}
-
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")

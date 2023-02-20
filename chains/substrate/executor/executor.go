@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -35,8 +36,8 @@ type MessageHandler interface {
 }
 
 type BridgePallet interface {
-	IsProposalExecuted(p *proposal.Proposal) bool
-	ExecuteProposals(proposals []*proposal.Proposal, signature []byte) (*types.Hash, error)
+	IsProposalExecuted(p *proposal.Proposal) (bool, error)
+	ExecuteProposals(conn *connection.Connection, proposals []*proposal.Proposal, signature []byte) (*types.Hash, error)
 	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
 }
 
@@ -47,6 +48,7 @@ type Executor struct {
 	fetcher     signing.SaveDataFetcher
 	bridge      BridgePallet
 	mh          MessageHandler
+	conn        *connection.Connection
 }
 
 func NewExecutor(
@@ -56,6 +58,7 @@ func NewExecutor(
 	mh MessageHandler,
 	bridgePallet BridgePallet,
 	fetcher signing.SaveDataFetcher,
+	conn *connection.Connection,
 ) *Executor {
 	return &Executor{
 		host:        host,
@@ -64,6 +67,7 @@ func NewExecutor(
 		mh:          mh,
 		bridge:      bridgePallet,
 		fetcher:     fetcher,
+		conn:        conn,
 	}
 }
 
@@ -75,8 +79,10 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		if err != nil {
 			return err
 		}
-
-		isExecuted := e.bridge.IsProposalExecuted(prop)
+		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+		if err != nil {
+			return err
+		}
 		if isExecuted {
 			continue
 		}
@@ -126,7 +132,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 					return err
 				}
 
-				log.Info().Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Msgf("Sent proposals execution with hash: %s", hash.Hex())
 			}
 		case err := <-statusChn:
 			{
@@ -136,7 +142,10 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 			{
 				allExecuted := true
 				for _, prop := range proposals {
-					isExecuted := e.bridge.IsProposalExecuted(prop)
+					isExecuted, err := e.bridge.IsProposalExecuted(prop)
+					if err != nil {
+						return err
+					}
 					if !isExecuted {
 						allExecuted = false
 						continue
@@ -164,7 +173,7 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposals(proposals, sig)
+	hash, err := e.bridge.ExecuteProposals(e.conn, proposals, sig)
 	if err != nil {
 		return nil, err
 	}
@@ -173,5 +182,5 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 }
 
 func (e *Executor) sessionID(hash []byte) string {
-	return fmt.Sprintf("signing-%s", types.NewHash(hash))
+	return fmt.Sprintf("signing-%s", ethCommon.Bytes2Hex(hash))
 }

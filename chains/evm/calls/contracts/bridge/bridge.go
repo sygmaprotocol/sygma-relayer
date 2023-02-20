@@ -71,7 +71,7 @@ func (c *BridgeContract) deposit(
 }
 
 func (c *BridgeContract) Erc20Deposit(
-	recipient common.Address,
+	recipient []byte,
 	amount *big.Int,
 	resourceID types.ResourceID,
 	destDomainID uint8,
@@ -79,7 +79,7 @@ func (c *BridgeContract) Erc20Deposit(
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
-		Str("recipient", recipient.String()).
+		Str("recipient", hexutil.Encode(recipient)).
 		Str("resourceID", hexutil.Encode(resourceID[:])).
 		Str("amount", amount.String()).
 		Uint8("destDomainID", destDomainID).
@@ -87,9 +87,9 @@ func (c *BridgeContract) Erc20Deposit(
 		Msgf("ERC20 deposit")
 	var data []byte
 	if opts.Priority == 0 {
-		data = deposit.ConstructErc20DepositData(recipient.Bytes(), amount)
+		data = deposit.ConstructErc20DepositData(recipient, amount)
 	} else {
-		data = deposit.ConstructErc20DepositDataWithPriority(recipient.Bytes(), amount, opts.Priority)
+		data = deposit.ConstructErc20DepositDataWithPriority(recipient, amount, opts.Priority)
 	}
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)

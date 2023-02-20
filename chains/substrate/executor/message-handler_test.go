@@ -2,10 +2,11 @@ package executor_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 var errIncorrectFungibleTransferPayloadLen = errors.New("malformed payload. Len  of payload should be 2")

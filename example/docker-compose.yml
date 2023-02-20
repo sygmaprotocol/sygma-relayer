@@ -4,7 +4,7 @@ version: '3'
 
 services:
   evm1-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.0.0
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.1.2
     container_name: evm1-1
     command: ganache-cli --chainId 1337 -d --db data/ --blockTime 2 > /dev/null
     logging:
@@ -14,13 +14,19 @@ services:
 
   # SECOND CHAIN
   evm2-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.0.0
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.1.2
     command: ganache-cli --chainId 1338 -d --db data/ --blockTime 2 > /dev/null
     container_name: evm2-1
     logging:
       driver: none
     ports:
       - "8547:8545"
+      
+  substrate-pallet:
+    container_name: substrate-pallet
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:e2e-latest"
+    ports:
+      - "9944:9944"
 
   relayer1:
     container_name: example_relayer1
@@ -30,7 +36,7 @@ services:
     command: sh -c "sleep 5 && ./bridge run --config /cfg/config_evm-evm_1.json --fresh"
     depends_on:
       - evm1-1
-      - evm2-1
+      - substrate-pallet
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -43,7 +49,7 @@ services:
     command: sh -c "sleep 5 && ./bridge run --config /cfg/config_evm-evm_2.json --fresh"
     depends_on:
       - evm1-1
-      - evm2-1
+      - substrate-pallet
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -56,7 +62,7 @@ services:
     command: sh -c "sleep 5 && ./bridge run --config /cfg/config_evm-evm_3.json --fresh"
     depends_on:
       - evm1-1
-      - evm2-1
+      - substrate-pallet
     volumes:
       - ./cfg:/cfg
     restart: always
@@ -67,7 +73,7 @@ services:
     command: go run main.go server -r ./fee-oracle-config/resource.json -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
     depends_on:
       - evm1-1
-      - evm2-1
+      - substrate-pallet
     volumes:
       - ./fee-oracle-config:/app/feeOracle/fee-oracle-config
     ports:

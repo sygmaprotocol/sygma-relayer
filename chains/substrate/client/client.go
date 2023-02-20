@@ -10,22 +10,21 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
 	"github.com/rs/zerolog/log"
 )
 
 type SubstrateClient struct {
 	client.Client
-	author.Author
 	key       *signature.KeyringPair // Keyring used for signing
 	ChainID   *big.Int
 	nonceLock sync.Mutex // Locks nonce for updates
 	nonce     types.U32  // Latest account nonce
 }
 
-func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClient, error) {
+func NewSubstrateClient(url string, key *signature.KeyringPair, chainID *big.Int) (*SubstrateClient, error) {
 	c := &SubstrateClient{
 		key: key,
 	}
@@ -34,6 +33,7 @@ func NewSubstrateClient(url string, key *signature.KeyringPair) (*SubstrateClien
 		return nil, err
 	}
 	c.Client = client
+	c.ChainID = chainID
 	return c, nil
 }
 
@@ -73,7 +73,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 		BlockHash:          conn.GenesisHash,
 		Era:                types.ExtrinsicEra{IsMortalEra: false},
 		GenesisHash:        conn.GenesisHash,
-		Nonce:              types.NewUCompactFromUInt(uint64(c.nonce)),
+		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
 		TransactionVersion: rv.TransactionVersion,
@@ -128,7 +128,18 @@ func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ex
 	return hash, nil
 }
 
-// sendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
+// SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
 func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
-	return c.Author.SubmitExtrinsic(ext)
+	enc, err := codec.EncodeToHex(ext)
+
+	if err != nil {
+		return types.Hash{}, err
+	}
+	var res string
+	err = c.Call(&res, "author_submitExtrinsic", enc)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	return types.NewHashFromHexString(res)
 }
