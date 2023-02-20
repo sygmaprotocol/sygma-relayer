@@ -21,10 +21,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const bridgeVersion = "3.1.0"
+const verifyingContract = "6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"
+
 type BridgeProposal struct {
 	OriginDomainID uint8
-	ResourceID     [32]byte
 	DepositNonce   uint64
+	ResourceID     [32]byte
 	Data           []byte
 }
 
@@ -57,15 +60,13 @@ func (p *BridgePallet) ExecuteProposals(
 
 	return p.client.Transact(
 		conn,
-		"execute_proposal",
+		"SygmaBridge.execute_proposal",
 		bridgeProposals,
 		signature,
 	)
 }
 
 func (p *BridgePallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
-	chainID := p.client.ChainID
-
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
 		formattedProps[i] = map[string]interface{}{
@@ -98,9 +99,10 @@ func (p *BridgePallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, er
 		},
 		PrimaryType: "Proposals",
 		Domain: apitypes.TypedDataDomain{
-			Name:    "Bridge",
-			ChainId: math.NewHexOrDecimal256(chainID.Int64()),
-			Version: "3.1.0",
+			Name:              "Bridge",
+			ChainId:           math.NewHexOrDecimal256(p.client.ChainID.Int64()),
+			Version:           bridgeVersion,
+			VerifyingContract: verifyingContract,
 		},
 		Message: message,
 	}
@@ -125,7 +127,7 @@ func (p *BridgePallet) IsProposalExecuted(prop *proposal.Proposal) (bool, error)
 		Str("resourceID", hexutil.Encode(prop.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.client.Call(res, "is_proposal_executed", big.NewInt(int64(prop.DepositNonce)))
+	err := p.client.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.Source)))
 	if err != nil {
 		return false, err
 	}

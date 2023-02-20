@@ -5,6 +5,7 @@ package listener_test
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"math/big"
 	"testing"
 
@@ -39,7 +40,7 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
 	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
-	s.retryEventHandler = listener.NewRetryEventHandler(s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5))
+	s.retryEventHandler = listener.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5))
 }
 
 func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
@@ -235,7 +236,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 	s.domainID = 1
 	s.mockEventListener = mock_coreListener.NewMockEventListener(ctrl)
 	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
-	s.depositEventHandler = listener.NewDepositEventHandler(s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID)
+	s.depositEventHandler = listener.NewDepositEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID)
 }
 
 func (s *DepositHandlerTestSuite) Test_FetchDepositFails() {

@@ -1,13 +1,18 @@
 package executor
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
+	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -68,14 +73,48 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	if !ok {
 		return nil, errors.New("wrong payload amount format")
 	}
-	recipient, ok := m.Payload[1].([]byte)
+	reciever, ok := m.Payload[1].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload recipient format")
 	}
 	var data []byte
 	data = append(data, common.LeftPadBytes(amount, 32)...) // amount (uint256)
+	acc := *(*[]types.U8)(unsafe.Pointer(&reciever))
+	recipient := constructRecipientData((acc))
+
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
-	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
-	data = append(data, recipient...)                             // recipient ([]byte)
+	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
+	data = append(data, recipient...)
 	return proposal.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
+}
+
+func constructRecipientData(recipient []types.U8) []byte {
+	rec := types.MultiLocationV1{
+		Parents: 0,
+		Interior: types.JunctionsV1{
+			IsX1: true,
+			X1: types.JunctionV1{
+				IsAccountID32: true,
+				AccountID32NetworkID: types.NetworkID{
+					IsAny: true,
+				},
+				AccountID: recipient,
+			},
+		},
+	}
+
+	encodedRecipient := bytes.NewBuffer([]byte{})
+	encoder := scale.NewEncoder(encodedRecipient)
+	_ = rec.Encode(*encoder)
+
+	recipientBytes := encodedRecipient.Bytes()
+	var finalRecipient []byte
+
+	// remove accountID size data
+	// this is a fix because the substrate decoder is not able to parse the data with extra data
+	// that represents size of the recipient byte array
+	finalRecipient = append(finalRecipient, recipientBytes[:4]...)
+	finalRecipient = append(finalRecipient, recipientBytes[5:]...)
+
+	return finalRecipient
 }

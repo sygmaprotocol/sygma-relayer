@@ -11,8 +11,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ChainSafe/sygma-relayer/comm"
-
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -21,14 +19,15 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/config/chain"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
@@ -36,6 +35,14 @@ import (
 	"github.com/ChainSafe/chainbridge-core/store"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	substrate_bridge "github.com/ChainSafe/sygma-relayer/chains/substrate/calls/pallets/bridge"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
+	substrate_events "github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
@@ -49,7 +56,14 @@ import (
 )
 
 func Run() error {
-	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName))
+	var TestKeyringPairAlice = signature.KeyringPair{
+		URI:       "//Alice",
+		PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
+		Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+	}
+
+	configuration := &config.Config{}
+	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName), configuration)
 	if err != nil {
 		panic(err)
 	}
@@ -84,9 +98,6 @@ func Run() error {
 		panic(err)
 	}
 
-	healthComm := p2p.NewCommunication(host, "p2p/health")
-	go comm.ExecuteCommHealthCheck(healthComm, host.Peerstore().Peers())
-
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
@@ -97,7 +108,7 @@ func Run() error {
 		switch chainConfig["type"] {
 		case "evm":
 			{
-				config, err := chain.NewEVMConfig(chainConfig)
+				config, err := evm.NewEVMConfig(chainConfig)
 				if err != nil {
 					panic(err)
 				}
@@ -123,32 +134,84 @@ func Run() error {
 				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				pGenericHandler := chainConfig["permissionlessGenericHandler"].(string)
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
-				depositHandler.RegisterDepositHandler(config.Erc20Handler, coreListener.Erc20DepositHandler)
-				depositHandler.RegisterDepositHandler(config.Erc721Handler, coreListener.Erc721DepositHandler)
-				depositHandler.RegisterDepositHandler(config.GenericHandler, coreListener.GenericDepositHandler)
-				depositHandler.RegisterDepositHandler(pGenericHandler, listener.PermissionlessGenericDepositHandler)
+				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
+				for _, handler := range config.Handlers {
+					switch handler.Type {
+					case "erc20":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc20DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC20MessageHandler)
+						}
+					case "permissionedGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.GenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.GenericMessageHandler)
+						}
+					case "permissionlessGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
+							mh.RegisterMessageHandler(handler.Address, executor.PermissionlessGenericMessageHandler)
+						}
+					case "erc721":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
+						}
+					}
+				}
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
-				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, config)
-
-				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
-				mh.RegisterMessageHandler(config.Erc20Handler, coreExecutor.ERC20MessageHandler)
-				mh.RegisterMessageHandler(config.Erc721Handler, coreExecutor.ERC721MessageHandler)
-				mh.RegisterMessageHandler(config.GenericHandler, coreExecutor.GenericMessageHandler)
-				mh.RegisterMessageHandler(pGenericHandler, executor.PermissionlessGenericMessageHandler)
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"]))
+				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(l, depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
+				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
-				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, config)
-				chain := evm.NewEVMChain(*coreEvmChain, executor)
+				chain := evm.NewEVMChain(
+					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
+					config.BlockInterval, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart,
+				)
 
 				chains = append(chains, chain)
+			}
+		case "substrate":
+			{
+				config, err := substrate.NewSubstrateConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice, config.ChainID)
+				if err != nil {
+					panic(err)
+				}
+
+				bridgePallet := substrate_bridge.NewBridgePallet(client)
+
+				depositHandler := substrate_events.NewSubstrateDepositHandler()
+				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_events.FungibleTransferHandler)
+				eventHandlers := make([]substrate_listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrate_events.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
+				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
+
+				mh := substrateExecutor.NewSubstrateMessageHandler()
+				mh.RegisterMessageHandler(message.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
+
+				executor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
+
+				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
+
+				chains = append(chains, substrateChain)
+
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))

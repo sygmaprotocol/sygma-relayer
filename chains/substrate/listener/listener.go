@@ -19,7 +19,7 @@ type EventHandler interface {
 type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
-	GetBlockEvents(hash types.Hash, target interface{}) error
+	GetBlockEvents(hash types.Hash) (*events.Events, error)
 }
 
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {
@@ -46,7 +46,7 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 	go func() {
 		for {
 			select {
-			case <-stopChn:
+			case <-ctx.Done():
 				return
 			default:
 				head, err := l.conn.GetHeaderLatest()
@@ -80,7 +80,6 @@ func (l *SubstrateListener) ListenToEvents(startBlock *big.Int, domainID uint8, 
 						continue
 					}
 				}
-
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
 					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
@@ -99,8 +98,7 @@ func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) 
 			return nil, err
 		}
 
-		var evt *events.Events
-		err = l.conn.GetBlockEvents(hash, evt)
+		evt, err := l.conn.GetBlockEvents(hash)
 		if err != nil {
 			return nil, err
 		}

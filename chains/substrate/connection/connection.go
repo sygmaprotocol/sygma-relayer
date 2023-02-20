@@ -69,22 +69,22 @@ func (c *Connection) UpdateMetatdata() error {
 	return nil
 }
 
-func (c *Connection) GetBlockEvents(hash types.Hash, target events.Events) error {
+func (c *Connection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
 	meta := c.GetMetadata()
-	key, err := types.CreateStorageKey(&meta, "System", "Events", nil, nil)
+	key, err := types.CreateStorageKey(&meta, "System", "Events", nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var records types.EventRecordsRaw
-	_, err = c.RPC.State.GetStorage(key, &records, hash)
+	var raw types.EventRecordsRaw
+	_, err = c.RPC.State.GetStorage(key, &raw, hash)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	err = records.DecodeEventRecords(&meta, &target)
+	evts := &events.Events{}
+	err = raw.DecodeEventRecords(&meta, evts)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return evts, nil
 }

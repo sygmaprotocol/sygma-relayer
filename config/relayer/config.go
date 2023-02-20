@@ -22,10 +22,11 @@ type RelayerConfig struct {
 }
 
 type MpcRelayerConfig struct {
-	TopologyConfiguration TopologyConfiguration
-	Port                  uint16
-	KeysharePath          string
-	Key                   string
+	TopologyConfiguration   TopologyConfiguration
+	Port                    uint16
+	KeysharePath            string
+	Key                     string
+	CommHealthCheckInterval time.Duration
 }
 
 type BullyConfig struct {
@@ -50,10 +51,11 @@ type RawRelayerConfig struct {
 }
 
 type RawMpcRelayerConfig struct {
-	KeysharePath          string                `mapstructure:"KeysharePath" json:"keysharePath"`
-	Key                   string                `mapstructure:"Key" json:"key"`
-	Port                  string                `mapstructure:"Port" json:"port" default:"9000"`
-	TopologyConfiguration TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
+	KeysharePath            string                `mapstructure:"KeysharePath" json:"keysharePath"`
+	Key                     string                `mapstructure:"Key" json:"key"`
+	Port                    string                `mapstructure:"Port" json:"port" default:"9000"`
+	TopologyConfiguration   TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
+	CommHealthCheckInterval string                `mapstructure:"CommHealthCheckInterval" json:"commHealthCheckInterval" default:"5m"`
 }
 
 type RawBullyConfig struct {
@@ -127,6 +129,12 @@ func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
 	mpcConfig.Key = rawConfig.MpcConfig.Key
+
+	duration, err := time.ParseDuration(rawConfig.MpcConfig.CommHealthCheckInterval)
+	if err != nil {
+		return MpcRelayerConfig{}, fmt.Errorf("unable to parse communication health check interval time: %w", err)
+	}
+	mpcConfig.CommHealthCheckInterval = duration
 
 	return mpcConfig, nil
 }

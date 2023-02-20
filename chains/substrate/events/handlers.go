@@ -4,9 +4,8 @@
 package events
 
 import (
-	"github.com/ChainSafe/chainbridge-core/types"
-
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -39,7 +38,7 @@ func (eh *SystemUpdateEventHandler) HandleEvents(evts []*Events, msgChan chan []
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID uint8, destID uint8, nonce uint64, resourceID types.ResourceID, calldata []byte, depositType message.TransferType, handlerResponse []byte) (*message.Message, error)
+	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType [1]byte) (*message.Message, error)
 }
 
 type FungibleTransferEventHandler struct {
@@ -58,7 +57,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*Events, msgChan cha
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	for _, evt := range evts {
-		for _, d := range evt.Deposit {
+		for _, d := range evt.SygmaBridge_Deposit {
 			func(d Deposit) {
 				defer func() {
 					if r := recover(); r != nil {
@@ -66,7 +65,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*Events, msgChan cha
 					}
 				}()
 
-				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.DepositType, d.HandlerResponse)
+				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
