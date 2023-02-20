@@ -35,7 +35,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
@@ -64,7 +64,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
