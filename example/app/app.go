@@ -19,7 +19,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	coreEvm "github.com/ChainSafe/chainbridge-core/chains/evm"
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -172,8 +171,10 @@ func Run() error {
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
 
-				coreEvmChain := coreEvm.NewEVMChain(evmListener, nil, blockstore, *config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
-				chain := evm.NewEVMChain(*coreEvmChain, executor)
+				chain := evm.NewEVMChain(
+					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
+					config.BlockInterval, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart,
+				)
 
 				chains = append(chains, chain)
 			}
@@ -192,11 +193,6 @@ func Run() error {
 				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &TestKeyringPairAlice, config.ChainID)
 				if err != nil {
 					panic(err)
-				}
-				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
-				// startBlock % blockConfirmations == 0
-				if mod.Cmp(big.NewInt(0)) != 0 {
-					config.StartBlock.Sub(config.StartBlock, mod)
 				}
 
 				bridgePallet := substrate_bridge.NewBridgePallet(client)

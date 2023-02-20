@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -15,13 +15,11 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
-	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
@@ -131,48 +129,44 @@ type IntegrationTestSuite struct {
 func (s *IntegrationTestSuite) SetupSuite() {
 	// EVM side preparation
 	evmTransactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, evmTransactor)
 	mintTo := s.evmClient.From()
 	amountToMint := big.NewInt(0).Mul(big.NewInt(5000000000000000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 	amountToApprove := big.NewInt(0).Mul(big.NewInt(100000), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
-	_, err := erc20Contract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	_, err = erc20Contract.MintTokens(s.evmConfig.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	// Approving tokens
-	_, err = erc20Contract.ApproveTokens(s.evmConfig.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	_, err = erc20Contract.ApproveTokens(s.evmConfig.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
 
 	erc20LRContract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, evmTransactor)
-	_, err = erc20LRContract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+	_, err := erc20LRContract.MintTokens(mintTo, amountToMint, transactor.TransactOptions{})
+	if err != nil {
+		panic(err)
+	}
+	_, err = erc20LRContract.MintTokens(s.evmConfig.Erc20LockReleaseHandlerAddr, amountToMint, transactor.TransactOptions{})
+	if err != nil {
+		panic(err)
+	}
+	_, err = erc20LRContract.ApproveTokens(s.evmConfig.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
+	var assetId uint32 = 2000
+	var accountInfo1 substrate.Account
 
+	assetIdSerialized := make([]byte, 4)
+	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
 	meta := s.substrateConnection.GetMetadata()
-	key, _ := substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
-	var accountInfo1 substrateTypes.AccountInfo
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
-	senderBalanceBefore := accountInfo1.Data.Free
+
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
+	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
+	s.Nil(err)
+
+	senderBalanceBefore := accountInfo1.Balance
 
 	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
 	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
 	transactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 
-	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor)
+	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor)
 
 	destBalanceBefore, err := erc20Contract.GetBalance(dstAddr)
 	s.Nil(err)
@@ -210,19 +204,19 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 		},
 	}
 	reciever := []substrateTypes.U8{92, 31, 89, 97, 105, 107, 173, 46, 115, 247, 52, 23, 240, 126, 245, 92, 98, 162, 220, 91}
-	dst := [2]JunctionV1{
-		JunctionV1{
+	dst := [2]substrateTypes.JunctionV1{
+		substrateTypes.JunctionV1{
 			IsGeneralKey: true,
 			GeneralKey:   reciever,
 		},
-		JunctionV1{
-			IsGeneralIndex: true,
-			GeneralIndex:   substrateTypes.NewUCompact(big.NewInt(1)),
+		substrateTypes.JunctionV1{
+			IsGeneralKey: true,
+			GeneralKey:   []substrateTypes.U8{1},
 		},
 	}
-	destinationLocation := MultiLocationV1{
+	destinationLocation := substrateTypes.MultiLocationV1{
 		Parents: 0,
-		Interior: JunctionsV1{
+		Interior: substrateTypes.JunctionsV1{
 			IsX2: true,
 			X2:   dst,
 		},
@@ -233,11 +227,12 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	s.Nil(err)
 
 	meta = s.substrateConnection.GetMetadata()
-	key, _ = substrateTypes.CreateStorageKey(&meta, "System", "Account", substratePK.PublicKey)
-	var accountInfo2 substrateTypes.AccountInfo
+	var accountInfo2 substrate.Account
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
+	s.Nil(err)
 
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
-	senderBalanceAfter := accountInfo2.Data.Free
+	senderBalanceAfter := accountInfo2.Balance
 
 	// balance of sender has decreased
 	s.Equal(1, senderBalanceBefore.Int.Cmp(senderBalanceAfter.Int))
@@ -255,44 +250,28 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	dstAddr := substratePK.PublicKey
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20Addr, transactor1)
+	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
 	bridgeContract1 := bridge.NewBridgeContract(s.evmClient, s.evmConfig.BridgeAddr, transactor1)
 
 	senderBalBefore, err := erc20Contract1.GetBalance(crypto.PubkeyToAddress(pk.PublicKey))
 	s.Nil(err)
 
 	meta := s.substrateConnection.GetMetadata()
-	var acc Account
+	var acc substrate.Account
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)
 	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
 
 	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	s.Nil(err)
+
 	destBalanceBefore := acc.Balance
+
+	_, err = bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
+		Value: s.evmConfig.BasicFee,
+	})
 	s.Nil(err)
-
-	var feeOracleSignature = "8167ba25cf7a08a43aae68576b71f0e42b6281a379a245a8be016c5b16d6227d3941da8f50c7b99763493d6e6f4f36e290ecd9bacca927a2f1b5f157cbe67b171b"
-	var feeDataHash = "00000000000000000000000000000000000000000000000000011f667bbfc00000000000000000000000000000000000000000000000000006bb5a99744a9000000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000698d283a0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
-	dt := deposit.ConstructErc20DepositData(dstAddr, amountToDeposit)
-
-	opts := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
-	depositTxHash, err := bridgeContract1.ExecuteTransaction(
-		"deposit",
-		opts,
-		uint8(2), s.evmConfig.Erc20ResourceID, dt, feeData,
-	)
-	s.Nil(err)
-
-	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
-
-	depositTx, _, err := s.evmClient.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore, dstAddr)
 	s.Nil(err)
@@ -301,77 +280,11 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
 
 	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	s.Nil(err)
+
 	destBalanceAfter := acc.Balance
 
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Int.Cmp(destBalanceBefore.Int))
-}
-
-type Account struct {
-	Balance substrateTypes.U128
-}
-
-type MultiLocationV1 struct {
-	Parents  substrateTypes.U8
-	Interior JunctionsV1
-}
-type JunctionsV1 struct {
-	IsHere bool
-
-	IsX1 bool
-	X1   JunctionV1
-
-	IsX2 bool
-	X2   [2]JunctionV1
-
-	IsX3 bool
-	X3   [3]JunctionV1
-
-	IsX4 bool
-	X4   [4]JunctionV1
-
-	IsX5 bool
-	X5   [5]JunctionV1
-
-	IsX6 bool
-	X6   [6]JunctionV1
-
-	IsX7 bool
-	X7   [7]JunctionV1
-
-	IsX8 bool
-	X8   [8]JunctionV1
-}
-
-type JunctionV1 struct {
-	IsParachain bool
-	ParachainID substrateTypes.UCompact
-
-	IsAccountID32        bool
-	AccountID32NetworkID substrateTypes.NetworkID
-	AccountID            []substrateTypes.U8
-
-	IsAccountIndex64        bool
-	AccountIndex64NetworkID substrateTypes.NetworkID
-	AccountIndex            substrateTypes.U64
-
-	IsAccountKey20        bool
-	AccountKey20NetworkID substrateTypes.NetworkID
-	AccountKey            []substrateTypes.U8
-
-	IsPalletInstance bool
-	PalletIndex      substrateTypes.U8
-
-	IsGeneralIndex bool
-	GeneralIndex   substrateTypes.UCompact
-
-	IsGeneralKey bool
-	GeneralKey   []substrateTypes.U8
-
-	IsOnlyChild bool
-
-	IsPlurality bool
-	BodyID      substrateTypes.BodyID
-	BodyPart    substrateTypes.BodyPart
 }

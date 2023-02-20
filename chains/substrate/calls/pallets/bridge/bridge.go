@@ -21,6 +21,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const bridgeVersion = "3.1.0"
+const verifyingContract = "6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"
+
 type BridgeProposal struct {
 	OriginDomainID uint8
 	DepositNonce   uint64
@@ -98,8 +101,8 @@ func (p *BridgePallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, er
 		Domain: apitypes.TypedDataDomain{
 			Name:              "Bridge",
 			ChainId:           math.NewHexOrDecimal256(p.client.ChainID.Int64()),
-			Version:           "3.1.0",
-			VerifyingContract: "6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
+			Version:           bridgeVersion,
+			VerifyingContract: verifyingContract,
 		},
 		Message: message,
 	}

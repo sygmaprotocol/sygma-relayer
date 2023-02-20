@@ -9,16 +9,16 @@ import (
 
 type Events struct {
 	types.EventRecords
-	SygmaBridge_Deposit         []EventDeposit
-	SygmaBasicFeeHandler_FeeSet []EventFeeSet
+	SygmaBridge_Deposit         []Deposit
+	SygmaBasicFeeHandler_FeeSet []FeeSet
 
-	SygmaBridge_ProposalExecution      []EventProposalExecution
-	SygmaBridge_FailedHandlerExecution []EventFailedHandlerExecution
-	SygmaBridge_Retry                  []EventRetry
-	SygmaBridge_BridgePaused           []EventBridgePaused
-	SygmaBridge_BridgeUnpaused         []EventBridgeUnpaused
+	SygmaBridge_ProposalExecution      []ProposalExecution
+	SygmaBridge_FailedHandlerExecution []FailedHandlerExecution
+	SygmaBridge_Retry                  []Retry
+	SygmaBridge_BridgePaused           []BridgePaused
+	SygmaBridge_BridgeUnpaused         []BridgeUnpaused
 }
-type EventDeposit struct {
+type Deposit struct {
 	Phase        types.Phase
 	DestDomainID types.U8
 	ResourceID   types.Bytes32
@@ -30,7 +30,7 @@ type EventDeposit struct {
 	Topics       []types.Hash
 }
 
-type EventFeeSet struct {
+type FeeSet struct {
 	Phase    types.Phase
 	DomainID types.U8
 	Asset    types.U32
@@ -38,7 +38,7 @@ type EventFeeSet struct {
 	Topics   []types.Hash
 }
 
-type EventProposalExecution struct {
+type ProposalExecution struct {
 	Phase          types.Phase
 	OriginDomainID types.U8
 	DepositNonce   types.U64
@@ -46,7 +46,7 @@ type EventProposalExecution struct {
 	Topics         []types.Hash
 }
 
-type EventFailedHandlerExecution struct {
+type FailedHandlerExecution struct {
 	Phase          types.Phase
 	Error          []byte
 	OriginDomainID types.U8
@@ -54,20 +54,21 @@ type EventFailedHandlerExecution struct {
 	Topics         []types.Hash
 }
 
-type EventRetry struct {
-	Phase                types.Phase
-	DepositOnBlockHeight types.U128
-	DestDomainID         types.U8
-	Topics               []types.Hash
+type Retry struct {
+	Phase                 types.Phase
+	DepositOnBlockHeight  types.U64
+	DepositExtrinsicIndex types.U64
+	Sender                types.AccountID
+	Topics                []types.Hash
 }
 
-type EventBridgePaused struct {
+type BridgePaused struct {
 	Phase        types.Phase
 	DestDomainID types.U8
 	Topics       []types.Hash
 }
 
-type EventBridgeUnpaused struct {
+type BridgeUnpaused struct {
 	Phase        types.Phase
 	DestDomainID types.U8
 	Topics       []types.Hash

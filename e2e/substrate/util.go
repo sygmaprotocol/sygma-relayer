@@ -47,10 +47,13 @@ func WaitForProposalExecuted(connection *connection.Connection, beforeBalance su
 	for {
 		select {
 		case <-ticker.C:
-			done := checkBalance(beforeBalance, connection, key)
+			done, err := checkBalance(beforeBalance, connection, key)
+			if err != nil {
+				ticker.Stop()
+				return err
+			}
 			if done {
 				ticker.Stop()
-
 				return nil
 			}
 		case <-timeout:
@@ -60,7 +63,7 @@ func WaitForProposalExecuted(connection *connection.Connection, beforeBalance su
 	}
 }
 
-func checkBalance(beforeBalance substrateTypes.U128, connection *connection.Connection, key []byte) bool {
+func checkBalance(beforeBalance substrateTypes.U128, connection *connection.Connection, key []byte) (bool, error) {
 	meta := connection.GetMetadata()
 	var acc Account
 	var assetId uint32 = 2000
@@ -68,12 +71,15 @@ func checkBalance(beforeBalance substrateTypes.U128, connection *connection.Conn
 	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
 
 	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, key)
-	connection.RPC.State.GetStorageLatest(key, &acc)
+	_, err := connection.RPC.State.GetStorageLatest(key, &acc)
+	if err != nil {
+		return false, err
+	}
 	destBalanceAfter := acc.Balance
 	if destBalanceAfter.Int.Cmp(beforeBalance.Int) == 1 {
-		return true
+		return true, nil
 	} else {
-		return false
+		return false, nil
 	}
 }
 

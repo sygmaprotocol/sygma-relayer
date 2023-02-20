@@ -12,15 +12,14 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
 	"github.com/rs/zerolog/log"
 )
 
 type SubstrateClient struct {
 	client.Client
-	author.Author
 	key       *signature.KeyringPair // Keyring used for signing
 	ChainID   *big.Int
 	nonceLock sync.Mutex // Locks nonce for updates
@@ -123,7 +122,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 		BlockHash:          conn.GenesisHash,
 		Era:                types.ExtrinsicEra{IsMortalEra: false},
 		GenesisHash:        conn.GenesisHash,
-		Nonce:              types.NewUCompactFromUInt(uint64(c.nonce)),
+		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
 		TransactionVersion: rv.TransactionVersion,
@@ -138,4 +137,59 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	log.Trace().Msg("Extrinsic submission succeeded")
 
 	return &h, nil
+}
+
+func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Metadata) (types.U32, error) {
+	key, err := types.CreateStorageKey(meta, "System", "Account", c.key.PublicKey, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var latestNonce types.U32
+	var acct types.AccountInfo
+	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
+	if err != nil {
+		return 0, err
+	}
+
+	if !exists {
+		latestNonce = 0
+	} else {
+		latestNonce = acct.Nonce
+	}
+
+	if latestNonce < c.nonce {
+		return c.nonce, nil
+	}
+
+	return latestNonce, nil
+}
+
+func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
+	err := ext.Sign(*c.key, opts)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	hash, err := c.sendRawTransaction(ext)
+	if err != nil {
+		return types.Hash{}, err
+	}
+	return hash, nil
+}
+
+// SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
+func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
+	enc, err := codec.EncodeToHex(ext)
+
+	if err != nil {
+		return types.Hash{}, err
+	}
+	var res string
+	err = c.Call(&res, "author_submitExtrinsic", enc)
+	if err != nil {
+		return types.Hash{}, err
+	}
+
+	return types.NewHashFromHexString(res)
 }

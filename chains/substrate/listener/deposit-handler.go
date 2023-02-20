@@ -27,16 +27,12 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType [1]byte) (*message.Message, error) {
 	var depositType message.TransferType
-	switch transferType[0] {
-	case 0:
+	if transferType[0] == 0 {
 		depositType = message.FungibleTransfer
-	case 1:
-		depositType = message.NonFungibleTransfer
-	case 2:
-		depositType = message.GenericTransfer
-	default:
+	} else {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
 	}
+
 	depositHandler, err := e.matchTransferTypeHandlerFunc(depositType)
 	if err != nil {
 		return nil, err

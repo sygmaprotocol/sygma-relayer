@@ -18,7 +18,6 @@
       "name": "evm1",
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
-      
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
       "handlers": [
         {
@@ -35,7 +34,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
@@ -64,11 +63,23 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
       "startBlock": 425,
+      "maxGasPrice": 20000000000,
+      "blockConfirmations": 2,
+      "key": "e3c47ceedff6e7dbe384aeeac37dba751b019ed0bb686e91a005f89172cc8184"
+    },
+    {
+      "id": 3,
+      "chainID": 5,
+      "name": "substrate1",
+      "type": "substrate",
+      "endpoint":"ws://substrate-pallet:9944",
+      "gasLimit": 9000000,
+      "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
       "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"

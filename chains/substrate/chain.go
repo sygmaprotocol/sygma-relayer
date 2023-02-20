@@ -10,6 +10,8 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/ChainSafe/sygma-relayer/chains"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -53,6 +55,7 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 		sysErr <- fmt.Errorf("error %w on getting last stored block", err)
 		return
 	}
+	startBlock = chains.CalculateStartingBlock(startBlock, c.config.BlockInterval)
 
 	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore, msgChan)
 }
