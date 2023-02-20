@@ -255,7 +255,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d1.ResourceID,
 		d1.CallData,
 		d1.TransferType,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, transferType interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(

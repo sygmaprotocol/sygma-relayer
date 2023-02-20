@@ -53,6 +53,7 @@ func (s *NewSubstrateConfigTestSuite) Test_InvalidBlockConfirmation() {
 func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
 		"id":       1,
+		"chainID":  5,
 		"endpoint": "ws://domain.com",
 		"name":     "substrate1",
 	}
@@ -69,6 +70,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 			Id:       id,
 		},
 		StartBlock:         big.NewInt(0),
+		ChainID:            big.NewInt(5),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(5),
 		BlockRetryInterval: time.Duration(5) * time.Second,
