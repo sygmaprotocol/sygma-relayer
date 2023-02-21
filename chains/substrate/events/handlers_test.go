@@ -39,7 +39,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{
+	evts := []*events.Events{{
 		evtsRec,
 		[]events.Deposit{},
 		[]events.FeeSet{},
@@ -52,18 +52,27 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 		[]events.RegisterDestDomain{},
 		[]events.UnregisterDestDomain{},
 		[]events.FeeHandlerSet{},
-	}
+	}}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
 }
 
-func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
-	evts := events.Events{}
+func (s *SystemUpdateHandlerTestSuite) Test_NoEvents() {
+	evts := []*events.Events{}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
+
+	s.Nil(err)
+	s.Equal(len(msgChan), 0)
+}
+
+func (s *SystemUpdateHandlerTestSuite) Test_NoMetadatUpdate() {
+	evts := []*events.Events{{}}
+	msgChan := make(chan []*message.Message, 1)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -75,21 +84,14 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.Deposit{},
-		[]events.FeeSet{},
-
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
-		[]events.RegisterDestDomain{},
-		[]events.UnregisterDestDomain{},
-		[]events.FeeHandlerSet{},
+	evts := []*events.Events{
+		{},
+		{
+			EventRecords: evtsRec,
+		},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -155,22 +157,25 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.Deposit{
-			*d1, *d2,
-		},
-		[]events.FeeSet{},
+	evts := []*events.Events{
+		{
+			evtsRec,
+			[]events.Deposit{
+				*d1, *d2,
+			},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
-		[]events.RegisterDestDomain{},
-		[]events.UnregisterDestDomain{},
-		[]events.FeeHandlerSet{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -221,22 +226,25 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.Deposit{
-			*d1, *d2,
-		},
-		[]events.FeeSet{},
+	evts := []*events.Events{
+		{
+			evtsRec,
+			[]events.Deposit{
+				*d1, *d2,
+			},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
-		[]events.RegisterDestDomain{},
-		[]events.UnregisterDestDomain{},
-		[]events.FeeHandlerSet{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -286,24 +294,142 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	evtsRec := substrate_types.EventRecords{
 		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{evtsRec,
-		[]events.Deposit{
-			*d1, *d2,
-		},
-		[]events.FeeSet{},
+	evts := []*events.Events{
+		{
+			evtsRec,
+			[]events.Deposit{
+				*d1, *d2,
+			},
+			[]events.FeeSet{},
 
-		[]events.ProposalExecution{},
-		[]events.FailedHandlerExecution{},
-		[]events.Retry{},
-		[]events.BridgePaused{},
-		[]events.BridgeUnpaused{},
-		[]events.RegisterDestDomain{},
-		[]events.UnregisterDestDomain{},
-		[]events.FeeHandlerSet{},
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
 	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
+}
+
+func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit_MultipleBlocks() {
+	d1 := &events.Deposit{
+		DepositNonce: 1,
+		DestDomainID: 2,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
+	}
+	d2 := &events.Deposit{
+		DepositNonce: 2,
+		DestDomainID: 2,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
+	}
+	d3 := &events.Deposit{
+		DepositNonce: 3,
+		DestDomainID: 3,
+		ResourceID:   [32]byte{},
+		TransferType: [1]byte{1},
+		CallData:     []byte{},
+	}
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d1.DestDomainID,
+		d1.DepositNonce,
+		d1.ResourceID,
+		d1.CallData,
+		d1.TransferType,
+	).Return(
+		&message.Message{DepositNonce: 1},
+		nil,
+	)
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d2.DestDomainID,
+		d2.DepositNonce,
+		d2.ResourceID,
+		d2.CallData,
+		d2.TransferType,
+	).Return(
+		&message.Message{DepositNonce: 2},
+		nil,
+	)
+	s.mockDepositHandler.EXPECT().HandleDeposit(
+		s.domainID,
+		d3.DestDomainID,
+		d3.DepositNonce,
+		d3.ResourceID,
+		d3.CallData,
+		d3.TransferType,
+	).Return(
+		&message.Message{DepositNonce: 3},
+		nil,
+	)
+
+	msgChan := make(chan []*message.Message, 3)
+	evtsRec := substrate_types.EventRecords{
+		System_CodeUpdated: make([]substrate_types.EventSystemCodeUpdated, 1),
+	}
+	evts := []*events.Events{
+		{
+			evtsRec,
+			[]events.Deposit{
+				*d1, *d2,
+			},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
+		{
+			evtsRec,
+			[]events.Deposit{},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
+		{
+			evtsRec,
+			[]events.Deposit{
+				*d3,
+			},
+			[]events.FeeSet{},
+
+			[]events.ProposalExecution{},
+			[]events.FailedHandlerExecution{},
+			[]events.Retry{},
+			[]events.BridgePaused{},
+			[]events.BridgeUnpaused{},
+			[]events.RegisterDestDomain{},
+			[]events.UnregisterDestDomain{},
+			[]events.FeeHandlerSet{},
+		},
+	}
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	msgs := <-msgChan
+
+	s.Nil(err)
+	s.Equal(msgs, []*message.Message{{DepositNonce: 1}, {DepositNonce: 2}, {DepositNonce: 3}})
 }
