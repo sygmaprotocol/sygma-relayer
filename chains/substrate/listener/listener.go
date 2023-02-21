@@ -96,8 +96,8 @@ func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) 
 	log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*events.Events, 0)
-	for ; startBlock.Cmp(endBlock) == -1; new(big.Int).Add(startBlock, big.NewInt(1)) {
-		hash, err := l.conn.GetBlockHash(startBlock.Uint64())
+	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
+		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
 			return nil, err
 		}
