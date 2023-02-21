@@ -17,7 +17,7 @@
       "id": 1,
       "name": "evm1",
       "type": "evm",
-      
+
       "endpoint": "ws://evm1-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
       "handlers": [

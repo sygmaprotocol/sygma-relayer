@@ -23,14 +23,17 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 	}
 }
 
-func (eh *SystemUpdateEventHandler) HandleEvents(evts *Events, msgChan chan []*message.Message) error {
-	if len(evts.System_CodeUpdated) > 0 {
-		err := eh.conn.UpdateMetatdata()
-		if err != nil {
-			log.Error().Err(err).Msg("Unable to update Metadata")
-			return err
+func (eh *SystemUpdateEventHandler) HandleEvents(evts []*Events, msgChan chan []*message.Message) error {
+	for _, evt := range evts {
+		if len(evt.System_CodeUpdated) > 0 {
+			err := eh.conn.UpdateMetatdata()
+			if err != nil {
+				log.Error().Err(err).Msg("Unable to update Metadata")
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -50,25 +53,28 @@ func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandl
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts *Events, msgChan chan []*message.Message) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(evts []*Events, msgChan chan []*message.Message) error {
 	domainDeposits := make(map[uint8][]*message.Message)
-	for _, d := range evts.SygmaBridge_Deposit {
-		func(d Deposit) {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Error().Msgf("panic occured while handling deposit %+v", d)
+
+	for _, evt := range evts {
+		for _, d := range evt.SygmaBridge_Deposit {
+			func(d Deposit) {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Error().Msgf("panic occured while handling deposit %+v", d)
+					}
+				}()
+
+				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
+				if err != nil {
+					log.Error().Err(err).Msgf("%v", err)
+					return
 				}
-			}()
-
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
-			if err != nil {
-				log.Error().Err(err).Msgf("%v", err)
-				return
-			}
-			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
-		}(d)
-
+				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+			}(d)
+		}
 	}
+
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
