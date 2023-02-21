@@ -199,6 +199,7 @@ func Run() error {
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
 				mh := substrateExecutor.NewSubstrateMessageHandler()
