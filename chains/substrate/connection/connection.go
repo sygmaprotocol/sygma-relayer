@@ -24,7 +24,6 @@ type Connection struct {
 }
 
 func NewSubstrateConnection(url string) (*Connection, error) {
-	c := &Connection{}
 	client, err := client.Connect(url)
 	if err != nil {
 		return nil, err
@@ -33,22 +32,24 @@ func NewSubstrateConnection(url string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.RPC = rpc
-	c.Chain = rpc.Chain
 
-	// Fetch metadata
-	meta, err := c.RPC.State.GetMetadataLatest()
+	meta, err := rpc.State.GetMetadataLatest()
 	if err != nil {
 		return nil, err
 	}
-	c.meta = *meta
-	// Fetch genesis hash
-	genesisHash, err := c.RPC.Chain.GetBlockHash(0)
+	genesisHash, err := rpc.Chain.GetBlockHash(0)
 	if err != nil {
 		return nil, err
 	}
-	c.GenesisHash = genesisHash
-	return c, nil
+
+	return &Connection{
+		meta: *meta,
+
+		RPC:         rpc,
+		Chain:       rpc.Chain,
+		Client:      client,
+		GenesisHash: genesisHash,
+	}, nil
 }
 
 func (c *Connection) GetMetadata() (meta types.Metadata) {

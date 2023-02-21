@@ -126,10 +126,10 @@ func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ex
 // SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
 func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
 	enc, err := codec.EncodeToHex(ext)
-
 	if err != nil {
 		return types.Hash{}, err
 	}
+
 	var res string
 	err = c.Conn.Call(&res, "author_submitExtrinsic", enc)
 	if err != nil {
