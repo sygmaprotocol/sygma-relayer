@@ -61,6 +61,7 @@ type Retry struct {
 	Phase                types.Phase
 	DepositOnBlockHeight types.U128
 	DestDomainID         types.U8
+	Sender               types.AccountID
 	Topics               []types.Hash
 }
 
