@@ -109,7 +109,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
-
+// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
 				if new(big.Int).Sub(latestBlockNumber, er.DepositOnBlockHeight.Int).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
 					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
