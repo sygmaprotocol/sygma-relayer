@@ -8,10 +8,11 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
+
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
 	"github.com/rs/zerolog/log"
 )
 

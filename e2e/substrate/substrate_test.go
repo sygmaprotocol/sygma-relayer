@@ -170,15 +170,15 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	s.Nil(err)
 
 	assetLocation := [3]substrateTypes.JunctionV1{
-		substrateTypes.JunctionV1{
+		{
 			IsParachain: true,
 			ParachainID: substrateTypes.NewUCompact(big.NewInt(2004)),
 		},
-		substrateTypes.JunctionV1{
+		{
 			IsGeneralKey: true,
 			GeneralKey:   []substrateTypes.U8("sygma"),
 		},
-		substrateTypes.JunctionV1{
+		{
 			IsGeneralKey: true,
 			GeneralKey:   []substrateTypes.U8("usdc"),
 		},
@@ -204,11 +204,11 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	addr := s.evmClient.From().Bytes()
 	reciever := *(*[]substrateTypes.U8)(unsafe.Pointer(&addr))
 	dst := [2]substrateTypes.JunctionV1{
-		substrateTypes.JunctionV1{
+		{
 			IsGeneralKey: true,
 			GeneralKey:   reciever,
 		},
-		substrateTypes.JunctionV1{
+		{
 			IsGeneralKey: true,
 			GeneralKey:   []substrateTypes.U8{1},
 		},

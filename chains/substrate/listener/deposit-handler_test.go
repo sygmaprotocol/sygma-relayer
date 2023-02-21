@@ -1,7 +1,7 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: BUSL-1.1
 
-package events_test
+package listener_test
 
 import (
 	"errors"
@@ -15,11 +15,12 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectDataLen = errors.New("invalid calldata length: less than 84 bytes")
 var errNoCorrespondingDepositHandler = errors.New("no corresponding deposit handler for this transfer type exists")
+var errIncorrectDataLen = errors.New("invalid calldata length: less than 84 bytes")
 
 type Erc20HandlerTestSuite struct {
 	suite.Suite
@@ -28,11 +29,6 @@ type Erc20HandlerTestSuite struct {
 func TestRunErc20HandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(Erc20HandlerTestSuite))
 }
-
-func (s *Erc20HandlerTestSuite) SetupSuite()    {}
-func (s *Erc20HandlerTestSuite) TearDownSuite() {}
-func (s *Erc20HandlerTestSuite) SetupTest()     {}
-func (s *Erc20HandlerTestSuite) TearDownTest()  {}
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	// Alice
@@ -79,7 +75,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		},
 	}
 
-	message, err := events.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
+	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -111,7 +107,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 
 	sourceID := uint8(1)
 
-	message, err := events.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
+	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
 	s.Nil(message)
 	s.EqualError(err, errIncorrectDataLen.Error())
 }
@@ -145,9 +141,9 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 		Topics:       []types.Hash{},
 	}
 
-	depositHandler := events.NewSubstrateDepositHandler()
+	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
-	depositHandler.RegisterDepositHandler(message.FungibleTransfer, events.FungibleTransferHandler)
+	depositHandler.RegisterDepositHandler(message.FungibleTransfer, listener.FungibleTransferHandler)
 	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType)
 	s.Nil(err1)
 	s.NotNil(message1)

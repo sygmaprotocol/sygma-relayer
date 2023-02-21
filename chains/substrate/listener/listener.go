@@ -18,9 +18,11 @@ type EventHandler interface {
 	HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
+	UpdateMetatdata() error
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash) (*events.Events, error)
+	GetBlockLatest() (*types.SignedBlock, error)
 }
 
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {

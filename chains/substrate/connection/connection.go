@@ -6,12 +6,12 @@ package connection
 import (
 	"sync"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/chain"
-
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/chain"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 )
 
 type Connection struct {

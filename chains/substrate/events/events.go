@@ -58,11 +58,11 @@ type FailedHandlerExecution struct {
 }
 
 type Retry struct {
-	Phase                 types.Phase
-	DepositOnBlockHeight  types.U64
-	DepositExtrinsicIndex types.U64
-	Sender                types.AccountID
-	Topics                []types.Hash
+	Phase                types.Phase
+	DepositOnBlockHeight types.U128
+	DestDomainID         types.U8
+	Sender               types.AccountID
+	Topics               []types.Hash
 }
 
 type BridgePaused struct {
