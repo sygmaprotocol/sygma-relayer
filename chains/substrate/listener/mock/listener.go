@@ -37,17 +37,17 @@ func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
 }
 
 // HandleEvents mocks base method.
-func (m *MockEventHandler) HandleEvents(evt *events.Events, msgChan chan []*message.Message) error {
+func (m *MockEventHandler) HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvents", evt, msgChan)
+	ret := m.ctrl.Call(m, "HandleEvents", evts, msgChan)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleEvents indicates an expected call of HandleEvents.
-func (mr *MockEventHandlerMockRecorder) HandleEvents(evt, msgChan interface{}) *gomock.Call {
+func (mr *MockEventHandlerMockRecorder) HandleEvents(evts, msgChan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), evt, msgChan)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), evts, msgChan)
 }
 
 // MockChainConnection is a mock of ChainConnection interface.
