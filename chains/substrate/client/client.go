@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
@@ -17,33 +16,29 @@ import (
 )
 
 type SubstrateClient struct {
-	client.Client
 	key       *signature.KeyringPair // Keyring used for signing
-	ChainID   *big.Int
-	nonceLock sync.Mutex // Locks nonce for updates
-	nonce     types.U32  // Latest account nonce
+	nonceLock sync.Mutex             // Locks nonce for updates
+	nonce     types.U32              // Latest account nonce
+
+	Conn    *connection.Connection
+	ChainID *big.Int
 }
 
-func NewSubstrateClient(url string, key *signature.KeyringPair, chainID *big.Int) (*SubstrateClient, error) {
-	c := &SubstrateClient{
-		key: key,
+func NewSubstrateClient(conn *connection.Connection, key *signature.KeyringPair, chainID *big.Int) *SubstrateClient {
+	return &SubstrateClient{
+		key:     key,
+		Conn:    conn,
+		ChainID: chainID,
 	}
-	client, err := client.Connect(url)
-	if err != nil {
-		return nil, err
-	}
-	c.Client = client
-	c.ChainID = chainID
-	return c, nil
 }
 
 // Transact constructs and submits an extrinsic to call the method with the given arguments.
 // All args are passed directly into GSRPC. GSRPC types are recommended to avoid serialization inconsistencies.
-func (c *SubstrateClient) Transact(conn *connection.Connection, method string, args ...interface{}) (*types.Hash, error) {
+func (c *SubstrateClient) Transact(method string, args ...interface{}) (*types.Hash, error) {
 	log.Debug().Msgf("Submitting substrate call... method %s, sender %s", method, c.key.Address)
 
 	// Create call and extrinsic
-	meta := conn.GetMetadata()
+	meta := c.Conn.GetMetadata()
 	call, err := types.NewCall(
 		&meta,
 		method,
@@ -55,7 +50,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 
 	ext := types.NewExtrinsic(call)
 	// Get latest runtime version
-	rv, err := conn.RPC.State.GetRuntimeVersionLatest()
+	rv, err := c.Conn.RPC.State.GetRuntimeVersionLatest()
 	if err != nil {
 		return nil, err
 	}
@@ -63,16 +58,16 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	c.nonceLock.Lock()
 	defer c.nonceLock.Unlock()
 
-	nonce, err := c.nextNonce(conn, &meta)
+	nonce, err := c.nextNonce(&meta)
 	if err != nil {
 		return nil, err
 	}
 
 	// Sign the extrinsic
 	o := types.SignatureOptions{
-		BlockHash:          conn.GenesisHash,
+		BlockHash:          c.Conn.GenesisHash,
 		Era:                types.ExtrinsicEra{IsMortalEra: false},
-		GenesisHash:        conn.GenesisHash,
+		GenesisHash:        c.Conn.GenesisHash,
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
 		Tip:                types.NewUCompactFromUInt(0),
@@ -89,7 +84,7 @@ func (c *SubstrateClient) Transact(conn *connection.Connection, method string, a
 	return &h, nil
 }
 
-func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Metadata) (types.U32, error) {
+func (c *SubstrateClient) nextNonce(meta *types.Metadata) (types.U32, error) {
 	key, err := types.CreateStorageKey(meta, "System", "Account", c.key.PublicKey, nil)
 	if err != nil {
 		return 0, err
@@ -97,7 +92,7 @@ func (c *SubstrateClient) nextNonce(conn *connection.Connection, meta *types.Met
 
 	var latestNonce types.U32
 	var acct types.AccountInfo
-	exists, err := conn.RPC.State.GetStorageLatest(key, &acct)
+	exists, err := c.Conn.RPC.State.GetStorageLatest(key, &acct)
 	if err != nil {
 		return 0, err
 	}
@@ -136,7 +131,7 @@ func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, e
 		return types.Hash{}, err
 	}
 	var res string
-	err = c.Call(&res, "author_submitExtrinsic", enc)
+	err = c.Conn.Call(&res, "author_submitExtrinsic", enc)
 	if err != nil {
 		return types.Hash{}, err
 	}

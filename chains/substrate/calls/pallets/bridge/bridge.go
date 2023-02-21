@@ -8,8 +8,6 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
-
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -44,7 +42,6 @@ func NewBridgePallet(
 }
 
 func (p *BridgePallet) ExecuteProposals(
-	conn *connection.Connection,
 	proposals []*proposal.Proposal,
 	signature []byte,
 ) (*types.Hash, error) {
@@ -59,7 +56,6 @@ func (p *BridgePallet) ExecuteProposals(
 	}
 
 	return p.client.Transact(
-		conn,
 		"SygmaBridge.execute_proposal",
 		bridgeProposals,
 		signature,
@@ -127,7 +123,7 @@ func (p *BridgePallet) IsProposalExecuted(prop *proposal.Proposal) (bool, error)
 		Str("resourceID", hexutil.Encode(prop.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.client.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.Source)))
+	err := p.client.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.Source)))
 	if err != nil {
 		return false, err
 	}

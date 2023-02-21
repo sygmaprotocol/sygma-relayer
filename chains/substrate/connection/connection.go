@@ -16,6 +16,7 @@ import (
 
 type Connection struct {
 	chain.Chain
+	client.Client
 	*rpc.RPC
 	meta        types.Metadata // Latest chain metadata
 	metaLock    sync.RWMutex   // Lock metadata for updates, allows concurrent reads
