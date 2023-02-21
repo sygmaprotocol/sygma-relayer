@@ -3,6 +3,7 @@ package substrate_test
 import (
 	"context"
 	"encoding/binary"
+	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
@@ -85,6 +86,11 @@ func Test_EVMSubstrate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
+	var assetId uint32 = 2000
+	assetIdSerialized := make([]byte, 4)
+	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
+
 	suite.Run(
 		t,
 		NewEVMSubstrateTestSuite(
@@ -94,6 +100,7 @@ func Test_EVMSubstrate(t *testing.T) {
 			substrateConnection,
 			gasPricer,
 			evmConfig,
+			assetIdSerialized,
 		),
 	)
 }
@@ -105,6 +112,7 @@ func NewEVMSubstrateTestSuite(
 	substrateConnection *connection.Connection,
 	gasPricer calls.GasPricer,
 	evmConfig evm.BridgeConfig,
+	substrateAssetID []byte,
 ) *IntegrationTestSuite {
 	return &IntegrationTestSuite{
 		fabric:              fabric,
@@ -113,6 +121,7 @@ func NewEVMSubstrateTestSuite(
 		substrateConnection: substrateConnection,
 		gasPricer:           gasPricer,
 		evmConfig:           evmConfig,
+		substrateAssetID:    substrateAssetID,
 	}
 }
 
@@ -124,6 +133,7 @@ type IntegrationTestSuite struct {
 	substrateConnection *connection.Connection
 	gasPricer           calls.GasPricer
 	evmConfig           evm.BridgeConfig
+	substrateAssetID    []byte
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
@@ -149,26 +159,17 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
-	var assetId uint32 = 2000
-	var accountInfo1 substrate.Account
-
-	assetIdSerialized := make([]byte, 4)
-	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
+	var accountInfoBefore substrate.Account
 	meta := s.substrateConnection.GetMetadata()
-
-	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
-	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo1)
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfoBefore)
 	s.Nil(err)
 
-	senderBalanceBefore := accountInfo1.Balance
-
-	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
 	transactor := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 
 	erc20Contract := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor)
 
-	destBalanceBefore, err := erc20Contract.GetBalance(dstAddr)
+	destBalanceBefore, err := erc20Contract.GetBalance(s.evmClient.From())
 	s.Nil(err)
 
 	assetLocation := [3]substrateTypes.JunctionV1{
@@ -203,7 +204,8 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 			Amount:     substrateTypes.NewUCompact(big.NewInt(20000000000000)),
 		},
 	}
-	reciever := []substrateTypes.U8{92, 31, 89, 97, 105, 107, 173, 46, 115, 247, 52, 23, 240, 126, 245, 92, 98, 162, 220, 91}
+	addr := s.evmClient.From().Bytes()
+	reciever := *(*[]substrateTypes.U8)(unsafe.Pointer(&addr))
 	dst := [2]substrateTypes.JunctionV1{
 		{
 			IsGeneralKey: true,
@@ -227,16 +229,14 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	s.Nil(err)
 
 	meta = s.substrateConnection.GetMetadata()
-	var accountInfo2 substrate.Account
-	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, substratePK.PublicKey)
-	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfo2)
+	var senderBalanceAfter substrate.Account
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &senderBalanceAfter)
 	s.Nil(err)
 
-	senderBalanceAfter := accountInfo2.Balance
-
 	// balance of sender has decreased
-	s.Equal(1, senderBalanceBefore.Int.Cmp(senderBalanceAfter.Int))
-	destBalanceAfter, err := erc20Contract.GetBalance(dstAddr)
+	s.Equal(1, accountInfoBefore.Balance.Int.Cmp(senderBalanceAfter.Balance.Int))
+	destBalanceAfter, err := erc20Contract.GetBalance(s.evmClient.From())
 
 	s.Nil(err)
 	//Balance has increased
@@ -246,45 +246,35 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 var amountToDeposit = big.NewInt(100000000000000)
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
-	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	dstAddr := substratePK.PublicKey
-
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
 	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
 	bridgeContract1 := bridge.NewBridgeContract(s.evmClient, s.evmConfig.BridgeAddr, transactor1)
 
-	senderBalBefore, err := erc20Contract1.GetBalance(crypto.PubkeyToAddress(pk.PublicKey))
+	senderBalBefore, err := erc20Contract1.GetBalance(s.evmClient.From())
 	s.Nil(err)
 
 	meta := s.substrateConnection.GetMetadata()
-	var acc substrate.Account
-	var assetId uint32 = 2000
-	assetIdSerialized := make([]byte, 4)
-	binary.LittleEndian.PutUint32(assetIdSerialized, assetId)
-
-	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	var destBalanceBefore substrate.Account
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &destBalanceBefore)
 	s.Nil(err)
 
-	destBalanceBefore := acc.Balance
-
-	_, err = bridgeContract1.Erc20Deposit(dstAddr, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
+	_, err = bridgeContract1.Erc20Deposit(substratePK.PublicKey, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
 		Value: s.evmConfig.BasicFee,
 	})
 	s.Nil(err)
 
-	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore, dstAddr)
+	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore.Balance, substratePK.PublicKey)
 	s.Nil(err)
 	senderBalAfter, err := erc20Contract1.GetBalance(s.evmClient.From())
 	s.Nil(err)
 	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
 
-	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", assetIdSerialized, dstAddr)
-	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &acc)
+	var destBalanceAfter substrate.Account
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &destBalanceAfter)
 	s.Nil(err)
 
-	destBalanceAfter := acc.Balance
-
 	//Balance has increased
-	s.Equal(1, destBalanceAfter.Int.Cmp(destBalanceBefore.Int))
+	s.Equal(1, destBalanceAfter.Balance.Int.Cmp(destBalanceBefore.Balance.Int))
 }
