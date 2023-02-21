@@ -18,7 +18,6 @@
       "name": "evm1",
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
-
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
       "handlers": [
         {
@@ -83,7 +82,8 @@
       "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "e3c47ceedff6e7dbe384aeeac37dba751b019ed0bb686e91a005f89172cc8184"
+      "key": "//Charlie",
+      "substrateNetwork": 0
     }
   ]
 }

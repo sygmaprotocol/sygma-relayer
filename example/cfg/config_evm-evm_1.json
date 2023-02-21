@@ -82,7 +82,8 @@
       "gasLimit": 9000000,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "a5fca6b6b7ac1be2e8f8f39e7c38722216c655a1c4504c29e43ebb7e21f14937"
+      "key": "//Alice",
+      "substrateNetwork": 0
     }
   ]
 }
