@@ -151,19 +151,22 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	evtsRec := types.EventRecords{
 		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.Deposit{
-			*d1, *d2,
-		},
-		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
+	evts := []*events.Events{
+		{
+			EventRecords: evtsRec,
+			SygmaBridge_Deposit: []events.Deposit{
+				*d1, *d2,
+			},
+			SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.Retry{},
-		SygmaBridge_BridgePaused:           []events.BridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
+			SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
+			SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
+			SygmaBridge_Retry:                  []events.Retry{},
+			SygmaBridge_BridgePaused:           []events.BridgePaused{},
+			SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
+		},
 	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -214,7 +217,8 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	evtsRec := types.EventRecords{
 		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{EventRecords: evtsRec,
+	evts := []*events.Events{{
+		EventRecords: evtsRec,
 		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
@@ -225,8 +229,8 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		SygmaBridge_Retry:                  []events.Retry{},
 		SygmaBridge_BridgePaused:           []events.BridgePaused{},
 		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
-	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	}}
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -257,7 +261,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d1.ResourceID,
 		d1.CallData,
 		d1.TransferType,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, handlerResponse interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -276,7 +280,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	evtsRec := types.EventRecords{
 		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
 	}
-	evts := events.Events{EventRecords: evtsRec,
+	evts := []*events.Events{{EventRecords: evtsRec,
 		SygmaBridge_Deposit: []events.Deposit{
 			*d1, *d2,
 		},
@@ -287,8 +291,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		SygmaBridge_Retry:                  []events.Retry{},
 		SygmaBridge_BridgePaused:           []events.BridgePaused{},
 		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
-	}
-	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
+	}}
+	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)

@@ -20,6 +20,7 @@ import (
 )
 
 var errNoCorrespondingDepositHandler = errors.New("no corresponding deposit handler for this transfer type exists")
+var errIncorrectDataLen = errors.New("invalid calldata length: less than 84 bytes")
 
 type Erc20HandlerTestSuite struct {
 	suite.Suite
@@ -88,12 +89,8 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 		PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
 		Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 	}
-	metadeposit_data := []byte("0xdeadbeef")
-	metadeposit_dataLen, _ := (types.BigIntToIntBytes(big.NewInt(int64(len(metadeposit_data))), 32))
 
 	var calldata []byte
-	calldata = append(calldata, metadeposit_dataLen...)
-	calldata = append(calldata, metadeposit_data...)
 
 	sender, _ := types.NewAccountID(substratePK.PublicKey)
 	depositLog := &events.Deposit{
@@ -109,26 +106,10 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 	}
 
 	sourceID := uint8(1)
-	amountParsed := calldata[:32]
-	recipientAddressParsed := calldata[64:]
-
-	expected := &message.Message{
-		Source:       sourceID,
-		Destination:  uint8(depositLog.DestDomainID),
-		DepositNonce: uint64(depositLog.DepositNonce),
-		ResourceId:   core_types.ResourceID(depositLog.ResourceID),
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			amountParsed,
-			recipientAddressParsed,
-		},
-	}
 
 	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
-
-	s.Nil(err)
-	s.NotNil(message)
-	s.Equal(message, expected)
+	s.Nil(message)
+	s.EqualError(err, errIncorrectDataLen.Error())
 }
 
 func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler() {
