@@ -189,11 +189,7 @@ func Run() error {
 					panic(err)
 				}
 
-				client, err := client.NewSubstrateClient(config.GeneralChainConfig.Endpoint, &keyPair, config.ChainID)
-				if err != nil {
-					panic(err)
-				}
-
+				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID)
 				bridgePallet := substrate_bridge.NewBridgePallet(client)
 
 				depositHandler := substrate_events.NewSubstrateDepositHandler()

@@ -78,14 +78,11 @@ func Test_EVMSubstrate(t *testing.T) {
 	}
 	gasPricer := dummy.NewStaticGasPriceDeterminant(ethClient, nil)
 
-	substrateClient, err := client.NewSubstrateClient(SubstrateEndpoint, &substratePK, big.NewInt(5))
-	if err != nil {
-		panic(err)
-	}
 	substrateConnection, err := connection.NewSubstrateConnection(SubstrateEndpoint)
 	if err != nil {
 		panic(err)
 	}
+	substrateClient := client.NewSubstrateClient(substrateConnection, &substratePK, big.NewInt(5))
 
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)
@@ -223,7 +220,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 			X2:   dst,
 		},
 	}
-	_, err = s.substrateClient.Transact(s.substrateConnection, "SygmaBridge.deposit", multiAsset, destinationLocation)
+	_, err = s.substrateClient.Transact("SygmaBridge.deposit", multiAsset, destinationLocation)
 	s.Nil(err)
 	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)
 	s.Nil(err)

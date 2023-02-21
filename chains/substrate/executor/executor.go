@@ -37,7 +37,7 @@ type MessageHandler interface {
 
 type BridgePallet interface {
 	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposals(conn *connection.Connection, proposals []*proposal.Proposal, signature []byte) (*types.Hash, error)
+	ExecuteProposals(proposals []*proposal.Proposal, signature []byte) (*types.Hash, error)
 	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
 }
 
@@ -174,7 +174,7 @@ func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData
 	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposals(e.conn, proposals, sig)
+	hash, err := e.bridge.ExecuteProposals(proposals, sig)
 	if err != nil {
 		return nil, err
 	}
