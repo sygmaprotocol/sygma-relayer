@@ -1,11 +1,13 @@
 package executor_test
 
 import (
+	"encoding/hex"
 	"errors"
 	"testing"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,9 +26,9 @@ func TestRunFungibleTransferHandlerTestSuite(t *testing.T) {
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	message := &message.Message{
 		Source:       1,
-		Destination:  0,
+		Destination:  2,
 		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
+		ResourceId:   [32]byte{1},
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
@@ -36,11 +38,19 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 			Priority: uint8(1),
 		},
 	}
+	data, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000024000101008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
+	expectedProp := &proposal.Proposal{
+		Source:       1,
+		Destination:  2,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{1},
+		Data:         data,
+	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
 
 	s.Nil(err)
-	s.NotNil(prop)
+	s.Equal(prop, expectedProp)
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
@@ -48,7 +58,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 		Source:       1,
 		Destination:  0,
 		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
+		ResourceId:   [32]byte{1},
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
