@@ -17,6 +17,9 @@ type Events struct {
 	SygmaBridge_Retry                  []Retry
 	SygmaBridge_BridgePaused           []BridgePaused
 	SygmaBridge_BridgeUnpaused         []BridgeUnpaused
+	SygmaBridge_RegisterDestDomain     []RegisterDestDomain
+	SygmaBridge_UnRegisterDestDomain   []UnregisterDestDomain
+	FeeHandlerRouter_FeeHandlerSet     []FeeHandlerSet
 }
 type Deposit struct {
 	Phase        types.Phase
@@ -33,8 +36,8 @@ type Deposit struct {
 type FeeSet struct {
 	Phase    types.Phase
 	DomainID types.U8
-	Asset    types.U32
-	Amount   types.U64
+	Asset    types.AssetID
+	Amount   types.U128
 	Topics   []types.Hash
 }
 
@@ -71,4 +74,28 @@ type BridgeUnpaused struct {
 	Phase        types.Phase
 	DestDomainID types.U8
 	Topics       []types.Hash
+}
+
+type RegisterDestDomain struct {
+	Phase    types.Phase
+	Sender   types.AccountID
+	DomainID types.U8
+	ChainID  types.U256
+	Topics   []types.Hash
+}
+
+type UnregisterDestDomain struct {
+	Phase    types.Phase
+	Sender   types.AccountID
+	DomainID types.U8
+	ChainID  types.U256
+	Topics   []types.Hash
+}
+
+type FeeHandlerSet struct {
+	Phase       types.Phase
+	DomainID    types.U8
+	Asset       types.AssetID
+	HandlerType [1]byte
+	Topics      []types.Hash
 }
