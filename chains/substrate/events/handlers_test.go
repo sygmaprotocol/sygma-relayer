@@ -49,6 +49,9 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 		[]events.Retry{},
 		[]events.BridgePaused{},
 		[]events.BridgeUnpaused{},
+		[]events.RegisterDestDomain{},
+		[]events.UnregisterDestDomain{},
+		[]events.FeeHandlerSet{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -81,6 +84,9 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 		[]events.Retry{},
 		[]events.BridgePaused{},
 		[]events.BridgeUnpaused{},
+		[]events.RegisterDestDomain{},
+		[]events.UnregisterDestDomain{},
+		[]events.FeeHandlerSet{},
 	}
 	msgChan := make(chan []*message.Message, 1)
 	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
@@ -160,6 +166,9 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		[]events.Retry{},
 		[]events.BridgePaused{},
 		[]events.BridgeUnpaused{},
+		[]events.RegisterDestDomain{},
+		[]events.UnregisterDestDomain{},
+		[]events.FeeHandlerSet{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -223,6 +232,9 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		[]events.Retry{},
 		[]events.BridgePaused{},
 		[]events.BridgeUnpaused{},
+		[]events.RegisterDestDomain{},
+		[]events.UnregisterDestDomain{},
+		[]events.FeeHandlerSet{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
@@ -285,6 +297,9 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		[]events.Retry{},
 		[]events.BridgePaused{},
 		[]events.BridgeUnpaused{},
+		[]events.RegisterDestDomain{},
+		[]events.UnregisterDestDomain{},
+		[]events.FeeHandlerSet{},
 	}
 	err := s.depositEventHandler.HandleEvents(&evts, msgChan)
 	msgs := <-msgChan
