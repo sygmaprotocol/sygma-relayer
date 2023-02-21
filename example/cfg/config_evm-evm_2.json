@@ -82,7 +82,7 @@
       "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
-      "key": "266aafa561c7a5329d8075521c5cf6a94253d4280b33b0a9c5135aaccdc2f3d3",
+      "key": "//Bob",
       "substrateNetwork": 0
 
     }
