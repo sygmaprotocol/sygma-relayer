@@ -11,7 +11,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains"
-
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,6 +25,7 @@ type SubstrateChain struct {
 	blockstore *store.BlockStore
 	config     *SubstrateConfig
 	executor   BatchProposalExecutor
+	logger     zerolog.Logger
 }
 
 type EventListener interface {
@@ -36,13 +37,19 @@ type ProposalExecutor interface {
 }
 
 func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
-	return &SubstrateChain{listener: listener, writer: writer, blockstore: blockstore, config: config, executor: executor}
+	return &SubstrateChain{
+		listener:   listener,
+		writer:     writer,
+		blockstore: blockstore,
+		config:     config,
+		executor:   executor,
+		logger:     log.With().Str("domain", string(*config.GeneralChainConfig.Id)).Logger()}
 }
 
 // PollEvents is the goroutine that polls blocks and searches Deposit events in them.
 // Events are then sent to eventsChan.
 func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, msgChan chan []*message.Message) {
-	log.Info().Msg("Polling Blocks...")
+	c.logger.Info().Msg("Polling Blocks...")
 
 	startBlock, err := c.blockstore.GetStartBlock(
 		*c.config.GeneralChainConfig.Id,
@@ -57,13 +64,15 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 	}
 	startBlock = chains.CalculateStartingBlock(startBlock, c.config.BlockInterval)
 
+	c.logger.Info().Msgf("Starting block: %s", startBlock.String())
+
 	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore, msgChan)
 }
 
 func (c *SubstrateChain) Write(msgs []*message.Message) {
 	err := c.executor.Execute(msgs)
 	if err != nil {
-		log.Err(err).Msgf("error writing messages %+v on network %d", msgs, c.DomainID())
+		c.logger.Err(err).Msgf("error writing messages %+v on network %d", msgs, c.DomainID())
 	}
 }
 
