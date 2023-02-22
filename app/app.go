@@ -13,8 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/jobs"
-
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
