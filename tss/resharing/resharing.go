@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
@@ -95,7 +96,8 @@ func (r *Resharing) Start(
 	newParties := r.sortParties(common.PartiesFromPeers(r.Host.Peerstore().Peers()), oldParties)
 	newCtx := tss.NewPeerContext(newParties)
 	r.PopulatePartyStore(newParties)
-	tssParams := tss.NewReSharingParameters(
+	tssParams, err := tss.NewReSharingParameters(
+		tss.S256(),
 		oldCtx,
 		newCtx,
 		r.PartyStore[r.Host.ID().Pretty()],
@@ -104,6 +106,11 @@ func (r *Resharing) Start(
 		len(newParties),
 		r.newThreshold,
 	)
+	if err != nil {
+		r.ErrChn <- err
+		return
+	}
+
 	endChn := make(chan keygen.LocalPartySaveData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
@@ -113,7 +120,11 @@ func (r *Resharing) Start(
 	go r.processEndMessage(ctx, endChn)
 
 	r.Log.Info().Msgf("Started resharing process")
-	r.Party = resharing.NewLocalParty(tssParams, r.key.Key, outChn, endChn)
+	r.Party, err = resharing.NewLocalParty(tssParams, r.key.Key, outChn, endChn, new(big.Int).SetBytes([]byte(r.SID)))
+	if err != nil {
+		r.ErrChn <- err
+		return
+	}
 	go func() {
 		err := r.Party.Start()
 		if err != nil {

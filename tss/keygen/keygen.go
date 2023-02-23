@@ -6,6 +6,7 @@ package keygen
 import (
 	"context"
 	"errors"
+	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
@@ -73,7 +74,11 @@ func (k *Keygen) Start(
 	k.PopulatePartyStore(parties)
 
 	pCtx := tss.NewPeerContext(parties)
-	tssParams := tss.NewParameters(pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
+	tssParams, err := tss.NewParameters(tss.S256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
+	if err != nil {
+		k.ErrChn <- err
+		return
+	}
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
@@ -85,7 +90,12 @@ func (k *Keygen) Start(
 	go k.ProcessInboundMessages(ctx, msgChn)
 	go k.processEndMessage(ctx, endChn)
 
-	k.Party = keygen.NewLocalParty(tssParams, outChn, endChn)
+	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
+	if err != nil {
+		k.ErrChn <- err
+		return
+	}
+	k.Party = party
 
 	k.Log.Info().Msgf("Started keygen process")
 	go func() {
@@ -129,7 +139,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 		select {
 		case key := <-endChn:
 			{
-				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToECDSAPubKey()))
+				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
 
 				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
