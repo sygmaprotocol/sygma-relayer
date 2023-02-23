@@ -194,6 +194,7 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.SignatureData) {
 	for {
 		select {
+		//nolint
 		case sig := <-endChn:
 			{
 				s.Log.Info().Msg("Successfully generated signature")
