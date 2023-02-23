@@ -22,14 +22,3 @@ jobs:
 
       - name: Run linter
         run: golangci-lint run --timeout=10m
-
-  vet-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: "1.18.x"
-      - uses: actions/checkout@v2
-
-      - name: Run go vet
-        run: go vet ./...
