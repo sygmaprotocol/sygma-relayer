@@ -5,7 +5,6 @@ package resharing
 
 import (
 	"context"
-	"crypto/elliptic"
 	"encoding/json"
 	"errors"
 	"math/big"
@@ -98,7 +97,7 @@ func (r *Resharing) Start(
 	newCtx := tss.NewPeerContext(newParties)
 	r.PopulatePartyStore(newParties)
 	tssParams, err := tss.NewReSharingParameters(
-		elliptic.P256(),
+		tss.S256(),
 		oldCtx,
 		newCtx,
 		r.PartyStore[r.Host.ID().Pretty()],

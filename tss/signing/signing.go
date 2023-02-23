@@ -5,7 +5,6 @@ package signing
 
 import (
 	"context"
-	"crypto/elliptic"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -100,7 +99,7 @@ func (s *Signing) Start(
 	parties := common.PartiesFromPeers(s.Peers)
 	s.PopulatePartyStore(parties)
 	pCtx := tss.NewPeerContext(parties)
-	tssParams, err := tss.NewParameters(elliptic.P256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+	tssParams, err := tss.NewParameters(tss.S256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
 	if err != nil {
 		s.ErrChn <- err
 		return
@@ -200,7 +199,7 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.S
 				s.Log.Info().Msg("Successfully generated signature")
 
 				if s.coordinator {
-					s.resultChn <- sig
+					s.resultChn <- &sig
 				}
 				s.ErrChn <- nil
 				return

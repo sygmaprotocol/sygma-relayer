@@ -122,7 +122,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		select {
 		case sigResult := <-sigChn:
 			{
-				signatureData := sigResult.(common.SignatureData)
+				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
@@ -160,7 +160,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData common.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)

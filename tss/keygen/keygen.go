@@ -5,7 +5,6 @@ package keygen
 
 import (
 	"context"
-	"crypto/elliptic"
 	"errors"
 	"math/big"
 
@@ -75,7 +74,7 @@ func (k *Keygen) Start(
 	k.PopulatePartyStore(parties)
 
 	pCtx := tss.NewPeerContext(parties)
-	tssParams, err := tss.NewParameters(elliptic.P256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
+	tssParams, err := tss.NewParameters(tss.S256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
 	if err != nil {
 		k.ErrChn <- err
 		return
