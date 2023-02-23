@@ -5,12 +5,14 @@ package signing
 
 import (
 	"context"
+	"crypto/elliptic"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"reflect"
 	"time"
 
+	tssCommon "github.com/binance-chain/tss-lib/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -98,9 +100,13 @@ func (s *Signing) Start(
 	parties := common.PartiesFromPeers(s.Peers)
 	s.PopulatePartyStore(parties)
 	pCtx := tss.NewPeerContext(parties)
-	tssParams := tss.NewParameters(pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+	tssParams, err := tss.NewParameters(elliptic.P256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+	if err != nil {
+		s.ErrChn <- err
+		return
+	}
 
-	sigChn := make(chan *signing.SignatureData)
+	sigChn := make(chan tssCommon.SignatureData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
@@ -110,7 +116,19 @@ func (s *Signing) Start(
 
 	s.Log.Info().Msgf("Started signing process")
 
-	s.Party = signing.NewLocalParty(s.msg, tssParams, s.key.Key, outChn, sigChn)
+	kdd := big.NewInt(0)
+	s.Party, err = signing.NewLocalParty(
+		s.msg,
+		tssParams,
+		s.key.Key,
+		kdd,
+		outChn,
+		sigChn,
+		new(big.Int).SetBytes([]byte(s.SID)))
+	if err != nil {
+		s.ErrChn <- err
+		return
+	}
 	go func() {
 		err := s.Party.Start()
 		if err != nil {
@@ -174,7 +192,7 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 }
 
 // processEndMessage routes signature to result channel.
-func (s *Signing) processEndMessage(ctx context.Context, endChn chan *signing.SignatureData) {
+func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.SignatureData) {
 	for {
 		select {
 		case sig := <-endChn:

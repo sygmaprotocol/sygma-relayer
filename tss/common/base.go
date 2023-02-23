@@ -6,6 +6,7 @@ package common
 import (
 	"context"
 	"errors"
+	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/binance-chain/tss-lib/tss"
@@ -15,7 +16,7 @@ import (
 )
 
 type Party interface {
-	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error)
+	UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool, sessionID *big.Int) (bool, *tss.Error)
 	Start() *tss.Error
 	WaitingFor() []*tss.PartyID
 }
@@ -70,7 +71,11 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 						return
 					}
 
-					ok, err := b.Party.UpdateFromBytes(msg.MsgBytes, b.PartyStore[wMsg.From.Pretty()], msg.IsBroadcast)
+					ok, err := b.Party.UpdateFromBytes(
+						msg.MsgBytes,
+						b.PartyStore[wMsg.From.Pretty()],
+						msg.IsBroadcast,
+						new(big.Int).SetBytes([]byte(b.SID)))
 					if !ok {
 						b.ErrChn <- err
 					}

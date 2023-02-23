@@ -5,6 +5,7 @@
 package mock_tss
 
 import (
+	big "math/big"
 	reflect "reflect"
 
 	tss "github.com/binance-chain/tss-lib/tss"
@@ -49,18 +50,18 @@ func (mr *MockPartyMockRecorder) Start() *gomock.Call {
 }
 
 // UpdateFromBytes mocks base method.
-func (m *MockParty) UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool) (bool, *tss.Error) {
+func (m *MockParty) UpdateFromBytes(wireBytes []byte, from *tss.PartyID, isBroadcast bool, sessionID *big.Int) (bool, *tss.Error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateFromBytes", wireBytes, from, isBroadcast)
+	ret := m.ctrl.Call(m, "UpdateFromBytes", wireBytes, from, isBroadcast, sessionID)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(*tss.Error)
 	return ret0, ret1
 }
 
 // UpdateFromBytes indicates an expected call of UpdateFromBytes.
-func (mr *MockPartyMockRecorder) UpdateFromBytes(wireBytes, from, isBroadcast interface{}) *gomock.Call {
+func (mr *MockPartyMockRecorder) UpdateFromBytes(wireBytes, from, isBroadcast, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFromBytes", reflect.TypeOf((*MockParty)(nil).UpdateFromBytes), wireBytes, from, isBroadcast)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFromBytes", reflect.TypeOf((*MockParty)(nil).UpdateFromBytes), wireBytes, from, isBroadcast, sessionID)
 }
 
 // WaitingFor mocks base method.

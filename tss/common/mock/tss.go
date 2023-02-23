@@ -5,6 +5,7 @@
 package mock_tss
 
 import (
+	big "math/big"
 	reflect "reflect"
 
 	tss "github.com/binance-chain/tss-lib/tss"
@@ -46,6 +47,20 @@ func (m *MockMessage) GetFrom() *tss.PartyID {
 func (mr *MockMessageMockRecorder) GetFrom() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFrom", reflect.TypeOf((*MockMessage)(nil).GetFrom))
+}
+
+// GetSessionId mocks base method.
+func (m *MockMessage) GetSessionId() *big.Int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionId")
+	ret0, _ := ret[0].(*big.Int)
+	return ret0
+}
+
+// GetSessionId indicates an expected call of GetSessionId.
+func (mr *MockMessageMockRecorder) GetSessionId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionId", reflect.TypeOf((*MockMessage)(nil).GetSessionId))
 }
 
 // GetTo mocks base method.
