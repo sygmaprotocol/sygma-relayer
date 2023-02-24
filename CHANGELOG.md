@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.4...v1.2.0) (2023-02-24)
+
+
+### Features
+
+* substrate integration ([#114](https://github.com/sygmaprotocol/sygma-relayer/issues/114)) ([7f8f0b9](https://github.com/sygmaprotocol/sygma-relayer/commit/7f8f0b972b5e849bcf1b2197ee2becef1906b541))
+* support erc20 handler response ([#109](https://github.com/sygmaprotocol/sygma-relayer/issues/109)) ([2d902ba](https://github.com/sygmaprotocol/sygma-relayer/commit/2d902baffa09812e757d461fdb3562b5b3f477b1))
+* switch tss lib ([#115](https://github.com/sygmaprotocol/sygma-relayer/issues/115)) ([673792c](https://github.com/sygmaprotocol/sygma-relayer/commit/673792cf7137ecf61dad8f0d8ea059f835702c99))
+
 ## [1.1.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.3...v1.1.4) (2023-02-17)
 
 
