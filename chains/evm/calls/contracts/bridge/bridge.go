@@ -225,7 +225,7 @@ func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, er
 	if err != nil {
 		return []byte{}, err
 	}
-	return chains.NewProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
+	return chains.ProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
 }
 
 func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {

@@ -31,7 +31,7 @@ type Proposal struct {
 	Metadata       message.Metadata
 }
 
-func NewProposalsHash(proposals []*Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+func ProposalsHash(proposals []*Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
 		formattedProps[i] = map[string]interface{}{

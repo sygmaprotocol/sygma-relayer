@@ -40,11 +40,11 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	}
 	data, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000024000101008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
 	expectedProp := &chains.Proposal{
-		Source:       1,
-		Destination:  2,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{1},
-		Data:         data,
+		OriginDomainID: 1,
+		Destination:    2,
+		DepositNonce:   1,
+		ResourceID:     [32]byte{1},
+		Data:           data,
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)

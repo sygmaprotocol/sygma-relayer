@@ -59,7 +59,7 @@ func (p *Pallet) ExecuteProposals(
 }
 
 func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
-	return chains.NewProposalsHash(proposals, p.client.ChainID.Int64(), verifyingContract, bridgeVersion)
+	return chains.ProposalsHash(proposals, p.client.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
 func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
