@@ -9,6 +9,12 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/binance-chain/tss-lib/common"
+
+	ethCommon "github.com/ethereum/go-ethereum/common"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/rs/zerolog/log"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -17,10 +23,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
-	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
-	ethCommon "github.com/ethereum/go-ethereum/common"
-	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -123,7 +125,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		select {
 		case sigResult := <-sigChn:
 			{
-				signatureData := sigResult.(*tssSigning.SignatureData)
+				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
@@ -161,11 +163,11 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*evmProposal.EvmProposal, signatureData *tssSigning.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) executeProposal(proposals []*evmProposal.EvmProposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
 	sig := []byte{}
-	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.R, 32)...)
-	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.S, 32)...)
-	sig = append(sig[:], signatureData.Signature.SignatureRecovery...)
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
+	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
+	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
 	var gasLimit uint64

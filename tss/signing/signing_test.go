@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"testing"
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -14,10 +15,15 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/stretchr/testify/suite"
 )
 
 type SigningTestSuite struct {
 	tsstest.CoordinatorTestSuite
+}
+
+func TestRunSigningTestSuite(t *testing.T) {
+	suite.Run(t, new(SigningTestSuite))
 }
 
 func (s *SigningTestSuite) Test_ValidSigningProcess() {

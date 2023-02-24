@@ -6,6 +6,7 @@ package common_test
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 	"time"
 
@@ -178,6 +179,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
+		SID:        "sessionID",
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	peer, _ := peer.Decode(peerID)
@@ -185,7 +187,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 		Payload: msg,
 		From:    peer,
 	}
-	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{})
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true, new(big.Int).SetBytes([]byte(baseTss.SID))).Return(false, &tss.Error{})
 
 	go baseTss.ProcessInboundMessages(context.Background(), msgChan)
 
@@ -206,6 +208,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
+		SID:        "sessionID",
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	peer, _ := peer.Decode(peerID)
@@ -213,7 +216,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 		Payload: msg,
 		From:    peer,
 	}
-	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(true, nil).AnyTimes()
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true, new(big.Int).SetBytes([]byte(baseTss.SID))).Return(true, nil).AnyTimes()
 
 	go baseTss.ProcessInboundMessages(context.Background(), msgChan)
 
@@ -233,6 +236,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
+		SID:        "sessionID",
 	}
 	msg, _ := common.MarshalTssMessage([]byte{1}, true)
 	peer, _ := peer.Decode(peerID)
@@ -240,7 +244,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 		Payload: msg,
 		From:    peer,
 	}
-	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true).Return(false, &tss.Error{}).AnyTimes()
+	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true, new(big.Int).SetBytes([]byte(baseTss.SID))).Return(false, &tss.Error{}).AnyTimes()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go baseTss.ProcessInboundMessages(ctx, msgChan)
