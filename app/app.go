@@ -33,11 +33,11 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/calls"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"

@@ -36,11 +36,11 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/calls"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
