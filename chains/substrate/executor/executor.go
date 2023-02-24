@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -32,13 +32,13 @@ var (
 )
 
 type MessageHandler interface {
-	HandleMessage(m *message.Message) (*proposal.Proposal, error)
+	HandleMessage(m *message.Message) (*chains.Proposal, error)
 }
 
 type BridgePallet interface {
-	IsProposalExecuted(p *proposal.Proposal) (bool, error)
-	ExecuteProposals(proposals []*proposal.Proposal, signature []byte) (*types.Hash, error)
-	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
+	IsProposalExecuted(p *chains.Proposal) (bool, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (*types.Hash, error)
+	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
 }
 
 type Executor struct {
@@ -73,7 +73,7 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
-	proposals := make([]*proposal.Proposal, 0)
+	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
@@ -167,7 +167,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *tssSigning.SignatureData) (*types.Hash, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *tssSigning.SignatureData) (*types.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.S, 32)...)

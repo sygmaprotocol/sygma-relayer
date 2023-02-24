@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +39,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 		},
 	}
 	data, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000024000101008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
-	expectedProp := &proposal.Proposal{
+	expectedProp := &chains.Proposal{
 		Source:       1,
 		Destination:  2,
 		DepositNonce: 1,

@@ -8,7 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor/proposal"
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +17,7 @@ import (
 )
 
 type Handlers map[message.TransferType]MessageHandlerFunc
-type MessageHandlerFunc func(m *message.Message) (*proposal.Proposal, error)
+type MessageHandlerFunc func(m *message.Message) (*chains.Proposal, error)
 
 type SubstrateMessageHandler struct {
 	handlers Handlers
@@ -32,7 +32,7 @@ func NewSubstrateMessageHandler() *SubstrateMessageHandler {
 	}
 }
 
-func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.Proposal, error) {
+func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*chains.Proposal, error) {
 	// Based on handler that was registered on BridgeContract
 	handleMessage, err := mh.matchTransferTypeHandlerFunc(m.Type)
 	if err != nil {
@@ -65,7 +65,7 @@ func (mh *SubstrateMessageHandler) RegisterMessageHandler(transferType message.T
 	mh.handlers[transferType] = handler
 }
 
-func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, error) {
+func FungibleTransferMessageHandler(m *message.Message) (*chains.Proposal, error) {
 	if len(m.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
 	}
@@ -85,7 +85,7 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
-	return proposal.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
+	return chains.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
 }
 
 func constructRecipientData(recipient []types.U8) []byte {
