@@ -1,0 +1,76 @@
+// The Licensed Work is (c) 2022 Sygma
+// SPDX-License-Identifier: BUSL-1.1
+
+package calls
+
+import (
+	"math/big"
+	"strconv"
+
+	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/rs/zerolog/log"
+)
+
+const bridgeVersion = "3.1.0"
+const verifyingContract = "6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"
+
+type BridgeProposal struct {
+	OriginDomainID uint8
+	DepositNonce   uint64
+	ResourceID     [32]byte
+	Data           []byte
+}
+
+type Pallet struct {
+	client *client.SubstrateClient
+}
+
+func NewPallet(
+	client *client.SubstrateClient,
+) *Pallet {
+	return &Pallet{
+		client: client,
+	}
+}
+
+func (p *Pallet) ExecuteProposals(
+	proposals []*chains.Proposal,
+	signature []byte,
+) (*types.Hash, error) {
+	bridgeProposals := make([]BridgeProposal, 0)
+	for _, prop := range proposals {
+		bridgeProposals = append(bridgeProposals, BridgeProposal{
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.DepositNonce,
+			ResourceID:     prop.ResourceId,
+			Data:           prop.Data,
+		})
+	}
+
+	return p.client.Transact(
+		"SygmaBridge.execute_proposal",
+		bridgeProposals,
+		signature,
+	)
+}
+
+func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
+	return chains.NewProposalsHash(proposals, p.client.ChainID.Int64(), verifyingContract, bridgeVersion)
+}
+
+func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
+	log.Debug().
+		Str("depositNonce", strconv.FormatUint(prop.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(prop.ResourceId[:])).
+		Msg("Getting is proposal executed")
+	var res bool
+	err := p.client.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.Source)))
+	if err != nil {
+		return false, err
+	}
+	return res, nil
+}

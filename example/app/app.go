@@ -36,7 +36,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	substrate_bridge "github.com/ChainSafe/sygma-relayer/chains/substrate/calls/pallets/bridge"
+	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/calls"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
@@ -189,7 +189,7 @@ func Run() error {
 				}
 
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID)
-				bridgePallet := substrate_bridge.NewBridgePallet(client)
+				bridgePallet := substrate_pallet.NewPallet(client)
 
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
