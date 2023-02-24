@@ -11,7 +11,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
-	tssSigning "github.com/binance-chain/tss-lib/ecdsa/signing"
+	"github.com/binance-chain/tss-lib/common"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -126,7 +126,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		select {
 		case sigResult := <-sigChn:
 			{
-				signatureData := sigResult.(*tssSigning.SignatureData)
+				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
@@ -167,7 +167,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *tssSigning.SignatureData) (*types.Hash, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*types.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.Signature.S, 32)...)
