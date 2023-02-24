@@ -19,7 +19,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains"
-	evmProposal "github.com/ChainSafe/sygma-relayer/chains/evm/executor/proposal"
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
@@ -35,8 +34,8 @@ type MessageHandler interface {
 }
 
 type BridgeContract interface {
-	IsProposalExecuted(p *evmProposal.EvmProposal) (bool, error)
-	ExecuteProposals(proposals []*evmProposal.EvmProposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
+	IsProposalExecuted(p *chains.Proposal) (bool, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
 }
 
@@ -69,14 +68,13 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
-	proposals := make([]*evmProposal.EvmProposal, 0)
-	chainProposals := make([]*chains.Proposal, 0)
+	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
 			return err
 		}
-		evmProposal := evmProposal.NewEvmProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.HandlerAddress, prop.BridgeAddress, prop.Metadata)
+		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
 		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
 		if err != nil {
 			return err
@@ -87,13 +85,12 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		}
 
 		proposals = append(proposals, evmProposal)
-		chainProposals = append(chainProposals, &evmProposal.Proposal)
 	}
 	if len(proposals) == 0 {
 		return nil
 	}
 
-	propHash, err := e.bridge.ProposalsHash(chainProposals)
+	propHash, err := e.bridge.ProposalsHash(proposals)
 	if err != nil {
 		return err
 	}
@@ -163,7 +160,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*evmProposal.EvmProposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)

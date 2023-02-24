@@ -16,7 +16,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor/proposal"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -183,33 +182,32 @@ func (c *BridgeContract) PermissionlessGenericDeposit(
 }
 
 func (c *BridgeContract) ExecuteProposal(
-	proposal *proposal.EvmProposal,
+	proposal *chains.Proposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceId[:])).
-		Str("handler", proposal.HandlerAddress.String()).
+		Str("resourceID", hexutil.Encode(proposal.ResourceID[:])).
 		Msgf("Execute proposal")
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.Source, proposal.DepositNonce, proposal.Data, proposal.ResourceId, signature,
+		proposal.OriginDomainID, proposal.DepositNonce, proposal.Data, proposal.ResourceID, signature,
 	)
 }
 
 func (c *BridgeContract) ExecuteProposals(
-	proposals []*proposal.EvmProposal,
+	proposals []*chains.Proposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
-	bridgeProposals := make([]BridgeProposal, 0)
+	bridgeProposals := make([]chains.Proposal, 0)
 	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, BridgeProposal{
-			OriginDomainID: prop.Source,
+		bridgeProposals = append(bridgeProposals, chains.Proposal{
+			OriginDomainID: prop.OriginDomainID,
 			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceId,
+			ResourceID:     prop.ResourceID,
 			Data:           prop.Data,
 		})
 	}
@@ -230,13 +228,12 @@ func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, er
 	return chains.NewProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
 }
 
-func (c *BridgeContract) IsProposalExecuted(p *proposal.EvmProposal) (bool, error) {
+func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(p.ResourceId[:])).
-		Str("handler", p.HandlerAddress.String()).
+		Str("resourceID", hexutil.Encode(p.ResourceID[:])).
 		Msg("Getting is proposal executed")
-	res, err := c.CallContract("isProposalExecuted", p.Source, big.NewInt(int64(p.DepositNonce)))
+	res, err := c.CallContract("isProposalExecuted", p.OriginDomainID, big.NewInt(int64(p.DepositNonce)))
 	if err != nil {
 		return false, err
 	}

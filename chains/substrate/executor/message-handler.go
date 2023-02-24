@@ -85,7 +85,7 @@ func FungibleTransferMessageHandler(m *message.Message) (*chains.Proposal, error
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
-	return chains.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data), nil
+	return chains.NewProposal(m.Source, m.Destination, m.DepositNonce, m.ResourceId, data, m.Metadata), nil
 }
 
 func constructRecipientData(recipient []types.U8) []byte {

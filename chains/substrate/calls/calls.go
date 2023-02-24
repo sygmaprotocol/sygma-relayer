@@ -44,9 +44,9 @@ func (p *Pallet) ExecuteProposals(
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
-			OriginDomainID: prop.Source,
+			OriginDomainID: prop.OriginDomainID,
 			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceId,
+			ResourceID:     prop.ResourceID,
 			Data:           prop.Data,
 		})
 	}
@@ -65,10 +65,10 @@ func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
 func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(prop.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(prop.ResourceId[:])).
+		Str("resourceID", hexutil.Encode(prop.ResourceID[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.client.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.Source)))
+	err := p.client.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.OriginDomainID)))
 	if err != nil {
 		return false, err
 	}
