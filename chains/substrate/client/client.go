@@ -75,7 +75,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (*types.H
 		Tip:                types.NewUCompactFromUInt(c.tip),
 		TransactionVersion: rv.TransactionVersion,
 	}
-	h, err := c.signAndSendTransaction(o, ext)
+	h, err := c.signAndSendTransaction(o, &ext)
 	if err != nil {
 		return nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
@@ -112,7 +112,7 @@ func (c *SubstrateClient) nextNonce(meta *types.Metadata) (types.U32, error) {
 	return latestNonce, nil
 }
 
-func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext types.Extrinsic) (types.Hash, error) {
+func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext *types.Extrinsic) (types.Hash, error) {
 	err := ext.Sign(*c.key, opts)
 	if err != nil {
 		return types.Hash{}, err
@@ -126,7 +126,7 @@ func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ex
 }
 
 // SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
-func (c *SubstrateClient) sendRawTransaction(ext types.Extrinsic) (types.Hash, error) {
+func (c *SubstrateClient) sendRawTransaction(ext *types.Extrinsic) (types.Hash, error) {
 	enc, err := codec.EncodeToHex(ext)
 	if err != nil {
 		return types.Hash{}, err
