@@ -1,9 +1,10 @@
 package chains
 
 import (
-	"github.com/stretchr/testify/suite"
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type UtilTestSuite struct {

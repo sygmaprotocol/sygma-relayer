@@ -9,16 +9,18 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
+
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-relayer/chains"
+
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
@@ -30,12 +32,12 @@ var (
 )
 
 type MessageHandler interface {
-	HandleMessage(m *message.Message) (*proposal.Proposal, error)
+	HandleMessage(m *message.Message) (*chains.Proposal, error)
 }
 
-type BridgeContract interface {
+type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (*types.Hash, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
 }
 
@@ -44,8 +46,9 @@ type Executor struct {
 	host        host.Host
 	comm        comm.Communication
 	fetcher     signing.SaveDataFetcher
-	bridge      BridgeContract
+	bridge      BridgePallet
 	mh          MessageHandler
+	conn        *connection.Connection
 }
 
 func NewExecutor(
@@ -53,16 +56,18 @@ func NewExecutor(
 	comm comm.Communication,
 	coordinator *tss.Coordinator,
 	mh MessageHandler,
-	bridgeContract BridgeContract,
+	bridgePallet BridgePallet,
 	fetcher signing.SaveDataFetcher,
+	conn *connection.Connection,
 ) *Executor {
 	return &Executor{
 		host:        host,
 		comm:        comm,
 		coordinator: coordinator,
 		mh:          mh,
-		bridge:      bridgeContract,
+		bridge:      bridgePallet,
 		fetcher:     fetcher,
+		conn:        conn,
 	}
 }
 
@@ -74,17 +79,16 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		if err != nil {
 			return err
 		}
-		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
-		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
+
+		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil {
 			return err
 		}
 		if isExecuted {
-			log.Info().Msgf("Prop %p already executed", prop)
 			continue
 		}
 
-		proposals = append(proposals, evmProposal)
+		proposals = append(proposals, prop)
 	}
 	if len(proposals) == 0 {
 		return nil
@@ -129,7 +133,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 					return err
 				}
 
-				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Msgf("Sent proposals execution with hash: %s", hash.Hex())
 			}
 		case err := <-statusChn:
 			{
@@ -140,12 +144,15 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 				allExecuted := true
 				for _, prop := range proposals {
 					isExecuted, err := e.bridge.IsProposalExecuted(prop)
-					if err != nil || !isExecuted {
+					if err != nil {
+						return err
+					}
+					if !isExecuted {
 						allExecuted = false
 						continue
 					}
 
-					log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposal %v", prop)
+					log.Info().Msgf("Successfully executed proposal %v", prop)
 				}
 
 				if allExecuted {
@@ -160,22 +167,14 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*types.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
 	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	var gasLimit uint64
-	l, ok := proposals[0].Metadata.Data["gasLimit"]
-	if ok {
-		gasLimit = l.(uint64)
-	}
-
-	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
-		GasLimit: gasLimit,
-	})
+	hash, err := e.bridge.ExecuteProposals(proposals, sig)
 	if err != nil {
 		return nil, err
 	}

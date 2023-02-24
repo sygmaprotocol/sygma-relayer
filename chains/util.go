@@ -1,6 +1,8 @@
 package chains
 
-import "math/big"
+import (
+	"math/big"
+)
 
 // CalculateStartingBlock returns first block number (smaller or equal) that is dividable with block confirmations
 func CalculateStartingBlock(startBlock *big.Int, blockConfirmations *big.Int) *big.Int {

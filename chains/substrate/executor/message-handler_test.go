@@ -1,11 +1,14 @@
 package executor_test
 
 import (
+	"encoding/hex"
 	"errors"
+	"testing"
+
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 var errIncorrectFungibleTransferPayloadLen = errors.New("malformed payload. Len  of payload should be 2")
@@ -23,23 +26,29 @@ func TestRunFungibleTransferHandlerTestSuite(t *testing.T) {
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	message := &message.Message{
 		Source:       1,
-		Destination:  0,
+		Destination:  2,
 		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
+		ResourceId:   [32]byte{1},
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
 			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
+	}
+	data, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000024000101008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
+	expectedProp := &chains.Proposal{
+		OriginDomainID: 1,
+		Destination:    2,
+		DepositNonce:   1,
+		ResourceID:     [32]byte{1},
+		Data:           data,
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
 
 	s.Nil(err)
-	s.NotNil(prop)
+	s.Equal(prop, expectedProp)
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
@@ -47,14 +56,12 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 		Source:       1,
 		Destination:  0,
 		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
+		ResourceId:   [32]byte{1},
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -75,9 +82,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			"incorrectAmount", // amount
 			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -98,9 +103,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			[]byte{2},            // amount
 			"incorrectRecipient", // recipientAddress
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -121,9 +124,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 			[]byte{2}, // amount
 			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	invalidMessageData := &message.Message{
@@ -136,9 +137,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 			[]byte{2}, // amount
 			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 		},
-		Metadata: message.Metadata{
-			Priority: uint8(1),
-		},
+		Metadata: message.Metadata{},
 	}
 
 	depositMessageHandler := executor.NewSubstrateMessageHandler()

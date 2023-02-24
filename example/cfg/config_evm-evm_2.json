@@ -34,7 +34,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
@@ -63,13 +63,27 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x7D50C961Cd7DfEcB493013D54C12eEa2769Ed41e"
+          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
         }
       ],
       "gasLimit": 9000000,
+      "startBlock": 50,
       "maxGasPrice": 20000000000,
       "blockConfirmations": 2,
       "key": "266aafa561c7a5329d8075521c5cf6a94253d4280b33b0a9c5135aaccdc2f3d3"
+    },
+    {
+      "id": 3,
+      "chainID": 5,
+      "name": "substrate1",
+      "type": "substrate",
+      "endpoint":"ws://substrate-pallet:9944",
+      "tip": 0,
+      "startBlock": 0,
+      "blockConfirmations": 2,
+      "key": "//Bob",
+      "substrateNetwork": 0
+
     }
   ]
 }
