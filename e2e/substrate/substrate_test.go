@@ -82,7 +82,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	substrateClient := client.NewSubstrateClient(substrateConnection, &substratePK, big.NewInt(5))
+	substrateClient := client.NewSubstrateClient(substrateConnection, &substratePK, big.NewInt(5), 0)
 
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)

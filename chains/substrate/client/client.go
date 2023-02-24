@@ -20,16 +20,17 @@ type SubstrateClient struct {
 	key       *signature.KeyringPair // Keyring used for signing
 	nonceLock sync.Mutex             // Locks nonce for updates
 	nonce     types.U32              // Latest account nonce
-
-	Conn    *connection.Connection
-	ChainID *big.Int
+	tip       uint64
+	Conn      *connection.Connection
+	ChainID   *big.Int
 }
 
-func NewSubstrateClient(conn *connection.Connection, key *signature.KeyringPair, chainID *big.Int) *SubstrateClient {
+func NewSubstrateClient(conn *connection.Connection, key *signature.KeyringPair, chainID *big.Int, tip uint64) *SubstrateClient {
 	return &SubstrateClient{
 		key:     key,
 		Conn:    conn,
 		ChainID: chainID,
+		tip:     tip,
 	}
 }
 
@@ -71,7 +72,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (*types.H
 		GenesisHash:        c.Conn.GenesisHash,
 		Nonce:              types.NewUCompactFromUInt(uint64(nonce)),
 		SpecVersion:        rv.SpecVersion,
-		Tip:                types.NewUCompactFromUInt(0),
+		Tip:                types.NewUCompactFromUInt(c.tip),
 		TransactionVersion: rv.TransactionVersion,
 	}
 	h, err := c.signAndSendTransaction(o, ext)
