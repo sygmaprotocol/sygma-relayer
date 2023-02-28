@@ -21,10 +21,10 @@ services:
       driver: none
     ports:
       - "8547:8545"
-      
+
   substrate-pallet:
     container_name: substrate-pallet
-    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:e2e-latest"
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:v0.0.1"
     ports:
       - "9944:9944"
 
@@ -69,7 +69,7 @@ services:
 
   fee-oracle:
     container_name: fee-oracle
-    image: "ghcr.io/sygmaprotocol/sygma-fee-oracle:latest"
+    image: "ghcr.io/sygmaprotocol/sygma-fee-oracle:v1.1.1"
     command: go run main.go server -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
     depends_on:
       - evm1-1
