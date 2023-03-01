@@ -24,8 +24,7 @@ services:
 
   substrate-pallet:
     container_name: substrate-pallet
-    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:v0.0.1"
-    command: "--dev --unsafe-ws-external --ws-external --rpc-cors=all --base-path ./db/ "
+    image: "ghcr.io/sygmaprotocol/sygma-substrate-pallets:e2e-latest"
     ports:
       - "9944:9944"
       - "9933:9933"
