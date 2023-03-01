@@ -12,15 +12,16 @@ type Events struct {
 	SygmaBridge_Deposit         []Deposit
 	SygmaBasicFeeHandler_FeeSet []FeeSet
 
-	SygmaBridge_ProposalExecution      []ProposalExecution
-	SygmaBridge_FailedHandlerExecution []FailedHandlerExecution
-	SygmaBridge_Retry                  []Retry
-	SygmaBridge_BridgePaused           []BridgePaused
-	SygmaBridge_BridgeUnpaused         []BridgeUnpaused
-	SygmaBridge_RegisterDestDomain     []RegisterDestDomain
-	SygmaBridge_UnRegisterDestDomain   []UnregisterDestDomain
-	FeeHandlerRouter_FeeHandlerSet     []FeeHandlerSet
+	SygmaBridge_ProposalExecution       []ProposalExecution
+	SygmaBridge_FailedHandlerExecution  []FailedHandlerExecution
+	SygmaBridge_Retry                   []Retry
+	SygmaBridge_BridgePaused            []BridgePaused
+	SygmaBridge_BridgeUnpaused          []BridgeUnpaused
+	SygmaBridge_RegisterDestDomain      []RegisterDestDomain
+	SygmaBridge_UnRegisterDestDomain    []UnregisterDestDomain
+	SygmaFeeHandlerRouter_FeeHandlerSet []FeeHandlerSet
 }
+
 type Deposit struct {
 	Phase        types.Phase
 	DestDomainID types.U8
