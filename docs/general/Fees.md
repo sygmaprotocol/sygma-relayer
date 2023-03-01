@@ -45,7 +45,7 @@ Check out the [Sygma Fee Oracle service repository](https://github.com/sygmaprot
 ## Implementations
 
 #### EVM
-Check out the [solidity documentation](https://github.com/sygmaprotocol/sygma-solidity/wiki/Fees) for details on EVM implementation.
+Check out the [solidity documentation](https://github.com/sygmaprotocol/sygma-solidity/blob/main/docs/Home.md) for details on EVM implementation.
 
 #### Substrate
 Check out the [substrate pallet documentation](https://github.com/sygmaprotocol/sygma-substrate-pallets/blob/main/docs/Home.md) for details on Substrate implementation.
