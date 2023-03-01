@@ -16,6 +16,7 @@ Sygma bridge uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-co
 
 1. [Local environment](#local-environment)
 2. [Configuration](#configuration)
+3. [Technical documentation](#technical-documentation)
 
 &nbsp;
 
@@ -50,3 +51,8 @@ translate to ENV variable named `SYG_RELAYER_MPCCONFIG_PORT`.
 
 Each `ChainConfig` is defined as one ENV variable, where its content is JSON configuration for one chain/domain.
 Variables are named like this: `SYG_DOM_X` where `X` is domain id.
+
+## Technical documentation
+Each service has a technical documentation inside its repository under `/docs` directory. [Here](/docs/Home.md) you can find technical documentation for relayers.
+
+Additionally, the [general high-level documentation for the entire Sygma system](/docs/general/Arhitecture.md) can be found in this same repository under the `/docs/general` directory.
