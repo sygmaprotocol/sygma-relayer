@@ -4,5 +4,5 @@
 
 ## Components
 
-- **[Fees](/docs/general/Fees.md)** - details on how are fees being handled by Sygma
+- **[Fees](/docs/general/Fees.md)** - high-level overview of handling fees
 - **[Relayers](/docs/Home.md)** - relayer technical documentation
