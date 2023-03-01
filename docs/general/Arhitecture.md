@@ -2,4 +2,7 @@
 
 ![](/docs/resources/sygma-arhitecture.png)
 
-#### [Fees](/docs/general/Fees.md)
+## Components
+
+- **[Fees](/docs/general/Fees.md)** - details on how are fees being handled by Sygma
+- **[Relayers](/docs/Home.md)** - relayer technical documentation

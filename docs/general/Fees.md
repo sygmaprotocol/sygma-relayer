@@ -2,7 +2,7 @@
 
 Sygma allows granular control of handling fees for each resource. Even though specific implementations differ based on chain architecture, general functionality is the same. The concept is that each resource is assigned a fee strategy for every potential destination domain, with this mapping also outlining all potential bridging routes for a given resource.
 
-![](https://i.imgur.com/7fG5XLO.png)
+![](/docs/resources/fee-router-general.png)
 
 ## Fee strategies
 
@@ -14,7 +14,7 @@ This strategy always requires a predefined static fee amount per deposit. **It c
 
 *On the diagram below, we use Sygma SDK for interaction with all services.*
 
-![](https://i.imgur.com/BW3j9IL.png)
+![](/docs/resources/static-fee-general.png)
 
 #### Deposit flow
 
@@ -24,13 +24,13 @@ This strategy always requires a predefined static fee amount per deposit. **It c
     - Send the appropriate base currency amount based on the calculated final fee when executing the deposit.
 
 ### Dynamic fee strategy
-This strategy utilizes the [Sygma Fee Oracle service](https://github.com/sygmaprotocol/sygma-fee-oracle/wiki), which issues fee estimates with details on the gas price for the destination chain. In addition, fee oracle can provide price information for different tokens, enabling paying bridging fees in the not native currency. Each issued gas estimate has a limited time validity in which it needs to be executed.
+This strategy utilizes the [Sygma Fee Oracle service](https://github.com/sygmaprotocol/sygma-fee-oracle), which issues fee estimates with details on the gas price for the destination chain. In addition, fee oracle can provide price information for different tokens, enabling paying bridging fees in the not native currency. Each issued gas estimate has a limited time validity in which it needs to be executed.
 
-Check out the [Sygma Fee Oracle service repository](https://github.com/sygmaprotocol/sygma-fee-oracle/wiki) for more details on the service and the format of the issued fee estimates.
+Check out the [Sygma Fee Oracle service repository](https://github.com/sygmaprotocol/sygma-fee-oracle/blob/main/docs/Home.md) for more details on the service and the format of the issued fee estimates.
 
 *On the diagram below, we use Sygma SDK for interaction with all services.*
 
-![](https://i.imgur.com/3ABwdf2.png)
+![](/docs/resources/dynamic-fee-general.png)
 
 #### Deposit flow
 
@@ -48,7 +48,7 @@ Check out the [Sygma Fee Oracle service repository](https://github.com/sygmaprot
 Check out the [solidity documentation](https://github.com/sygmaprotocol/sygma-solidity/wiki/Fees) for details on EVM implementation.
 
 #### Substrate
-WIP
+Check out the [substrate pallet documentation](https://github.com/sygmaprotocol/sygma-substrate-pallets/blob/main/docs/Home.md) for details on Substrate implementation.
 
 
  
