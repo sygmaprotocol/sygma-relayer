@@ -326,7 +326,11 @@ func (eh *RefreshEventHandler) HandleEvent(
 		return nil
 	}
 
-	topology, err := eh.topologyProvider.NetworkTopology(refreshEvents[len(refreshEvents)-1].Hash)
+	hash := refreshEvents[len(refreshEvents)-1].Hash
+	if hash == "" {
+		return fmt.Errorf("hash cannot be empty string")
+	}
+	topology, err := eh.topologyProvider.NetworkTopology(hash)
 	if err != nil {
 		return err
 	}
