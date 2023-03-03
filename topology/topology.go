@@ -4,6 +4,8 @@
 package topology
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,21 +14,11 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/mitchellh/hashstructure/v2"
 )
 
 type NetworkTopology struct {
 	Peers     []*peer.AddrInfo
 	Threshold int
-}
-
-func (nt NetworkTopology) Hash() (string, error) {
-	hash, err := hashstructure.Hash(nt, hashstructure.FormatV2, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return strconv.FormatUint(hash, 16), nil
 }
 
 func (nt NetworkTopology) IsAllowedPeer(peer peer.ID) bool {
@@ -56,7 +48,9 @@ type Decrypter interface {
 }
 
 type NetworkTopologyProvider interface {
-	NetworkTopology() (NetworkTopology, error)
+	// NetworkTopology fetches latest topology from network and validates that
+	// the version matches expected hash.
+	NetworkTopology(hash string) (NetworkTopology, error)
 }
 
 func NewNetworkTopologyProvider(config relayer.TopologyConfiguration, fetcher Fetcher) (NetworkTopologyProvider, error) {
@@ -78,7 +72,7 @@ type TopologyProvider struct {
 	fetcher   Fetcher
 }
 
-func (t *TopologyProvider) NetworkTopology() (NetworkTopology, error) {
+func (t *TopologyProvider) NetworkTopology(hash string) (NetworkTopology, error) {
 	resp, err := t.fetcher.Get(t.url)
 	if err != nil {
 		return NetworkTopology{}, err
@@ -87,6 +81,13 @@ func (t *TopologyProvider) NetworkTopology() (NetworkTopology, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return NetworkTopology{}, err
+	}
+
+	h := sha256.New()
+	h.Write(body)
+	eh := hex.EncodeToString(h.Sum(nil))
+	if hash != "" && eh != hash {
+		return NetworkTopology{}, fmt.Errorf("topology hash %s not matching expected hash %s", string(eh), hash)
 	}
 
 	unecryptedBody := t.decrypter.Decrypt(string(body))
