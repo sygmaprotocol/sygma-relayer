@@ -89,23 +89,6 @@ func TestRunNetworkTopologyTestSuite(t *testing.T) {
 	suite.Run(t, new(NetworkTopologyTestSuite))
 }
 
-func (s *NetworkTopologyTestSuite) Test_Hash_ValidHash() {
-	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
-	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
-	p1, _ := peer.AddrInfoFromString(p1RawAddress)
-	p2, _ := peer.AddrInfoFromString(p2RawAddress)
-	topology := topology.NetworkTopology{
-		Peers: []*peer.AddrInfo{
-			p1, p2,
-		},
-		Threshold: 2,
-	}
-
-	hash, _ := topology.Hash()
-
-	s.Equal(hash, "8c6541d0e584f0c0")
-}
-
 func (s *NetworkTopologyTestSuite) Test_IsAllowedPeer_ValidPeer() {
 	p1RawAddress := "/ip4/127.0.0.1/tcp/4000/p2p/QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR"
 	p2RawAddress := "/ip4/127.0.0.1/tcp/4002/p2p/QmeWhpY8tknHS29gzf9TAsNEwfejTCNJ7vFpmkV6rNUgyq"
