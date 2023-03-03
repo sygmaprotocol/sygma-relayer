@@ -5,6 +5,7 @@ package topology
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -84,8 +85,8 @@ func (t *TopologyProvider) NetworkTopology(hash string) (NetworkTopology, error)
 
 	h := sha256.New()
 	h.Write(body)
-	eh := h.Sum(nil)
-	if hash != "" && string(eh) != hash {
+	eh := hex.EncodeToString(h.Sum(nil))
+	if hash != "" && eh != hash {
 		return NetworkTopology{}, fmt.Errorf("topology hash %s not matching expected hash %s", string(eh), hash)
 	}
 
