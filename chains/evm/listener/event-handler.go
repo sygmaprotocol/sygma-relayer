@@ -6,9 +6,10 @@ package listener
 import (
 	"context"
 	"fmt"
-	"github.com/rs/zerolog"
 	"math/big"
 	"strings"
+
+	"github.com/rs/zerolog"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
@@ -325,11 +326,11 @@ func (eh *RefreshEventHandler) HandleEvent(
 		return nil
 	}
 
-	topology, err := eh.topologyProvider.NetworkTopology()
-	if err != nil {
-		return err
+	hash := refreshEvents[len(refreshEvents)-1].Hash
+	if hash == "" {
+		return fmt.Errorf("hash cannot be empty string")
 	}
-	hash, err := topology.Hash()
+	topology, err := eh.topologyProvider.NetworkTopology(hash)
 	if err != nil {
 		return err
 	}
@@ -338,11 +339,6 @@ func (eh *RefreshEventHandler) HandleEvent(
 		return err
 	}
 
-	// if multiple refresh events inside block range use latest
-	expectedHash := refreshEvents[len(refreshEvents)-1].Hash
-	if hash != expectedHash {
-		return fmt.Errorf("aborting refresh because expected hash %s doesn't match %s", expectedHash, hash)
-	}
 	eh.connectionGate.SetTopology(topology)
 	p2p.LoadPeers(eh.host, topology.Peers)
 
