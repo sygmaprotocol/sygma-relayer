@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.2.0...v1.3.0) (2023-03-03)
+
+
+### Features
+
+* check hash value of encrypted topology ([#123](https://github.com/sygmaprotocol/sygma-relayer/issues/123)) ([f179194](https://github.com/sygmaprotocol/sygma-relayer/commit/f17919461e63acec792b28f0b04797e4c9a24330))
+
+
+### Miscellaneous
+
+* fixate versions in local setup ([#118](https://github.com/sygmaprotocol/sygma-relayer/issues/118)) ([3a6ffd2](https://github.com/sygmaprotocol/sygma-relayer/commit/3a6ffd29c17493b6a8c67d172eb05ded736a2f9e))
+* Tags Versioning ([#122](https://github.com/sygmaprotocol/sygma-relayer/issues/122)) ([3c031d8](https://github.com/sygmaprotocol/sygma-relayer/commit/3c031d833dc24bfe5d1ced5aa0e3772a477cb126))
+
 ## [1.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.1.4...v1.2.0) (2023-02-24)
 
 
