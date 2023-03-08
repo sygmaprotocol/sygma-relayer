@@ -15,7 +15,7 @@ Fee strategy defines a set of rules on how fees should be charged when executing
 This strategy always requires a predefined static fee amount per deposit. **It can only collect fees in the native
 currency of the source chain**.
 
-*On the diagram below, we use Sygma SDK for interaction with all services.*
+*On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
 
 ![](/docs/resources/static-fee-general.png)
 
@@ -37,7 +37,7 @@ Check out
 the [Sygma Fee Oracle technical documentation](https://github.com/sygmaprotocol/sygma-fee-oracle/blob/main/docs/Home.md) for
 more details on the service and the format of the issued fee estimates.
 
-*On the diagram below, we use Sygma SDK for interaction with all services.*
+*On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
 
 ![](/docs/resources/dynamic-fee-general.png)
 

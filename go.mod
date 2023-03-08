@@ -12,7 +12,6 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/imdario/mergo v0.3.12
 	github.com/libp2p/go-libp2p v0.23.4
-	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/multiformats/go-multiaddr v0.7.0
 	github.com/multiformats/go-multiaddr-dns v0.3.1
