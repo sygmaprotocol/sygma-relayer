@@ -74,7 +74,7 @@ func (m *MockDecrypter) EXPECT() *MockDecrypterMockRecorder {
 }
 
 // Decrypt mocks base method.
-func (m *MockDecrypter) Decrypt(data string) []byte {
+func (m *MockDecrypter) Decrypt(data []byte) []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Decrypt", data)
 	ret0, _ := ret[0].([]byte)
@@ -111,10 +111,10 @@ func (m *MockNetworkTopologyProvider) EXPECT() *MockNetworkTopologyProviderMockR
 }
 
 // NetworkTopology mocks base method.
-func (m *MockNetworkTopologyProvider) NetworkTopology(hash string) (topology.NetworkTopology, error) {
+func (m *MockNetworkTopologyProvider) NetworkTopology(hash string) (*topology.NetworkTopology, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkTopology", hash)
-	ret0, _ := ret[0].(topology.NetworkTopology)
+	ret0, _ := ret[0].(*topology.NetworkTopology)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
