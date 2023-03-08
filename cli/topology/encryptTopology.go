@@ -38,7 +38,12 @@ func encryptTopology(cmd *cobra.Command, args []string) error {
 	cipherKey := []byte(encryptionKey)
 	aesEncryption, _ := topology.NewAESEncryption(cipherKey)
 	topologyFile, err := os.Open(path)
-	defer topologyFile.Close()
+	defer func() {
+		err := topologyFile.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 	if err != nil {
 		return err
 	}

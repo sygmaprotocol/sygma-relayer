@@ -41,7 +41,7 @@ func (s *CoordinatorElectorTestSuite) SetupTest() {
 	// create test hosts
 	for i := 0; i < numberOfTestHosts; i++ {
 		privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-		topology := topology.NetworkTopology{
+		topology := &topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
 		}
 		newHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4000+i))

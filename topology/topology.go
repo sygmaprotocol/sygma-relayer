@@ -106,7 +106,7 @@ func (t *TopologyProvider) NetworkTopology(hash string) (*NetworkTopology, error
 	}
 	if hash != "" {
 		log.Info().Msgf("New NetworkTopology initialised. "+
-			"Peers amount %s, Threshold %s", len(rawTopology.Peers), rawTopology.Threshold)
+			"Peers amount %v, Threshold %v", len(rawTopology.Peers), rawTopology.Threshold)
 	}
 
 	return ProcessRawTopology(rawTopology)

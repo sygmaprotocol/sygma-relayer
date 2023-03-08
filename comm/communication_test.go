@@ -89,7 +89,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
 	privKeyForHost, _, _ := crypto.GenerateKeyPair(crypto.ECDSA, 1)
-	topology := topology.NetworkTopology{
+	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
 	}
 	externalHost, _ := p2p.NewHost(privKeyForHost, topology, p2p.NewConnectionGate(topology), uint16(4005))
@@ -200,7 +200,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 Util function used for setting tests with multiple communications
 */
 func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID) ([]host.Host, []comm.Communication) {
-	topology := topology.NetworkTopology{
+	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
 	}
 	privateKeys := []crypto.PrivKey{}
