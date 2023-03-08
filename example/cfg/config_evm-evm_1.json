@@ -17,7 +17,6 @@
       "id": 1,
       "name": "evm1",
       "type": "evm",
-
       "endpoint": "ws://evm1-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
       "handlers": [
@@ -30,12 +29,12 @@
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
-         "type": "permissionedGeneric",
-         "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+          "type": "permissionedGeneric",
+          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
+          "address": "0xE837D42dd3c685839a418886f418769BDD23546b"
         }
       ],
       "gasLimit": 9000000,
@@ -59,12 +58,12 @@
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
-         "type": "permissionedGeneric",
-         "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+          "type": "permissionedGeneric",
+          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"
+          "address": "0xE837D42dd3c685839a418886f418769BDD23546b"
         }
       ],
       "gasLimit": 9000000,
@@ -78,7 +77,7 @@
       "name": "substrate1",
       "type": "substrate",
       "startBlock": 0,
-      "endpoint":"ws://substrate-pallet:9944",
+      "endpoint": "ws://substrate-pallet:9944",
       "tip": 0,
       "blockConfirmations": 2,
       "key": "//Alice",
