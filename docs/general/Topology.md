@@ -19,7 +19,7 @@ After the topology map file is created, the file needs to be encrypted and uploa
 On startup, relayers are fetching the topology map from the remote service, and store the data in a local file.
  
 ## Topology map update
-To update the topology map, the topology map on the remote service needs to be updated. After we updated the topology map on ipfs, the refreshKey function needs to be called on the [bridge smart contract](https://github.com/sygmaprotocol/sygma-solidity/blob/master/contracts/Bridge.sol) (only Admin is allowed to trigger this function). refreshKey function is implemented only on the evm chain. The refreshKey function is called with topology map hash. This hash is used to prevent changes to the topology map during the refresh process. Relayers will start using the new, updated topology only when the KeyRefresh event is processed. The event is emitted by refreshKey function.
+To update the topology map, the map on the remote service needs to be updated. After we updated the topology map on ipfs, the `refreshKey` function needs to be called on the [bridge smart contract](https://github.com/sygmaprotocol/sygma-solidity/blob/master/contracts/Bridge.sol) (only Admin is allowed to trigger this function). `refreshKey` function is implemented only on the evm chain. The `refreshKey` function is called with the topology map hash. This hash is used to prevent relayers using invalid or compromised topology when updating it. Relayers will start using the new, updated topology only when the `KeyRefresh` event is processed which is emitted by the `refreshKey` function.
 
 ## Env variables
 - SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY - the key that is used to encrypt the topology map
