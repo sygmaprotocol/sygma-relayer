@@ -4,9 +4,11 @@
 package topology
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"encoding/hex"
+	"crypto/rand"
+	"log"
 )
 
 type AESEncryption struct {
@@ -24,12 +26,27 @@ func NewAESEncryption(key []byte) (*AESEncryption, error) {
 	}, nil
 }
 
-func (ae *AESEncryption) Decrypt(data string) []byte {
-	iv := data[:aes.BlockSize]
-	bytes, _ := hex.DecodeString(data[aes.BlockSize:])
-
-	stream := cipher.NewCTR(ae.block, []byte(iv))
-	dst := make([]byte, len(bytes))
-	stream.XORKeyStream(dst, bytes)
+func (ae *AESEncryption) Decrypt(ct []byte) []byte {
+	iv := ct[:aes.BlockSize]
+	stream := cipher.NewCTR(ae.block, iv)
+	dst := make([]byte, len(ct[aes.BlockSize:]))
+	stream.XORKeyStream(dst, ct[aes.BlockSize:])
 	return dst
+}
+
+// Encrypt is a function that encrypts provided bytes with AES in CTR mode
+// Returned value is iv + ct
+func (ae *AESEncryption) Encrypt(data []byte) []byte {
+	dst := make([]byte, len(data))
+	iv := make([]byte, 16)
+	_, err := rand.Read(iv)
+	if err != nil {
+		log.Fatalf("error while generating random string: %s", err)
+	}
+	stream := cipher.NewCTR(ae.block, iv)
+	stream.XORKeyStream(dst, data)
+
+	ct := bytes.NewBuffer(iv)
+	ct.Write(dst)
+	return ct.Bytes()
 }
