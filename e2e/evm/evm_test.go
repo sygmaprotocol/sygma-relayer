@@ -53,7 +53,7 @@ func Test_EVM2EVM(t *testing.T) {
 	config := evm.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 
-		Erc20Addr:        common.HexToAddress("0x7d5De134A86a03A589682db281ea549B92892De4"),
+		Erc20Addr:        common.HexToAddress("0x37356a2B2EbF65e5Ea18BD93DeA6869769099739"),
 		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
@@ -61,15 +61,15 @@ func Test_EVM2EVM(t *testing.T) {
 		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-		Erc721Addr:        common.HexToAddress("0x16376D793DEE472d893b8ffa3A777513337B907E"),
+		Erc721Addr:        common.HexToAddress("0xE54Dc792c226AEF99D6086527b98b36a4ADDe56a"),
 		Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
 		GenericHandlerAddr: common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0xaa0F0edf48bEac732e2c2d8B40F02c232622926D"),
+		AssetStoreAddr:     common.HexToAddress("0xB1387B365AE7294Ea13bad9db83436e671DD16Ba"),
 
-		PermissionlessGenericHandlerAddr: common.HexToAddress("0xb8A105bE8a89Bd4096daE5e133Ba6aD7B31a0db8"),
+		PermissionlessGenericHandlerAddr: common.HexToAddress("0xE837D42dd3c685839a418886f418769BDD23546b"),
 		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
 		BasicFeeHandlerAddr:      common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),

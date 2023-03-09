@@ -56,7 +56,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	evmConfig := evm.BridgeConfig{
 		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 
-		Erc20Addr:        common.HexToAddress("0x1D20a9AcDBE9466E7C07859Cf17fB3A93f010c8D"),
+		Erc20Addr:        common.HexToAddress("0x37356a2B2EbF65e5Ea18BD93DeA6869769099739"),
 		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
