@@ -8,7 +8,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"log"
 )
 
 type AESEncryption struct {
@@ -36,17 +35,17 @@ func (ae *AESEncryption) Decrypt(ct []byte) []byte {
 
 // Encrypt is a function that encrypts provided bytes with AES in CTR mode
 // Returned value is iv + ct
-func (ae *AESEncryption) Encrypt(data []byte) []byte {
+func (ae *AESEncryption) Encrypt(data []byte) ([]byte, error) {
 	dst := make([]byte, len(data))
 	iv := make([]byte, 16)
 	_, err := rand.Read(iv)
 	if err != nil {
-		log.Fatalf("error while generating random string: %s", err)
+		return nil, err
 	}
 	stream := cipher.NewCTR(ae.block, iv)
 	stream.XORKeyStream(dst, data)
 
 	ct := bytes.NewBuffer(iv)
 	ct.Write(dst)
-	return ct.Bytes()
+	return ct.Bytes(), nil
 }

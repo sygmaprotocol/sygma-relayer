@@ -27,8 +27,8 @@ var (
 )
 
 func init() {
-	testTopologyCMD.PersistentFlags().StringVar(&decryptionKey, "decryptionKey", "", "password to decrypt topology")
-	_ = testTopologyCMD.MarkFlagRequired("decryptionKey")
+	testTopologyCMD.PersistentFlags().StringVar(&decryptionKey, "decryption-key", "", "password to decrypt topology")
+	_ = testTopologyCMD.MarkFlagRequired("decryption-key")
 	testTopologyCMD.PersistentFlags().StringVar(&url, "url", "", "url to fetch topology")
 	_ = testTopologyCMD.MarkFlagRequired("url")
 	testTopologyCMD.PersistentFlags().StringVar(&hash, "hash", "", "hash of topology")
@@ -50,7 +50,7 @@ func testTopology(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Everething is fine your topology is \n")
+	fmt.Printf("Everything is fine your topology is \n")
 	fmt.Printf("%+v", decryptedTopology)
 	return nil
 }

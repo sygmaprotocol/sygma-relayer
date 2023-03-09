@@ -30,8 +30,8 @@ var (
 func init() {
 	encryptTopologyCMD.PersistentFlags().StringVar(&path, "path", "", "path to json file with network topology")
 	_ = encryptTopologyCMD.MarkFlagRequired("path")
-	encryptTopologyCMD.PersistentFlags().StringVar(&encryptionKey, "encryptionKey", "", "password to encrypt topology")
-	_ = encryptTopologyCMD.MarkFlagRequired("password")
+	encryptTopologyCMD.PersistentFlags().StringVar(&encryptionKey, "encryption-key", "", "password to encrypt topology")
+	_ = encryptTopologyCMD.MarkFlagRequired("encryption-key")
 }
 
 func encryptTopology(cmd *cobra.Command, args []string) error {
@@ -57,8 +57,10 @@ func encryptTopology(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("topology was wrong formed %s", err.Error())
 	}
-	fmt.Printf("%+v", testTopology)
-	ct := aesEncryption.Encrypt(byteValue)
+	ct, err := aesEncryption.Encrypt(byteValue)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Encrypted topology is: %x \n", ct)
 	h := sha256.New()

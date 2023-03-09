@@ -34,9 +34,9 @@ IPFS should return hex formatted IV + data. To help you there are 2 utility CLI 
 There are two utility CLI that helps encrypt and then test uploaded Toplogy.
 
 `./relayer topology encrypt --path ./topology.json --encryptionKey 123` 
-This command will encrypt provided topology and output correspponding hash and encrypted toplogy in hex representation (iv + data)
+This command will encrypt provided topology and output corresponding hash and encrypted toplogy in hex representation (iv + data)
 
 `./relayer topology test --hash 123  --url https://cloudflare-ipfs.com/ipfs/123  --decryptionKey 321` 
-This command will fetch topology from IPFS and test it according to Relayers topology initialisation flow. 
+This command will fetch topology from IPFS and test it according to Relayers topology initialization flow. 
 This allows to test correctnes of topology before actually call `RefreshKey`
 

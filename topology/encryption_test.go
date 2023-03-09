@@ -39,7 +39,8 @@ func (s *AESEncryptionTestSuite) Test_EncrDecr() {
 
 	s.Nil(err)
 
-	ct := s.aesEncryption.Encrypt(pt)
+	ct, err := s.aesEncryption.Encrypt(pt)
+	s.Nil(err)
 
 	resultingPt := s.aesEncryption.Decrypt(ct)
 
