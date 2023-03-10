@@ -37,5 +37,5 @@ This command will encrypt provided topology and output corresponding hash and en
 
 `./relayer topology test --hash 123  --url https://cloudflare-ipfs.com/ipfs/123  --decryptionKey 321` 
 This command will fetch topology from IPFS and test it according to Relayers topology initialization flow. 
-This allows to test correctnes of topology before actually call `RefreshKey`
+This allows to test correctnes of topology before actually calling `RefreshKey`
 
