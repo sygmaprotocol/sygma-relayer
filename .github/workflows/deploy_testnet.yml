@@ -40,7 +40,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: build / tag / push docker image into ghcr
-        id: build-and-push
+        id: build-and-push-tag
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -48,7 +48,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
 
       - name: tag version / push docker image into ghcr
-        id: build-and-push
+        id: build-and-push-ref
         uses: docker/build-push-action@v3
         with:
           context: .
