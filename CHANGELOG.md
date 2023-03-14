@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.3.0...v1.3.1) (2023-03-14)
+
+
+### Miscellaneous
+
+* add fees documentation ([#120](https://github.com/sygmaprotocol/sygma-relayer/issues/120)) ([f6261db](https://github.com/sygmaprotocol/sygma-relayer/commit/f6261dbd52cf9193fbb6187cbc8944af370a6094))
+* add topology map documentation ([#125](https://github.com/sygmaprotocol/sygma-relayer/issues/125)) ([e032b2f](https://github.com/sygmaprotocol/sygma-relayer/commit/e032b2f99363f03aae25bd9bd07640b06b7d9a8b))
+* fix testnet release pipeline ([#131](https://github.com/sygmaprotocol/sygma-relayer/issues/131)) ([5db8acc](https://github.com/sygmaprotocol/sygma-relayer/commit/5db8acc5da1d9f7a12c3badfb4e5f3bef40c3ab7))
+* update example to latest solidity version ([#127](https://github.com/sygmaprotocol/sygma-relayer/issues/127)) ([c072181](https://github.com/sygmaprotocol/sygma-relayer/commit/c072181e1770df5cc67ebd5470a8a6fdb8a2d822))
+
 ## [1.3.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.2.0...v1.3.0) (2023-03-03)
 
 
