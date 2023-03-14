@@ -111,16 +111,16 @@ func (m *MockNetworkTopologyProvider) EXPECT() *MockNetworkTopologyProviderMockR
 }
 
 // NetworkTopology mocks base method.
-func (m *MockNetworkTopologyProvider) NetworkTopology() (topology.NetworkTopology, error) {
+func (m *MockNetworkTopologyProvider) NetworkTopology(hash string) (topology.NetworkTopology, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkTopology")
+	ret := m.ctrl.Call(m, "NetworkTopology", hash)
 	ret0, _ := ret[0].(topology.NetworkTopology)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NetworkTopology indicates an expected call of NetworkTopology.
-func (mr *MockNetworkTopologyProviderMockRecorder) NetworkTopology() *gomock.Call {
+func (mr *MockNetworkTopologyProviderMockRecorder) NetworkTopology(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkTopology", reflect.TypeOf((*MockNetworkTopologyProvider)(nil).NetworkTopology))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkTopology", reflect.TypeOf((*MockNetworkTopologyProvider)(nil).NetworkTopology), hash)
 }

@@ -86,7 +86,7 @@ func Run() error {
 	// if topology is not already in file, read from provider
 	if err != nil {
 		log.Debug().Msg("Reading topology from provider")
-		networkTopology, err = topologyProvider.NetworkTopology()
+		networkTopology, err = topologyProvider.NetworkTopology("")
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
