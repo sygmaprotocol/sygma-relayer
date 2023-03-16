@@ -33,7 +33,7 @@ type RawEVMConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	Bridge                   string          `mapstructure:"bridge"`
 	Handlers                 []HandlerConfig `mapstrcture:"handlers"`
-	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"20000000000"`
+	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"500000000000"`
 	GasMultiplier            float64         `mapstructure:"gasMultiplier" default:"1"`
 	GasLimit                 int64           `mapstructure:"gasLimit" default:"2000000"`
 	StartBlock               int64           `mapstructure:"startBlock"`
