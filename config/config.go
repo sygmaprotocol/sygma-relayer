@@ -31,15 +31,10 @@ type RawConfig struct {
 //
 //
 // Properties of RelayerConfig are expected to be defined as separate ENV variables
-// where ENV variable name reflects properties position in structure. Each ENV variable needs to be prefixed with CBH.
+// where ENV variable name reflects properties position in structure. Each ENV variable needs to be prefixed with SYG.
 //
 // For example, if you want to set Config.RelayerConfig.MpcConfig.Port this would
-// translate to ENV variable named CBH_RELAYER_MPCCONFIG_PORT.
-//
-//
-// Each ChainConfig is defined as one ENV variable, where its content is JSON configuration for one chain/domain.
-// Variables are named like this: CBH_DOM_X where X is domain id.
-//
+// translate to ENV variable named SYG_RELAYER_MPCCONFIG_PORT.
 func GetConfigFromENV(config *Config) (*Config, error) {
 	rawConfig, err := loadFromEnv()
 	if err != nil {
