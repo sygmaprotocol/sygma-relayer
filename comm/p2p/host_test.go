@@ -41,7 +41,7 @@ func (s *HostTestSuite) TestHost_NewHost_Success() {
 	p1, _ := peer.AddrInfoFromString(p1RawAddress)
 	p2, _ := peer.AddrInfoFromString(p2RawAddress)
 
-	topology := topology.NetworkTopology{
+	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{
 			p1, p2,
 		},
@@ -61,10 +61,10 @@ func (s *HostTestSuite) TestHost_NewHost_Success() {
 func (s *HostTestSuite) TestHost_NewHost_InvalidPrivKey() {
 	host, err := p2p.NewHost(
 		nil,
-		topology.NetworkTopology{
+		&topology.NetworkTopology{
 			Peers: []*peer.AddrInfo{},
 		},
-		p2p.NewConnectionGate(topology.NetworkTopology{}),
+		p2p.NewConnectionGate(&topology.NetworkTopology{}),
 		2020,
 	)
 	s.Nil(host)
@@ -89,7 +89,7 @@ func (s *LoadPeersTestSuite) SetupTest() {
 	}
 	p1, _ := peer.AddrInfoFromString(p1RawAddress)
 	p2, _ := peer.AddrInfoFromString(p2RawAddress)
-	topology := topology.NetworkTopology{Peers: []*peer.AddrInfo{p1, p2}}
+	topology := &topology.NetworkTopology{Peers: []*peer.AddrInfo{p1, p2}}
 	host, err := p2p.NewHost(privKey, topology, p2p.NewConnectionGate(topology), 2020)
 	if err != nil {
 		panic(err)

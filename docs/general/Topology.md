@@ -26,3 +26,16 @@ To update the topology map, the map on the remote service needs to be updated. A
 - SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL - topology map location
 - SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH - local file where the topology map is stored after the download from the remote service
  
+## Topology encryption/decryption details
+Topology should be encrypted with AES using CTR mode.
+IPFS should return hex formatted IV + data. To help you there are 2 utility CLI described below.
+
+## Utility CLI
+
+`./relayer topology encrypt --path ./topology.json --encryptionKey 123` 
+This command will encrypt provided topology and output corresponding hash and encrypted toplogy in hex representation (iv + data)
+
+`./relayer topology test --hash 123  --url https://cloudflare-ipfs.com/ipfs/123  --decryptionKey 321` 
+This command will fetch topology from IPFS and test it according to Relayers topology initialization flow. 
+This allows to test correctnes of topology before actually calling `RefreshKey`
+

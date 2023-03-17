@@ -22,7 +22,7 @@ func NewTopologyStore(filePath string) *TopologyStore {
 }
 
 // StoreTopology stores topology into a file
-func (ts *TopologyStore) StoreTopology(topology NetworkTopology) error {
+func (ts *TopologyStore) StoreTopology(topology *NetworkTopology) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -43,20 +43,20 @@ func (ts *TopologyStore) StoreTopology(topology NetworkTopology) error {
 }
 
 // Topology fetches current topology from file
-func (ts *TopologyStore) Topology() (NetworkTopology, error) {
+func (ts *TopologyStore) Topology() (*NetworkTopology, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	t := NetworkTopology{}
+	t := &NetworkTopology{}
 	tb, err := ioutil.ReadFile(ts.path)
 	if err != nil {
-		return t, err
+		return nil, err
 	}
 
 	err = json.Unmarshal(tb, &t)
 	if err != nil {
-		return t, err
+		return nil, err
 	}
 
-	return t, err
+	return nil, err
 }
