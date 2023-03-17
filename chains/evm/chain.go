@@ -6,6 +6,8 @@ package evm
 import (
 	"context"
 	"fmt"
+	"math/big"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -13,7 +15,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"math/big"
 )
 
 type BatchProposalExecutor interface {
@@ -48,7 +49,7 @@ func NewEVMChain(
 		blockInterval: blockInterval,
 		freshStart:    freshStart,
 		latestBlock:   latestBlock,
-		logger:        log.With().Str("domain", string(domainID)).Logger(),
+		logger:        log.With().Uint8("domainID", domainID).Logger(),
 	}
 }
 

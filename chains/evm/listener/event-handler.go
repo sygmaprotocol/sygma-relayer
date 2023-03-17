@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/go-kit/kit/log"
 	"github.com/rs/zerolog"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -53,9 +52,8 @@ func NewDepositEventHandler(
 	bridgeAddress common.Address,
 	domainID uint8,
 ) *DepositEventHandler {
-	logger := log.With().Str("domainID", domainID).Logger()
 	return &DepositEventHandler{
-		log:            logger,
+		log:            logC.Logger(),
 		eventListener:  eventListener,
 		depositHandler: depositHandler,
 		bridgeAddress:  bridgeAddress,
@@ -129,9 +127,8 @@ func NewRetryEventHandler(
 	blockConfirmations *big.Int,
 ) *RetryEventHandler {
 	bridgeABI, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
-	logger := log.With().Str("domainID", domainID).Logger()
 	return &RetryEventHandler{
-		log:                logger,
+		log:                logC.Logger(),
 		eventListener:      eventListener,
 		depositHandler:     depositHandler,
 		bridgeAddress:      bridgeAddress,
