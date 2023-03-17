@@ -44,12 +44,11 @@ type FungibleTransferEventHandler struct {
 	log            zerolog.Logger
 }
 
-func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
-	logger := log.With().Uint8("domainID", domainID).Logger()
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
-		log:            logger,
+		log:            logC.Logger(),
 	}
 }
 
@@ -92,14 +91,13 @@ type RetryEventHandler struct {
 	log                zerolog.Logger
 }
 
-func NewRetryEventHandler(conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
-	logger := log.With().Uint8("domainID", domainID).Logger()
+func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
 	return &RetryEventHandler{
 		depositHandler:     depositHandler,
 		domainID:           domainID,
 		blockConfirmations: blockConfirmations,
 		conn:               conn,
-		log:                logger,
+		log:                logC.Logger(),
 	}
 }
 

@@ -151,7 +151,7 @@ func Run() error {
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"]))
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(l, depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
@@ -188,11 +188,12 @@ func Run() error {
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)
 
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
 				mh := substrateExecutor.NewSubstrateMessageHandler()
