@@ -29,26 +29,22 @@ func loadFromEnv() (RawConfig, error) {
 	}
 	rawConfig := c.Config
 
-	// load chain configs
-	index := 1
-	for {
-		rawDomainConfig := os.Getenv(fmt.Sprintf("%s_DOM_%d", EnvPrefix, index))
-		if rawDomainConfig == "" {
-			break
-		}
-		var cc map[string]interface{}
-		err = json.Unmarshal([]byte(rawDomainConfig), &cc)
-		if err != nil {
-			return RawConfig{}, err
-		}
-		rawConfig.ChainConfigs = append(rawConfig.ChainConfigs, cc)
-		index++
-	}
-
 	err = rawConfig.RelayerConfig.Validate()
 	if err != nil {
 		return RawConfig{}, err
 	}
+
+	rawDomainConfig := os.Getenv(fmt.Sprintf("%s_CHAINS", EnvPrefix))
+	if rawDomainConfig == "" {
+		return rawConfig, nil
+	}
+
+	var cc []map[string]interface{}
+	err = json.Unmarshal([]byte(rawDomainConfig), &cc)
+	if err != nil {
+		return RawConfig{}, err
+	}
+	rawConfig.ChainConfigs = cc
 
 	return rawConfig, nil
 }
