@@ -92,7 +92,7 @@ func Run() error {
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
 	}
-	log.Info().Msg("Successfully loaded topology")
+	log.Info().Msgf("Successfully loaded topology from url: %s", configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Url)
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
