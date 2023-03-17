@@ -63,7 +63,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]elector.Coordin
 
 	numberOfTestHosts := len(c.testRelayers)
 
-	topology := topology.NetworkTopology{
+	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
 	}
 	privateKeys := []crypto.PrivKey{}
