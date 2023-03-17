@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/go-kit/kit/log"
 	"github.com/rs/zerolog"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
@@ -52,8 +53,9 @@ func NewDepositEventHandler(
 	bridgeAddress common.Address,
 	domainID uint8,
 ) *DepositEventHandler {
+	logger := log.With().Str("domainID", domainID).Logger()
 	return &DepositEventHandler{
-		log:            logC.Logger(),
+		log:            logger,
 		eventListener:  eventListener,
 		depositHandler: depositHandler,
 		bridgeAddress:  bridgeAddress,
@@ -70,10 +72,6 @@ func (eh *DepositEventHandler) HandleEvent(
 	if err != nil {
 		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
 	}
-
-	eh.log.Debug().Msgf(
-		"Processing %d deposit events in blocks: %s to %s", len(deposits), startBlock.String(), endBlock.String(),
-	)
 
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range deposits {
@@ -94,7 +92,7 @@ func (eh *DepositEventHandler) HandleEvent(
 				return
 			}
 
-			eh.log.Info().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+			eh.log.Info().Msgf("Resolved deposit message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
 
 			if m.Type == PermissionlessGenericTransfer {
 				msgChan <- []*message.Message{m}
@@ -131,8 +129,9 @@ func NewRetryEventHandler(
 	blockConfirmations *big.Int,
 ) *RetryEventHandler {
 	bridgeABI, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
+	logger := log.With().Str("domainID", domainID).Logger()
 	return &RetryEventHandler{
-		log:                logC.Logger(),
+		log:                logger,
 		eventListener:      eventListener,
 		depositHandler:     depositHandler,
 		bridgeAddress:      bridgeAddress,
@@ -151,10 +150,6 @@ func (eh *RetryEventHandler) HandleEvent(
 	if err != nil {
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
 	}
-
-	eh.log.Debug().Msgf(
-		"Processing %d retry events in blocks: %s to %s", len(retryEvents), startBlock.String(), endBlock.String(),
-	)
 
 	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
@@ -181,7 +176,7 @@ func (eh *RetryEventHandler) HandleEvent(
 					continue
 				}
 
-				eh.log.Debug().Msgf(
+				eh.log.Info().Msgf(
 					"Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String(),
 				)
 				retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
@@ -246,13 +241,13 @@ func (eh *KeygenEventHandler) HandleEvent(
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
 
-	eh.log.Debug().Msgf(
-		"Processing %d keygen events in blocks: %s to %s", len(keygenEvents), startBlock.String(), endBlock.String(),
-	)
-
 	if len(keygenEvents) == 0 {
 		return nil
 	}
+
+	eh.log.Info().Msgf(
+		"Resolved keygen message in block range: %s-%s", startBlock.String(), endBlock.String(),
+	)
 
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
@@ -317,11 +312,6 @@ func (eh *RefreshEventHandler) HandleEvent(
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
-
-	eh.log.Debug().Msgf(
-		"Processing %d refresh events in blocks: %s to %s", len(refreshEvents), startBlock.String(), endBlock.String(),
-	)
-
 	if len(refreshEvents) == 0 {
 		return nil
 	}
@@ -341,6 +331,10 @@ func (eh *RefreshEventHandler) HandleEvent(
 
 	eh.connectionGate.SetTopology(topology)
 	p2p.LoadPeers(eh.host, topology.Peers)
+
+	eh.log.Info().Msgf(
+		"Resolved refresh message in block range: %s-%s", startBlock.String(), endBlock.String(),
+	)
 
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer,
