@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 )
 
 type HandlerConfig struct {
@@ -27,6 +29,29 @@ type EVMConfig struct {
 	BlockConfirmations *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
+}
+
+func (c *EVMConfig) String() string {
+	privateKey, _ := crypto.HexToECDSA(c.GeneralChainConfig.Key)
+	kp := secp256k1.NewKeypair(*privateKey)
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', Bridge: '%s', Handlers: %+v, MaxGasPrice: '%s', GasMultiplier: '%s', GasLimit: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s'`,
+		c.GeneralChainConfig.Name,
+		*c.GeneralChainConfig.Id,
+		c.GeneralChainConfig.Type,
+		c.GeneralChainConfig.BlockstorePath,
+		c.GeneralChainConfig.FreshStart,
+		c.GeneralChainConfig.LatestBlock,
+		kp.Address(),
+		c.Bridge,
+		c.Handlers,
+		c.MaxGasPrice,
+		c.GasMultiplier,
+		c.GasLimit,
+		c.StartBlock,
+		c.BlockConfirmations,
+		c.BlockInterval,
+		c.BlockRetryInterval,
+	)
 }
 
 type RawEVMConfig struct {

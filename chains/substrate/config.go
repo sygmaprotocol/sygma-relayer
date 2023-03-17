@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 )
 
 type RawSubstrateConfig struct {
@@ -34,6 +36,26 @@ type SubstrateConfig struct {
 	BlockRetryInterval time.Duration
 	SubstrateNetwork   uint8
 	Tip                uint64
+}
+
+func (c *SubstrateConfig) String() string {
+	privateKey, _ := crypto.HexToECDSA(c.GeneralChainConfig.Key)
+	kp := secp256k1.NewKeypair(*privateKey)
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
+		c.GeneralChainConfig.Name,
+		*c.GeneralChainConfig.Id,
+		c.GeneralChainConfig.Type,
+		c.GeneralChainConfig.BlockstorePath,
+		c.GeneralChainConfig.FreshStart,
+		c.GeneralChainConfig.LatestBlock,
+		kp.Address(),
+		c.StartBlock,
+		c.BlockConfirmations,
+		c.BlockInterval,
+		c.BlockRetryInterval,
+		c.ChainID,
+		c.Tip,
+	)
 }
 
 func (c *RawSubstrateConfig) Validate() error {

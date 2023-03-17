@@ -6,7 +6,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"os"
 	"os/signal"
 	"syscall"
@@ -116,11 +115,7 @@ func Run() error {
 					panic(err)
 				}
 
-				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
-				// startBlock % blockConfirmations == 0
-				if mod.Cmp(big.NewInt(0)) != 0 {
-					config.StartBlock.Sub(config.StartBlock, mod)
-				}
+				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
@@ -187,6 +182,8 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
+
+				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)

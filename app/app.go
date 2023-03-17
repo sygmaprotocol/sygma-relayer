@@ -141,6 +141,8 @@ func Run() error {
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
 				panicOnError(err)
 
+				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
+
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
 					UpperLimitFeePerGas: config.MaxGasPrice,
@@ -210,6 +212,8 @@ func Run() error {
 				}
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)
+
+				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
