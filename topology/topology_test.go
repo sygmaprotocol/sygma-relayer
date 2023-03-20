@@ -144,7 +144,7 @@ func (s *TopologyProviderTestSuite) Test_FetchingTopologyFails() {
 	s.fetcher.EXPECT().Get("test.url").Return(&http.Response{}, fmt.Errorf("error"))
 	topologyConfiguration := relayer.TopologyConfiguration{
 		Url:           "test.url",
-		EncryptionKey: "v8y/B?E(H+MbQeTh",
+		EncryptionKey: "qwertyuiopasdfgh",
 	}
 	topologyProvider, _ := topology.NewNetworkTopologyProvider(topologyConfiguration, s.fetcher)
 
@@ -155,11 +155,11 @@ func (s *TopologyProviderTestSuite) Test_FetchingTopologyFails() {
 
 func (s *TopologyProviderTestSuite) Test_ValidTopology() {
 	resp := &http.Response{}
-	resp.Body = io.NopCloser(strings.NewReader("12345678123456786c49ea9bdd0d37f3ad3d266b4ef5d6ef243027b25bd5092091bcd26488e185c4f466c6795535593dc41b03fcd8997985a78bc784c9f561bac89683a0170e5632ec0fc9237a97ebe38f783067d7f0d19dfe708349ca10759e6091228de7899ee10d679c8b444132bfd8106e1d28e944facb21be60182b7c069f264244ab545871ee6d15a1f070cacada34647bc7d2404384b3ee54b9058ec14ae9e017610f392adeb05d33d524e10043908887d932e5a974c8200639c0dc8d77e1cfb65ecbd2f9c731c61212d1a928b5436f3540cfbd981070b5567ced664ef20cc795ebb792231df08f05987a5d9458664d34666995fb15a969440dfd28db35fbd79f9e11cbcfd42409259c4bb1006c0907d2d4b170698e90452ead9ab7f4e41309fe8c586ccee54cc9cfaf3ac22d00b6c6f583a3f7a1fe3ddd470aa12ad9cf63f072798dadb5a21004529fec4a5914d68a18fd0b3fc33079d4ff09af44416b732f024b75b40dd0"))
+	resp.Body = io.NopCloser(strings.NewReader("f533758136cd1f62c3c7fd96b41d439ce3c899b0e705ecebd567275e4447683f80c21d9cf6287d3ac504f116c18308d34fd1f79cda675983dc01231cdb13db39f271f37bbc4ed9f89b87b04ed74cb4de382e43809a2e690c7a0872c1c2eec631455628621291803d34c73965917b52b44e713d927db805bbc145a2fe51c7352ab8b34f216a57c19e2e3dca27a1cf2013a9e6ece2989fd90bff45ad614520419bc132bd07d4aa89f1afb4016ba16b8de0b8921071ab99d86f4c15672c08ad98a55c0b179cff340dc128c3f8a56876d9a75aec735924fcba5f21ae6e64cf875f23cc1fdef4ae5c3d0f43e421d75161fd44d3a7a4cbab3c6ff84e7ff3b83582944c93627c75ad93262d057889e53d48263749dab0355adc8f949b946f3da3e9a4a104728a4f56214bb177bd5d59a257cf55befb53b6bff1b293f883bd60b7c1aa13c75e8ffd394b130ab6d867e60bfef67c78432663775093023c66bbad812bdda890de43b5491dd27a75ae27b79d85afc0ff390b531743642066c200ea5a405ef746041fa5fbf75c23c4dd35a1cc9854b01f1aaeec4265b4c46145a99e6b02eba82408903117fa34917368d5012420a2f985d2eac929c758d487e93f7779ae8ba6ff0f7f1eca1997abbc3ff0efdf"))
 	s.fetcher.EXPECT().Get("test.url").Return(resp, nil)
 	topologyConfiguration := relayer.TopologyConfiguration{
 		Url:           "test.url",
-		EncryptionKey: "v8y/B?E(H+MbQeTh",
+		EncryptionKey: "qwertyuiopasdfgh",
 	}
 	topologyProvider, _ := topology.NewNetworkTopologyProvider(topologyConfiguration, s.fetcher)
 
@@ -167,9 +167,10 @@ func (s *TopologyProviderTestSuite) Test_ValidTopology() {
 
 	rawTp, _ := topology.ProcessRawTopology(&topology.RawTopology{
 		Peers: []topology.RawPeer{
+			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
 			{PeerAddress: "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"},
 			{PeerAddress: "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
-			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
+			{PeerAddress: "/dns4/relayer-0.test.com/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
 		},
 		Threshold: "2",
 	})
@@ -179,11 +180,11 @@ func (s *TopologyProviderTestSuite) Test_ValidTopology() {
 
 func (s *TopologyProviderTestSuite) Test_InvalidHash() {
 	resp := &http.Response{}
-	resp.Body = io.NopCloser(strings.NewReader("12345678123456786c49ea9bdd0d37f3ad3d266b4ef5d6ef243027b25bd5092091bcd26488e185c4f466c6795535593dc41b03fcd8997985a78bc784c9f561bac89683a0170e5632ec0fc9237a97ebe38f783067d7f0d19dfe708349ca10759e6091228de7899ee10d679c8b444132bfd8106e1d28e944facb21be60182b7c069f264244ab545871ee6d15a1f070cacada34647bc7d2404384b3ee54b9058ec14ae9e017610f392adeb05d33d524e10043908887d932e5a974c8200639c0dc8d77e1cfb65ecbd2f9c731c61212d1a928b5436f3540cfbd981070b5567ced664ef20cc795ebb792231df08f05987a5d9458664d34666995fb15a969440dfd28db35fbd79f9e11cbcfd42409259c4bb1006c0907d2d4b170698e90452ead9ab7f4e41309fe8c586ccee54cc9cfaf3ac22d00b6c6f583a3f7a1fe3ddd470aa12ad9cf63f072798dadb5a21004529fec4a5914d68a18fd0b3fc33079d4ff09af44416b732f024b75b40dd0"))
+	resp.Body = io.NopCloser(strings.NewReader("f533758136cd1f62c3c7fd96b41d439ce3c899b0e705ecebd567275e4447683f80c21d9cf6287d3ac504f116c18308d34fd1f79cda675983dc01231cdb13db39f271f37bbc4ed9f89b87b04ed74cb4de382e43809a2e690c7a0872c1c2eec631455628621291803d34c73965917b52b44e713d927db805bbc145a2fe51c7352ab8b34f216a57c19e2e3dca27a1cf2013a9e6ece2989fd90bff45ad614520419bc132bd07d4aa89f1afb4016ba16b8de0b8921071ab99d86f4c15672c08ad98a55c0b179cff340dc128c3f8a56876d9a75aec735924fcba5f21ae6e64cf875f23cc1fdef4ae5c3d0f43e421d75161fd44d3a7a4cbab3c6ff84e7ff3b83582944c93627c75ad93262d057889e53d48263749dab0355adc8f949b946f3da3e9a4a104728a4f56214bb177bd5d59a257cf55befb53b6bff1b293f883bd60b7c1aa13c75e8ffd394b130ab6d867e60bfef67c78432663775093023c66bbad812bdda890de43b5491dd27a75ae27b79d85afc0ff390b531743642066c200ea5a405ef746041fa5fbf75c23c4dd35a1cc9854b01f1aaeec4265b4c46145a99e6b02eba82408903117fa34917368d5012420a2f985d2eac929c758d487e93f7779ae8ba6ff0f7f1eca1997abbc3ff0efdf"))
 	s.fetcher.EXPECT().Get("test.url").Return(resp, nil)
 	topologyConfiguration := relayer.TopologyConfiguration{
 		Url:           "test.url",
-		EncryptionKey: "v8y/B?E(H+MbQeTh",
+		EncryptionKey: "qwertyuiopasdfgh",
 	}
 	topologyProvider, _ := topology.NewNetworkTopologyProvider(topologyConfiguration, s.fetcher)
 
@@ -194,22 +195,23 @@ func (s *TopologyProviderTestSuite) Test_InvalidHash() {
 
 func (s *TopologyProviderTestSuite) Test_ValidHash() {
 	resp := &http.Response{}
-	resp.Body = io.NopCloser(strings.NewReader("12345678123456786c49ea9bdd0d37f3ad3d266b4ef5d6ef243027b25bd5092091bcd26488e185c4f466c6795535593dc41b03fcd8997985a78bc784c9f561bac89683a0170e5632ec0fc9237a97ebe38f783067d7f0d19dfe708349ca10759e6091228de7899ee10d679c8b444132bfd8106e1d28e944facb21be60182b7c069f264244ab545871ee6d15a1f070cacada34647bc7d2404384b3ee54b9058ec14ae9e017610f392adeb05d33d524e10043908887d932e5a974c8200639c0dc8d77e1cfb65ecbd2f9c731c61212d1a928b5436f3540cfbd981070b5567ced664ef20cc795ebb792231df08f05987a5d9458664d34666995fb15a969440dfd28db35fbd79f9e11cbcfd42409259c4bb1006c0907d2d4b170698e90452ead9ab7f4e41309fe8c586ccee54cc9cfaf3ac22d00b6c6f583a3f7a1fe3ddd470aa12ad9cf63f072798dadb5a21004529fec4a5914d68a18fd0b3fc33079d4ff09af44416b732f024b75b40dd0"))
+	resp.Body = io.NopCloser(strings.NewReader("f533758136cd1f62c3c7fd96b41d439ce3c899b0e705ecebd567275e4447683f80c21d9cf6287d3ac504f116c18308d34fd1f79cda675983dc01231cdb13db39f271f37bbc4ed9f89b87b04ed74cb4de382e43809a2e690c7a0872c1c2eec631455628621291803d34c73965917b52b44e713d927db805bbc145a2fe51c7352ab8b34f216a57c19e2e3dca27a1cf2013a9e6ece2989fd90bff45ad614520419bc132bd07d4aa89f1afb4016ba16b8de0b8921071ab99d86f4c15672c08ad98a55c0b179cff340dc128c3f8a56876d9a75aec735924fcba5f21ae6e64cf875f23cc1fdef4ae5c3d0f43e421d75161fd44d3a7a4cbab3c6ff84e7ff3b83582944c93627c75ad93262d057889e53d48263749dab0355adc8f949b946f3da3e9a4a104728a4f56214bb177bd5d59a257cf55befb53b6bff1b293f883bd60b7c1aa13c75e8ffd394b130ab6d867e60bfef67c78432663775093023c66bbad812bdda890de43b5491dd27a75ae27b79d85afc0ff390b531743642066c200ea5a405ef746041fa5fbf75c23c4dd35a1cc9854b01f1aaeec4265b4c46145a99e6b02eba82408903117fa34917368d5012420a2f985d2eac929c758d487e93f7779ae8ba6ff0f7f1eca1997abbc3ff0efdf"))
 	s.fetcher.EXPECT().Get("test.url").Return(resp, nil)
 	topologyConfiguration := relayer.TopologyConfiguration{
 		Url:           "test.url",
-		EncryptionKey: "v8y/B?E(H+MbQeTh",
+		EncryptionKey: "qwertyuiopasdfgh",
 	}
 	topologyProvider, _ := topology.NewNetworkTopologyProvider(topologyConfiguration, s.fetcher)
 
-	expectedHash := "f5909a83374428a4d34ec475ff09f041722145ee7e935847eec9f0b483f9ff06"
+	expectedHash := "49cd57ba3b3296a994b2f7ef004164c55d16650fbb0306f31963ceb800ca5bc9"
 	tp, err := topologyProvider.NetworkTopology(expectedHash)
 
 	rawTp, _ := topology.ProcessRawTopology(&topology.RawTopology{
 		Peers: []topology.RawPeer{
+			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
 			{PeerAddress: "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"},
 			{PeerAddress: "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
-			{PeerAddress: "/dns4/relayer1/tcp/9000/p2p/QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX"},
+			{PeerAddress: "/dns4/relayer-0.test.com/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"},
 		},
 		Threshold: "2",
 	})

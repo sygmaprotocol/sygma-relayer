@@ -146,7 +146,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessag
 	portOffset := 0
 	protocolID := "/p2p/test"
 
-	topology := topology.NetworkTopology{
+	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},
 	}
 

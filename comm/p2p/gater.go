@@ -15,16 +15,16 @@ import (
 // ConnectionGate implements libp2p ConnectionGater to prevent inbound and
 // outbound requests to peers not specified in topology
 type ConnectionGate struct {
-	topology topology.NetworkTopology
+	topology *topology.NetworkTopology
 }
 
-func NewConnectionGate(topology topology.NetworkTopology) *ConnectionGate {
+func NewConnectionGate(topology *topology.NetworkTopology) *ConnectionGate {
 	return &ConnectionGate{
 		topology: topology,
 	}
 }
 
-func (cg *ConnectionGate) SetTopology(topology topology.NetworkTopology) {
+func (cg *ConnectionGate) SetTopology(topology *topology.NetworkTopology) {
 	cg.topology = topology
 }
 
