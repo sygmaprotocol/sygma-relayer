@@ -14,6 +14,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
 )
 
 type NetworkTopology struct {
@@ -73,6 +74,8 @@ type TopologyProvider struct {
 }
 
 func (t *TopologyProvider) NetworkTopology(hash string) (NetworkTopology, error) {
+	log.Info().Msgf("Reading topology from URL: %s", t.url)
+
 	resp, err := t.fetcher.Get(t.url)
 	if err != nil {
 		return NetworkTopology{}, err

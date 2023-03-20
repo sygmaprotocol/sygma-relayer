@@ -85,14 +85,13 @@ func Run() error {
 	networkTopology, err := topologyStore.Topology()
 	// if topology is not already in file, read from provider
 	if err != nil {
-		log.Debug().Msg("Reading topology from provider")
 		networkTopology, err = topologyProvider.NetworkTopology("")
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
 	}
-	log.Info().Msgf("Successfully loaded topology from url: %s", configuration.RelayerConfig.MpcConfig.TopologyConfiguration.Url)
+	log.Info().Msgf("Successfully loaded topology")
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
