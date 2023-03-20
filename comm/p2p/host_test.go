@@ -77,7 +77,7 @@ type LoadPeersTestSuite struct {
 }
 
 func TestRunLoadPeersTestSuite(t *testing.T) {
-	suite.Run(t, new(HostTestSuite))
+	suite.Run(t, new(LoadPeersTestSuite))
 }
 
 func (s *LoadPeersTestSuite) SetupTest() {
@@ -105,7 +105,6 @@ func (s *LoadPeersTestSuite) Test_LoadPeers_RemovesOldAndSetsNewPeers() {
 
 	p2p.LoadPeers(s.host, []*peer.AddrInfo{newP1, newP2})
 
-	s.Equal(newP1.ID, s.host.Peerstore().Peers()[0])
-	s.Equal(newP2.ID, s.host.Peerstore().Peers()[1])
-	s.Equal(s.host.Peerstore().Peers(), 3)
+	s.Equal(newP1.ID.Pretty(), s.host.Peerstore().Peers()[1].Pretty())
+	s.Equal(newP2.ID.Pretty(), s.host.Peerstore().Peers()[2].Pretty())
 }

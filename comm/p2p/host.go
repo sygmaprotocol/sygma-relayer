@@ -48,11 +48,7 @@ func NewHost(privKey crypto.PrivKey, networkTopology topology.NetworkTopology, c
 // LoadPeers clears out peerstore and loads new peers into it
 func LoadPeers(h host.Host, peers []*peer.AddrInfo) {
 	for _, p := range h.Peerstore().Peers() {
-		if p == h.ID() {
-			continue
-		}
-
-		h.Peerstore().RemovePeer(p)
+		h.Peerstore().ClearAddrs(p)
 	}
 
 	for _, p := range peers {
