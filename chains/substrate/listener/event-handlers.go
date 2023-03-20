@@ -70,7 +70,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*events.Events, msgC
 					return
 				}
 
-				eh.log.Info().Msgf("Resolved deposit message %+v")
+				eh.log.Info().Msgf("Resolved deposit message %+v", d)
 
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(d)
@@ -139,7 +139,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 						return err
 					}
 
-					rh.log.Info().Msgf("Resolved retry message %+v")
+					rh.log.Info().Msgf("Resolved retry message %+v", d)
 
 					domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 				}
