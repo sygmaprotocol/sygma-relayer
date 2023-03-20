@@ -76,7 +76,7 @@ type TopologyProvider struct {
 
 func (t *TopologyProvider) NetworkTopology(hash string) (*NetworkTopology, error) {
 	log.Info().Msgf("Reading topology from URL: %s", t.url)
-
+  
 	resp, err := t.fetcher.Get(t.url)
 	if err != nil {
 		return nil, err
@@ -102,10 +102,6 @@ func (t *TopologyProvider) NetworkTopology(hash string) (*NetworkTopology, error
 	err = json.Unmarshal(unecryptedBody, rawTopology)
 	if err != nil {
 		return nil, err
-	}
-	if hash != "" {
-		log.Info().Msgf("New NetworkTopology initialised. "+
-			"Peers amount %v, Threshold %v", len(rawTopology.Peers), rawTopology.Threshold)
 	}
 
 	return ProcessRawTopology(rawTopology)
