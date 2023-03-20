@@ -56,7 +56,7 @@ func NewEVMChain(
 func (c *EVMChain) Write(msgs []*message.Message) {
 	err := c.executor.Execute(msgs)
 	if err != nil {
-		log.Err(err).Str("domain", string(c.domainID)).Msgf("error writing messages %+v", msgs)
+		log.Err(err).Str("domainID", string(c.domainID)).Msgf("error writing messages %+v", msgs)
 	}
 }
 

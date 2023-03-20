@@ -43,7 +43,7 @@ func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blocksto
 		blockstore: blockstore,
 		config:     config,
 		executor:   executor,
-		logger:     log.With().Str("domain", string(*config.GeneralChainConfig.Id)).Logger()}
+		logger:     log.With().Str("domainID", string(*config.GeneralChainConfig.Id)).Logger()}
 }
 
 // PollEvents is the goroutine that polls blocks and searches Deposit events in them.

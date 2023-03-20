@@ -115,7 +115,7 @@ func Run() error {
 					panic(err)
 				}
 
-				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
+				log.Info().Str("domainID", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
@@ -183,7 +183,7 @@ func Run() error {
 					panic(err)
 				}
 
-				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
+				log.Info().Str("domainID", config.String()).Msgf("Registering substrate domain")
 
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)
