@@ -46,7 +46,6 @@ func (ts *TopologyStore) StoreTopology(topology *NetworkTopology) error {
 func (ts *TopologyStore) Topology() (*NetworkTopology, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-
 	t := &NetworkTopology{}
 	tb, err := ioutil.ReadFile(ts.path)
 	if err != nil {
@@ -57,6 +56,5 @@ func (ts *TopologyStore) Topology() (*NetworkTopology, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return nil, err
+	return t, err
 }
