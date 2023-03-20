@@ -105,7 +105,7 @@ func Run() error {
 					panic(err)
 				}
 
-				kp, err := secp256k1.NewKeypairFromPrivateKey([]byte(config.GeneralChainConfig.Key))
+				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				if err != nil {
 					panic(err)
 				}
