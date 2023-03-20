@@ -9,6 +9,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,12 +41,14 @@ type DepositHandler interface {
 type FungibleTransferEventHandler struct {
 	domainID       uint8
 	depositHandler DepositHandler
+	log            zerolog.Logger
 }
 
-func NewFungibleTransferEventHandler(domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
+		log:            logC.Logger(),
 	}
 }
 
@@ -66,6 +69,9 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*events.Events, msgC
 					log.Error().Err(err).Msgf("%v", err)
 					return
 				}
+
+				eh.log.Info().Msgf("Resolved deposit message %+v", d)
+
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(d)
 		}
@@ -82,14 +88,16 @@ type RetryEventHandler struct {
 	domainID           uint8
 	blockConfirmations *big.Int
 	depositHandler     DepositHandler
+	log                zerolog.Logger
 }
 
-func NewRetryEventHandler(conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
 	return &RetryEventHandler{
 		depositHandler:     depositHandler,
 		domainID:           domainID,
 		blockConfirmations: blockConfirmations,
 		conn:               conn,
+		log:                logC.Logger(),
 	}
 }
 
@@ -109,7 +117,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
-// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
+				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
 				if new(big.Int).Sub(latestBlockNumber, er.DepositOnBlockHeight.Int).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
 					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
@@ -130,6 +138,8 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 					if err != nil {
 						return err
 					}
+
+					rh.log.Info().Msgf("Resolved retry message %+v", d)
 
 					domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 				}

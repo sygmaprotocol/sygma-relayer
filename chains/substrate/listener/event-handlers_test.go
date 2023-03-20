@@ -10,6 +10,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/listener/mock"
+	"github.com/rs/zerolog"
 
 	"testing"
 
@@ -106,7 +107,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockDepositHandler = mock_events.NewMockDepositHandler(ctrl)
-	s.depositEventHandler = listener.NewFungibleTransferEventHandler(s.domainID, s.mockDepositHandler)
+	s.depositEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler)
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
@@ -320,7 +321,7 @@ func (s *RetryHandlerTestSuite) SetupTest() {
 func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 	s.mockConn.EXPECT().GetBlockLatest().Return(nil, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 2)
 	err := retryHandler.HandleEvents([]*events.Events{}, msgChan)
 
@@ -334,7 +335,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 		},
 	}}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
@@ -359,7 +360,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
@@ -385,7 +386,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
@@ -411,7 +412,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(&events.Events{}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	evts := []*events.Events{
 		{
@@ -480,7 +481,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 2)
 	evts := []*events.Events{
 		{
@@ -557,7 +558,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 1)
 	evts := []*events.Events{
 		{

@@ -1,11 +1,12 @@
 package jobs
 
 import (
+	"time"
+
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration) {

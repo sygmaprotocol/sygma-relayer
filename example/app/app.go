@@ -6,15 +6,14 @@ package app
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 
 	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -106,21 +105,17 @@ func Run() error {
 					panic(err)
 				}
 
-				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				if err != nil {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				if err != nil {
 					panic(err)
 				}
 
-				mod := big.NewInt(0).Mod(config.StartBlock, config.BlockConfirmations)
-				// startBlock % blockConfirmations == 0
-				if mod.Cmp(big.NewInt(0)) != 0 {
-					config.StartBlock.Sub(config.StartBlock, mod)
-				}
+				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
@@ -156,7 +151,7 @@ func Run() error {
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"]))
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(l, depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
@@ -188,14 +183,17 @@ func Run() error {
 					panic(err)
 				}
 
+				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
+
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)
 
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
 				mh := substrateExecutor.NewSubstrateMessageHandler()

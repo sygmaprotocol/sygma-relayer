@@ -20,6 +20,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
@@ -49,7 +50,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -85,13 +85,13 @@ func Run() error {
 	networkTopology, err := topologyStore.Topology()
 	// if topology is not already in file, read from provider
 	if err != nil {
-		log.Debug().Msg("Reading topology from provider")
 		networkTopology, err = topologyProvider.NetworkTopology("")
 		panicOnError(err)
 
 		err = topologyStore.StoreTopology(networkTopology)
 		panicOnError(err)
 	}
+	log.Info().Msgf("Successfully loaded topology")
 
 	privBytes, err := crypto.ConfigDecodeKey(configuration.RelayerConfig.MpcConfig.Key)
 	panicOnError(err)
@@ -134,11 +134,13 @@ func Run() error {
 				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
-				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				panicOnError(err)
+
+				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
@@ -177,7 +179,7 @@ func Run() error {
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]coreListener.EventHandler, 0)
-				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"]))
+				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				eventHandlers = append(eventHandlers, listener.NewDepositEventHandler(l, depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
@@ -210,11 +212,14 @@ func Run() error {
 				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(client)
 
+				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
+
+				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(*config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
 				mh := substrateExecutor.NewSubstrateMessageHandler()
@@ -252,6 +257,11 @@ func Run() error {
 
 	relayerName := viper.GetString("name")
 	log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
+
+	_, err = keyshareStore.GetKeyshare()
+	if err != nil {
+		log.Info().Msg("Relayer not part of MPC. Waiting for refresh event...")
+	}
 
 	select {
 	case err := <-errChn:

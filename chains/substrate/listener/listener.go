@@ -11,6 +11,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,22 +26,26 @@ type ChainConnection interface {
 	GetBlockLatest() (*types.SignedBlock, error)
 }
 
+type SubstrateListener struct {
+	conn ChainConnection
+
+	eventHandlers      []EventHandler
+	blockRetryInterval time.Duration
+	blockInterval      *big.Int
+	blockConfirmations *big.Int
+
+	log zerolog.Logger
+}
+
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {
 	return &SubstrateListener{
+		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),
 		conn:               connection,
 		eventHandlers:      eventHandlers,
 		blockRetryInterval: config.BlockRetryInterval,
 		blockInterval:      config.BlockInterval,
 		blockConfirmations: config.BlockConfirmations,
 	}
-}
-
-type SubstrateListener struct {
-	conn               ChainConnection
-	eventHandlers      []EventHandler
-	blockRetryInterval time.Duration
-	blockInterval      *big.Int
-	blockConfirmations *big.Int
 }
 
 func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore store.BlockStore, msgChan chan []*message.Message) {
@@ -54,7 +59,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 			default:
 				head, err := l.conn.GetHeaderLatest()
 				if err != nil {
-					log.Error().Err(err).Msg("Failed to fetch finalized header")
+					l.log.Error().Err(err).Msg("Failed to fetch finalized header")
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
@@ -72,7 +77,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 
 				evts, err := l.fetchEvents(startBlock, endBlock)
 				if err != nil {
-					log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
+					l.log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
@@ -80,13 +85,13 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 				for _, handler := range l.eventHandlers {
 					err := handler.HandleEvents(evts, msgChan)
 					if err != nil {
-						log.Error().Err(err).Msg("Error handling substrate events")
+						l.log.Error().Err(err).Msg("Error handling substrate events")
 						continue
 					}
 				}
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
-					log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
+					l.log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 				}
 				startBlock.Add(startBlock, l.blockInterval)
 			}
@@ -95,7 +100,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 }
 
 func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*events.Events, error) {
-	log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
+	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*events.Events, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {

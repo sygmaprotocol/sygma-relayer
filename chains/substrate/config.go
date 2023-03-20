@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
 
@@ -34,6 +35,25 @@ type SubstrateConfig struct {
 	BlockRetryInterval time.Duration
 	SubstrateNetwork   uint8
 	Tip                uint64
+}
+
+func (c *SubstrateConfig) String() string {
+	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, c.SubstrateNetwork)
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
+		c.GeneralChainConfig.Name,
+		*c.GeneralChainConfig.Id,
+		c.GeneralChainConfig.Type,
+		c.GeneralChainConfig.BlockstorePath,
+		c.GeneralChainConfig.FreshStart,
+		c.GeneralChainConfig.LatestBlock,
+		kp.Address,
+		c.StartBlock,
+		c.BlockConfirmations,
+		c.BlockInterval,
+		c.BlockRetryInterval,
+		c.ChainID,
+		c.Tip,
+	)
 }
 
 func (c *RawSubstrateConfig) Validate() error {
