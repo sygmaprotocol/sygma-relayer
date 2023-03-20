@@ -52,7 +52,7 @@ func LoadPeers(h host.Host, peers []*peer.AddrInfo) {
 	}
 
 	for _, p := range peers {
-		log.Debug().Msgf("Adding new peer with ID %s and address %s", p.ID, p.String())
+		log.Debug().Msgf("Adding new peer with ID %s", p.ID)
 		h.Peerstore().AddAddr(p.ID, p.Addrs[0], peerstore.PermanentAddrTTL)
 	}
 }
