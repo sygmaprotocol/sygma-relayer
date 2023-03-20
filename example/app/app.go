@@ -10,10 +10,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 
 	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -105,12 +105,12 @@ func Run() error {
 					panic(err)
 				}
 
-				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				kp, err := secp256k1.NewKeypairFromPrivateKey([]byte(config.GeneralChainConfig.Key))
 				if err != nil {
 					panic(err)
 				}
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				if err != nil {
 					panic(err)
 				}

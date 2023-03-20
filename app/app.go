@@ -20,6 +20,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
@@ -49,7 +50,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ethereum/go-ethereum/common"
-	secp256k1 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -134,10 +134,10 @@ func Run() error {
 				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
-				privateKey, err := secp256k1.HexToECDSA(config.GeneralChainConfig.Key)
+				kp, err := secp256k1.NewKeypairFromPrivateKey([]byte(config.GeneralChainConfig.Key))
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, privateKey)
+				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				panicOnError(err)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")

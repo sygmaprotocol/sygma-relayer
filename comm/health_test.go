@@ -50,7 +50,7 @@ func (s *CommunicationHealthTestSuite) TearDownTest() {
 
 func (s *CommunicationHealthTestSuite) TestCommHealth_AllPearsAvailable() {
 	errors := comm.ExecuteCommHealthCheck(
-		s.testCommunications[0], peer.IDSlice{s.testHosts[1].ID(), s.testHosts[2].ID()},
+		s.testHosts[0], s.testCommunications[0], peer.IDSlice{s.testHosts[1].ID(), s.testHosts[2].ID()},
 	)
 	s.Empty(errors)
 }
@@ -60,7 +60,7 @@ func (s *CommunicationHealthTestSuite) TestCommHealth_OnePeerOffline() {
 	// close one peer
 	_ = s.testHosts[2].Close()
 	errors := comm.ExecuteCommHealthCheck(
-		s.testCommunications[0], broadcastPeers,
+		s.testHosts[0], s.testCommunications[0], broadcastPeers,
 	)
 
 	s.NotEmpty(errors)
@@ -75,7 +75,7 @@ func (s *CommunicationHealthTestSuite) TestCommHealth_AllPeersOffline() {
 	_ = s.testHosts[2].Close()
 	_ = s.testHosts[1].Close()
 	errors := comm.ExecuteCommHealthCheck(
-		s.testCommunications[0], broadcastPeers,
+		s.testHosts[0], s.testCommunications[0], broadcastPeers,
 	)
 
 	s.NotEmpty(errors)
