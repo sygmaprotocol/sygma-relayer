@@ -6,21 +6,16 @@ package comm
 import (
 	"time"
 
-	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 )
 
 const HealthTimeout = 10 * time.Second
 
-func ExecuteCommHealthCheck(host host.Host, communication Communication, peers peer.IDSlice) []*CommunicationError {
+func ExecuteCommHealthCheck(communication Communication, peers peer.IDSlice) []*CommunicationError {
 	errChan := make(chan error)
 	endTimer := time.NewTimer(HealthTimeout)
 	sessionID := "health-session"
-
-	if !isInTopology(host.ID(), peers) {
-		log.Info().Msg("Relayer not in peer subset. Waiting for refresh...")
-	}
 
 	defer communication.CloseSession(sessionID)
 	communication.Broadcast(peers, []byte{}, Unknown, sessionID, errChan)
@@ -46,14 +41,4 @@ func ExecuteCommHealthCheck(host host.Host, communication Communication, peers p
 			return collectedErrors
 		}
 	}
-}
-
-func isInTopology(peer peer.ID, peers peer.IDSlice) bool {
-	for _, id := range peers {
-		if id == peer {
-			return true
-		}
-	}
-
-	return false
 }

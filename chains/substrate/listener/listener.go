@@ -39,7 +39,7 @@ type SubstrateListener struct {
 
 func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandler, config *substrate.SubstrateConfig) *SubstrateListener {
 	return &SubstrateListener{
-		logger: log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger()
+		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),
 		conn:               connection,
 		eventHandlers:      eventHandlers,
 		blockRetryInterval: config.BlockRetryInterval,

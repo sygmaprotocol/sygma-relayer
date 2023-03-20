@@ -27,6 +27,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/chainbridge-core/keystore"
 
@@ -79,7 +80,7 @@ func Test_EVM2EVM(t *testing.T) {
 		OracleFee:                evm.OracleFee,
 	}
 
-	pk, _ := crypto.HexToECDSA("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
+	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
 	ethClient1, err := evmclient.NewEVMClient(ETHEndpoint1, pk)
 	if err != nil {
 		panic(err)

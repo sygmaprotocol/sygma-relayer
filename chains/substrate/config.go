@@ -8,12 +8,11 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/creasty/defaults"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 )
 
 type RawSubstrateConfig struct {
@@ -39,8 +38,7 @@ type SubstrateConfig struct {
 }
 
 func (c *SubstrateConfig) String() string {
-	privateKey, _ := crypto.HexToECDSA(c.GeneralChainConfig.Key)
-	kp := secp256k1.NewKeypair(*privateKey)
+	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, c.SubstrateNetwork)
 	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
 		c.GeneralChainConfig.Name,
 		*c.GeneralChainConfig.Id,
@@ -48,7 +46,7 @@ func (c *SubstrateConfig) String() string {
 		c.GeneralChainConfig.BlockstorePath,
 		c.GeneralChainConfig.FreshStart,
 		c.GeneralChainConfig.LatestBlock,
-		kp.Address(),
+		kp.Address,
 		c.StartBlock,
 		c.BlockConfirmations,
 		c.BlockInterval,

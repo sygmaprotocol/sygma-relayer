@@ -134,7 +134,7 @@ func Run() error {
 				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
 
-				kp, err := secp256k1.NewKeypairFromPrivateKey([]byte(config.GeneralChainConfig.Key))
+				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
 				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
@@ -257,6 +257,11 @@ func Run() error {
 
 	relayerName := viper.GetString("name")
 	log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
+
+	_, err = keyshareStore.GetKeyshare()
+	if err != nil {
+		log.Info().Msg("Relayer not part of MPC. Waiting for refresh event...")
+	}
 
 	select {
 	case err := <-errChn:
