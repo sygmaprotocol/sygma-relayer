@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.3.1...v1.4.0) (2023-03-20)
+
+
+### Features
+
+* improve logging ([#136](https://github.com/sygmaprotocol/sygma-relayer/issues/136)) ([0958ec7](https://github.com/sygmaprotocol/sygma-relayer/commit/0958ec7ffaa6bb779259392686398557e502b30f))
+* topology encryption utils and refactor ([#128](https://github.com/sygmaprotocol/sygma-relayer/issues/128)) ([9be4953](https://github.com/sygmaprotocol/sygma-relayer/commit/9be49532f163e91bd73e6c523984042cca61b50d))
+* unify SYG_DOM variables into a single SYG_CHAINS variable ([#134](https://github.com/sygmaprotocol/sygma-relayer/issues/134)) ([5e08745](https://github.com/sygmaprotocol/sygma-relayer/commit/5e087455da57f6522dbc81e1033ceffa2d7ebe37))
+
+
+### Bug Fixes
+
+* fixing Topology file fetcher and related unit test ([#138](https://github.com/sygmaprotocol/sygma-relayer/issues/138)) ([d619cda](https://github.com/sygmaprotocol/sygma-relayer/commit/d619cda660184e72892dd802022a982cc350d122))
+* increase max gas price allowed by default ([#133](https://github.com/sygmaprotocol/sygma-relayer/issues/133)) ([a8fad65](https://github.com/sygmaprotocol/sygma-relayer/commit/a8fad65a4db3e67f73b54d8d7abf84b7b5ff7830))
+
+
+### Miscellaneous
+
+* add more debug logs for libp2p initialisation ([#137](https://github.com/sygmaprotocol/sygma-relayer/issues/137)) ([54138a0](https://github.com/sygmaprotocol/sygma-relayer/commit/54138a09b84b38d6619660a1f8aaabb5f3de7b26))
+* Add shared configuration docs ([#129](https://github.com/sygmaprotocol/sygma-relayer/issues/129)) ([1389a3b](https://github.com/sygmaprotocol/sygma-relayer/commit/1389a3b20aa26e3ebf296fa2d7d14a12281f448f))
+
 ## [1.3.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.3.0...v1.3.1) (2023-03-14)
 
 
