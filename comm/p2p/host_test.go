@@ -97,6 +97,16 @@ func (s *LoadPeersTestSuite) SetupTest() {
 	s.host = host
 }
 
+func peerInSlice(peer peer.ID, peers peer.IDSlice) bool {
+	for _, p := range peers {
+		if peer == p {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *LoadPeersTestSuite) Test_LoadPeers_RemovesOldAndSetsNewPeers() {
 	newP1RawAddress := "/dns4/relayer2/tcp/9001/p2p/QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT"
 	newP2RawAddress := "/dns4/relayer3/tcp/9002/p2p/QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK"
@@ -105,6 +115,7 @@ func (s *LoadPeersTestSuite) Test_LoadPeers_RemovesOldAndSetsNewPeers() {
 
 	p2p.LoadPeers(s.host, []*peer.AddrInfo{newP1, newP2})
 
-	s.Equal(newP1.ID.Pretty(), s.host.Peerstore().Peers()[1].Pretty())
-	s.Equal(newP2.ID.Pretty(), s.host.Peerstore().Peers()[2].Pretty())
+	s.Equal(peerInSlice(newP1.ID, s.host.Peerstore().Peers()), true)
+	s.Equal(peerInSlice(newP2.ID, s.host.Peerstore().Peers()), true)
+	s.Equal(len(s.host.Peerstore().Peers()), 3)
 }
