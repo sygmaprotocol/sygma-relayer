@@ -133,7 +133,7 @@ func Run() error {
 			{
 				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
-
+				log.Info().Msgf("Loaded config %s", config.String())
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
@@ -200,7 +200,7 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
-
+				log.Info().Msgf("Loaded config %s", config.String())
 				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
 				if err != nil {
 					panic(err)

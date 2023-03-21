@@ -85,7 +85,7 @@ func (c *EVMChain) PollEvents(ctx context.Context, sysErr chan<- error, msgChan 
 	}
 
 	startBlock = chains.CalculateStartingBlock(startBlock, c.blockInterval)
-	c.logger.Info().Msgf("Starting block: %s", startBlock.String())
+	c.logger.Info().Msgf("For chainID %v, Starting block: %s", c.domainID, startBlock.String())
 
 	go c.listener.ListenToEvents(ctx, startBlock, msgChan, sysErr)
 }
