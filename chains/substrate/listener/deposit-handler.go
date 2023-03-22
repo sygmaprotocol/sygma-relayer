@@ -71,10 +71,10 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 	// amount: first 32 bytes of calldata
 	amount := calldata[:32]
 
-	// 32-64 is recipient address length
+	// 32-64 is multiLocation length
 	recipientAddressLength, _ := types.IntBytesToBigInt(calldata[32:64])
 
-	// 64 - (64 + recipient address length) is recipient address
+	// 64 - (64 + multiLocation length) is recipient address
 	recipientAddress := calldata[64:(64 + recipientAddressLength.Int64())]
 
 	// if there is priority data, parse it and use it
