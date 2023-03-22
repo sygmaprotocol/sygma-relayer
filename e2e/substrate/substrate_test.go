@@ -9,7 +9,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -34,12 +33,6 @@ import (
 
 const ETHEndpoint = "ws://localhost:8545"
 const SubstrateEndpoint = "ws://localhost:9944"
-
-var substratePK = signature.KeyringPair{
-	URI:       "//Alice",
-	PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
-	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-}
 
 type TestClient interface {
 	evm.EVMClient
@@ -82,7 +75,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	substrateClient := client.NewSubstrateClient(substrateConnection, &substratePK, big.NewInt(5), 0)
+	substrateClient := client.NewSubstrateClient(substrateConnection, &substrate.SubstratePK, big.NewInt(5), 0)
 
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)
@@ -158,7 +151,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	var accountInfoBefore substrate.Account
 	meta := s.substrateConnection.GetMetadata()
-	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substrate.SubstratePK.PublicKey)
 	_, err := s.substrateConnection.RPC.State.GetStorageLatest(key, &accountInfoBefore)
 	s.Nil(err)
 
@@ -227,7 +220,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 
 	meta = s.substrateConnection.GetMetadata()
 	var senderBalanceAfter substrate.Account
-	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substrate.SubstratePK.PublicKey)
 	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &senderBalanceAfter)
 	s.Nil(err)
 
@@ -252,23 +245,25 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 
 	meta := s.substrateConnection.GetMetadata()
 	var destBalanceBefore substrate.Account
-	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	key, _ := substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substrate.SubstratePK.PublicKey)
 	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &destBalanceBefore)
 	s.Nil(err)
+	pk := []substrateTypes.U8{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
 
-	_, err = bridgeContract1.Erc20Deposit(substratePK.PublicKey, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
+	recipientMultilocation := substrate.ConstructRecipientData(pk)
+	_, err = bridgeContract1.Erc20Deposit(recipientMultilocation, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
 		Value: s.evmConfig.BasicFee,
 	})
 	s.Nil(err)
 
-	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore.Balance, substratePK.PublicKey)
+	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore.Balance, substrate.SubstratePK.PublicKey)
 	s.Nil(err)
 	senderBalAfter, err := erc20Contract1.GetBalance(s.evmClient.From())
 	s.Nil(err)
 	s.Equal(-1, senderBalAfter.Cmp(senderBalBefore))
 
 	var destBalanceAfter substrate.Account
-	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substratePK.PublicKey)
+	key, _ = substrateTypes.CreateStorageKey(&meta, "Assets", "Account", s.substrateAssetID, substrate.SubstratePK.PublicKey)
 	_, err = s.substrateConnection.RPC.State.GetStorageLatest(key, &destBalanceAfter)
 	s.Nil(err)
 

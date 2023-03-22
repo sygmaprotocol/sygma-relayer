@@ -4,12 +4,15 @@
 package substrate
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
 	"math/big"
 	"time"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
@@ -27,6 +30,11 @@ var BasicFee = big.NewInt(1000000000000000)
 var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
 var GasUsed = uint32(2000000000)
 var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
+var SubstratePK = signature.KeyringPair{
+	URI:       "//Alice",
+	PublicKey: []byte{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d},
+	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+}
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
@@ -85,4 +93,35 @@ func checkBalance(beforeBalance substrateTypes.U128, connection *connection.Conn
 
 type Account struct {
 	Balance substrateTypes.U128
+}
+
+func ConstructRecipientData(recipient []substrateTypes.U8) []byte {
+	rec := substrateTypes.MultiLocationV1{
+		Parents: 0,
+		Interior: substrateTypes.JunctionsV1{
+			IsX1: true,
+			X1: substrateTypes.JunctionV1{
+				IsAccountID32: true,
+				AccountID32NetworkID: substrateTypes.NetworkID{
+					IsAny: true,
+				},
+				AccountID: recipient,
+			},
+		},
+	}
+
+	encodedRecipient := bytes.NewBuffer([]byte{})
+	encoder := scale.NewEncoder(encodedRecipient)
+	_ = rec.Encode(*encoder)
+
+	recipientBytes := encodedRecipient.Bytes()
+	var finalRecipient []byte
+
+	// remove accountID size data
+	// this is a fix because the substrate decoder is not able to parse the data with extra data
+	// that represents size of the recipient byte array
+	finalRecipient = append(finalRecipient, recipientBytes[:4]...)
+	finalRecipient = append(finalRecipient, recipientBytes[5:]...)
+
+	return finalRecipient
 }
