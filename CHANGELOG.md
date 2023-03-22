@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.4.0...v1.4.1) (2023-03-22)
+
+
+### Bug Fixes
+
+* fix latest and fresh flags being switched ([#145](https://github.com/sygmaprotocol/sygma-relayer/issues/145)) ([da98cd2](https://github.com/sygmaprotocol/sygma-relayer/commit/da98cd2a055c29edea58f7343d7e4e943f797a93))
+* Remove hardcoded multilocation ([#146](https://github.com/sygmaprotocol/sygma-relayer/issues/146)) ([257058a](https://github.com/sygmaprotocol/sygma-relayer/commit/257058a3a32d060abe388ef52977cac0267106fb))
+
+
+### Miscellaneous
+
+* fix flaky test ([#141](https://github.com/sygmaprotocol/sygma-relayer/issues/141)) ([fcbf19e](https://github.com/sygmaprotocol/sygma-relayer/commit/fcbf19eda22633497ca77409e975a0bb029403bb))
+
 ## [1.4.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.3.1...v1.4.0) (2023-03-20)
 
 
