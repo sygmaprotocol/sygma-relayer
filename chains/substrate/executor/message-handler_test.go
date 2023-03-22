@@ -4,10 +4,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"testing"
+	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,6 +28,9 @@ func TestRunFungibleTransferHandlerTestSuite(t *testing.T) {
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
+	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
+	recipient := substrate.ConstructRecipientData(recipientAddr)
+
 	message := &message.Message{
 		Source:       1,
 		Destination:  2,
@@ -32,11 +39,11 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
-			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
+			recipient,
 		},
 		Metadata: message.Metadata{},
 	}
-	data, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000024000101008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48")
+	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &chains.Proposal{
 		OriginDomainID: 1,
 		Destination:    2,
@@ -114,6 +121,9 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransferMessageHandler() {
+	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
+	recipient := substrate.ConstructRecipientData(recipientAddr)
+
 	messageData := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -122,7 +132,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
-			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
+			recipient,
 		},
 		Metadata: message.Metadata{},
 	}
@@ -135,7 +145,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type:         message.NonFungibleTransfer,
 		Payload: []interface{}{
 			[]byte{2}, // amount
-			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
+			recipient,
 		},
 		Metadata: message.Metadata{},
 	}
