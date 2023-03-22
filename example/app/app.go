@@ -161,7 +161,7 @@ func Run() error {
 
 				chain := evm.NewEVMChain(
 					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
-					config.BlockInterval, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart,
+					config.BlockInterval, config.GeneralChainConfig.FreshStart, config.GeneralChainConfig.LatestBlock,
 				)
 
 				chains = append(chains, chain)
