@@ -20,15 +20,7 @@ type Events struct {
 	SygmaBridge_RegisterDestDomain      []RegisterDestDomain
 	SygmaBridge_UnRegisterDestDomain    []UnregisterDestDomain
 	SygmaFeeHandlerRouter_FeeHandlerSet []FeeHandlerSet
-
-	// Substrate default events
-	PhragmenElection_CandidateSlashed  []types.EventElectionsCandidateSlashed
-	PhragmenElection_ElectionError     []types.EventElectionsElectionError
-	PhragmenElection_EmptyTerm         []types.EventElectionsEmptyTerm
-	PhragmenElection_MemberKicked      []types.EventElectionsMemberKicked
-	PhragmenElection_NewTerm           []types.EventElectionsNewTerm
-	PhragmenElection_Renounced         []types.EventElectionsRenounced
-	PhragmenElection_SeatHolderSlashed []types.EventElectionsSeatHolderSlashed
+	PhragmenElection
 }
 
 type Deposit struct {
@@ -109,4 +101,15 @@ type FeeHandlerSet struct {
 	Asset       types.AssetID
 	HandlerType [1]byte
 	Topics      []types.Hash
+}
+
+type PhragmenElection struct {
+	// Substrate default events
+	PhragmenElection_CandidateSlashed  []types.EventElectionsCandidateSlashed
+	PhragmenElection_ElectionError     []types.EventElectionsElectionError
+	PhragmenElection_EmptyTerm         []types.EventElectionsEmptyTerm
+	PhragmenElection_MemberKicked      []types.EventElectionsMemberKicked
+	PhragmenElection_NewTerm           []types.EventElectionsNewTerm
+	PhragmenElection_Renounced         []types.EventElectionsRenounced
+	PhragmenElection_SeatHolderSlashed []types.EventElectionsSeatHolderSlashed
 }
