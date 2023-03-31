@@ -14,19 +14,17 @@ type Events struct {
 }
 
 type Deposit struct {
-	DestDomainID types.U8        `mapstructure:"dest_domain_id"`
-	ResourceID   types.Bytes32   `mapstructure:"resource_id"`
-	DepositNonce types.U64       `mapstructure:"deposit_nonce"`
-	Sender       types.AccountID `mapstructure:"sp_core_crypto_AccountId32"`
-	TransferType [1]byte         `mapstructure:"sygma_traits_TransferType"`
-	CallData     []byte          `mapstructure:"deposit_data"`
-	Handler      [1]byte         `mapstructure:"handler_response"`
+	DestDomainID types.U8      `mapstructure:"dest_domain_id"`
+	ResourceID   types.Bytes32 `mapstructure:"resource_id"`
+	DepositNonce types.U64     `mapstructure:"deposit_nonce"`
+	TransferType types.U8      `mapstructure:"sygma_traits_TransferType"`
+	CallData     []byte        `mapstructure:"deposit_data"`
+	Handler      [1]byte       `mapstructure:"handler_response"`
 }
 
 type Retry struct {
-	DepositOnBlockHeight types.U128      `mapstructure:"deposit_on_block_height"`
-	DestDomainID         types.U8        `mapstructure:"dest_domain_id"`
-	Sender               types.AccountID `mapstructure:"sp_core_crypto_AccountId32"`
+	DepositOnBlockHeight types.U128 `mapstructure:"deposit_on_block_height"`
+	DestDomainID         types.U8   `mapstructure:"dest_domain_id"`
 }
 
 type CodeUpdated struct{}
