@@ -79,7 +79,7 @@
       "type": "substrate",
       "endpoint": "ws://substrate-pallet:9944",
       "tip": 0,
-      "startBlock": 0,
+      "startBlock": 5,
       "blockConfirmations": 2,
       "key": "//Bob",
       "substrateNetwork": 0
