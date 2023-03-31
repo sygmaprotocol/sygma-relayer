@@ -8,7 +8,9 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -23,19 +25,22 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 	}
 }
 
-func (eh *SystemUpdateEventHandler) HandleEvents(evts *events.Events, msgChan chan []*message.Message) error {
-	if len(evts.System_CodeUpdated) > 0 {
-		err := eh.conn.UpdateMetatdata()
-		if err != nil {
-			log.Error().Err(err).Msg("Unable to update Metadata")
-			return err
+func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+	for _, e := range evts {
+		if e.Name == "System.CodeUpdated" {
+			err := eh.conn.UpdateMetatdata()
+			if err != nil {
+				log.Error().Err(err).Msg("Unable to update Metadata")
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType [1]byte) (*message.Message, error)
+	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error)
 }
 
 type FungibleTransferEventHandler struct {
@@ -52,17 +57,24 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	for _, evt := range evts {
-		for _, d := range evt.SygmaBridge_Deposit {
-			func(d events.Deposit) {
+		if evt.Name == "SygmaBridge.Deposit" {
+			func(evt parser.Event) {
 				defer func() {
 					if r := recover(); r != nil {
-						log.Error().Msgf("panic occured while handling deposit %+v", d)
+						log.Error().Msgf("panic occured while handling deposit %+v", evt)
 					}
 				}()
+
+				var d events.Deposit
+				err := mapstructure.Decode(evt.Fields, &d)
+				if err != nil {
+					log.Error().Err(err).Msgf("%v", err)
+					return
+				}
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
@@ -73,7 +85,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*events.Events, msgC
 				eh.log.Info().Msgf("Resolved deposit message %+v", d)
 
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
-			}(d)
+			}(*evt)
 		}
 	}
 
@@ -101,7 +113,7 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 	}
 }
 
-func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error {
+func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
 	latest, err := rh.conn.GetBlockLatest()
 	if err != nil {
 		return err
@@ -110,13 +122,18 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, evt := range evts {
-		for _, r := range evt.SygmaBridge_Retry {
-			err := func(er events.Retry) error {
+		if evt.Name == "SygmaBridge.Retry" {
+			err := func(evt parser.Event) error {
 				defer func() {
 					if r := recover(); r != nil {
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
+				var er events.Retry
+				err = mapstructure.Decode(evt.Fields, &er)
+				if err != nil {
+					return err
+				}
 				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
 				if new(big.Int).Sub(latestBlockNumber, er.DepositOnBlockHeight.Int).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
 					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
@@ -133,19 +150,26 @@ func (rh *RetryEventHandler) HandleEvents(evts []*events.Events, msgChan chan []
 					return err
 				}
 
-				for _, d := range bEvts.SygmaBridge_Deposit {
-					m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
-					if err != nil {
-						return err
+				for _, event := range bEvts {
+					if event.Name == "SygmaBridge.Deposit" {
+						var d events.Deposit
+						err = mapstructure.Decode(event.Fields, &d)
+						if err != nil {
+							return err
+						}
+						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
+						if err != nil {
+							return err
+						}
+
+						rh.log.Info().Msgf("Resolved retry message %+v", d)
+
+						domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 					}
-
-					rh.log.Info().Msgf("Resolved retry message %+v", d)
-
-					domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 				}
 
 				return nil
-			}(r)
+			}(*evt)
 			if err != nil {
 				return err
 			}
