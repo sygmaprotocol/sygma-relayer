@@ -14,7 +14,6 @@ import (
 
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/golang/mock/gomock"
@@ -94,38 +93,38 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: types.NewU8(0),
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: types.NewU8(0),
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(&message.Message{}, fmt.Errorf("error"))
 
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.CallData,
-		d1.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
@@ -134,7 +133,12 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	msgChan := make(chan []*message.Message, 2)
 	evts := []*parser.Event{
 		{
-			Name: "SygmaBridge.Deposit",
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
+		},
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
 		},
 	}
 	err := s.depositEventHandler.HandleEvents(evts, msgChan)
@@ -146,18 +150,18 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	d1 := map[string]any{
-		"dest_domain_id":            2,
-		"deposit_nonce":             1,
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
 	d2 := map[string]any{
-		"deposit_nonce":             2,
-		"dest_domain_id":            2,
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
@@ -205,18 +209,18 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
 	d1 := map[string]any{
-		"dest_domain_id":            2,
-		"deposit_nonce":             1,
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
 	d2 := map[string]any{
-		"deposit_nonce":             2,
-		"dest_domain_id":            2,
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
@@ -324,7 +328,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(11950)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
 	}
 	evts := []*parser.Event{
 		{
@@ -350,7 +354,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(11950)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
 	}
 	evts := []*parser.Event{
 		{
@@ -371,12 +375,12 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 		},
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(&parser.Event{}, nil)
+	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(11950)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
 	}
 	evts := []*parser.Event{
 		{
@@ -398,18 +402,18 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	d1 := map[string]any{
-		"dest_domain_id":            2,
-		"deposit_nonce":             1,
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
 	d2 := map[string]any{
-		"deposit_nonce":             2,
-		"dest_domain_id":            2,
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
@@ -450,7 +454,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 2)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(11950)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
 	}
 	evts := []*parser.Event{
 		{
@@ -475,18 +479,18 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	d1 := map[string]any{
-		"dest_domain_id":            2,
-		"deposit_nonce":             1,
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
 	d2 := map[string]any{
-		"deposit_nonce":             2,
-		"dest_domain_id":            2,
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
 		"resource_id":               types.Bytes32{1},
-		"sygma_traits_TransferType": [1]byte{0},
+		"sygma_traits_TransferType": types.NewU8(0),
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
@@ -530,7 +534,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 1)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(11950)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
 	}
 	evts := []*parser.Event{
 		{
