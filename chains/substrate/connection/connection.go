@@ -6,12 +6,15 @@ package connection
 import (
 	"sync"
 
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/chain"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 )
 
 type Connection struct {
@@ -72,21 +75,43 @@ func (c *Connection) UpdateMetatdata() error {
 }
 
 func (c *Connection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
-	meta := c.GetMetadata()
-	key, err := types.CreateStorageKey(&meta, "System", "Events", nil)
+	provider := state.NewProvider(c.State)
+	eventRetriever, err := retriever.NewDefaultEventRetriever(provider)
 	if err != nil {
 		return nil, err
 	}
 
-	var raw types.EventRecordsRaw
-	_, err = c.RPC.State.GetStorage(key, &raw, hash)
+	evts, err := eventRetriever.GetEvents(hash)
 	if err != nil {
 		return nil, err
 	}
-	evts := &events.Events{}
-	err = raw.DecodeEventRecords(&meta, evts)
-	if err != nil {
-		return nil, err
+
+	deposits := []events.Deposit{}
+	retry := []events.Retry{}
+	codeUpdated := []events.CodeUpdated{}
+	for _, event := range evts {
+
+		if event.Name == "SygmaBridge.Deposit" {
+			var d events.Deposit
+			mapstructure.Decode(event.Fields, &d)
+			deposits = append(deposits, d)
+		}
+
+		if event.Name == "SygmaBridge.Retry" {
+			var r events.Retry
+			mapstructure.Decode(event.Fields, &r)
+			retry = append(retry, r)
+		}
+
+		if event.Name == "System.CodeUpdated" {
+			cu := events.CodeUpdated{}
+			codeUpdated = append(codeUpdated, cu)
+		}
 	}
-	return evts, nil
+
+	return &events.Events{
+		SygmaBridge_Deposit: deposits,
+		SygmaBridge_Retry:   retry,
+		System_CodeUpdated:  codeUpdated,
+	}, nil
 }
