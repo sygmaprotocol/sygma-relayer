@@ -17,6 +17,10 @@ type SubstrateDepositHandler struct {
 	depositHandlers DepositHandlers
 }
 
+const (
+	FungibleTransfer = iota
+)
+
 // NewSubstrateDepositHandler creates an instance of SubstrateDepositHandler that contains
 // handler functions for processing deposit events
 func NewSubstrateDepositHandler() *SubstrateDepositHandler {
@@ -27,7 +31,7 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
 	var depositType message.TransferType
-	if transferType == 0 {
+	if transferType == FungibleTransfer {
 		depositType = message.FungibleTransfer
 	} else {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
