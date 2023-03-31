@@ -491,14 +491,17 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		"deposit_data":              []byte{},
 	}
 
-	blockEvts1 := parser.Event{
-		Name:   "SygmaBridge.Deposit",
-		Fields: d1,
+	blockEvts1 := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
+		},
 	}
-
-	blockEvts2 := parser.Event{
-		Name:   "SygmaBridge.Deposit",
-		Fields: d2,
+	blockEvts2 := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
+		},
 	}
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts1, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts2, nil)
