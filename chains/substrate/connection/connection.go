@@ -6,11 +6,10 @@ package connection
 import (
 	"sync"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
-	"github.com/mitchellh/mapstructure"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/chain"
@@ -74,7 +73,7 @@ func (c *Connection) UpdateMetatdata() error {
 	return nil
 }
 
-func (c *Connection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
+func (c *Connection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
 	provider := state.NewProvider(c.State)
 	eventRetriever, err := retriever.NewDefaultEventRetriever(provider)
 	if err != nil {
@@ -85,33 +84,5 @@ func (c *Connection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	deposits := []events.Deposit{}
-	retry := []events.Retry{}
-	codeUpdated := []events.CodeUpdated{}
-	for _, event := range evts {
-
-		if event.Name == "SygmaBridge.Deposit" {
-			var d events.Deposit
-			mapstructure.Decode(event.Fields, &d)
-			deposits = append(deposits, d)
-		}
-
-		if event.Name == "SygmaBridge.Retry" {
-			var r events.Retry
-			mapstructure.Decode(event.Fields, &r)
-			retry = append(retry, r)
-		}
-
-		if event.Name == "System.CodeUpdated" {
-			cu := events.CodeUpdated{}
-			codeUpdated = append(codeUpdated, cu)
-		}
-	}
-
-	return &events.Events{
-		SygmaBridge_Deposit: deposits,
-		SygmaBridge_Retry:   retry,
-		System_CodeUpdated:  codeUpdated,
-	}, nil
+	return evts, nil
 }
