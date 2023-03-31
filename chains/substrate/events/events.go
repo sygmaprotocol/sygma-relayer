@@ -7,12 +7,6 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-type Events struct {
-	System_CodeUpdated  []CodeUpdated
-	SygmaBridge_Deposit []Deposit
-	SygmaBridge_Retry   []Retry
-}
-
 type Deposit struct {
 	DestDomainID types.U8      `mapstructure:"dest_domain_id"`
 	ResourceID   types.Bytes32 `mapstructure:"resource_id"`
