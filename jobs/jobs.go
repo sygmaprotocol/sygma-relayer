@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -30,7 +29,6 @@ func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metri
 			unavailable = append(unavailable, cerr.Peer)
 		}
 
-		fmt.Println("TRACK RELAYER STATUS")
 		metrics.TrackRelayerStatus(unavailable, all)
 	}
 }
