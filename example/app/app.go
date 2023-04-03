@@ -218,7 +218,6 @@ func Run() error {
 	}
 	metrics := metrics.NewTelemetry(meter)
 
-	fmt.Println("STARTING HEALTH CHECK PRE FLIGHT")
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, metrics)
 
 	r := relayer.NewRelayer(

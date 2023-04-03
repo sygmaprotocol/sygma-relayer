@@ -18,8 +18,6 @@ type Metrics interface {
 func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metrics Metrics) {
 	healthComm := p2p.NewCommunication(h, "p2p/health")
 	for {
-		fmt.Println(interval)
-
 		time.Sleep(interval)
 		log.Info().Msg("Starting communication health check")
 
