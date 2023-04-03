@@ -3,7 +3,7 @@ module github.com/ChainSafe/sygma-relayer
 go 1.18
 
 require (
-	github.com/ChainSafe/chainbridge-core v1.2.0
+	github.com/ChainSafe/chainbridge-core v1.2.1-0.20230403091503-2ce735717171
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
@@ -19,6 +19,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.0
+	go.opentelemetry.io/otel/metric v0.24.0
 	golang.org/x/exp v0.0.0-20220916125017-b168a2c6b86b
 )
 
@@ -29,9 +30,8 @@ require (
 	github.com/agl/ed25519 v0.0.0-20200305024217-f36fc4b53d43 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.22.1 // indirect
+	github.com/btcsuite/btcd v0.22.0-beta.0.20220201204404-81fbd9b67e54 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20211129182920-9c4bbabe7acd // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
@@ -139,7 +139,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.24.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.24.0 // indirect
 	go.opentelemetry.io/otel/internal/metric v0.24.0 // indirect
-	go.opentelemetry.io/otel/metric v0.24.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.0.1 // indirect
 	go.opentelemetry.io/otel/sdk/export/metric v0.24.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v0.24.0 // indirect
