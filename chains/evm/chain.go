@@ -53,11 +53,14 @@ func NewEVMChain(
 	}
 }
 
-func (c *EVMChain) Write(msgs []*message.Message) {
+func (c *EVMChain) Write(msgs []*message.Message) error {
 	err := c.executor.Execute(msgs)
 	if err != nil {
 		log.Err(err).Str("domainID", string(c.domainID)).Msgf("error writing messages %+v", msgs)
+		return err
 	}
+
+	return nil
 }
 
 func (c *EVMChain) PollEvents(ctx context.Context, sysErr chan<- error, msgChan chan []*message.Message) {
