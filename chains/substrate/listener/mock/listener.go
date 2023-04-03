@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	message "github.com/ChainSafe/chainbridge-core/relayer/message"
-	events "github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -37,7 +37,7 @@ func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
 }
 
 // HandleEvents mocks base method.
-func (m *MockEventHandler) HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error {
+func (m *MockEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HandleEvents", evts, msgChan)
 	ret0, _ := ret[0].(error)
@@ -74,10 +74,10 @@ func (m *MockChainConnection) EXPECT() *MockChainConnectionMockRecorder {
 }
 
 // GetBlockEvents mocks base method.
-func (m *MockChainConnection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
+func (m *MockChainConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockEvents", hash)
-	ret0, _ := ret[0].(*events.Events)
+	ret0, _ := ret[0].([]*parser.Event)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

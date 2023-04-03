@@ -14,7 +14,7 @@ import (
 
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
@@ -39,31 +39,22 @@ func (s *SystemUpdateHandlerTestSuite) SetupTest() {
 func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 	s.conn.EXPECT().UpdateMetatdata().Return(fmt.Errorf("error"))
 
-	evtsRec := types.EventRecords{
-		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
-	}
-	evts := events.Events{
-		EventRecords:                evtsRec,
-		SygmaBridge_Deposit:         []events.Deposit{},
-		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
-
-		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.Retry{},
-		SygmaBridge_BridgePaused:           []events.BridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
+	evts := []*parser.Event{
+		{
+			Name: "System.CodeUpdated",
+		},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
-	evts := events.Events{}
+	evts := []*parser.Event{}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -71,22 +62,13 @@ func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
 
 func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	s.conn.EXPECT().UpdateMetatdata().Return(nil)
-
-	evtsRec := types.EventRecords{
-		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
-	}
-	evts := events.Events{EventRecords: evtsRec,
-		SygmaBridge_Deposit:         []events.Deposit{},
-		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
-
-		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.Retry{},
-		SygmaBridge_BridgePaused:           []events.BridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
+	evts := []*parser.Event{
+		{
+			Name: "System.CodeUpdated",
+		},
 	}
 	msgChan := make(chan []*message.Message, 1)
-	err := s.systemUpdateHandler.HandleEvents(&evts, msgChan)
+	err := s.systemUpdateHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -111,60 +93,52 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(&message.Message{}, fmt.Errorf("error"))
 
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.CallData,
-		d1.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := types.EventRecords{
-		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
-	}
-	evts := []*events.Events{
+	evts := []*parser.Event{
 		{
-			EventRecords: evtsRec,
-			SygmaBridge_Deposit: []events.Deposit{
-				*d1, *d2,
-			},
-			SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
-
-			SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-			SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-			SygmaBridge_Retry:                  []events.Retry{},
-			SygmaBridge_BridgePaused:           []events.BridgePaused{},
-			SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
+		},
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
 		},
 	}
 	err := s.depositEventHandler.HandleEvents(evts, msgChan)
@@ -175,62 +149,57 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 }
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 1},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.CallData,
-		d2.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d2["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := types.EventRecords{
-		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
-	}
-	evts := []*events.Events{{
-		EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.Deposit{
-			*d1, *d2,
-		},
-		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
 
-		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.Retry{},
-		SygmaBridge_BridgePaused:           []events.BridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
-	}}
+	evts := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
+		},
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
+		},
+	}
 	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
@@ -239,60 +208,55 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d2["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	evtsRec := types.EventRecords{
-		System_CodeUpdated: make([]types.EventSystemCodeUpdated, 1),
-	}
-	evts := []*events.Events{{EventRecords: evtsRec,
-		SygmaBridge_Deposit: []events.Deposit{
-			*d1, *d2,
+	evts := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
 		},
-		SygmaBasicFeeHandler_FeeSet: []events.FeeSet{},
-
-		SygmaBridge_ProposalExecution:      []events.ProposalExecution{},
-		SygmaBridge_FailedHandlerExecution: []events.FailedHandlerExecution{},
-		SygmaBridge_Retry:                  []events.Retry{},
-		SygmaBridge_BridgePaused:           []events.BridgePaused{},
-		SygmaBridge_BridgeUnpaused:         []events.BridgeUnpaused{},
-	}}
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
+		},
+	}
 	err := s.depositEventHandler.HandleEvents(evts, msgChan)
 	msgs := <-msgChan
 
@@ -323,7 +287,7 @@ func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 2)
-	err := retryHandler.HandleEvents([]*events.Events{}, msgChan)
+	err := retryHandler.HandleEvents([]*parser.Event{}, msgChan)
 
 	s.NotNil(err)
 }
@@ -337,15 +301,16 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(110)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(110)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
+
 	err := retryHandler.HandleEvents(evts, msgChan)
 
 	s.Nil(err)
@@ -362,13 +327,13 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
 	err := retryHandler.HandleEvents(evts, msgChan)
@@ -388,13 +353,13 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
 	err := retryHandler.HandleEvents(evts, msgChan)
@@ -410,17 +375,17 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 		},
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(&events.Events{}, nil)
+	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
 	err := retryHandler.HandleEvents(evts, msgChan)
@@ -436,46 +401,51 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		},
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	blockEvts := &events.Events{
-		SygmaBridge_Deposit: []events.Deposit{
-			*d1, *d2,
+	blockEvts := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
+		},
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
 		},
 	}
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 1},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.CallData,
-		d2.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d2["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
@@ -483,13 +453,13 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 2)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
 	err := retryHandler.HandleEvents(evts, msgChan)
@@ -508,51 +478,54 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
-	d1 := &events.Deposit{
-		DepositNonce: 1,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d1 := map[string]any{
+		"dest_domain_id":            types.NewU8(2),
+		"deposit_nonce":             types.NewU64(1),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	d2 := &events.Deposit{
-		DepositNonce: 2,
-		DestDomainID: 2,
-		ResourceID:   types.Bytes32{1},
-		TransferType: [1]byte{0},
-		Handler:      [1]byte{0},
-		CallData:     []byte{},
+	d2 := map[string]any{
+		"deposit_nonce":             types.NewU64(2),
+		"dest_domain_id":            types.NewU8(2),
+		"resource_id":               types.Bytes32{1},
+		"sygma_traits_TransferType": types.NewU8(0),
+		"handler_response":          [1]byte{0},
+		"deposit_data":              []byte{},
 	}
-	blockEvts1 := &events.Events{
-		SygmaBridge_Deposit: []events.Deposit{
-			*d1,
+
+	blockEvts1 := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d1,
 		},
 	}
-	blockEvts2 := &events.Events{
-		SygmaBridge_Deposit: []events.Deposit{
-			*d2,
+	blockEvts2 := []*parser.Event{
+		{
+			Name:   "SygmaBridge.Deposit",
+			Fields: d2,
 		},
 	}
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts1, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts2, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d1.DestDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.CallData,
-		d1.TransferType,
+		d1["dest_domain_id"],
+		d1["deposit_nonce"],
+		d1["resource_id"],
+		d1["deposit_data"],
+		d1["sygma_traits_TransferType"],
 	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
-		d2.DestDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.CallData,
-		d2.TransferType,
+		d2["dest_domain_id"],
+		d2["deposit_nonce"],
+		d2["resource_id"],
+		d2["deposit_data"],
+		d2["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{DepositNonce: 2},
 		nil,
@@ -560,20 +533,17 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
 	msgChan := make(chan []*message.Message, 1)
-	evts := []*events.Events{
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 		{
-			SygmaBridge_Retry: []events.Retry{
-				{
-					DepositOnBlockHeight: types.NewU128(*big.NewInt(95)),
-				},
-			},
+			Name:   "SygmaBridge.Retry",
+			Fields: rtry,
 		},
 	}
 	err := retryHandler.HandleEvents(evts, msgChan)

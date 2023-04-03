@@ -76,7 +76,7 @@
       "chainID": 5,
       "name": "substrate1",
       "type": "substrate",
-      "startBlock": 0,
+      "startBlock": 5,
       "endpoint": "ws://substrate-pallet:9944",
       "tip": 0,
       "blockConfirmations": 2,

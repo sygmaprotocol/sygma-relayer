@@ -6,7 +6,7 @@ require (
 	github.com/ChainSafe/chainbridge-core v1.2.0
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.12
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.0.13-0.20230328172517-bf8a95095d4d
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/golang/mock v1.6.0
@@ -130,6 +130,7 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect

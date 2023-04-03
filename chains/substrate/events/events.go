@@ -7,109 +7,18 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-type Events struct {
-	types.EventRecords
-	SygmaBridge_Deposit         []Deposit
-	SygmaBasicFeeHandler_FeeSet []FeeSet
-
-	SygmaBridge_ProposalExecution       []ProposalExecution
-	SygmaBridge_FailedHandlerExecution  []FailedHandlerExecution
-	SygmaBridge_Retry                   []Retry
-	SygmaBridge_BridgePaused            []BridgePaused
-	SygmaBridge_BridgeUnpaused          []BridgeUnpaused
-	SygmaBridge_RegisterDestDomain      []RegisterDestDomain
-	SygmaBridge_UnRegisterDestDomain    []UnregisterDestDomain
-	SygmaFeeHandlerRouter_FeeHandlerSet []FeeHandlerSet
-	PhragmenElection
-}
-
 type Deposit struct {
-	Phase        types.Phase
-	DestDomainID types.U8
-	ResourceID   types.Bytes32
-	DepositNonce types.U64
-	Sender       types.AccountID
-	TransferType [1]byte
-	CallData     []byte
-	Handler      [1]byte
-	Topics       []types.Hash
-}
-
-type FeeSet struct {
-	Phase    types.Phase
-	DomainID types.U8
-	Asset    types.AssetID
-	Amount   types.U128
-	Topics   []types.Hash
-}
-
-type ProposalExecution struct {
-	Phase          types.Phase
-	OriginDomainID types.U8
-	DepositNonce   types.U64
-	DataHash       types.Bytes32
-	Topics         []types.Hash
-}
-
-type FailedHandlerExecution struct {
-	Phase          types.Phase
-	Error          []byte
-	OriginDomainID types.U8
-	DepositNonce   types.U64
-	Topics         []types.Hash
+	DestDomainID types.U8      `mapstructure:"dest_domain_id"`
+	ResourceID   types.Bytes32 `mapstructure:"resource_id"`
+	DepositNonce types.U64     `mapstructure:"deposit_nonce"`
+	TransferType types.U8      `mapstructure:"sygma_traits_TransferType"`
+	CallData     []byte        `mapstructure:"deposit_data"`
+	Handler      [1]byte       `mapstructure:"handler_response"`
 }
 
 type Retry struct {
-	Phase                types.Phase
-	DepositOnBlockHeight types.U128
-	DestDomainID         types.U8
-	Sender               types.AccountID
-	Topics               []types.Hash
+	DepositOnBlockHeight types.U128 `mapstructure:"deposit_on_block_height"`
+	DestDomainID         types.U8   `mapstructure:"dest_domain_id"`
 }
 
-type BridgePaused struct {
-	Phase        types.Phase
-	DestDomainID types.U8
-	Topics       []types.Hash
-}
-
-type BridgeUnpaused struct {
-	Phase        types.Phase
-	DestDomainID types.U8
-	Topics       []types.Hash
-}
-
-type RegisterDestDomain struct {
-	Phase    types.Phase
-	Sender   types.AccountID
-	DomainID types.U8
-	ChainID  types.U256
-	Topics   []types.Hash
-}
-
-type UnregisterDestDomain struct {
-	Phase    types.Phase
-	Sender   types.AccountID
-	DomainID types.U8
-	ChainID  types.U256
-	Topics   []types.Hash
-}
-
-type FeeHandlerSet struct {
-	Phase       types.Phase
-	DomainID    types.U8
-	Asset       types.AssetID
-	HandlerType [1]byte
-	Topics      []types.Hash
-}
-
-type PhragmenElection struct {
-	// Substrate default events
-	PhragmenElection_CandidateSlashed  []types.EventElectionsCandidateSlashed
-	PhragmenElection_ElectionError     []types.EventElectionsElectionError
-	PhragmenElection_EmptyTerm         []types.EventElectionsEmptyTerm
-	PhragmenElection_MemberKicked      []types.EventElectionsMemberKicked
-	PhragmenElection_NewTerm           []types.EventElectionsNewTerm
-	PhragmenElection_Renounced         []types.EventElectionsRenounced
-	PhragmenElection_SeatHolderSlashed []types.EventElectionsSeatHolderSlashed
-}
+type CodeUpdated struct{}
