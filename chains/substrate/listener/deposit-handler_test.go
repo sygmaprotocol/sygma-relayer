@@ -42,17 +42,13 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	calldata = append(calldata, recipientLen...)
 	calldata = append(calldata, types.Bytes(recipient)...)
 
-	sender, _ := types.NewAccountID(substrate.SubstratePK.PublicKey)
 	depositLog := &events.Deposit{
-		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
 		DepositNonce: types.NewU64(1),
-		Sender:       *sender,
-		TransferType: [1]byte{0},
+		TransferType: types.NewU8(0),
 		CallData:     calldata,
 		Handler:      [1]byte{0},
-		Topics:       []types.Hash{},
 	}
 
 	sourceID := uint8(1)
@@ -81,17 +77,13 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 	var calldata []byte
 
-	sender, _ := types.NewAccountID(substrate.SubstratePK.PublicKey)
 	depositLog := &events.Deposit{
-		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
 		DepositNonce: types.NewU64(1),
-		Sender:       *sender,
-		TransferType: [1]byte{0},
+		TransferType: types.NewU8(0),
 		CallData:     calldata,
 		Handler:      [1]byte{0},
-		Topics:       []types.Hash{},
 	}
 
 	sourceID := uint8(1)
@@ -111,18 +103,14 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 	recipientLen, _ := (types.BigIntToIntBytes(big.NewInt(int64(len(recipient))), 32))
 	calldata = append(calldata, recipientLen...)
 	calldata = append(calldata, types.Bytes(recipient)...)
-	sender, _ := types.NewAccountID(substrate.SubstratePK.PublicKey)
 
 	d1 := &events.Deposit{
-		Phase:        types.Phase{},
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
 		DepositNonce: types.NewU64(1),
-		Sender:       *sender,
-		TransferType: [1]byte{0},
+		TransferType: types.NewU8(0),
 		CallData:     calldata,
 		Handler:      [1]byte{0},
-		Topics:       []types.Hash{},
 	}
 
 	depositHandler := listener.NewSubstrateDepositHandler()
@@ -133,7 +121,7 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 	s.NotNil(message1)
 
 	// Use unregistered transfer type
-	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, [1]byte{1})
+	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, 1)
 	s.Nil(message2)
 	s.NotNil(err2)
 	s.EqualError(err2, errNoCorrespondingDepositHandler.Error())

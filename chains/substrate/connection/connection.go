@@ -7,11 +7,13 @@ import (
 	"sync"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/client"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/chain"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 )
 
 type Connection struct {
@@ -71,20 +73,14 @@ func (c *Connection) UpdateMetatdata() error {
 	return nil
 }
 
-func (c *Connection) GetBlockEvents(hash types.Hash) (*events.Events, error) {
-	meta := c.GetMetadata()
-	key, err := types.CreateStorageKey(&meta, "System", "Events", nil)
+func (c *Connection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
+	provider := state.NewProvider(c.State)
+	eventRetriever, err := retriever.NewDefaultEventRetriever(provider)
 	if err != nil {
 		return nil, err
 	}
 
-	var raw types.EventRecordsRaw
-	_, err = c.RPC.State.GetStorage(key, &raw, hash)
-	if err != nil {
-		return nil, err
-	}
-	evts := &events.Events{}
-	err = raw.DecodeEventRecords(&meta, evts)
+	evts, err := eventRetriever.GetEvents(hash)
 	if err != nil {
 		return nil, err
 	}

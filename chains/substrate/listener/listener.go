@@ -7,22 +7,22 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 
 	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type EventHandler interface {
-	HandleEvents(evts []*events.Events, msgChan chan []*message.Message) error
+	HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
 	UpdateMetatdata() error
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
-	GetBlockEvents(hash types.Hash) (*events.Events, error)
+	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
 	GetBlockLatest() (*types.SignedBlock, error)
 }
 
@@ -99,10 +99,10 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 	}()
 }
 
-func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*events.Events, error) {
+func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
 	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
-	evts := make([]*events.Events, 0)
+	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
 		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
@@ -113,8 +113,8 @@ func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) 
 		if err != nil {
 			return nil, err
 		}
+		evts = append(evts, evt...)
 
-		evts = append(evts, evt)
 	}
 
 	return evts, nil
