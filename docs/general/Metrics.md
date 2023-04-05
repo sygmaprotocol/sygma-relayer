@@ -14,4 +14,4 @@ sygma.availableRelayers (gauge) - number of currently available relayers from th
 ```
 
 ## Env variables
-- SYG_RELAYER_OPENTELEMETERYCOLLECTORURL - url of the opentelemetry collector application that collects metrics
+- SYG_RELAYER_OPENTELEMETRYCOLLECTORURL - url of the opentelemetry collector application that collects metrics
