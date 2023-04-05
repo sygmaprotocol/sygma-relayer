@@ -37,9 +37,9 @@ type MessageHandler interface {
 
 type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (*author.ExtrinsicStatusSubscription, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (string, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
-	TrackExtrinsic(id string, sub *author.ExtrinsicStatusSubscription, errChn chan error)
+	TrackExtrinsic(extHash string, sub *author.ExtrinsicStatusSubscription, errChn chan error)
 }
 
 type Executor struct {
@@ -128,13 +128,13 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*common.SignatureData)
-				sub, err := e.executeProposal(proposals, signatureData)
+				hash, sub, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
 					return err
 				}
 				errChn := make(chan error)
-				e.bridge.TrackExtrinsic(e.sessionID(propHash), sub, errChn)
+				go e.bridge.TrackExtrinsic(hash, sub, errChn)
 				err = <-errChn
 				return err
 			}
@@ -170,19 +170,19 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*author.ExtrinsicStatusSubscription, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (string, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
 	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	sub, err := e.bridge.ExecuteProposals(proposals, sig)
+	hash, sub, err := e.bridge.ExecuteProposals(proposals, sig)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	return sub, err
+	return hash, sub, err
 }
 
 func (e *Executor) sessionID(hash []byte) string {

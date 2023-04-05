@@ -213,8 +213,14 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 			X2:   dst,
 		},
 	}
-	_, err = s.substrateClient.Transact("SygmaBridge.deposit", multiAsset, destinationLocation)
+	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", multiAsset, destinationLocation)
 	s.Nil(err)
+
+	errChn := make(chan error)
+	go s.substrateClient.TrackExtrinsic(extHash, sub, errChn)
+	err = <-errChn
+	s.Nil(err)
+
 	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)
 	s.Nil(err)
 

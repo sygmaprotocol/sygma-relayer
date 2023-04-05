@@ -21,4 +21,10 @@ type Retry struct {
 	DestDomainID         types.U8   `mapstructure:"dest_domain_id"`
 }
 
-type CodeUpdated struct{}
+const (
+	CodeUpdatedEvent      = "System.CodeUpdated"
+	ExtrinsicFailedEvent  = "System.ExtrinsicFailed"
+	ExtrinsicSuccessEvent = "System.ExtrinsicSuccess"
+	RetryEvent            = "SygmaBridge.Retry"
+	DepositEvent          = "SygmaBridge.Deposit"
+)

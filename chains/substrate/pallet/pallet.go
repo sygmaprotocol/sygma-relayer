@@ -40,7 +40,7 @@ func NewPallet(
 func (p *Pallet) ExecuteProposals(
 	proposals []*chains.Proposal,
 	signature []byte,
-) (*author.ExtrinsicStatusSubscription, error) {
+) (string, *author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
