@@ -10,7 +10,8 @@
         "encryptionKey": "test-enc-key"
       },
       "commHealthCheckInterval": "24h"
-    }
+    },
+    "opentelemetryCollectorURL": "http://otel-collector:4318"
   },
   "domains": [
     {

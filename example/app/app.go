@@ -12,6 +12,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
+	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -29,7 +30,6 @@ import (
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/store"
 
@@ -40,6 +40,8 @@ import (
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
+	"github.com/ChainSafe/sygma-relayer/jobs"
+	"github.com/ChainSafe/sygma-relayer/metrics"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -204,16 +206,23 @@ func Run() error {
 				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
 
 				chains = append(chains, substrateChain)
-
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
 		}
 	}
 
+	meter, err := opentelemetry.DefaultMeter(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
+	if err != nil {
+		panic(err)
+	}
+	metrics := metrics.NewTelemetry(meter)
+
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, metrics)
+
 	r := relayer.NewRelayer(
 		chains,
-		&opentelemetry.ConsoleTelemetry{},
+		metrics,
 	)
 
 	errChn := make(chan error)

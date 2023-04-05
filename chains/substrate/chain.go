@@ -69,11 +69,14 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore, msgChan)
 }
 
-func (c *SubstrateChain) Write(msgs []*message.Message) {
+func (c *SubstrateChain) Write(msgs []*message.Message) error {
 	err := c.executor.Execute(msgs)
 	if err != nil {
 		c.logger.Err(err).Msgf("error writing messages %+v on network %d", msgs, c.DomainID())
+		return err
 	}
+
+	return nil
 }
 
 func (c *SubstrateChain) DomainID() uint8 {

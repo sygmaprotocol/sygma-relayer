@@ -39,6 +39,7 @@ import (
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
+	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
@@ -236,11 +237,17 @@ func Run() error {
 		}
 	}
 
-	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval)
+	meter, err := opentelemetry.DefaultMeter(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
+	if err != nil {
+		panic(err)
+	}
+	metrics := metrics.NewTelemetry(meter)
+
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, metrics)
 
 	r := relayer.NewRelayer(
 		chains,
-		&opentelemetry.ConsoleTelemetry{},
+		metrics,
 	)
 
 	errChn := make(chan error)
