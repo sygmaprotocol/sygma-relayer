@@ -9,7 +9,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
@@ -26,21 +26,21 @@ type BridgeProposal struct {
 }
 
 type Pallet struct {
-	client *client.SubstrateClient
+	*client.SubstrateClient
 }
 
 func NewPallet(
 	client *client.SubstrateClient,
 ) *Pallet {
 	return &Pallet{
-		client: client,
+		client,
 	}
 }
 
 func (p *Pallet) ExecuteProposals(
 	proposals []*chains.Proposal,
 	signature []byte,
-) (*types.Hash, error) {
+) (*author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
@@ -51,7 +51,7 @@ func (p *Pallet) ExecuteProposals(
 		})
 	}
 
-	return p.client.Transact(
+	return p.Transact(
 		"SygmaBridge.execute_proposal",
 		bridgeProposals,
 		signature,
@@ -59,7 +59,7 @@ func (p *Pallet) ExecuteProposals(
 }
 
 func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
-	return chains.ProposalsHash(proposals, p.client.ChainID.Int64(), verifyingContract, bridgeVersion)
+	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
 func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
@@ -68,7 +68,7 @@ func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
 		Str("resourceID", hexutil.Encode(prop.ResourceID[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.client.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.OriginDomainID)))
+	err := p.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.OriginDomainID)))
 	if err != nil {
 		return false, err
 	}

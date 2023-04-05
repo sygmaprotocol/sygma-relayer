@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types/codec"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -36,7 +36,7 @@ func NewSubstrateClient(conn *connection.Connection, key *signature.KeyringPair,
 
 // Transact constructs and submits an extrinsic to call the method with the given arguments.
 // All args are passed directly into GSRPC. GSRPC types are recommended to avoid serialization inconsistencies.
-func (c *SubstrateClient) Transact(method string, args ...interface{}) (*types.Hash, error) {
+func (c *SubstrateClient) Transact(method string, args ...interface{}) (*author.ExtrinsicStatusSubscription, error) {
 	log.Debug().Msgf("Submitting substrate call... method %s, sender %s", method, c.key.Address)
 
 	// Create call and extrinsic
@@ -75,15 +75,15 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (*types.H
 		Tip:                types.NewUCompactFromUInt(c.tip),
 		TransactionVersion: rv.TransactionVersion,
 	}
-	h, err := c.signAndSendTransaction(o, &ext)
+	sub, err := c.submitAndWatchExtrinsic(o, &ext)
 	if err != nil {
 		return nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
 
-	log.Debug().Msgf("Extinsic call succededed... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
+	log.Debug().Msgf("Extinsic call submitted... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
 	c.nonce = nonce + 1
 
-	return &h, nil
+	return sub, nil
 }
 
 func (c *SubstrateClient) nextNonce(meta *types.Metadata) (types.U32, error) {
@@ -112,31 +112,31 @@ func (c *SubstrateClient) nextNonce(meta *types.Metadata) (types.U32, error) {
 	return latestNonce, nil
 }
 
-func (c *SubstrateClient) signAndSendTransaction(opts types.SignatureOptions, ext *types.Extrinsic) (types.Hash, error) {
+func (c *SubstrateClient) submitAndWatchExtrinsic(opts types.SignatureOptions, ext *types.Extrinsic) (*author.ExtrinsicStatusSubscription, error) {
 	err := ext.Sign(*c.key, opts)
 	if err != nil {
-		return types.Hash{}, err
+		return nil, err
 	}
 
-	hash, err := c.sendRawTransaction(ext)
+	sub, err := c.Conn.RPC.Author.SubmitAndWatchExtrinsic(*ext)
 	if err != nil {
-		return types.Hash{}, err
+		return nil, err
 	}
-	return hash, nil
+
+	return sub, nil
 }
 
-// SendRawTransaction accepts rlp-encode of signed transaction and sends it via RPC call
-func (c *SubstrateClient) sendRawTransaction(ext *types.Extrinsic) (types.Hash, error) {
-	enc, err := codec.EncodeToHex(ext)
-	if err != nil {
-		return types.Hash{}, err
+func (c *SubstrateClient) TrackExtrinsic(id string, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
+	defer sub.Unsubscribe()
+	subChan := sub.Chan()
+	for {
+		status := <-subChan
+		if status.IsInBlock {
+			log.Debug().Str("extrinsic", id).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
+		}
+		if status.IsFinalized {
+			log.Info().Str("extrinsic", id).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
+			errChn <- nil
+		}
 	}
-
-	var res string
-	err = c.Conn.Call(&res, "author_submitExtrinsic", enc)
-	if err != nil {
-		return types.Hash{}, err
-	}
-
-	return types.NewHashFromHexString(res)
 }
