@@ -14,6 +14,7 @@ import (
 	"github.com/binance-chain/tss-lib/common"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/libp2p/go-libp2p/core/host"
@@ -37,9 +38,9 @@ type MessageHandler interface {
 
 type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (string, *author.ExtrinsicStatusSubscription, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
-	TrackExtrinsic(extHash string, sub *author.ExtrinsicStatusSubscription, errChn chan error)
+	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, errChn chan error)
 }
 
 type Executor struct {
@@ -170,7 +171,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (string, *author.ExtrinsicStatusSubscription, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
@@ -179,7 +180,7 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 
 	hash, sub, err := e.bridge.ExecuteProposals(proposals, sig)
 	if err != nil {
-		return "", nil, err
+		return types.Hash{}, nil, err
 	}
 
 	return hash, sub, err

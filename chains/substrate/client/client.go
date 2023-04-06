@@ -40,7 +40,7 @@ func NewSubstrateClient(conn *connection.Connection, key *signature.KeyringPair,
 
 // Transact constructs and submits an extrinsic to call the method with the given arguments.
 // All args are passed directly into GSRPC. GSRPC types are recommended to avoid serialization inconsistencies.
-func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, *author.ExtrinsicStatusSubscription, error) {
+func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	log.Debug().Msgf("Submitting substrate call... method %s, sender %s", method, c.key.Address)
 
 	// Create call and extrinsic
@@ -51,14 +51,14 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, 
 		args...,
 	)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to construct call: %w", err)
+		return types.Hash{}, nil, fmt.Errorf("failed to construct call: %w", err)
 	}
 
 	ext := types.NewExtrinsic(call)
 	// Get latest runtime version
 	rv, err := c.Conn.RPC.State.GetRuntimeVersionLatest()
 	if err != nil {
-		return "", nil, err
+		return types.Hash{}, nil, err
 	}
 
 	c.nonceLock.Lock()
@@ -66,7 +66,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, 
 
 	nonce, err := c.nextNonce(&meta)
 	if err != nil {
-		return "", nil, err
+		return types.Hash{}, nil, err
 	}
 
 	// Sign the extrinsic
@@ -81,21 +81,21 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, 
 	}
 	sub, err := c.submitAndWatchExtrinsic(o, &ext)
 	if err != nil {
-		return "", nil, fmt.Errorf("submission of extrinsic failed: %w", err)
+		return types.Hash{}, nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
 
 	hash, err := substrate.ExtrinsicHash(ext)
 	if err != nil {
-		return "", nil, err
+		return types.Hash{}, nil, err
 	}
 
-	log.Info().Str("extrinsic", hash).Msgf("Extrinsic call submitted... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
+	log.Info().Str("extrinsic", hash.Hex()).Msgf("Extrinsic call submitted... method %s, sender %s, nonce %d", method, c.key.Address, nonce)
 	c.nonce = nonce + 1
 
 	return hash, sub, nil
 }
 
-func (c *SubstrateClient) TrackExtrinsic(extHash string, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
+func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
 	defer sub.Unsubscribe()
 	defer cancel()
@@ -105,10 +105,10 @@ func (c *SubstrateClient) TrackExtrinsic(extHash string, sub *author.ExtrinsicSt
 		case status := <-subChan:
 			{
 				if status.IsInBlock {
-					log.Debug().Str("extrinsic", extHash).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
+					log.Debug().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
 				}
 				if status.IsFinalized {
-					log.Info().Str("extrinsic", extHash).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
+					log.Info().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
 					err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
 					errChn <- err
 					return
@@ -161,7 +161,7 @@ func (c *SubstrateClient) submitAndWatchExtrinsic(opts types.SignatureOptions, e
 	return sub, nil
 }
 
-func (c *SubstrateClient) checkExtrinsicSuccess(extHash string, blockHash types.Hash) error {
+func (c *SubstrateClient) checkExtrinsicSuccess(extHash types.Hash, blockHash types.Hash) error {
 	block, err := c.Conn.Chain.GetBlock(blockHash)
 	if err != nil {
 		return err

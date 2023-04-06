@@ -10,6 +10,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
@@ -40,7 +41,7 @@ func NewPallet(
 func (p *Pallet) ExecuteProposals(
 	proposals []*chains.Proposal,
 	signature []byte,
-) (string, *author.ExtrinsicStatusSubscription, error) {
+) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
