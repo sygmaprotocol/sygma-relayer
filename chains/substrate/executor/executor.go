@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
 
+	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 
@@ -37,8 +38,9 @@ type MessageHandler interface {
 
 type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (*types.Hash, error)
+	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
+	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, errChn chan error)
 }
 
 type Executor struct {
@@ -127,13 +129,15 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		case sigResult := <-sigChn:
 			{
 				signatureData := sigResult.(*common.SignatureData)
-				hash, err := e.executeProposal(proposals, signatureData)
+				hash, sub, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
 					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
 					return err
 				}
-
-				log.Info().Msgf("Sent proposals execution with hash: %s", hash.Hex())
+				errChn := make(chan error)
+				go e.bridge.TrackExtrinsic(hash, sub, errChn)
+				err = <-errChn
+				return err
 			}
 		case err := <-statusChn:
 			{
@@ -167,19 +171,19 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*types.Hash, error) {
+func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
 	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	hash, err := e.bridge.ExecuteProposals(proposals, sig)
+	hash, sub, err := e.bridge.ExecuteProposals(proposals, sig)
 	if err != nil {
-		return nil, err
+		return types.Hash{}, nil, err
 	}
 
-	return hash, err
+	return hash, sub, err
 }
 
 func (e *Executor) sessionID(hash []byte) string {
