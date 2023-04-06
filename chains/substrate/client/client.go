@@ -96,8 +96,9 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, 
 }
 
 func (c *SubstrateClient) TrackExtrinsic(extHash string, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
 	defer sub.Unsubscribe()
+	defer cancel()
 	subChan := sub.Chan()
 	for {
 		select {
