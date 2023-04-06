@@ -197,11 +197,7 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.S
 		//nolint
 		case sig := <-endChn:
 			{
-				s.Log.Info().
-					Str("r", string(sig.R)).
-					Str("s", string(sig.S)).
-					Str("v", string(sig.SignatureRecovery)).
-					Msg("Successfully generated signature")
+				s.Log.Info().Msg("Successfully generated signature")
 
 				if s.coordinator {
 					s.resultChn <- &sig

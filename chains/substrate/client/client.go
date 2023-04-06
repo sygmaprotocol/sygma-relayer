@@ -4,9 +4,11 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 
@@ -94,18 +96,26 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (string, 
 }
 
 func (c *SubstrateClient) TrackExtrinsic(extHash string, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
 	defer sub.Unsubscribe()
 	subChan := sub.Chan()
 	for {
-		status := <-subChan
-		if status.IsInBlock {
-			log.Debug().Str("extrinsic", extHash).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
-		}
-		if status.IsFinalized {
-			log.Info().Str("extrinsic", extHash).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
-			err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
-			errChn <- err
-			break
+		select {
+		case status := <-subChan:
+			{
+				if status.IsInBlock {
+					log.Debug().Str("extrinsic", extHash).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
+				}
+				if status.IsFinalized {
+					log.Info().Str("extrinsic", extHash).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
+					err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
+					errChn <- err
+					return
+				}
+			}
+		case <-ctx.Done():
+			errChn <- fmt.Errorf("extrinsic has timed out")
+			return
 		}
 	}
 }
