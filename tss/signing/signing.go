@@ -14,6 +14,7 @@ import (
 	tssCommon "github.com/binance-chain/tss-lib/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
@@ -198,9 +199,9 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.S
 		case sig := <-endChn:
 			{
 				s.Log.Info().
-					Str("r", string(sig.R)).
-					Str("s", string(sig.S)).
-					Str("v", string(sig.SignatureRecovery)).
+					Str("r", hexutil.Encode(sig.R)).
+					Str("s", hexutil.Encode(sig.S)).
+					Str("v", hexutil.Encode(sig.SignatureRecovery)).
 					Msg("Successfully generated signature")
 
 				if s.coordinator {
