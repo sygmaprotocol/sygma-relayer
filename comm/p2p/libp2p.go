@@ -17,6 +17,7 @@ import (
 	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc"
 )
 
 const (
@@ -74,18 +75,24 @@ func (c Libp2pCommunication) Broadcast(
 	c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
 		"broadcasting message",
 	)
+
+	var wg conc.WaitGroup
 	for _, peerID := range peers {
 		if hostID == peerID {
 			continue // don't send message to itself
 		}
-		go func(peerID peer.ID) {
+
+		peerID := peerID
+		wg.Go(func() {
 			err := c.sendMessage(peerID, marshaledMsg, msgType, sessionID)
 			if err != nil {
 				SendError(errChan, err, peerID)
-				return
 			}
-		}(peerID)
+		})
 	}
+
+	pr := wg.WaitAndRecover()
+	c.logger.Err(pr.AsError()).Msg("Recovered from panic while broadcasting message")
 }
 
 func (c Libp2pCommunication) Subscribe(
