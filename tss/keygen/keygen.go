@@ -17,6 +17,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 )
 
 type SaveDataStorer interface {
@@ -86,9 +87,18 @@ func (k *Keygen) Start(
 
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
 
-	go k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
-	go k.ProcessInboundMessages(ctx, msgChn)
-	go k.processEndMessage(ctx, endChn)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		err := p.Wait()
+		if err != nil {
+			k.ErrChn <- err
+		}
+		k.Stop()
+	}()
+
+	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	k.ProcessInboundMessages(p, msgChn)
+	k.processEndMessage(p, endChn)
 
 	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
 	if err != nil {
@@ -98,12 +108,11 @@ func (k *Keygen) Start(
 	k.Party = party
 
 	k.Log.Info().Msgf("Started keygen process")
-	go func() {
-		err := k.Party.Start()
-		if err != nil {
-			k.ErrChn <- err
-		}
-	}()
+
+	err = k.Party.Start()
+	if err != nil {
+		k.ErrChn <- err
+	}
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -134,28 +143,29 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
-	for {
-		select {
-		case key := <-endChn:
-			{
-				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
+func (k *Keygen) processEndMessage(p *pool.ContextPool, endChn chan keygen.LocalPartySaveData) {
+	p.Go(func(ctx context.Context) error {
+		for {
+			select {
+			case key := <-endChn:
+				{
+					k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
 
-				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
-				err := k.storer.StoreKeyshare(keyshare)
-				if err != nil {
-					k.ErrChn <- err
+					keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
+					err := k.storer.StoreKeyshare(keyshare)
+					if err != nil {
+						return err
+					}
+
+					return nil
 				}
-
-				k.ErrChn <- nil
-				return
-			}
-		case <-ctx.Done():
-			{
-				return
+			case <-ctx.Done():
+				{
+					return ctx.Err()
+				}
 			}
 		}
-	}
+	})
 }
 
 func (k *Keygen) Retryable() bool {

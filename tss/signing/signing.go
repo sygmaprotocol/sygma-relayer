@@ -17,6 +17,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/exp/slices"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -109,9 +110,19 @@ func (s *Signing) Start(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
-	go s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg)
-	go s.ProcessInboundMessages(ctx, msgChn)
-	go s.processEndMessage(ctx, sigChn)
+
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		err := p.Wait()
+		if err != nil {
+			s.ErrChn <- err
+		}
+		s.Stop()
+	}()
+
+	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
+	s.ProcessInboundMessages(p, msgChn)
+	s.processEndMessage(p, sigChn)
 
 	s.Log.Info().Msgf("Started signing process")
 
@@ -128,15 +139,13 @@ func (s *Signing) Start(
 		s.ErrChn <- err
 		return
 	}
-	go func() {
-		err := s.Party.Start()
-		if err != nil {
-			s.ErrChn <- err
-			return
-		}
 
-		s.monitorSigning(ctx)
-	}()
+	err = s.Party.Start()
+	if err != nil {
+		s.ErrChn <- err
+		return
+	}
+	s.monitorSigning(p)
 }
 
 // Stop ends all subscriptions created when starting the tss process.
@@ -191,26 +200,28 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 }
 
 // processEndMessage routes signature to result channel.
-func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.SignatureData) {
-	for {
-		select {
-		//nolint
-		case sig := <-endChn:
-			{
-				s.Log.Info().Msg("Successfully generated signature")
+func (s *Signing) processEndMessage(p *pool.ContextPool, endChn chan tssCommon.SignatureData) {
+	p.Go(func(ctx context.Context) error {
+		for {
+			select {
+			//nolint
+			case sig := <-endChn:
+				{
+					s.Log.Info().Msg("Successfully generated signature")
 
-				if s.coordinator {
-					s.resultChn <- &sig
+					if s.coordinator {
+						s.resultChn <- &sig
+					}
+
+					return nil
 				}
-				s.ErrChn <- nil
-				return
-			}
-		case <-ctx.Done():
-			{
-				return
+			case <-ctx.Done():
+				{
+					return ctx.Err()
+				}
 			}
 		}
-	}
+	})
 }
 
 // readyParticipants returns all ready peers that contain a valid key share
@@ -237,26 +248,28 @@ func (s *Signing) Retryable() bool {
 
 // monitorSigning checks if the process is stuck and waiting for peers and sends an error
 // if it is
-func (s *Signing) monitorSigning(ctx context.Context) {
-	waitingFor := make([]*tss.PartyID, 0)
-	ticker := time.NewTicker(time.Minute * 3)
+func (s *Signing) monitorSigning(p *pool.ContextPool) {
+	p.Go(func(ctx context.Context) error {
+		waitingFor := make([]*tss.PartyID, 0)
+		ticker := time.NewTicker(time.Minute * 3)
 
-	for {
-		select {
-		case <-ticker.C:
-			{
-				if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
-					s.ErrChn <- &comm.CommunicationError{
-						Err: fmt.Errorf("waiting for peers %s", waitingFor),
+		for {
+			select {
+			case <-ticker.C:
+				{
+					if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
+						return &comm.CommunicationError{
+							Err: fmt.Errorf("waiting for peers %s", waitingFor),
+						}
 					}
-				}
 
-				waitingFor = s.Party.WaitingFor()
-			}
-		case <-ctx.Done():
-			{
-				return
+					waitingFor = s.Party.WaitingFor()
+				}
+			case <-ctx.Done():
+				{
+					return ctx.Err()
+				}
 			}
 		}
-	}
+	})
 }

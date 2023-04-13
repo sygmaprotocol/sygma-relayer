@@ -18,6 +18,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/exp/slices"
 )
 
@@ -115,22 +116,33 @@ func (r *Resharing) Start(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), comm.TssReshareMsg, msgChn)
-	go r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg)
-	go r.ProcessInboundMessages(ctx, msgChn)
-	go r.processEndMessage(ctx, endChn)
+
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		err := p.Wait()
+		if err != nil {
+			r.ErrChn <- err
+		}
+		r.Stop()
+	}()
+
+	r.ProcessOutboundMessages(p, outChn, comm.TssReshareMsg)
+	r.ProcessInboundMessages(p, msgChn)
+	r.processEndMessage(p, endChn)
 
 	r.Log.Info().Msgf("Started resharing process")
+
 	r.Party, err = resharing.NewLocalParty(tssParams, r.key.Key, outChn, endChn, new(big.Int).SetBytes([]byte(r.SID)))
 	if err != nil {
 		r.ErrChn <- err
 		return
 	}
-	go func() {
-		err := r.Party.Start()
-		if err != nil {
-			r.ErrChn <- err
-		}
-	}()
+
+	err = r.Party.Start()
+	if err != nil {
+		r.ErrChn <- err
+		return
+	}
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -196,24 +208,25 @@ func (r *Resharing) validateStartParams(params startParams) error {
 }
 
 // processEndMessage routes signature to result channel.
-func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
-	for {
-		select {
-		case key := <-endChn:
-			{
-				r.Log.Info().Msg("Successfully reshared key")
+func (r *Resharing) processEndMessage(p *pool.ContextPool, endChn chan keygen.LocalPartySaveData) {
+	p.Go(func(ctx context.Context) error {
+		for {
+			select {
+			case key := <-endChn:
+				{
+					r.Log.Info().Msg("Successfully reshared key")
 
-				keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
-				err := r.storer.StoreKeyshare(keyshare)
-				r.ErrChn <- err
-				return
-			}
-		case <-ctx.Done():
-			{
-				return
+					keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
+					err := r.storer.StoreKeyshare(keyshare)
+					return err
+				}
+			case <-ctx.Done():
+				{
+					return ctx.Err()
+				}
 			}
 		}
-	}
+	})
 }
 
 // sortParties assign new parties indexes that are greater than old party indexes to prevent
