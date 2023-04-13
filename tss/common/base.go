@@ -5,7 +5,6 @@ package common
 
 import (
 	"context"
-	"errors"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -13,6 +12,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog"
+	"github.com/sourcegraph/conc/panics"
+	"github.com/sourcegraph/conc/pool"
 )
 
 type Party interface {
@@ -45,85 +46,79 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) {
-	for {
-		select {
-		case wMsg := <-msgChan:
-			{
-				go func() {
-					defer func() {
-						if r := recover(); r != nil {
-							switch x := r.(type) {
-							case string:
-								b.ErrChn <- errors.New(x)
-							case error:
-								b.ErrChn <- x
-							default:
-								b.ErrChn <- errors.New("unknown panic")
-							}
-						}
-					}()
+func (b *BaseTss) ProcessInboundMessages(p *pool.ContextPool, msgChan chan *comm.WrappedMessage) {
+	p.Go(func(ctx context.Context) error {
+		for {
+			select {
+			case wMsg := <-msgChan:
+				{
 					b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
 					msg, err := UnmarshalTssMessage(wMsg.Payload)
 					if err != nil {
 						b.ErrChn <- err
-						return
+						return err
 					}
 
-					ok, err := b.Party.UpdateFromBytes(
-						msg.MsgBytes,
-						b.PartyStore[wMsg.From.Pretty()],
-						msg.IsBroadcast,
-						new(big.Int).SetBytes([]byte(b.SID)))
-					if !ok {
-						b.ErrChn <- err
+					var pc panics.Catcher
+					pc.Try(func() {
+						ok, err := b.Party.UpdateFromBytes(
+							msg.MsgBytes,
+							b.PartyStore[wMsg.From.Pretty()],
+							msg.IsBroadcast,
+							new(big.Int).SetBytes([]byte(b.SID)))
+						if !ok {
+							panic(err)
+						}
+					})
+					if pc.Recovered().AsError() != nil {
+						return err
 					}
-				}()
-			}
-		case <-ctx.Done():
-			{
-				return
+				}
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 		}
-	}
+	})
 }
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) {
-	for {
-		select {
-		case msg := <-outChn:
-			{
-				b.Log.Debug().Msg(msg.String())
-				wireBytes, routing, err := msg.WireBytes()
-				if err != nil {
-					b.ErrChn <- err
-					return
-				}
+func (b *BaseTss) ProcessOutboundMessages(p *pool.ContextPool, outChn chan tss.Message, messageType comm.MessageType) {
+	p.Go(func(ctx context.Context) error {
+		for {
+			select {
+			case msg := <-outChn:
+				{
+					b.Log.Debug().Msg(msg.String())
+					wireBytes, routing, err := msg.WireBytes()
+					if err != nil {
+						return err
+					}
 
-				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
-				if err != nil {
-					b.ErrChn <- err
-					return
-				}
+					msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
+					if err != nil {
+						return err
+					}
 
-				peers, err := b.BroadcastPeers(msg)
-				if err != nil {
-					b.ErrChn <- err
-					return
-				}
+					peers, err := b.BroadcastPeers(msg)
+					if err != nil {
+						return err
+					}
 
-				b.Log.Debug().Msgf("sending message to %s", peers)
-				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), b.ErrChn)
-			}
-		case <-ctx.Done():
-			{
-				return
+					b.Log.Debug().Msgf("sending message to %s", peers)
+					p.Go(func(ctx context.Context) error {
+						b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), b.ErrChn)
+						return nil
+					})
+				}
+			case <-ctx.Done():
+				{
+					return ctx.Err()
+				}
 			}
 		}
-	}
+	})
 }
 
 // BroccastPeers returns peers that should receive the tss message
