@@ -92,7 +92,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	subscriptionID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssFailMsg, failChn)
 	defer c.communication.UnSubscribe(subscriptionID)
 	defer ticker.Stop()
-	defer tssProcess.Stop()
 	for {
 		select {
 		case <-ticker.C:
