@@ -56,7 +56,6 @@ func (b *BaseTss) ProcessInboundMessages(p *pool.ContextPool, msgChan chan *comm
 
 					msg, err := UnmarshalTssMessage(wMsg.Payload)
 					if err != nil {
-						b.ErrChn <- err
 						return err
 					}
 

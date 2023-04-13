@@ -1,6 +1,6 @@
 module github.com/ChainSafe/sygma-relayer
 
-go 1.18
+go 1.19
 
 require (
 	github.com/ChainSafe/chainbridge-core v1.2.1-0.20230403091503-2ce735717171
