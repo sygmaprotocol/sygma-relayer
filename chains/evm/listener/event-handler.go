@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
@@ -248,8 +249,10 @@ func (eh *KeygenEventHandler) HandleEvent(
 
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
-	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
-
+	go func() {
+		err := eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1))
+		log.Err(err).Msg("Error executing keygen")
+	}()
 	return nil
 }
 
@@ -336,7 +339,10 @@ func (eh *RefreshEventHandler) HandleEvent(
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer,
 	)
-	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
+	go func() {
+		err := eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1))
+		log.Err(err).Msg("Error executing keygen")
+	}()
 
 	return nil
 }
