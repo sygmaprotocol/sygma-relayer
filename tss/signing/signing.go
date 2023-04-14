@@ -84,14 +84,6 @@ func (s *Signing) Start(
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	defer func() {
-		err := p.Wait()
-		s.Stop()
-		if err != nil {
-			s.ErrChn <- err
-		}
-	}()
 
 	peerSubset, err := s.unmarshallStartParams(params)
 	if err != nil {
@@ -116,15 +108,6 @@ func (s *Signing) Start(
 
 	sigChn := make(chan tssCommon.SignatureData)
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *comm.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
-
-	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
-	s.ProcessInboundMessages(p, msgChn)
-	s.processEndMessage(p, sigChn)
-
-	s.Log.Info().Msgf("Started signing process")
-
 	kdd := big.NewInt(0)
 	s.Party, err = signing.NewLocalParty(
 		s.msg,
@@ -139,12 +122,29 @@ func (s *Signing) Start(
 		return
 	}
 
+	msgChn := make(chan *comm.WrappedMessage)
+	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
+
+	defer s.Stop()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
+	s.ProcessInboundMessages(p, msgChn)
+	s.processEndMessage(p, sigChn)
+	s.monitorSigning(p)
+
+	s.Log.Info().Msgf("Started signing process")
+
 	tssError := s.Party.Start()
 	if tssError != nil {
 		s.ErrChn <- err
 		return
 	}
-	s.monitorSigning(p)
+
+	err = p.Wait()
+	select {
+	case s.ErrChn <- err:
+	default:
+	}
 }
 
 // Stop ends all subscriptions created when starting the tss process.
@@ -250,11 +250,11 @@ func (s *Signing) Retryable() bool {
 // if it is
 func (s *Signing) monitorSigning(p *pool.ContextPool) {
 	p.Go(func(ctx context.Context) error {
+		defer s.Cancel()
 		waitingFor := make([]*tss.PartyID, 0)
 		ticker := time.NewTicker(time.Minute * 3)
 
 		for {
-			defer s.Cancel()
 			select {
 			case <-ticker.C:
 				{

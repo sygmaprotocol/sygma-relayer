@@ -78,7 +78,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		return fmt.Errorf("process already pending")
 	}
 
-	var wg conc.WaitGroup
 	c.processLock.Lock()
 	c.pendingProcesses[sessionID] = true
 	c.processLock.Unlock()
@@ -87,6 +86,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	subscriptionID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssFailMsg, failChn)
 	ticker := time.NewTicker(c.TssTimeout)
 
+	var wg conc.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		cancel()
@@ -108,7 +108,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	errChn := make(chan error)
 	wg.Go(func() {
 		c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
-		cancel()
 	})
 	for {
 		select {

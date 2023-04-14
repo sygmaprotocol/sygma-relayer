@@ -55,16 +55,19 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 
 	resultChn := make(chan interface{})
 
-	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
+	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(ctx)
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error {
-			return coordinator.Execute(context.Background(), processes[i], resultChn)
+			return coordinator.Execute(ctx, processes[i], resultChn)
 		})
 	}
 
 	sig := <-resultChn
 	s.NotNil(sig)
+
+	cancel()
 	err := pool.Wait()
 	s.Nil(err)
 }
@@ -98,7 +101,7 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 	tsstest.SetupCommunication(communicationMap)
 
 	resultChn := make(chan interface{})
-	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
+	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
@@ -134,5 +137,4 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 
 	err := pool.Wait()
 	s.NotNil(err)
-	fmt.Println(err)
 }

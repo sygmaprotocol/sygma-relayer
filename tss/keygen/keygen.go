@@ -69,16 +69,8 @@ func (k *Keygen) Start(
 ) {
 	k.ErrChn = errChn
 	ctx, k.Cancel = context.WithCancel(ctx)
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	defer func() {
-		err := p.Wait()
-		k.Stop()
-		if err != nil {
-			k.ErrChn <- err
-		}
-	}()
-	k.storer.LockKeyshare()
 
+	k.storer.LockKeyshare()
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
 	k.PopulatePartyStore(parties)
 
@@ -92,12 +84,7 @@ func (k *Keygen) Start(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
-
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
-
-	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
-	k.ProcessInboundMessages(p, msgChn)
-	k.processEndMessage(p, endChn)
 
 	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
 	if err != nil {
@@ -108,9 +95,21 @@ func (k *Keygen) Start(
 
 	k.Log.Info().Msgf("Started keygen process")
 
+	defer k.Stop()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	k.ProcessInboundMessages(p, msgChn)
+	k.processEndMessage(p, endChn)
+
 	tssError := k.Party.Start()
 	if tssError != nil {
 		k.ErrChn <- err
+	}
+
+	err = p.Wait()
+	select {
+	case k.ErrChn <- err:
+	default:
 	}
 }
 
