@@ -69,6 +69,14 @@ func (k *Keygen) Start(
 ) {
 	k.ErrChn = errChn
 	ctx, k.Cancel = context.WithCancel(ctx)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		err := p.Wait()
+		k.Stop()
+		if err != nil {
+			k.ErrChn <- err
+		}
+	}()
 	k.storer.LockKeyshare()
 
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
@@ -86,15 +94,6 @@ func (k *Keygen) Start(
 	endChn := make(chan keygen.LocalPartySaveData)
 
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
-
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	defer func() {
-		err := p.Wait()
-		k.Stop()
-		if err != nil {
-			k.ErrChn <- err
-		}
-	}()
 
 	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
 	k.ProcessInboundMessages(p, msgChn)

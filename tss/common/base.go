@@ -75,7 +75,7 @@ func (b *BaseTss) ProcessInboundMessages(p *pool.ContextPool, msgChan chan *comm
 					}
 				}
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil
 			}
 		}
 	})
@@ -106,14 +106,11 @@ func (b *BaseTss) ProcessOutboundMessages(p *pool.ContextPool, outChn chan tss.M
 					}
 
 					b.Log.Debug().Msgf("sending message to %s", peers)
-					p.Go(func(ctx context.Context) error {
-						b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), b.ErrChn)
-						return nil
-					})
+					b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), b.ErrChn)
 				}
 			case <-ctx.Done():
 				{
-					return ctx.Err()
+					return nil
 				}
 			}
 		}

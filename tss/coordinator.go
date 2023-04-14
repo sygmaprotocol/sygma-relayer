@@ -70,27 +70,35 @@ func NewCoordinator(
 }
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
-func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, statusChn chan error) {
+func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}) error {
 	sessionID := tssProcess.SessionID()
 	value, ok := c.pendingProcesses[sessionID]
 	if ok && value {
 		log.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
-		statusChn <- nil
-		return
+		return fmt.Errorf("process already pending")
 	}
 
+	var wg conc.WaitGroup
 	c.processLock.Lock()
 	c.pendingProcesses[sessionID] = true
 	c.processLock.Unlock()
+
+	failChn := make(chan *comm.WrappedMessage)
+	subscriptionID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssFailMsg, failChn)
+	ticker := time.NewTicker(c.TssTimeout)
+
+	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
+		cancel()
+		wg.Wait()
+		ticker.Stop()
+		c.communication.CloseSession(sessionID)
+		c.communication.UnSubscribe(subscriptionID)
 		c.processLock.Lock()
 		c.pendingProcesses[sessionID] = false
 		c.retriedProcesses[sessionID] = false
 		c.processLock.Unlock()
 	}()
-	defer c.communication.CloseSession(sessionID)
-
-	var wg conc.WaitGroup
 
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
@@ -98,28 +106,19 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	log.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.Pretty())
 
 	errChn := make(chan error)
-	wg.Go(func() { c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{}) })
-	defer wg.Wait()
-
-	ticker := time.NewTicker(c.TssTimeout)
-	failChn := make(chan *comm.WrappedMessage)
-	subscriptionID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssFailMsg, failChn)
-	defer c.communication.UnSubscribe(subscriptionID)
-	defer ticker.Stop()
+	wg.Go(func() {
+		c.start(ctx, tssProcess, coordinator, resultChn, errChn, []peer.ID{})
+		cancel()
+	})
 	for {
 		select {
 		case <-ticker.C:
 			{
-				err := fmt.Errorf("tss process timed out after %v", c.TssTimeout)
-				log.Err(err).Str("SessionID", sessionID).Msgf("Tss process timed out")
-				ctx.Done()
-				statusChn <- err
-				return
+				return fmt.Errorf("tss process timed out after %v", c.TssTimeout)
 			}
 		case <-ctx.Done():
 			{
-				statusChn <- nil
-				return
+				return nil
 			}
 		case msg := <-failChn:
 			{
@@ -128,21 +127,16 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					continue
 				}
 
-				err := fmt.Errorf("tss fail message received for process %s", sessionID)
-				log.Err(err).Msgf("Tss process fail message received")
-				statusChn <- err
-				return
+				return fmt.Errorf("tss fail message received for process %s", sessionID)
 			}
 		case err := <-errChn:
 			{
 				if err == nil {
-					statusChn <- nil
-					return
+					return nil
 				}
 
 				if !tssProcess.Retryable() {
-					statusChn <- fmt.Errorf("process failed with error: %+v", err)
-					return
+					return fmt.Errorf("process failed with error: %+v", err)
 				}
 
 				retryError := c.lockRetry(sessionID)
@@ -169,8 +163,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 						excludedPeers, err := common.PeersFromParties(err.Culprits())
 						if err != nil {
-							statusChn <- err
-							return
+							return err
 						}
 						wg.Go(func() { c.retry(ctx, tssProcess, resultChn, errChn, excludedPeers) })
 					}
@@ -181,9 +174,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 					}
 				default:
 					{
-						log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
-						statusChn <- err
-						return
+						return err
 					}
 				}
 			}
@@ -220,9 +211,6 @@ func (c *Coordinator) lockRetry(sessionID string) error {
 // retry initiates full bully process to calculate coordinator and starts a new tss process after
 // an expected error ocurred during regular tss execution
 func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, errChn chan error, excludedPeers []peer.ID) {
-	var wg conc.WaitGroup
-	defer wg.Wait()
-
 	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcess.SessionID(), elector.Bully)
 	coordinator, err := coordinatorElector.Coordinator(ctx, common.ExcludePeers(tssProcess.ValidCoordinators(), excludedPeers))
 	if err != nil {
@@ -230,7 +218,7 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 		return
 	}
 
-	wg.Go(func() { c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers) })
+	c.start(ctx, tssProcess, coordinator, resultChn, errChn, excludedPeers)
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
@@ -251,9 +239,6 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 
 	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
-
-	var wg conc.WaitGroup
-	defer wg.Wait()
 
 	ticker := time.NewTicker(c.InitiatePeriod)
 	defer ticker.Stop()
@@ -283,7 +268,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 				}
 
 				c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID(), nil)
-				wg.Go(func() { tssProcess.Start(ctx, true, resultChn, errChn, startParams) })
+				tssProcess.Start(ctx, true, resultChn, errChn, startParams)
 				return
 			}
 		case <-ticker.C:
@@ -315,9 +300,6 @@ func (c *Coordinator) waitForStart(
 	defer c.communication.UnSubscribe(initSubID)
 	startSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssStartMsg, startMsgChn)
 	defer c.communication.UnSubscribe(startSubID)
-
-	var wg conc.WaitGroup
-	defer wg.Wait()
 
 	coordinatorTimeoutTicker := time.NewTicker(timeout)
 	defer coordinatorTimeoutTicker.Stop()
@@ -352,7 +334,7 @@ func (c *Coordinator) waitForStart(
 					return
 				}
 
-				wg.Go(func() { tssProcess.Start(ctx, false, resultChn, errChn, msg.Params) })
+				tssProcess.Start(ctx, false, resultChn, errChn, msg.Params)
 				return
 			}
 		case <-coordinatorTimeoutTicker.C:

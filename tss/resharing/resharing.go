@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -83,12 +84,24 @@ func (r *Resharing) Start(
 	errChn chan error,
 	params []byte,
 ) {
+	fmt.Println("STARTED")
 	r.ErrChn = errChn
 	ctx, r.Cancel = context.WithCancel(ctx)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		fmt.Println("WAITING")
+		err := p.Wait()
+		r.Stop()
+		if err != nil {
+			r.ErrChn <- err
+		}
+	}()
 
 	startParams, err := r.unmarshallStartParams(params)
 	if err != nil {
+		fmt.Println("START PARAMS ERROR")
 		r.ErrChn <- err
+		fmt.Println("SENT ON CLOSED CHANNEL")
 		return
 	}
 
@@ -117,15 +130,6 @@ func (r *Resharing) Start(
 	msgChn := make(chan *comm.WrappedMessage)
 	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), comm.TssReshareMsg, msgChn)
 
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	defer func() {
-		err := p.Wait()
-		if err != nil {
-			r.ErrChn <- err
-		}
-		r.Stop()
-	}()
-
 	r.ProcessOutboundMessages(p, outChn, comm.TssReshareMsg)
 	r.ProcessInboundMessages(p, msgChn)
 	r.processEndMessage(p, endChn)
@@ -134,12 +138,14 @@ func (r *Resharing) Start(
 
 	r.Party, err = resharing.NewLocalParty(tssParams, r.key.Key, outChn, endChn, new(big.Int).SetBytes([]byte(r.SID)))
 	if err != nil {
+		r.Cancel()
 		r.ErrChn <- err
 		return
 	}
 
-	err = r.Party.Start()
-	if err != nil {
+	tssError := r.Party.Start()
+	if tssError != nil {
+		r.Cancel()
 		r.ErrChn <- err
 		return
 	}
@@ -210,6 +216,7 @@ func (r *Resharing) validateStartParams(params startParams) error {
 // processEndMessage routes signature to result channel.
 func (r *Resharing) processEndMessage(p *pool.ContextPool, endChn chan keygen.LocalPartySaveData) {
 	p.Go(func(ctx context.Context) error {
+		defer r.Cancel()
 		for {
 			select {
 			case key := <-endChn:
@@ -222,7 +229,7 @@ func (r *Resharing) processEndMessage(p *pool.ContextPool, endChn chan keygen.Lo
 				}
 			case <-ctx.Done():
 				{
-					return ctx.Err()
+					return nil
 				}
 			}
 		}

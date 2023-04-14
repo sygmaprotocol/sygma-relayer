@@ -84,6 +84,14 @@ func (s *Signing) Start(
 	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	defer func() {
+		err := p.Wait()
+		s.Stop()
+		if err != nil {
+			s.ErrChn <- err
+		}
+	}()
 
 	peerSubset, err := s.unmarshallStartParams(params)
 	if err != nil {
@@ -110,15 +118,6 @@ func (s *Signing) Start(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
-
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	defer func() {
-		err := p.Wait()
-		s.Stop()
-		if err != nil {
-			s.ErrChn <- err
-		}
-	}()
 
 	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
 	s.ProcessInboundMessages(p, msgChn)
