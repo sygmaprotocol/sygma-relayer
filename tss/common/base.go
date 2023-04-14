@@ -71,7 +71,7 @@ func (b *BaseTss) ProcessInboundMessages(p *pool.ContextPool, msgChan chan *comm
 						}
 					})
 					if pc.Recovered().AsError() != nil {
-						return err
+						return pc.Recovered().AsError()
 					}
 				}
 			case <-ctx.Done():
