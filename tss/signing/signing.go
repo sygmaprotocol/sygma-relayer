@@ -114,10 +114,10 @@ func (s *Signing) Start(
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	defer func() {
 		err := p.Wait()
+		s.Stop()
 		if err != nil {
 			s.ErrChn <- err
 		}
-		s.Stop()
 	}()
 
 	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
@@ -140,8 +140,8 @@ func (s *Signing) Start(
 		return
 	}
 
-	err = s.Party.Start()
-	if err != nil {
+	tssError := s.Party.Start()
+	if tssError != nil {
 		s.ErrChn <- err
 		return
 	}
@@ -202,6 +202,7 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 // processEndMessage routes signature to result channel.
 func (s *Signing) processEndMessage(p *pool.ContextPool, endChn chan tssCommon.SignatureData) {
 	p.Go(func(ctx context.Context) error {
+		defer s.Cancel()
 		for {
 			select {
 			//nolint
@@ -217,7 +218,7 @@ func (s *Signing) processEndMessage(p *pool.ContextPool, endChn chan tssCommon.S
 				}
 			case <-ctx.Done():
 				{
-					return ctx.Err()
+					return nil
 				}
 			}
 		}
@@ -254,20 +255,22 @@ func (s *Signing) monitorSigning(p *pool.ContextPool) {
 		ticker := time.NewTicker(time.Minute * 3)
 
 		for {
+			defer s.Cancel()
 			select {
 			case <-ticker.C:
 				{
 					if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
-						return &comm.CommunicationError{
+						err := &comm.CommunicationError{
 							Err: fmt.Errorf("waiting for peers %s", waitingFor),
 						}
+						return err
 					}
 
 					waitingFor = s.Party.WaitingFor()
 				}
 			case <-ctx.Done():
 				{
-					return ctx.Err()
+					return nil
 				}
 			}
 		}
