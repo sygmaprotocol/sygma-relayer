@@ -12,6 +12,7 @@ import (
 	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,18 +45,13 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 	s.MockStorer.EXPECT().LockKeyshare().Times(3)
 	s.MockStorer.EXPECT().UnlockKeyshare().Times(3)
 	s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
-	status := make(chan error, s.PartyNumber)
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], nil, status)
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
 	}
 
-	for i := 0; i < s.PartyNumber; i++ {
-		err := <-status
-		s.Nil(err)
-	}
-	time.Sleep(time.Millisecond * 50)
-	cancel()
+	err := pool.Wait()
+	s.Nil(err)
 }
 
 func (s *KeygenTestSuite) Test_KeygenTimeout() {
@@ -80,16 +76,11 @@ func (s *KeygenTestSuite) Test_KeygenTimeout() {
 	s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
 	s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
-	status := make(chan error, s.PartyNumber)
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], nil, status)
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
 	}
 
-	for i := 0; i < s.PartyNumber; i++ {
-		err := <-status
-		s.NotNil(err)
-	}
-	time.Sleep(time.Millisecond * 50)
-	cancel()
+	err := pool.Wait()
+	s.NotNil(err)
 }

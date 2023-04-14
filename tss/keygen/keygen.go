@@ -90,10 +90,10 @@ func (k *Keygen) Start(
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	defer func() {
 		err := p.Wait()
+		k.Stop()
 		if err != nil {
 			k.ErrChn <- err
 		}
-		k.Stop()
 	}()
 
 	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
@@ -109,8 +109,8 @@ func (k *Keygen) Start(
 
 	k.Log.Info().Msgf("Started keygen process")
 
-	err = k.Party.Start()
-	if err != nil {
+	tssError := k.Party.Start()
+	if tssError != nil {
 		k.ErrChn <- err
 	}
 }
@@ -145,6 +145,7 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 // processEndMessage waits for the final message with generated key share and stores it locally.
 func (k *Keygen) processEndMessage(p *pool.ContextPool, endChn chan keygen.LocalPartySaveData) {
 	p.Go(func(ctx context.Context) error {
+		defer k.Cancel()
 		for {
 			select {
 			case key := <-endChn:
@@ -161,7 +162,7 @@ func (k *Keygen) processEndMessage(p *pool.ContextPool, endChn chan keygen.Local
 				}
 			case <-ctx.Done():
 				{
-					return ctx.Err()
+					return nil
 				}
 			}
 		}
