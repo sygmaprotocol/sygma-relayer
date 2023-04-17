@@ -154,6 +154,10 @@ func (e *Executor) watchExecution(ctx context.Context, proposals []*chains.Propo
 			{
 				return fmt.Errorf("execution timed out in %s", signingTimeout)
 			}
+		case <-ctx.Done():
+			{
+				return nil
+			}
 		}
 	}
 }
