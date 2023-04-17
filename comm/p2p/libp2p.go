@@ -92,7 +92,9 @@ func (c Libp2pCommunication) Broadcast(
 	}
 
 	pr := wg.WaitAndRecover()
-	c.logger.Err(pr.AsError()).Msg("Recovered from panic while broadcasting message")
+	if pr.AsError() != nil {
+		c.logger.Err(pr.AsError()).Msg("Recovered from panic while broadcasting message")
+	}
 }
 
 func (c Libp2pCommunication) Subscribe(
