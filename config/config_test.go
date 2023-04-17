@@ -5,7 +5,6 @@ package config_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -491,7 +490,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 	for _, t := range testCases {
 		s.Run(t.name, func() {
 			file, _ := json.Marshal(t.inConfig)
-			_ = ioutil.WriteFile("test.json", file, 0644)
+			_ = os.WriteFile("test.json", file, 0644)
 
 			conf, err := config.GetConfigFromFile("test.json", &config.Config{})
 

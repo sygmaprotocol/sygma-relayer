@@ -2,7 +2,7 @@ package tsstest
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
@@ -60,7 +60,7 @@ func (s *CoordinatorTestSuite) SetupTest() {
 }
 
 func NewHost(i int) (host.Host, error) {
-	privBytes, err := ioutil.ReadFile(fmt.Sprintf("../test/pks/%d.pk", i))
+	privBytes, err := os.ReadFile(fmt.Sprintf("../test/pks/%d.pk", i))
 	if err != nil {
 		return nil, err
 	}

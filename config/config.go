@@ -6,7 +6,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/creasty/defaults"
@@ -28,7 +28,6 @@ type RawConfig struct {
 
 // GetConfigFromENV reads config from ENV variables, validates it and parses
 // it into config suitable for application
-//
 //
 // Properties of RelayerConfig are expected to be defined as separate ENV variables
 // where ENV variable name reflects properties position in structure. Each ENV variable needs to be prefixed with SYG.
@@ -74,7 +73,7 @@ func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
 		return &Config{}, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return &Config{}, err
 	}
