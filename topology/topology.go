@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -76,12 +76,12 @@ type TopologyProvider struct {
 
 func (t *TopologyProvider) NetworkTopology(hash string) (*NetworkTopology, error) {
 	log.Info().Msgf("Reading topology from URL: %s", t.url)
-  
+
 	resp, err := t.fetcher.Get(t.url)
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
