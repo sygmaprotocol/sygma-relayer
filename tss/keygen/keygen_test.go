@@ -76,7 +76,7 @@ func (s *KeygenTestSuite) Test_KeygenTimeout() {
 	s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
 	s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
-	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
+	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
 	}

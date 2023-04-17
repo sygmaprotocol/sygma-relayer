@@ -95,7 +95,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Ha
 	return hash, sub, nil
 }
 
-func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, errChn chan error) {
+func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
 	defer sub.Unsubscribe()
 	defer cancel()
@@ -109,14 +109,11 @@ func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.Extrins
 				}
 				if status.IsFinalized {
 					log.Info().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
-					err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
-					errChn <- err
-					return
+					return c.checkExtrinsicSuccess(extHash, status.AsFinalized)
 				}
 			}
 		case <-ctx.Done():
-			errChn <- fmt.Errorf("extrinsic has timed out")
-			return
+			return fmt.Errorf("extrinsic has timed out")
 		}
 	}
 }
