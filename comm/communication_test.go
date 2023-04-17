@@ -114,8 +114,12 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_E
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
+	success := make(chan error)
 	errChan := make(chan error)
-
+	go func() {
+		e := <-errChan
+		success <- e
+	}()
 	s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), externalHost.ID(), s.testHosts[1].ID()},
 		nil,
@@ -123,7 +127,8 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_E
 		"1",
 		errChan,
 	)
-	e := <-errChan
+
+	e := <-success
 	s.NotNil(e)
 }
 
@@ -197,8 +202,8 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 }
 
 /**
-Util function used for setting tests with multiple communications
-*/
+* Util function used for setting tests with multiple communications
+ */
 func InitializeHostsAndCommunications(numberOfActors int, protocolID protocol.ID) ([]host.Host, []comm.Communication) {
 	topology := &topology.NetworkTopology{
 		Peers: []*peer.AddrInfo{},

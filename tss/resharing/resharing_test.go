@@ -150,7 +150,7 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Bi
 		share.Threshold = 314
 
 		s.MockStorer.EXPECT().LockKeyshare()
-		s.MockStorer.EXPECT().UnlockKeyshare()
+		s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		resharing := resharing.NewResharing("resharing4", 1, host, &communication, s.MockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)

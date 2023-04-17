@@ -39,7 +39,7 @@ func (tc *TestCommunication) Broadcast(
 			continue
 		}
 
-		tc.PeerCommunications[peer.Pretty()].ReceiveMessage(&wMsg, msgType, sessionID)
+		go tc.PeerCommunications[peer.Pretty()].ReceiveMessage(&wMsg, msgType, sessionID)
 	}
 }
 
