@@ -114,11 +114,15 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 }
 
 func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
-	latest, err := rh.conn.GetBlockLatest()
+	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err
 	}
-	latestBlockNumber := big.NewInt(int64(latest.Block.Header.Number))
+	finalized, err := rh.conn.GetBlock(hash)
+	if err != nil {
+		return err
+	}
+	latestBlockNumber := big.NewInt(int64(finalized.Block.Header.Number))
 
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, evt := range evts {

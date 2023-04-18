@@ -23,7 +23,8 @@ type ChainConnection interface {
 	GetHeaderLatest() (*types.Header, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
-	GetBlockLatest() (*types.SignedBlock, error)
+	GetFinalizedHead() (types.Hash, error)
+	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
 }
 
 type SubstrateListener struct {
@@ -32,7 +33,6 @@ type SubstrateListener struct {
 	eventHandlers      []EventHandler
 	blockRetryInterval time.Duration
 	blockInterval      *big.Int
-	blockConfirmations *big.Int
 
 	log zerolog.Logger
 }
@@ -44,7 +44,6 @@ func NewSubstrateListener(connection ChainConnection, eventHandlers []EventHandl
 		eventHandlers:      eventHandlers,
 		blockRetryInterval: config.BlockRetryInterval,
 		blockInterval:      config.BlockInterval,
-		blockConfirmations: config.BlockConfirmations,
 	}
 }
 
@@ -57,20 +56,26 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 			case <-ctx.Done():
 				return
 			default:
-				head, err := l.conn.GetHeaderLatest()
+				hash, err := l.conn.GetFinalizedHead()
 				if err != nil {
 					l.log.Error().Err(err).Msg("Failed to fetch finalized header")
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
+				head, err := l.conn.GetBlock(hash)
+				if err != nil {
+					l.log.Error().Err(err).Msg("Failed to fetch block")
+					time.Sleep(l.blockRetryInterval)
+					continue
+				}
 
 				if startBlock == nil {
-					startBlock = big.NewInt(int64(head.Number))
+					startBlock = big.NewInt(int64(head.Block.Header.Number))
 				}
 				endBlock.Add(startBlock, l.blockInterval)
 
-				// Sleep if the difference is less than needed block confirmations; (latest - current) < BlockDelay
-				if new(big.Int).Sub(new(big.Int).SetInt64(int64(head.Number)), endBlock).Cmp(l.blockConfirmations) == -1 {
+				// Sleep if finalized is less then current block
+				if new(big.Int).SetInt64(int64(head.Block.Header.Number)).Cmp(endBlock) == -1 {
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}

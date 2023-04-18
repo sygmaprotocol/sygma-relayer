@@ -37,19 +37,6 @@ func (s *NewSubstrateConfigTestSuite) Test_FailedGeneralConfigValidation() {
 
 	s.NotNil(err)
 }
-
-func (s *NewSubstrateConfigTestSuite) Test_InvalidBlockConfirmation() {
-	_, err := NewSubstrateConfig(map[string]interface{}{
-		"id":                 1,
-		"endpoint":           "ws://domain.com",
-		"name":               "substrate1",
-		"blockConfirmations": -1,
-	})
-
-	s.NotNil(err)
-	s.Equal(err.Error(), "blockConfirmations has to be >=1")
-}
-
 func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
 		"id":               1,
@@ -73,7 +60,6 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 		StartBlock:         big.NewInt(0),
 		ChainID:            big.NewInt(5),
 		SubstrateNetwork:   uint8(0),
-		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(5),
 		BlockRetryInterval: time.Duration(5) * time.Second,
 	})
@@ -87,7 +73,6 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 		"chainID":            5,
 		"substrateNetwork":   0,
 		"startBlock":         1000,
-		"blockConfirmations": 10,
 		"blockRetryInterval": 10,
 		"blockInterval":      2,
 	}
@@ -106,7 +91,6 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 		ChainID:            big.NewInt(5),
 		SubstrateNetwork:   uint8(0),
 		StartBlock:         big.NewInt(1000),
-		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(2),
 		BlockRetryInterval: time.Duration(10) * time.Second,
 	})

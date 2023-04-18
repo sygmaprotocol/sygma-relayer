@@ -73,6 +73,21 @@ func (m *MockChainConnection) EXPECT() *MockChainConnectionMockRecorder {
 	return m.recorder
 }
 
+// GetBlock mocks base method.
+func (m *MockChainConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlock", blockHash)
+	ret0, _ := ret[0].(*types.SignedBlock)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlock indicates an expected call of GetBlock.
+func (mr *MockChainConnectionMockRecorder) GetBlock(blockHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockChainConnection)(nil).GetBlock), blockHash)
+}
+
 // GetBlockEvents mocks base method.
 func (m *MockChainConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
 	m.ctrl.T.Helper()
@@ -103,19 +118,19 @@ func (mr *MockChainConnectionMockRecorder) GetBlockHash(blockNumber interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHash", reflect.TypeOf((*MockChainConnection)(nil).GetBlockHash), blockNumber)
 }
 
-// GetBlockLatest mocks base method.
-func (m *MockChainConnection) GetBlockLatest() (*types.SignedBlock, error) {
+// GetFinalizedHead mocks base method.
+func (m *MockChainConnection) GetFinalizedHead() (types.Hash, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockLatest")
-	ret0, _ := ret[0].(*types.SignedBlock)
+	ret := m.ctrl.Call(m, "GetFinalizedHead")
+	ret0, _ := ret[0].(types.Hash)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetBlockLatest indicates an expected call of GetBlockLatest.
-func (mr *MockChainConnectionMockRecorder) GetBlockLatest() *gomock.Call {
+// GetFinalizedHead indicates an expected call of GetFinalizedHead.
+func (mr *MockChainConnectionMockRecorder) GetFinalizedHead() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockLatest", reflect.TypeOf((*MockChainConnection)(nil).GetBlockLatest))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalizedHead", reflect.TypeOf((*MockChainConnection)(nil).GetFinalizedHead))
 }
 
 // GetHeaderLatest mocks base method.
