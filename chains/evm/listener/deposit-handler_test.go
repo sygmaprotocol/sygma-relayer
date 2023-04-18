@@ -85,6 +85,33 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	s.Equal(message, expected)
 }
 
+func (s *PermissionlessGenericHandlerTestSuite) Test_HandleEvent_IncorrectDataLen() {
+	metadata := make(map[string]interface{})
+	metadata["gasLimit"] = uint64(200000)
+	var calldata []byte
+	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 32)...)
+	depositLog := &events.Deposit{
+		DestinationDomainID: 0,
+		ResourceID:          [32]byte{0},
+		DepositNonce:        1,
+		SenderAddress:       common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b"),
+		Data:                calldata,
+		HandlerResponse:     []byte{},
+	}
+
+	sourceID := uint8(1)
+	_, err := listener.PermissionlessGenericDepositHandler(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+	)
+
+	s.NotNil(err)
+}
+
 var errIncorrectDataLen = errors.New("invalid calldata length: less than 84 bytes")
 
 type Erc20HandlerTestSuite struct {
