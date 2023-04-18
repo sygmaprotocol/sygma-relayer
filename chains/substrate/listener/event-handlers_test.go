@@ -285,7 +285,7 @@ func (s *RetryHandlerTestSuite) SetupTest() {
 func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message, 2)
 	err := retryHandler.HandleEvents([]*parser.Event{}, msgChan)
 
@@ -300,10 +300,10 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 		},
 	}}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
-		"deposit_on_block_height": types.NewU128(*big.NewInt(110)),
+		"deposit_on_block_height": types.NewU128(*big.NewInt(101)),
 	}
 	evts := []*parser.Event{
 		{
@@ -327,7 +327,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
 		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
@@ -354,7 +354,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
 		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
@@ -381,7 +381,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message)
 	rtry := map[string]any{
 		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
@@ -456,7 +456,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message, 2)
 	rtry := map[string]any{
 		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
@@ -537,7 +537,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, big.NewInt(5))
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message, 1)
 	rtry := map[string]any{
 		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),

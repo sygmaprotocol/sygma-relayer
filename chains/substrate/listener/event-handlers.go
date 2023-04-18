@@ -96,20 +96,18 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 }
 
 type RetryEventHandler struct {
-	conn               ChainConnection
-	domainID           uint8
-	blockConfirmations *big.Int
-	depositHandler     DepositHandler
-	log                zerolog.Logger
+	conn           ChainConnection
+	domainID       uint8
+	depositHandler DepositHandler
+	log            zerolog.Logger
 }
 
-func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8, blockConfirmations *big.Int) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8) *RetryEventHandler {
 	return &RetryEventHandler{
-		depositHandler:     depositHandler,
-		domainID:           domainID,
-		blockConfirmations: blockConfirmations,
-		conn:               conn,
-		log:                logC.Logger(),
+		depositHandler: depositHandler,
+		domainID:       domainID,
+		conn:           conn,
+		log:            logC.Logger(),
 	}
 }
 
@@ -122,7 +120,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 	if err != nil {
 		return err
 	}
-	latestBlockNumber := big.NewInt(int64(finalized.Block.Header.Number))
+	finalizedBlockNumber := big.NewInt(int64(finalized.Block.Header.Number))
 
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, evt := range evts {
@@ -139,7 +137,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 					return err
 				}
 				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
-				if new(big.Int).Sub(latestBlockNumber, er.DepositOnBlockHeight.Int).Cmp(big.NewInt(rh.blockConfirmations.Int64())) == -1 {
+				if big.NewInt(finalizedBlockNumber.Int64()).Cmp(er.DepositOnBlockHeight.Int) == -1 {
 					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
 				}

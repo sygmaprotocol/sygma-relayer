@@ -220,7 +220,7 @@ func Run() error {
 				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, config.BlockConfirmations))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
 				mh := substrateExecutor.NewSubstrateMessageHandler()

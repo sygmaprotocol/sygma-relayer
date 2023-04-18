@@ -75,7 +75,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 				endBlock.Add(startBlock, l.blockInterval)
 
 				// Sleep if finalized is less then current block
-				if new(big.Int).SetInt64(int64(head.Block.Header.Number)).Cmp(endBlock) == -1 {
+				if big.NewInt(int64(head.Block.Header.Number)).Cmp(endBlock) == -1 {
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
