@@ -109,6 +109,11 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	if err == nil {
 		return nil
 	}
+
+	if !tssProcess.Retryable() {
+		return err
+	}
+
 	return c.handleError(ctx, err, tssProcess, resultChn)
 }
 
