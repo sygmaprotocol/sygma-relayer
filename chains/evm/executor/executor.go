@@ -129,7 +129,7 @@ func (e *Executor) watchExecution(ctx context.Context, proposals []*chains.Propo
 				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
-					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
+					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
 				}
 

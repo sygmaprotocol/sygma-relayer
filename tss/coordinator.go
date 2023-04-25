@@ -210,7 +210,7 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
-	go c.communication.Broadcast(
+	_ = c.communication.Broadcast(
 		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID,
 	)
 }
@@ -292,7 +292,7 @@ func (c *Coordinator) waitForStart(
 				coordinatorTimeoutTicker.Reset(timeout)
 
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
-				go c.communication.Broadcast(
+				_ = c.communication.Broadcast(
 					peer.IDSlice{wMsg.From}, []byte{}, comm.TssReadyMsg, tssProcess.SessionID(),
 				)
 			}
