@@ -67,7 +67,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	sig := <-resultChn
 	s.NotNil(sig)
 
-	time.Sleep(time.Millisecond * 50)
+	time.Sleep(time.Millisecond * 100)
 	cancel()
 	err := pool.Wait()
 	s.Nil(err)

@@ -85,15 +85,14 @@ func (s *BaseTssTestSuite) Test_PopulatePartyStore() {
 
 func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidWireBytes() {
 	outChn := make(chan tss.Message)
-	errChn := make(chan error)
-	baseTss := common.BaseTss{
-		ErrChn: errChn,
-	}
+	baseTss := common.BaseTss{}
 	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{}, errors.New("error"))
 
 	p := pool.New().WithContext(context.Background()).WithCancelOnError()
-	baseTss.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	p.Go(func(ctx context.Context) error {
+		return baseTss.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
+	})
 	outChn <- s.mockMessage
 	err := p.Wait()
 
@@ -102,10 +101,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidWireBytes() {
 
 func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidBroadcastPeers() {
 	outChn := make(chan tss.Message)
-	errChn := make(chan error)
-	baseTss := common.BaseTss{
-		ErrChn: errChn,
-	}
+	baseTss := common.BaseTss{}
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
 		IsBroadcast: true,
 		From:        common.CreatePartyID("invalid"),
@@ -116,7 +112,9 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidBroadcastPeers() 
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	baseTss.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	p.Go(func(ctx context.Context) error {
+		return baseTss.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
+	})
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		cancel()
@@ -129,13 +127,11 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidBroadcastPeers() 
 
 func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 	outChn := make(chan tss.Message)
-	errChn := make(chan error, 1)
 	peerID, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	baseTss := common.BaseTss{
 		Peers:         []peer.ID{peerID},
 		SID:           "keygen",
 		Communication: s.mockCommunication,
-		ErrChn:        errChn,
 	}
 	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
@@ -143,11 +139,13 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
 	}, nil)
 	s.mockMessage.EXPECT().IsBroadcast().Return(true)
-	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), comm.TssKeyGenMsg, "keygen", gomock.Any())
+	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), comm.TssKeyGenMsg, "keygen").Return(nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	baseTss.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	p.Go(func(ctx context.Context) error {
+		return baseTss.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
+	})
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		cancel()
@@ -160,11 +158,9 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 
 func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 	outChn := make(chan tss.Message, 1)
-	errChn := make(chan error, 1)
 	peerID, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	baseTss := common.BaseTss{
-		Peers:  []peer.ID{peerID},
-		ErrChn: errChn,
+		Peers: []peer.ID{peerID},
 	}
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
 		IsBroadcast: true,
@@ -173,7 +169,9 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	baseTss.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
+	p.Go(func(ctx context.Context) error {
+		return baseTss.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
+	})
 	cancel()
 
 	err := p.Wait()
@@ -182,13 +180,11 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ContextCanceled() {
 
 func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 	msgChan := make(chan *comm.WrappedMessage)
-	errChn := make(chan error, 1)
 	partyStore := make(map[string]*tss.PartyID)
 	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
 	party := common.CreatePartyID(peerID)
 	partyStore[peerID] = party
 	baseTss := common.BaseTss{
-		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 		SID:        "sessionID",
@@ -202,24 +198,21 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_InvalidMessage() {
 	s.mockParty.EXPECT().UpdateFromBytes([]byte{1}, baseTss.PartyStore[peerID], true, new(big.Int).SetBytes([]byte(baseTss.SID))).Return(false, tss.NewError(fmt.Errorf("error"), "", 1, &tss.PartyID{}))
 
 	p := pool.New().WithContext(context.Background()).WithCancelOnError()
-	baseTss.ProcessInboundMessages(p, msgChan)
+	p.Go(func(ctx context.Context) error { return baseTss.ProcessInboundMessages(ctx, msgChan) })
 
 	msgChan <- wrappedMsg
 
 	err := p.Wait()
-	fmt.Println(err)
 	s.NotNil(err)
 }
 
 func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 	msgChan := make(chan *comm.WrappedMessage)
-	errChn := make(chan error, 1)
 	partyStore := make(map[string]*tss.PartyID)
 	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
 	party := common.CreatePartyID(peerID)
 	partyStore[peerID] = party
 	baseTss := common.BaseTss{
-		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 		SID:        "sessionID",
@@ -234,7 +227,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	baseTss.ProcessInboundMessages(p, msgChan)
+	p.Go(func(ctx context.Context) error { return baseTss.ProcessInboundMessages(ctx, msgChan) })
 
 	go func() {
 		time.Sleep(50 * time.Millisecond)
@@ -248,13 +241,11 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ValidMessage() {
 
 func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 	msgChan := make(chan *comm.WrappedMessage, 1)
-	errChn := make(chan error, 1)
 	partyStore := make(map[string]*tss.PartyID)
 	peerID := "QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"
 	party := common.CreatePartyID(peerID)
 	partyStore[peerID] = party
 	baseTss := common.BaseTss{
-		ErrChn:     errChn,
 		PartyStore: partyStore,
 		Party:      s.mockParty,
 		SID:        "sessionID",
@@ -263,7 +254,7 @@ func (s *BaseTssTestSuite) Test_ProcessInboundMessages_ContextCanceled() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	baseTss.ProcessInboundMessages(p, msgChan)
+	p.Go(func(ctx context.Context) error { return baseTss.ProcessInboundMessages(ctx, msgChan) })
 
 	cancel()
 

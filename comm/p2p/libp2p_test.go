@@ -172,11 +172,11 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessag
 	communications[1].SubscribeTo("1", comm.CoordinatorPingMsg, msgChn)
 	communications[1].SubscribeTo("2", comm.TssKeySignMsg, msgChn)
 
-	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1", nil)
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1")
 	pingMsg := <-msgChn
 
 	msgBytes, _ := common.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
-	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2", nil)
+	communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2")
 	largeMsg := <-msgChn
 
 	s.Equal(pingMsg, &comm.WrappedMessage{

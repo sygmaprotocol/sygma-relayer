@@ -21,7 +21,7 @@ type Communication interface {
 	CloseSession(sessionID string)
 	// Broadcast sends message to provided peers
 	// If error has occurred on sending any message, broadcast will be aborted and error will be sent to errChan
-	Broadcast(peers peer.IDSlice, msg []byte, msgType MessageType, sessionID string, errChan chan error)
+	Broadcast(peers peer.IDSlice, msg []byte, msgType MessageType, sessionID string) error
 	// Subscribe subscribes provided channel to a specific message type for a provided session
 	// Returns SubscriptionID - unique identifier of created subscription that is used to unsubscribe from subscription
 	Subscribe(sessionID string, msgType MessageType, channel chan *WrappedMessage) SubscriptionID

@@ -64,10 +64,8 @@ func (k *Keygen) Start(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
-	errChn chan error,
 	params []byte,
-) {
-	k.ErrChn = errChn
+) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
 
 	k.storer.LockKeyshare()
@@ -77,8 +75,7 @@ func (k *Keygen) Start(
 	pCtx := tss.NewPeerContext(parties)
 	tssParams, err := tss.NewParameters(tss.S256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
 	if err != nil {
-		k.ErrChn <- err
-		return
+		return err
 	}
 
 	outChn := make(chan tss.Message)
@@ -88,8 +85,7 @@ func (k *Keygen) Start(
 
 	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
 	if err != nil {
-		k.ErrChn <- err
-		return
+		return err
 	}
 	k.Party = party
 
@@ -97,20 +93,16 @@ func (k *Keygen) Start(
 
 	defer k.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	k.ProcessOutboundMessages(p, outChn, comm.TssKeyGenMsg)
-	k.ProcessInboundMessages(p, msgChn)
-	k.processEndMessage(p, endChn)
+	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
+	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx, endChn) })
 
 	tssError := k.Party.Start()
 	if tssError != nil {
-		k.ErrChn <- err
+		return tssError
 	}
 
-	err = p.Wait()
-	select {
-	case k.ErrChn <- err:
-	default:
-	}
+	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -141,30 +133,28 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(p *pool.ContextPool, endChn chan keygen.LocalPartySaveData) {
-	p.Go(func(ctx context.Context) error {
-		defer k.Cancel()
-		for {
-			select {
-			case key := <-endChn:
-				{
-					k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
+func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) error {
+	defer k.Cancel()
+	for {
+		select {
+		case key := <-endChn:
+			{
+				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
 
-					keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
-					err := k.storer.StoreKeyshare(keyshare)
-					if err != nil {
-						return err
-					}
+				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
+				err := k.storer.StoreKeyshare(keyshare)
+				if err != nil {
+					return err
+				}
 
-					return nil
-				}
-			case <-ctx.Done():
-				{
-					return nil
-				}
+				return nil
+			}
+		case <-ctx.Done():
+			{
+				return nil
 			}
 		}
-	})
+	}
 }
 
 func (k *Keygen) Retryable() bool {

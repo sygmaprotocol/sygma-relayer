@@ -79,15 +79,17 @@ func (mr *MockTssProcessMockRecorder) SessionID() *gomock.Call {
 }
 
 // Start mocks base method.
-func (m *MockTssProcess) Start(ctx context.Context, coordinator bool, resultChn chan interface{}, errChn chan error, params []byte) {
+func (m *MockTssProcess) Start(ctx context.Context, coordinator bool, resultChn chan interface{}, params []byte) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start", ctx, coordinator, resultChn, errChn, params)
+	ret := m.ctrl.Call(m, "Start", ctx, coordinator, resultChn, params)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockTssProcessMockRecorder) Start(ctx, coordinator, resultChn, errChn, params interface{}) *gomock.Call {
+func (mr *MockTssProcessMockRecorder) Start(ctx, coordinator, resultChn, params interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockTssProcess)(nil).Start), ctx, coordinator, resultChn, errChn, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockTssProcess)(nil).Start), ctx, coordinator, resultChn, params)
 }
 
 // StartParams mocks base method.

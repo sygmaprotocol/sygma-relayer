@@ -36,15 +36,17 @@ func (m *MockCommunication) EXPECT() *MockCommunicationMockRecorder {
 }
 
 // Broadcast mocks base method.
-func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType comm.MessageType, sessionID string, errChan chan error) {
+func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType comm.MessageType, sessionID string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID, errChan)
+	ret := m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Broadcast indicates an expected call of Broadcast.
-func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID, errChan interface{}) *gomock.Call {
+func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID, errChan)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID)
 }
 
 // CloseSession mocks base method.

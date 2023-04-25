@@ -74,17 +74,13 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
-	errChan := make(chan error)
-
-	s.testCommunications[2].Broadcast(
+	err := s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
 		"1",
-		errChan,
 	)
-
-	s.Len(errChan, 0)
+	s.Nil(err)
 }
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_ErrorOnSendingMessageToExternalHost() {
@@ -114,22 +110,13 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_E
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
-	success := make(chan error)
-	errChan := make(chan error)
-	go func() {
-		e := <-errChan
-		success <- e
-	}()
-	s.testCommunications[2].Broadcast(
+	err := s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), externalHost.ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
 		"1",
-		errChan,
 	)
-
-	e := <-success
-	s.NotNil(e)
+	s.NotNil(err)
 }
 
 func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_StopReceivingMessagesAfterUnsubscribe() {
@@ -155,31 +142,25 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 		s.Equal(s.testHosts[2].ID(), msg.From)
 	}()
 
-	errChan := make(chan error)
-
-	s.testCommunications[2].Broadcast(
+	err := s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
 		"1",
-		errChan,
 	)
-
-	s.Len(errChan, 0)
+	s.Nil(err)
 
 	/** After unsubscribe only one subscriber got a message **/
 
 	s.testCommunications[0].UnSubscribe(firstSubID)
 
-	s.testCommunications[2].Broadcast(
+	err = s.testCommunications[2].Broadcast(
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
 		"1",
-		errChan,
 	)
-
-	s.Len(errChan, 0)
+	s.Nil(err)
 
 	time.Sleep(1 * time.Second)
 

@@ -77,23 +77,19 @@ func (s *Signing) Start(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
-	errChn chan error,
 	params []byte,
-) {
+) error {
 	s.coordinator = coordinator
-	s.ErrChn = errChn
 	s.resultChn = resultChn
 	ctx, s.Cancel = context.WithCancel(ctx)
 
 	peerSubset, err := s.unmarshallStartParams(params)
 	if err != nil {
-		s.ErrChn <- err
-		return
+		return err
 	}
 
 	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
-		s.ErrChn <- &errors.SubsetError{Peer: s.Host.ID()}
-		return
+		return &errors.SubsetError{Peer: s.Host.ID()}
 	}
 
 	s.Peers = peerSubset
@@ -102,8 +98,7 @@ func (s *Signing) Start(
 	pCtx := tss.NewPeerContext(parties)
 	tssParams, err := tss.NewParameters(tss.S256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
 	if err != nil {
-		s.ErrChn <- err
-		return
+		return err
 	}
 
 	sigChn := make(chan tssCommon.SignatureData)
@@ -118,8 +113,7 @@ func (s *Signing) Start(
 		sigChn,
 		new(big.Int).SetBytes([]byte(s.SID)))
 	if err != nil {
-		s.ErrChn <- err
-		return
+		return err
 	}
 
 	msgChn := make(chan *comm.WrappedMessage)
@@ -127,24 +121,19 @@ func (s *Signing) Start(
 
 	defer s.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	s.ProcessOutboundMessages(p, outChn, comm.TssKeySignMsg)
-	s.ProcessInboundMessages(p, msgChn)
-	s.processEndMessage(p, sigChn)
-	s.monitorSigning(p)
+	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
+	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx, sigChn) })
+	p.Go(func(ctx context.Context) error { return s.monitorSigning(ctx) })
 
 	s.Log.Info().Msgf("Started signing process")
 
 	tssError := s.Party.Start()
 	if tssError != nil {
-		s.ErrChn <- err
-		return
+		return tssError
 	}
 
-	err = p.Wait()
-	select {
-	case s.ErrChn <- err:
-	default:
-	}
+	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process.
@@ -199,29 +188,27 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 }
 
 // processEndMessage routes signature to result channel.
-func (s *Signing) processEndMessage(p *pool.ContextPool, endChn chan tssCommon.SignatureData) {
-	p.Go(func(ctx context.Context) error {
-		defer s.Cancel()
-		for {
-			select {
-			//nolint
-			case sig := <-endChn:
-				{
-					s.Log.Info().Msg("Successfully generated signature")
+func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.SignatureData) error {
+	defer s.Cancel()
+	for {
+		select {
+		//nolint
+		case sig := <-endChn:
+			{
+				s.Log.Info().Msg("Successfully generated signature")
 
-					if s.coordinator {
-						s.resultChn <- &sig
-					}
+				if s.coordinator {
+					s.resultChn <- &sig
+				}
 
-					return nil
-				}
-			case <-ctx.Done():
-				{
-					return nil
-				}
+				return nil
+			}
+		case <-ctx.Done():
+			{
+				return nil
 			}
 		}
-	})
+	}
 }
 
 // readyParticipants returns all ready peers that contain a valid key share
@@ -248,30 +235,28 @@ func (s *Signing) Retryable() bool {
 
 // monitorSigning checks if the process is stuck and waiting for peers and sends an error
 // if it is
-func (s *Signing) monitorSigning(p *pool.ContextPool) {
-	p.Go(func(ctx context.Context) error {
-		defer s.Cancel()
-		waitingFor := make([]*tss.PartyID, 0)
-		ticker := time.NewTicker(time.Minute * 3)
+func (s *Signing) monitorSigning(ctx context.Context) error {
+	defer s.Cancel()
+	waitingFor := make([]*tss.PartyID, 0)
+	ticker := time.NewTicker(time.Minute * 3)
 
-		for {
-			select {
-			case <-ticker.C:
-				{
-					if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
-						err := &comm.CommunicationError{
-							Err: fmt.Errorf("waiting for peers %s", waitingFor),
-						}
-						return err
+	for {
+		select {
+		case <-ticker.C:
+			{
+				if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
+					err := &comm.CommunicationError{
+						Err: fmt.Errorf("waiting for peers %s", waitingFor),
 					}
+					return err
+				}
 
-					waitingFor = s.Party.WaitingFor()
-				}
-			case <-ctx.Done():
-				{
-					return nil
-				}
+				waitingFor = s.Party.WaitingFor()
+			}
+		case <-ctx.Done():
+			{
+				return nil
 			}
 		}
-	})
+	}
 }

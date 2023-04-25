@@ -106,8 +106,8 @@ func (bc *bullyCoordinatorElector) listen(ctx context.Context) {
 			case comm.CoordinatorPingResponseMsg:
 				bc.pingChan <- msg
 			case comm.CoordinatorPingMsg:
-				bc.comm.Broadcast(
-					[]peer.ID{msg.From}, nil, comm.CoordinatorPingResponseMsg, bc.sessionID, nil,
+				_ = bc.comm.Broadcast(
+					[]peer.ID{msg.From}, nil, comm.CoordinatorPingResponseMsg, bc.sessionID,
 				)
 			default:
 				break
@@ -119,7 +119,7 @@ func (bc *bullyCoordinatorElector) listen(ctx context.Context) {
 func (bc *bullyCoordinatorElector) elect(errChan chan error) {
 	for _, p := range bc.sortedPeers {
 		if bc.isPeerIDHigher(p.ID, bc.hostID) {
-			bc.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, bc.sessionID, errChan)
+			_ = bc.comm.Broadcast(peer.IDSlice{p.ID}, nil, comm.CoordinatorElectionMsg, bc.sessionID)
 		}
 	}
 
@@ -128,7 +128,7 @@ func (bc *bullyCoordinatorElector) elect(errChan chan error) {
 		return
 	case <-time.After(bc.conf.ElectionWaitTime):
 		bc.setCoordinator(bc.hostID)
-		bc.comm.Broadcast(bc.sortedPeers.GetPeerIDs(), []byte{}, comm.CoordinatorSelectMsg, bc.sessionID, errChan)
+		_ = bc.comm.Broadcast(bc.sortedPeers.GetPeerIDs(), []byte{}, comm.CoordinatorSelectMsg, bc.sessionID)
 		return
 	}
 }
@@ -137,7 +137,7 @@ func (bc *bullyCoordinatorElector) startBullyCoordination(errChan chan error) {
 	bc.elect(errChan)
 	for msg := range bc.receiveChan {
 		if msg.MessageType == comm.CoordinatorElectionMsg && !bc.isPeerIDHigher(msg.From, bc.hostID) {
-			bc.comm.Broadcast([]peer.ID{msg.From}, []byte{}, comm.CoordinatorAliveMsg, bc.sessionID, errChan)
+			_ = bc.comm.Broadcast([]peer.ID{msg.From}, []byte{}, comm.CoordinatorAliveMsg, bc.sessionID)
 			bc.elect(errChan)
 		} else if msg.MessageType == comm.CoordinatorSelectMsg {
 			bc.setCoordinator(msg.From)
