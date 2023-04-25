@@ -5,7 +5,9 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"math/big"
+	"runtime/debug"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/binance-chain/tss-lib/tss"
@@ -43,7 +45,13 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) error {
+func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf(string(debug.Stack()))
+		}
+	}()
+
 	for {
 		select {
 		case wMsg := <-msgChan:
