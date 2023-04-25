@@ -57,10 +57,10 @@ func NewKeygen(
 	}
 }
 
-// Start initializes the keygen party and starts the keygen tss process.
+// Run initializes the keygen party and runs the keygen tss process.
 //
 // Should be run only after all the participating parties are ready.
-func (k *Keygen) Start(
+func (k *Keygen) Run(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},

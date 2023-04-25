@@ -74,9 +74,9 @@ func NewResharing(
 	}
 }
 
-// Start initializes the signing party and starts the signing tss procesr.
+// Run initializes the signing party and runs the resharing tss process.
 // Params contains peer subset that leaders sends with start message.
-func (r *Resharing) Start(
+func (r *Resharing) Run(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},

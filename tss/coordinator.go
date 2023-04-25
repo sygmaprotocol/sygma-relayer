@@ -27,7 +27,7 @@ var (
 )
 
 type TssProcess interface {
-	Start(ctx context.Context, coordinator bool, resultChn chan interface{}, params []byte) error
+	Run(ctx context.Context, coordinator bool, resultChn chan interface{}, params []byte) error
 	Stop()
 	Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error)
 	Retryable() bool
@@ -252,7 +252,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 				}
 
 				_ = c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
-				return tssProcess.Start(ctx, true, resultChn, startParams)
+				return tssProcess.Run(ctx, true, resultChn, startParams)
 			}
 		case <-ticker.C:
 			{
@@ -314,7 +314,7 @@ func (c *Coordinator) waitForStart(
 					return err
 				}
 
-				return tssProcess.Start(ctx, false, resultChn, msg.Params)
+				return tssProcess.Run(ctx, false, resultChn, msg.Params)
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{

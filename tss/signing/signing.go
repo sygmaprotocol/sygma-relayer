@@ -71,9 +71,9 @@ func NewSigning(
 	}, nil
 }
 
-// Start initializes the signing party and starts the signing tss process.
+// Run initializes the signing party and runs the signing tss process.
 // Params contains peer subset that leaders sends with start message.
-func (s *Signing) Start(
+func (s *Signing) Run(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
