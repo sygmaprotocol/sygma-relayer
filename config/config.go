@@ -29,7 +29,6 @@ type RawConfig struct {
 // GetConfigFromENV reads config from ENV variables, validates it and parses
 // it into config suitable for application
 //
-//
 // Properties of RelayerConfig are expected to be defined as separate ENV variables
 // where ENV variable name reflects properties position in structure. Each ENV variable needs to be prefixed with SYG.
 //
@@ -98,23 +97,22 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 		return config, err
 	}
 
+	chainConfigs := make([]map[string]interface{}, 0)
 	for i, chain := range rawConfig.ChainConfigs {
-		if i >= len(config.ChainConfigs) {
-			config.ChainConfigs = append(config.ChainConfigs, chain)
-		} else {
+		if i < len(config.ChainConfigs) {
 			err := mergo.Merge(&chain, config.ChainConfigs[i])
 			if err != nil {
 				return config, err
 			}
-
-			config.ChainConfigs[i] = chain
 		}
 
 		if chain["type"] == "" || chain["type"] == nil {
 			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
+		chainConfigs = append(chainConfigs, chain)
 	}
 
+	config.ChainConfigs = chainConfigs
 	config.RelayerConfig = relayerConfig
 	return config, nil
 }
