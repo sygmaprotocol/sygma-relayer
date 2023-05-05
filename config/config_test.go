@@ -72,6 +72,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
+	_ = os.Setenv("ENV", "TEST")
+	_ = os.Setenv("RELAYER_ID", "123")
 
 	// load from ENV
 	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
@@ -90,6 +92,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				LogLevel: 1,
 				LogFile:  "out.log",
 			},
+			Env:        "TEST",
+			RelayerID:  "123",
 			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{

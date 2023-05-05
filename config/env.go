@@ -34,6 +34,9 @@ func loadFromEnv() (RawConfig, error) {
 		return RawConfig{}, err
 	}
 
+	rawConfig.RelayerConfig.ENV = os.Getenv("ENV")
+	rawConfig.RelayerConfig.RelayerID = os.Getenv("RELAYER_ID")
+
 	rawDomainConfig := os.Getenv(fmt.Sprintf("%s_CHAINS", EnvPrefix))
 	if rawDomainConfig == "" {
 		return rawConfig, nil
