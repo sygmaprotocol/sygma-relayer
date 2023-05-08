@@ -17,6 +17,8 @@ import (
 type RelayerConfig struct {
 	relayer.RelayerConfig
 	HealthPort  uint16
+	Env         string
+	Id          string
 	MpcConfig   MpcRelayerConfig
 	BullyConfig BullyConfig
 }
@@ -46,6 +48,8 @@ type TopologyConfiguration struct {
 type RawRelayerConfig struct {
 	relayer.RawRelayerConfig `mapstructure:",squash"`
 	HealthPort               string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
+	Env                      string              `mapstructure:"Env" json:"env"`
+	Id                       string              `mapstructure:"Id" json:"id"`
 	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
@@ -113,7 +117,8 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 		return RelayerConfig{}, err
 	}
 	config.BullyConfig = bullyConfig
-
+	config.Env = rawConfig.Env
+	config.Id = rawConfig.Id
 	return config, nil
 }
 

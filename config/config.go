@@ -26,14 +26,14 @@ type RawConfig struct {
 	ChainConfigs  []map[string]interface{} `mapstructure:"domains" json:"domains"`
 }
 
-// GetConfigFromENV reads config from ENV variables, validates it and parses
+// GetConfigFromENV reads config from Env variables, validates it and parses
 // it into config suitable for application
 //
-// Properties of RelayerConfig are expected to be defined as separate ENV variables
-// where ENV variable name reflects properties position in structure. Each ENV variable needs to be prefixed with SYG.
+// Properties of RelayerConfig are expected to be defined as separate Env variables
+// where Env variable name reflects properties position in structure. Each Env variable needs to be prefixed with SYG.
 //
 // For example, if you want to set Config.RelayerConfig.MpcConfig.Port this would
-// translate to ENV variable named SYG_RELAYER_MPCCONFIG_PORT.
+// translate to Env variable named SYG_RELAYER_MPCCONFIG_PORT.
 func GetConfigFromENV(config *Config) (*Config, error) {
 	rawConfig, err := loadFromEnv()
 	if err != nil {
