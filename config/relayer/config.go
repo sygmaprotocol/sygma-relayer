@@ -117,7 +117,8 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 		return RelayerConfig{}, err
 	}
 	config.BullyConfig = bullyConfig
-
+	config.Env = rawConfig.Env
+	config.Id = rawConfig.Id
 	return config, nil
 }
 

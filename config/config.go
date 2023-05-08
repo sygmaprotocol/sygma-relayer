@@ -114,7 +114,5 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 
 	config.ChainConfigs = chainConfigs
 	config.RelayerConfig = relayerConfig
-	config.RelayerConfig.Env = rawConfig.RelayerConfig.Env
-	config.RelayerConfig.Id = rawConfig.RelayerConfig.Id
 	return config, nil
 }
