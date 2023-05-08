@@ -241,7 +241,7 @@ func Run() error {
 	if err != nil {
 		panic(err)
 	}
-	metrics := metrics.NewTelemetry(meter, configuration.RelayerConfig.Env, configuration.RelayerConfig.RelayerID)
+	metrics := metrics.NewTelemetry(meter, configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, metrics)
 

@@ -48,6 +48,8 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_PINGINTERVAL", "2s")
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_ELECTIONWAITTIME", "2s")
 	_ = os.Setenv("SYG_RELAYER_BULLYCONFIG_BULLYWAITTIME", "2s")
+	_ = os.Setenv("SYG_RELAYER_ENV", "TEST")
+	_ = os.Setenv("SYG_RELAYER_ID", "123")
 
 	env, err := loadFromEnv()
 
@@ -58,6 +60,8 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 			LogLevel:                  "info",
 			LogFile:                   "test.log",
 		},
+		Id:         "123",
+		Env:        "TEST",
 		HealthPort: "4000",
 		MpcConfig: relayer.RawMpcRelayerConfig{
 			KeysharePath: "/cfg/keyshares/0.keyshare",

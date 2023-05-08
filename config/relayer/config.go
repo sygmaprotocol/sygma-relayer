@@ -18,7 +18,7 @@ type RelayerConfig struct {
 	relayer.RelayerConfig
 	HealthPort  uint16
 	Env         string
-	RelayerID   string
+	Id          string
 	MpcConfig   MpcRelayerConfig
 	BullyConfig BullyConfig
 }
@@ -47,9 +47,9 @@ type TopologyConfiguration struct {
 
 type RawRelayerConfig struct {
 	relayer.RawRelayerConfig `mapstructure:",squash"`
-	HealthPort               string `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
-	ENV                      string
-	RelayerID                string
+	HealthPort               string              `mapstructure:"HealthPort" json:"healthPort" default:"9001"`
+	Env                      string              `mapstructure:"Env" json:"env"`
+	Id                       string              `mapstructure:"Id" json:"id"`
 	MpcConfig                RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig              RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
 }
