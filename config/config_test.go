@@ -67,12 +67,13 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_PORT", "9000")
-
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
+	_ = os.Setenv("SYG_RELAYER_ENV", "TEST")
+	_ = os.Setenv("SYG_RELAYER_ID", "123")
 
-	// load from ENV
+	// load from Env
 	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
 		"blockConfirmations": 5,
 		"gasLimit":           500,
@@ -89,6 +90,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				LogLevel: 1,
 				LogFile:  "out.log",
 			},
+			Env:        "TEST",
+			Id:         "123",
 			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
@@ -180,7 +183,7 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
 
-	// load from ENV
+	// load from Env
 	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
 		"blockConfirmations": 5,
 		"gasLimit":           500,

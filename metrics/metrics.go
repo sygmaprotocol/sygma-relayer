@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"go.opentelemetry.io/otel/metric"
@@ -19,20 +20,20 @@ type Metrics struct {
 }
 
 // NewMetrics creates an instance of metrics
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, env, relayerID string) *Metrics {
 	totalRelayerCount := new(int64)
 	availableRelayerCount := new(int64)
 	return &Metrics{
 		ChainbridgeMetrics: *opentelemetry.NewChainbridgeMetrics(meter),
 		TotalRelayers: metric.Must(meter).NewInt64GaugeObserver(
-			"sygma.TotalRelayers",
+			fmt.Sprintf("sygma.{%s}.Relayer-{%s}.TotalRelayers", env, relayerID),
 			func(ctx context.Context, result metric.Int64ObserverResult) {
 				result.Observe(*totalRelayerCount)
 			},
 			metric.WithDescription("Total number of relayers currently in the subset"),
 		),
 		AvailableRelayers: metric.Must(meter).NewInt64GaugeObserver(
-			"sygma.AvailableRelayers",
+			fmt.Sprintf("sygma.{%s}.Relayer-{%s}.AvailableRelayers", env, relayerID),
 			func(ctx context.Context, result metric.Int64ObserverResult) {
 				result.Observe(*availableRelayerCount)
 			},

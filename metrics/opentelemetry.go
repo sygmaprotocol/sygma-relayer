@@ -17,9 +17,9 @@ type Telemetry struct {
 }
 
 // NewTelemetry initializes OpenTelementry metrics
-func NewTelemetry(meter metric.Meter) *Telemetry {
+func NewTelemetry(meter metric.Meter, env, relayerID string) *Telemetry {
 	coreTelemetry := opentelemetry.NewOpenTelemetry(meter)
-	metrics := NewMetrics(meter)
+	metrics := NewMetrics(meter, env, relayerID)
 
 	return &Telemetry{
 		OpenTelemetry: *coreTelemetry,
