@@ -18,6 +18,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/exp/slices"
 )
 
@@ -73,22 +74,19 @@ func NewResharing(
 	}
 }
 
-// Start initializes the signing party and starts the signing tss procesr.
+// Run initializes the signing party and runs the resharing tss process.
 // Params contains peer subset that leaders sends with start message.
-func (r *Resharing) Start(
+func (r *Resharing) Run(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
-	errChn chan error,
 	params []byte,
-) {
-	r.ErrChn = errChn
+) error {
 	ctx, r.Cancel = context.WithCancel(ctx)
 
 	startParams, err := r.unmarshallStartParams(params)
 	if err != nil {
-		r.ErrChn <- err
-		return
+		return err
 	}
 
 	oldParties := common.PartiesFromPeers(startParams.OldSubset)
@@ -107,30 +105,33 @@ func (r *Resharing) Start(
 		r.newThreshold,
 	)
 	if err != nil {
-		r.ErrChn <- err
-		return
+		return err
 	}
 
 	endChn := make(chan keygen.LocalPartySaveData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), comm.TssReshareMsg, msgChn)
-	go r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg)
-	go r.ProcessInboundMessages(ctx, msgChn)
-	go r.processEndMessage(ctx, endChn)
 
-	r.Log.Info().Msgf("Started resharing process")
 	r.Party, err = resharing.NewLocalParty(tssParams, r.key.Key, outChn, endChn, new(big.Int).SetBytes([]byte(r.SID)))
 	if err != nil {
-		r.ErrChn <- err
-		return
+		return err
 	}
-	go func() {
-		err := r.Party.Start()
-		if err != nil {
-			r.ErrChn <- err
-		}
-	}()
+
+	defer r.Stop()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error { return r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg) })
+	p.Go(func(ctx context.Context) error { return r.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return r.processEndMessage(ctx, endChn) })
+
+	r.Log.Info().Msgf("Started resharing process")
+
+	tssError := r.Party.Start()
+	if tssError != nil {
+		return tssError
+	}
+
+	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -196,7 +197,8 @@ func (r *Resharing) validateStartParams(params startParams) error {
 }
 
 // processEndMessage routes signature to result channel.
-func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
+func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) error {
+	defer r.Cancel()
 	for {
 		select {
 		case key := <-endChn:
@@ -205,12 +207,11 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 
 				keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
 				err := r.storer.StoreKeyshare(keyshare)
-				r.ErrChn <- err
-				return
+				return err
 			}
 		case <-ctx.Done():
 			{
-				return
+				return nil
 			}
 		}
 	}

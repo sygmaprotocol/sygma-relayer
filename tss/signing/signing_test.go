@@ -15,6 +15,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,19 +53,24 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	statusChn := make(chan error, s.PartyNumber)
 	resultChn := make(chan interface{})
+
 	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(ctx)
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+		coordinator := coordinator
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, processes[i], resultChn)
+		})
 	}
 
-	err := <-statusChn
-	s.Nil(err)
 	sig := <-resultChn
 	s.NotNil(sig)
-	time.Sleep(time.Millisecond * 50)
+
+	time.Sleep(time.Millisecond * 100)
 	cancel()
+	err := pool.Wait()
+	s.Nil(err)
 }
 
 func (s *SigningTestSuite) Test_SigningTimeout() {
@@ -95,21 +101,15 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	statusChn := make(chan error, s.PartyNumber)
 	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+		coordinator := coordinator
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
 	}
 
-	err := <-statusChn
+	err := pool.Wait()
 	s.NotNil(err)
-	err = <-statusChn
-	s.NotNil(err)
-	err = <-statusChn
-	s.NotNil(err)
-	time.Sleep(time.Millisecond * 50)
-	cancel()
 }
 
 func (s *SigningTestSuite) Test_PendingProcessExists() {
@@ -130,18 +130,12 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 	tsstest.SetupCommunication(communicationMap)
 
 	s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
-	status := make(chan error, s.PartyNumber)
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], nil, nil)
-		time.Sleep(time.Millisecond * 50)
-		go coordinator.Execute(ctx, processes[i], nil, status)
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
 	}
 
-	for i := 0; i < s.PartyNumber; i++ {
-		err := <-status
-		s.Nil(err)
-	}
-	time.Sleep(time.Millisecond * 50)
-	cancel()
+	err := pool.Wait()
+	s.NotNil(err)
 }

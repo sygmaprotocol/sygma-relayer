@@ -12,6 +12,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -40,7 +41,7 @@ type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
 	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
-	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, errChn chan error)
+	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
 }
 
 type Executor struct {
@@ -115,15 +116,18 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 
 	sigChn := make(chan interface{})
-	statusChn := make(chan error)
-	ctx, cancel := context.WithCancel(context.Background())
-	go e.coordinator.Execute(ctx, signing, sigChn, statusChn)
+	ctx := context.Background()
+	pool := pool.New().WithContext(ctx).WithCancelOnError()
+	pool.Go(func(ctx context.Context) error { return e.coordinator.Execute(ctx, signing, sigChn) })
+	pool.Go(func(ctx context.Context) error { return e.watchExecution(ctx, proposals, sigChn, sessionID) })
+	return pool.Wait()
+}
 
+func (e *Executor) watchExecution(ctx context.Context, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
 	defer timeout.Stop()
-	defer cancel()
 	for {
 		select {
 		case sigResult := <-sigChn:
@@ -131,41 +135,28 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 				signatureData := sigResult.(*common.SignatureData)
 				hash, sub, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
-					go e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID, nil)
+					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
 				}
-				errChn := make(chan error)
-				go e.bridge.TrackExtrinsic(hash, sub, errChn)
-				err = <-errChn
-				return err
-			}
-		case err := <-statusChn:
-			{
-				return err
+
+				return e.bridge.TrackExtrinsic(hash, sub)
 			}
 		case <-ticker.C:
 			{
-				allExecuted := true
-				for _, prop := range proposals {
-					isExecuted, err := e.bridge.IsProposalExecuted(prop)
-					if err != nil {
-						return err
-					}
-					if !isExecuted {
-						allExecuted = false
-						continue
-					}
-
-					log.Info().Msgf("Successfully executed proposal %v", prop)
+				if !e.areProposalsExecuted(proposals, sessionID) {
+					continue
 				}
 
-				if allExecuted {
-					return nil
-				}
+				log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
+				return nil
 			}
 		case <-timeout.C:
 			{
 				return fmt.Errorf("execution timed out in %s", signingTimeout)
+			}
+		case <-ctx.Done():
+			{
+				return nil
 			}
 		}
 	}
@@ -184,6 +175,17 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 	}
 
 	return hash, sub, err
+}
+
+func (e *Executor) areProposalsExecuted(proposals []*chains.Proposal, sessionID string) bool {
+	for _, prop := range proposals {
+		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+		if err != nil || !isExecuted {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (e *Executor) sessionID(hash []byte) string {

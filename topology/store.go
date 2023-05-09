@@ -5,7 +5,6 @@ package topology
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"sync"
 )
@@ -47,7 +46,7 @@ func (ts *TopologyStore) Topology() (*NetworkTopology, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	t := &NetworkTopology{}
-	tb, err := ioutil.ReadFile(ts.path)
+	tb, err := os.ReadFile(ts.path)
 	if err != nil {
 		return nil, err
 	}

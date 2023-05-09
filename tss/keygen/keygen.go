@@ -17,6 +17,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 )
 
 type SaveDataStorer interface {
@@ -56,54 +57,52 @@ func NewKeygen(
 	}
 }
 
-// Start initializes the keygen party and starts the keygen tss process.
+// Run initializes the keygen party and runs the keygen tss process.
 //
 // Should be run only after all the participating parties are ready.
-func (k *Keygen) Start(
+func (k *Keygen) Run(
 	ctx context.Context,
 	coordinator bool,
 	resultChn chan interface{},
-	errChn chan error,
 	params []byte,
-) {
-	k.ErrChn = errChn
+) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
-	k.storer.LockKeyshare()
 
+	k.storer.LockKeyshare()
 	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
 	k.PopulatePartyStore(parties)
 
 	pCtx := tss.NewPeerContext(parties)
 	tssParams, err := tss.NewParameters(tss.S256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
 	if err != nil {
-		k.ErrChn <- err
-		return
+		return err
 	}
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
-
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
-
-	go k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg)
-	go k.ProcessInboundMessages(ctx, msgChn)
-	go k.processEndMessage(ctx, endChn)
 
 	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
 	if err != nil {
-		k.ErrChn <- err
-		return
+		return err
 	}
 	k.Party = party
 
 	k.Log.Info().Msgf("Started keygen process")
-	go func() {
-		err := k.Party.Start()
-		if err != nil {
-			k.ErrChn <- err
-		}
-	}()
+
+	defer k.Stop()
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
+	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx, endChn) })
+
+	tssError := k.Party.Start()
+	if tssError != nil {
+		return tssError
+	}
+
+	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -134,7 +133,8 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) {
+func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) error {
+	defer k.Cancel()
 	for {
 		select {
 		case key := <-endChn:
@@ -144,15 +144,14 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
 				if err != nil {
-					k.ErrChn <- err
+					return err
 				}
 
-				k.ErrChn <- nil
-				return
+				return nil
 			}
 		case <-ctx.Done():
 			{
-				return
+				return nil
 			}
 		}
 	}

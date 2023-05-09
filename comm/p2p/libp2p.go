@@ -17,6 +17,7 @@ import (
 	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 )
 
 const (
@@ -57,8 +58,7 @@ func (c Libp2pCommunication) Broadcast(
 	msg []byte,
 	msgType comm.MessageType,
 	sessionID string,
-	errChan chan error,
-) {
+) error {
 	hostID := c.h.ID()
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
@@ -69,23 +69,33 @@ func (c Libp2pCommunication) Broadcast(
 	marshaledMsg, err := json.Marshal(wMsg)
 	if err != nil {
 		c.logger.Error().Err(err).Str("SessionID", sessionID).Msg("unable to marshal message")
-		return
+		return err
 	}
 	c.logger.Debug().Str("MsgType", msgType.String()).Str("SessionID", sessionID).Msg(
 		"broadcasting message",
 	)
+
+	p := pool.New().WithErrors().WithFirstError()
 	for _, peerID := range peers {
 		if hostID == peerID {
 			continue // don't send message to itself
 		}
-		go func(peerID peer.ID) {
+
+		peerID := peerID
+		p.Go(func() error {
 			err := c.sendMessage(peerID, marshaledMsg, msgType, sessionID)
 			if err != nil {
-				SendError(errChan, err, peerID)
-				return
+				return &comm.CommunicationError{
+					Peer: peerID,
+					Err:  err,
+				}
 			}
-		}(peerID)
+
+			return nil
+		})
 	}
+
+	return p.Wait()
 }
 
 func (c Libp2pCommunication) Subscribe(

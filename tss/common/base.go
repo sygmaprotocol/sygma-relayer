@@ -5,8 +5,9 @@ package common
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/big"
+	"runtime/debug"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/binance-chain/tss-lib/tss"
@@ -32,7 +33,6 @@ type BaseTss struct {
 	Peers         []peer.ID
 	Log           zerolog.Logger
 
-	ErrChn chan error
 	Cancel context.CancelFunc
 }
 
@@ -45,53 +45,42 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) {
+func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf(string(debug.Stack()))
+		}
+	}()
+
 	for {
 		select {
 		case wMsg := <-msgChan:
 			{
-				go func() {
-					defer func() {
-						if r := recover(); r != nil {
-							switch x := r.(type) {
-							case string:
-								b.ErrChn <- errors.New(x)
-							case error:
-								b.ErrChn <- x
-							default:
-								b.ErrChn <- errors.New("unknown panic")
-							}
-						}
-					}()
-					b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
+				b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
-					msg, err := UnmarshalTssMessage(wMsg.Payload)
-					if err != nil {
-						b.ErrChn <- err
-						return
-					}
+				msg, err := UnmarshalTssMessage(wMsg.Payload)
+				if err != nil {
+					return err
+				}
 
-					ok, err := b.Party.UpdateFromBytes(
-						msg.MsgBytes,
-						b.PartyStore[wMsg.From.Pretty()],
-						msg.IsBroadcast,
-						new(big.Int).SetBytes([]byte(b.SID)))
-					if !ok {
-						b.ErrChn <- err
-					}
-				}()
+				ok, err := b.Party.UpdateFromBytes(
+					msg.MsgBytes,
+					b.PartyStore[wMsg.From.Pretty()],
+					msg.IsBroadcast,
+					new(big.Int).SetBytes([]byte(b.SID)))
+				if !ok {
+					return err
+				}
 			}
 		case <-ctx.Done():
-			{
-				return
-			}
+			return nil
 		}
 	}
 }
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) {
+func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
 	for {
 		select {
 		case msg := <-outChn:
@@ -99,28 +88,28 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 				b.Log.Debug().Msg(msg.String())
 				wireBytes, routing, err := msg.WireBytes()
 				if err != nil {
-					b.ErrChn <- err
-					return
+					return err
 				}
 
 				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
 				if err != nil {
-					b.ErrChn <- err
-					return
+					return err
 				}
 
 				peers, err := b.BroadcastPeers(msg)
 				if err != nil {
-					b.ErrChn <- err
-					return
+					return err
 				}
 
 				b.Log.Debug().Msgf("sending message to %s", peers)
-				go b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID(), b.ErrChn)
+				err = b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID())
+				if err != nil {
+					return err
+				}
 			}
 		case <-ctx.Done():
 			{
-				return
+				return nil
 			}
 		}
 	}

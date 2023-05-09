@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/ChainSafe/sygma-relayer/topology"
@@ -47,7 +47,7 @@ func encryptTopology(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	byteValue, err := ioutil.ReadAll(topologyFile)
+	byteValue, err := io.ReadAll(topologyFile)
 	if err != nil {
 		return err
 	}

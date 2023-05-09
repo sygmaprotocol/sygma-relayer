@@ -248,9 +248,7 @@ func (eh *KeygenEventHandler) HandleEvent(
 
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
-	go eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1), make(chan error, 1))
-
-	return nil
+	return eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1))
 }
 
 func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
@@ -336,9 +334,7 @@ func (eh *RefreshEventHandler) HandleEvent(
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer,
 	)
-	go eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1), make(chan error, 1))
-
-	return nil
+	return eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1))
 }
 
 func (eh *RefreshEventHandler) sessionID(block *big.Int) string {

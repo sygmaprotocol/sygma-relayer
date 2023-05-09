@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
@@ -16,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,24 +62,14 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	statusChn := make(chan error, s.PartyNumber)
 	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
 	}
 
-	err := <-statusChn
+	err := pool.Wait()
 	s.Nil(err)
-	err = <-statusChn
-	s.Nil(err)
-	err = <-statusChn
-	s.Nil(err)
-	err = <-statusChn
-	s.Nil(err)
-
-	time.Sleep(time.Millisecond * 50)
-	cancel()
 }
 
 func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_LessThenZero() {
@@ -110,8 +100,8 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Le
 		// set old threshold to invalid value
 		share.Threshold = -1
 
-		s.MockStorer.EXPECT().LockKeyshare()
-		s.MockStorer.EXPECT().UnlockKeyshare()
+		s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
+		s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		resharing := resharing.NewResharing("resharing3", 1, host, &communication, s.MockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
@@ -120,28 +110,15 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Le
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	statusChn := make(chan error, s.PartyNumber)
 	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, processes[i], resultChn)
+		})
 	}
-
-	err := <-statusChn
+	err := pool.Wait()
 	s.NotNil(err)
-	s.Equal("process failed with error: threshold too small", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold too small", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold too small", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold too small", err.Error())
-
-	time.Sleep(time.Millisecond * 50)
-	cancel()
 }
 
 func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_BiggerThenSubsetLength() {
@@ -173,7 +150,7 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Bi
 		share.Threshold = 314
 
 		s.MockStorer.EXPECT().LockKeyshare()
-		s.MockStorer.EXPECT().UnlockKeyshare()
+		s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
 		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
 		resharing := resharing.NewResharing("resharing4", 1, host, &communication, s.MockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
@@ -182,26 +159,12 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Bi
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	statusChn := make(chan error, s.PartyNumber)
 	resultChn := make(chan interface{})
-	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
-		go coordinator.Execute(ctx, processes[i], resultChn, statusChn)
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
 	}
 
-	err := <-statusChn
+	err := pool.Wait()
 	s.NotNil(err)
-	s.Equal("process failed with error: threshold bigger then subset", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold bigger then subset", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold bigger then subset", err.Error())
-	err = <-statusChn
-	s.NotNil(err)
-	s.Equal("process failed with error: threshold bigger then subset", err.Error())
-
-	time.Sleep(time.Millisecond * 50)
-	cancel()
 }

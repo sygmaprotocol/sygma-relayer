@@ -6,7 +6,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/creasty/defaults"
@@ -73,7 +73,7 @@ func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
 		return &Config{}, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return &Config{}, err
 	}

@@ -6,7 +6,6 @@ package keyshare
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -76,7 +75,7 @@ func (ks *KeyshareStore) StoreKeyshare(keyshare Keyshare) error {
 func (ks *KeyshareStore) GetKeyshare() (Keyshare, error) {
 	k := Keyshare{}
 
-	kb, err := ioutil.ReadFile(ks.path)
+	kb, err := os.ReadFile(ks.path)
 	if err != nil {
 		return k, fmt.Errorf("error on reading keyshare file: %s", err)
 	}

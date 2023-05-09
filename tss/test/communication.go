@@ -5,6 +5,7 @@ package tsstest
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -19,6 +20,7 @@ type TestCommunication struct {
 	Host               host.Host
 	Subscriptions      map[comm.SubscriptionID]chan *comm.WrappedMessage
 	PeerCommunications map[string]Receiver
+	lock               sync.Mutex
 }
 
 func (tc *TestCommunication) Broadcast(
@@ -26,8 +28,7 @@ func (tc *TestCommunication) Broadcast(
 	msg []byte,
 	msgType comm.MessageType,
 	sessionID string,
-	errChan chan error,
-) {
+) error {
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
@@ -39,8 +40,10 @@ func (tc *TestCommunication) Broadcast(
 			continue
 		}
 
-		tc.PeerCommunications[peer.Pretty()].ReceiveMessage(&wMsg, msgType, sessionID)
+		go tc.PeerCommunications[peer.Pretty()].ReceiveMessage(&wMsg, msgType, sessionID)
 	}
+
+	return nil
 }
 
 func (ts *TestCommunication) Subscribe(
@@ -48,12 +51,18 @@ func (ts *TestCommunication) Subscribe(
 	topic comm.MessageType,
 	channel chan *comm.WrappedMessage,
 ) comm.SubscriptionID {
+	ts.lock.Lock()
+	defer ts.lock.Unlock()
+
 	subID := comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))
 	ts.Subscriptions[subID] = channel
 	return subID
 }
 
 func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
+	ts.lock.Lock()
+	defer ts.lock.Unlock()
+
 	delete(ts.Subscriptions, subscriptionID)
 }
 
