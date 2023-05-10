@@ -19,7 +19,6 @@ type RawSubstrateConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	ChainID                  int64  `mapstructure:"chainID"`
 	StartBlock               int64  `mapstructure:"startBlock"`
-	BlockConfirmations       int64  `mapstructure:"blockConfirmations" default:"10"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
 	SubstrateNetwork         int64  `mapstructure:"substrateNetwork"`
@@ -30,7 +29,6 @@ type SubstrateConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
 	ChainID            *big.Int
 	StartBlock         *big.Int
-	BlockConfirmations *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
 	SubstrateNetwork   uint8
@@ -39,7 +37,7 @@ type SubstrateConfig struct {
 
 func (c *SubstrateConfig) String() string {
 	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, c.SubstrateNetwork)
-	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
 		c.GeneralChainConfig.Name,
 		*c.GeneralChainConfig.Id,
 		c.GeneralChainConfig.Type,
@@ -48,7 +46,6 @@ func (c *SubstrateConfig) String() string {
 		c.GeneralChainConfig.LatestBlock,
 		kp.Address,
 		c.StartBlock,
-		c.BlockConfirmations,
 		c.BlockInterval,
 		c.BlockRetryInterval,
 		c.ChainID,
@@ -61,9 +58,6 @@ func (c *RawSubstrateConfig) Validate() error {
 		return err
 	}
 
-	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
-		return fmt.Errorf("blockConfirmations has to be >=1")
-	}
 	return nil
 }
 
@@ -92,7 +86,6 @@ func NewSubstrateConfig(chainConfig map[string]interface{}) (*SubstrateConfig, e
 		ChainID:            big.NewInt(c.ChainID),
 		BlockRetryInterval: time.Duration(c.BlockRetryInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
-		BlockConfirmations: big.NewInt(c.BlockConfirmations),
 		BlockInterval:      big.NewInt(c.BlockInterval),
 		SubstrateNetwork:   uint8(c.SubstrateNetwork),
 		Tip:                uint64(c.Tip),
