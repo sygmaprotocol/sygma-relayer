@@ -19,16 +19,17 @@ type HandlerConfig struct {
 }
 
 type EVMConfig struct {
-	GeneralChainConfig chain.GeneralChainConfig
-	Bridge             string
-	Handlers           []HandlerConfig
-	MaxGasPrice        *big.Int
-	GasMultiplier      *big.Float
-	GasLimit           *big.Int
-	StartBlock         *big.Int
-	BlockConfirmations *big.Int
-	BlockInterval      *big.Int
-	BlockRetryInterval time.Duration
+	GeneralChainConfig    chain.GeneralChainConfig
+	Bridge                string
+	Handlers              []HandlerConfig
+	MaxGasPrice           *big.Int
+	GasMultiplier         *big.Float
+	GasLimit              *big.Int
+	GasIncreasePercentage *big.Int
+	StartBlock            *big.Int
+	BlockConfirmations    *big.Int
+	BlockInterval         *big.Int
+	BlockRetryInterval    time.Duration
 }
 
 func (c *EVMConfig) String() string {
@@ -60,6 +61,7 @@ type RawEVMConfig struct {
 	Handlers                 []HandlerConfig `mapstrcture:"handlers"`
 	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"500000000000"`
 	GasMultiplier            float64         `mapstructure:"gasMultiplier" default:"1"`
+	GasIncreasePercentage    int64           `mapstructure:"gasIncreasePercentage" default:"15"`
 	GasLimit                 int64           `mapstructure:"gasLimit" default:"2000000"`
 	StartBlock               int64           `mapstructure:"startBlock"`
 	BlockConfirmations       int64           `mapstructure:"blockConfirmations" default:"10"`
@@ -101,16 +103,17 @@ func NewEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 
 	c.GeneralChainConfig.ParseFlags()
 	config := &EVMConfig{
-		GeneralChainConfig: c.GeneralChainConfig,
-		Handlers:           c.Handlers,
-		Bridge:             c.Bridge,
-		BlockRetryInterval: time.Duration(c.BlockRetryInterval) * time.Second,
-		GasLimit:           big.NewInt(c.GasLimit),
-		MaxGasPrice:        big.NewInt(c.MaxGasPrice),
-		GasMultiplier:      big.NewFloat(c.GasMultiplier),
-		StartBlock:         big.NewInt(c.StartBlock),
-		BlockConfirmations: big.NewInt(c.BlockConfirmations),
-		BlockInterval:      big.NewInt(c.BlockInterval),
+		GeneralChainConfig:    c.GeneralChainConfig,
+		Handlers:              c.Handlers,
+		Bridge:                c.Bridge,
+		BlockRetryInterval:    time.Duration(c.BlockRetryInterval) * time.Second,
+		GasLimit:              big.NewInt(c.GasLimit),
+		MaxGasPrice:           big.NewInt(c.MaxGasPrice),
+		GasIncreasePercentage: big.NewInt(c.GasIncreasePercentage),
+		GasMultiplier:         big.NewFloat(c.GasMultiplier),
+		StartBlock:            big.NewInt(c.StartBlock),
+		BlockConfirmations:    big.NewInt(c.BlockConfirmations),
+		BlockInterval:         big.NewInt(c.BlockInterval),
 	}
 
 	return config, nil
