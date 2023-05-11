@@ -24,7 +24,11 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	if !ok {
 		return nil, errors.New("wrong max fee format")
 	}
-	executionData, ok := msg.Payload[3].([]byte)
+	depositor, ok := msg.Payload[3].([]byte)
+	if !ok {
+		return nil, errors.New("wrong depositor data format")
+	}
+	executionData, ok := msg.Payload[4].([]byte)
 	if !ok {
 		return nil, errors.New("wrong execution data format")
 	}
@@ -38,7 +42,9 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	data.Write([]byte{byte(len(executeContractAddress))})
 	data.Write(executeContractAddress)
 
-	data.Write([]byte{byte(len(executionData))})
+	data.Write([]byte{byte(len(depositor))})
+	data.Write(depositor)
+
 	data.Write(executionData)
 
 	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil

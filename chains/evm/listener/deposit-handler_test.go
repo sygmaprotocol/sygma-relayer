@@ -32,7 +32,6 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	depositor := common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b")
 	maxFee := big.NewInt(200000)
 	var executionData []byte
-	executionData = append(executionData, common.LeftPadBytes(depositor.Bytes(), 32)...)
 	executionData = append(executionData, hash[:]...)
 	metadata := make(map[string]interface{})
 	metadata["gasLimit"] = uint64(200000)
@@ -64,6 +63,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 			functionSig,
 			contractAddress.Bytes(),
 			common.LeftPadBytes(maxFee.Bytes(), 32),
+			depositor.Bytes(),
 			executionData,
 		},
 		Metadata: message.Metadata{
