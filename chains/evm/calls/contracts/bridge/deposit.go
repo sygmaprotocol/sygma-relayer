@@ -13,8 +13,8 @@ func ConstructPermissionlessGenericDepositData(metadata []byte, executionFunctio
 	data = append(data, executionFunctionSig...)
 	data = append(data, byte(len(executeContractAddress)))
 	data = append(data, executeContractAddress...)
-	data = append(data, byte(32))
-	data = append(data, common.LeftPadBytes(metadataDepositor, 32)...)
+	data = append(data, byte(len(metadataDepositor)))
+	data = append(data, metadataDepositor...)
 	data = append(data, metadata...)
 	return data
 }
