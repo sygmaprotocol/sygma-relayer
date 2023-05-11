@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
@@ -21,11 +22,11 @@ import (
 
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/monitored"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
@@ -97,6 +98,8 @@ func Run() error {
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
@@ -121,7 +124,9 @@ func Run() error {
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				dummyGasPricer := dummy.NewStaticGasPriceDeterminant(client, nil)
-				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, dummyGasPricer, client)
+				t := monitored.NewMonitoredTransactor(evmtransaction.NewTransaction, dummyGasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
+
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
@@ -226,8 +231,6 @@ func Run() error {
 	)
 
 	errChn := make(chan error)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	go r.Start(ctx, errChn)
 
 	sysErr := make(chan os.Signal, 1)
