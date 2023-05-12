@@ -36,6 +36,17 @@ var SubstratePK = signature.KeyringPair{
 	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 }
 
+type USDCAsset struct{}
+
+func (a USDCAsset) Encode(encoder scale.Encoder) error {
+	encoder.Write([]byte{0, 1, 3, 0, 85, 31, 6, 5, 115, 121, 103, 109, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 97, 115, 116, 114, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 64, 229, 156, 48, 18})
+	return nil
+}
+
+func (a USDCAsset) Decode(decoder scale.Decoder) error {
+	return nil
+}
+
 type Client interface {
 	LatestBlock() (*big.Int, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- ethereumTypes.Log) (ethereum.Subscription, error)

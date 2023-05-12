@@ -162,58 +162,26 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	destBalanceBefore, err := erc20Contract.GetBalance(s.evmClient.From())
 	s.Nil(err)
 
-	assetLocation := [3]substrateTypes.JunctionV1{
-		{
-			IsParachain: true,
-			ParachainID: substrateTypes.NewUCompact(big.NewInt(2004)),
-		},
-		{
-			IsGeneralKey: true,
-			GeneralKey:   []substrateTypes.U8("sygma"),
-		},
-		{
-			IsGeneralKey: true,
-			GeneralKey:   []substrateTypes.U8("usdc"),
-		},
-	}
-	multiLocation := substrateTypes.MultiLocationV1{
-		Parents: 1,
-		Interior: substrateTypes.JunctionsV1{
-			IsX3: true,
-			X3:   assetLocation,
-		},
-	}
-
-	multiAsset := substrateTypes.MultiAssetV1{
-		ID: substrateTypes.AssetID{
-			IsConcrete:    true,
-			MultiLocation: multiLocation,
-		},
-		Fungibility: substrateTypes.Fungibility{
-			IsFungible: true,
-			Amount:     substrateTypes.NewUCompact(big.NewInt(20000000000000)),
-		},
-	}
 	addr := s.evmClient.From().Bytes()
-	reciever := *(*[]substrateTypes.U8)(unsafe.Pointer(&addr))
-	dst := [2]substrateTypes.JunctionV1{
+	receiver := *(*[32]substrateTypes.U8)(unsafe.Pointer(&addr))
+	dst := [2]substrate.JunctionV3{
 		{
 			IsGeneralKey: true,
-			GeneralKey:   reciever,
+			GeneralKey:   receiver,
 		},
 		{
 			IsGeneralKey: true,
-			GeneralKey:   []substrateTypes.U8{1},
+			GeneralKey:   [32]substrateTypes.U8{1},
 		},
 	}
-	destinationLocation := substrateTypes.MultiLocationV1{
+	destinationLocation := substrate.MultiLocationV3{
 		Parents: 0,
-		Interior: substrateTypes.JunctionsV1{
+		Interior: substrate.JunctionsV3{
 			IsX2: true,
 			X2:   dst,
 		},
 	}
-	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", multiAsset, destinationLocation)
+	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", substrate.USDCAsset{}, destinationLocation)
 	s.Nil(err)
 
 	err = s.substrateClient.TrackExtrinsic(extHash, sub)
