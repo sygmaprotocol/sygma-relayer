@@ -3,7 +3,6 @@ package substrate_test
 import (
 	"context"
 	"encoding/binary"
-	"unsafe"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
@@ -162,26 +161,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	destBalanceBefore, err := erc20Contract.GetBalance(s.evmClient.From())
 	s.Nil(err)
 
-	addr := s.evmClient.From().Bytes()
-	receiver := *(*[32]substrateTypes.U8)(unsafe.Pointer(&addr))
-	dst := [2]substrate.JunctionV3{
-		{
-			IsGeneralKey: true,
-			GeneralKey:   receiver,
-		},
-		{
-			IsGeneralKey: true,
-			GeneralKey:   [32]substrateTypes.U8{1},
-		},
-	}
-	destinationLocation := substrate.MultiLocationV3{
-		Parents: 0,
-		Interior: substrate.JunctionsV3{
-			IsX2: true,
-			X2:   dst,
-		},
-	}
-	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", substrate.USDCAsset{}, destinationLocation)
+	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", substrate.USDCAsset{}, substrate.Destination{})
 	s.Nil(err)
 
 	err = s.substrateClient.TrackExtrinsic(extHash, sub)
