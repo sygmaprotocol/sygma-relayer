@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.5.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.4.1...v1.5.0) (2023-05-15)
+
+
+### Features
+
+* add relayerID and instance env to configuration to use in metrics ([#165](https://github.com/sygmaprotocol/sygma-relayer/issues/165)) ([d9c0860](https://github.com/sygmaprotocol/sygma-relayer/commit/d9c0860568145f5ce509e91c48691c4cf1e29f1a))
+* implement metrics ([#153](https://github.com/sygmaprotocol/sygma-relayer/issues/153)) ([cea714e](https://github.com/sygmaprotocol/sygma-relayer/commit/cea714e09a5848d7349bf100692a1ff84a2ee995))
+* track substrate extrinsic status ([#157](https://github.com/sygmaprotocol/sygma-relayer/issues/157)) ([eee465c](https://github.com/sygmaprotocol/sygma-relayer/commit/eee465c60dfc5ad1aa3ca652935b9010ba2e1ac1))
+* update library versions ([#172](https://github.com/sygmaprotocol/sygma-relayer/issues/172)) ([aba6d60](https://github.com/sygmaprotocol/sygma-relayer/commit/aba6d60f5d02812c119e399ca836c90e3deaee9d))
+* use finalized head when indexing substrate ([#161](https://github.com/sygmaprotocol/sygma-relayer/issues/161)) ([5bdcd42](https://github.com/sygmaprotocol/sygma-relayer/commit/5bdcd4268d8dc923a9384759922462c7f172f7af))
+* use structured concurrency for tss processes ([#160](https://github.com/sygmaprotocol/sygma-relayer/issues/160)) ([986966f](https://github.com/sygmaprotocol/sygma-relayer/commit/986966f7df29b14a270edd649c89e85173cfbba0))
+
+
+### Bug Fixes
+
+* Add substrate default event ([#150](https://github.com/sygmaprotocol/sygma-relayer/issues/150)) ([bc3bbb5](https://github.com/sygmaprotocol/sygma-relayer/commit/bc3bbb5c0ada1dd9b53a06242b34787cc4af3974))
+* fix substrate event handling ([#152](https://github.com/sygmaprotocol/sygma-relayer/issues/152)) ([1e14379](https://github.com/sygmaprotocol/sygma-relayer/commit/1e1437967cc32a95dc38ada5e94757a223d1a798))
+* ignore extra networks from shared config ([#163](https://github.com/sygmaprotocol/sygma-relayer/issues/163)) ([9eaf1c6](https://github.com/sygmaprotocol/sygma-relayer/commit/9eaf1c66f1f435d2e9082562f5406880ac546e33))
+
 ## [1.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.4.0...v1.4.1) (2023-03-22)
 
 
