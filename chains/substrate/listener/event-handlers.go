@@ -90,7 +90,9 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 	}
 
 	for _, deposits := range domainDeposits {
-		msgChan <- deposits
+		go func(d []*message.Message) {
+			msgChan <- d
+		}(deposits)
 	}
 	return nil
 }

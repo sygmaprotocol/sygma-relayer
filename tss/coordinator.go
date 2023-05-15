@@ -22,8 +22,8 @@ import (
 
 var (
 	initiatePeriod     = 15 * time.Second
-	coordinatorTimeout = 5 * time.Minute
-	tssTimeout         = 30 * time.Minute
+	coordinatorTimeout = 3 * time.Minute
+	tssTimeout         = 15 * time.Minute
 )
 
 type TssProcess interface {
@@ -122,6 +122,9 @@ func (c *Coordinator) handleError(ctx context.Context, err error, tssProcess Tss
 	defer cancel()
 
 	rp := pool.New().WithContext(ctx).WithCancelOnError()
+	rp.Go(func(ctx context.Context) error {
+		return c.watchExecution(ctx, tssProcess, peer.ID(""))
+	})
 	switch err := err.(type) {
 	case *CoordinatorError:
 		{

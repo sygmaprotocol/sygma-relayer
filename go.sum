@@ -54,10 +54,12 @@ filippo.io/edwards25519 v1.0.0-rc.1/go.mod h1:N1IkdkCkiLB6tki+MYJoSx2JTY9NUlxZE7
 git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/ChainSafe/chainbridge-core v1.2.1-0.20230403091503-2ce735717171 h1:ZYtNHBl0+K4TZOqpoKkX4SSWmCPUM5knnFkbc8UCCoc=
-github.com/ChainSafe/chainbridge-core v1.2.1-0.20230403091503-2ce735717171/go.mod h1:j51yNYVujQPo0FkFj361cnNX0YjlBM+Qq9kvAudiKfU=
+github.com/ChainSafe/chainbridge-core v1.3.0 h1:y/CzWZQWBGHjE2SUQBKjOul4PW+aWy10Qh7uHARAADY=
+github.com/ChainSafe/chainbridge-core v1.3.0/go.mod h1:j51yNYVujQPo0FkFj361cnNX0YjlBM+Qq9kvAudiKfU=
 github.com/ChainSafe/go-schnorrkel v1.0.0 h1:3aDA67lAykLaG1y3AOjs88dMxC88PgUuHRrLeDnvGIM=
 github.com/ChainSafe/go-schnorrkel v1.0.0/go.mod h1:dpzHYVxLZcp8pjlV+O+UR8K0Hp/z7vcchBSbMBEhCw4=
+github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684 h1:l5IpX6FFHNFgbjOIZ9LLS9y2sm1Zxp6CMbMpUmFWuxw=
+github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684/go.mod h1:QWOI8ORRuVh3uoHDqcDVOjUmg+CIVvNmzJOs4vWlfcY=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
@@ -708,8 +710,6 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a h1:1ur3QoCqvE5fl+nylMaIr9PVV1w343YRDtsy+Rwu7XI=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/timoftime/threshlib v0.0.0-20230223114305-ead1433f2707 h1:qbMSkjbHBk+IlgxAhQwCmTVFJbkVZxBG3U/eaqGmtcA=
-github.com/timoftime/threshlib v0.0.0-20230223114305-ead1433f2707/go.mod h1:QWOI8ORRuVh3uoHDqcDVOjUmg+CIVvNmzJOs4vWlfcY=
 github.com/tklauser/go-sysconf v0.3.5 h1:uu3Xl4nkLzQfXNsWn15rPc/HQCJKObbt1dKJeWp3vU4=
 github.com/tklauser/go-sysconf v0.3.5/go.mod h1:MkWzOF4RMCshBAMXuhXJs64Rte09mITnppBXY/rYEFI=
 github.com/tklauser/numcpus v0.2.2 h1:oyhllyrScuYI6g+h/zUvNXNp1wy7x8qQy3t/piefldA=

@@ -17,7 +17,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
+	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/monitored"
 	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
@@ -127,6 +127,8 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	chains := []relayer.RelayedChain{}
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
@@ -148,7 +150,8 @@ func Run() error {
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
-				t := signAndSend.NewSignAndSendTransactor(evmtransaction.NewTransaction, gasPricer, client)
+				t := monitored.NewMonitoredTransactor(evmtransaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
@@ -251,8 +254,6 @@ func Run() error {
 	)
 
 	errChn := make(chan error)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	go r.Start(ctx, errChn)
 
 	sysErr := make(chan os.Signal, 1)

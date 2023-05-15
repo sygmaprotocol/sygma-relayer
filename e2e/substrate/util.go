@@ -36,6 +36,29 @@ var SubstratePK = signature.KeyringPair{
 	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 }
 
+type USDCAsset struct{}
+
+func (a USDCAsset) Encode(encoder scale.Encoder) error {
+	_ = encoder.Write([]byte{0, 1, 3, 0, 81, 31, 6, 5, 115, 121, 103, 109, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 117, 115, 100, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4})
+	return nil
+}
+
+func (a USDCAsset) Decode(decoder scale.Decoder) error {
+	return nil
+}
+
+type Destination struct {
+}
+
+func (a Destination) Encode(encoder scale.Encoder) error {
+	_ = encoder.Write([]byte{0, 2, 6, 20, 92, 31, 89, 97, 105, 107, 173, 46, 115, 247, 52, 23, 240, 126, 245, 92, 98, 162, 220, 91, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	return nil
+}
+
+func (a Destination) Decode(decoder scale.Decoder) error {
+	return nil
+}
+
 type Client interface {
 	LatestBlock() (*big.Int, error)
 	SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- ethereumTypes.Log) (ethereum.Subscription, error)

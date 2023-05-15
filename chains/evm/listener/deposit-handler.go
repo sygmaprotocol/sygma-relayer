@@ -29,12 +29,16 @@ func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, r
 	contractAddressEnd := functionSigEnd + 1 + contractAddressLen.Int64()
 	contractAddress := calldata[functionSigEnd+1 : contractAddressEnd]
 
-	executionData := calldata[contractAddressEnd+1:]
+	depositorLen := big.NewInt(0).SetBytes(calldata[contractAddressEnd : contractAddressEnd+1])
+	depositorEnd := contractAddressEnd + 1 + depositorLen.Int64()
+	depositorAddress := calldata[contractAddressEnd+1 : depositorEnd]
+	executionData := calldata[depositorEnd:]
 
 	payload := []interface{}{
 		functionSig,
 		contractAddress,
 		maxFee,
+		depositorAddress,
 		executionData,
 	}
 
