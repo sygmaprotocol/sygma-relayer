@@ -191,7 +191,7 @@ func (c Libp2pCommunication) sendMessage(
 
 	err = WriteStream(msg, bufio.NewWriterSize(stream, defaultBufferSize))
 	if err != nil {
-		c.logger.Error().Str("To", string(to)).Err(err).Msg("unable to send message")
+		c.logger.Error().Str("To", to.String()).Err(err).Msg("unable to send message")
 		return err
 	}
 	c.logger.Trace().Str(

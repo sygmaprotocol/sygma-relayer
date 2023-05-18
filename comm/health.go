@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
 )
 
 const HealthTimeout = 10 * time.Second
@@ -14,7 +15,7 @@ const HealthTimeout = 10 * time.Second
 func ExecuteCommHealthCheck(communication Communication, peers peer.IDSlice) []*CommunicationError {
 	sessionID := "health-session"
 	defer communication.CloseSession(sessionID)
-
+	log.Debug().Msgf("ExecuteCommHealthCheck for peers %s", peers.String())
 	errors := make([]*CommunicationError, 0)
 	for _, p := range peers {
 		err := communication.Broadcast([]peer.ID{p}, []byte{}, Unknown, sessionID)

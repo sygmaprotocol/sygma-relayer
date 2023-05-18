@@ -25,7 +25,7 @@ func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metri
 
 		communicationErrors := comm.ExecuteCommHealthCheck(healthComm, h.Peerstore().Peers())
 		for _, cerr := range communicationErrors {
-			log.Err(cerr).Msg("communication error")
+			log.Err(cerr).Msg("communication error on ExecuteCommHealthCheck")
 			unavailable = append(unavailable, cerr.Peer)
 		}
 
