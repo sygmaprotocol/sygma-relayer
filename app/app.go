@@ -128,7 +128,7 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
-	// wait until executions are done and then stop further executions before executing
+	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
 	defer exitLock.Lock()
 
