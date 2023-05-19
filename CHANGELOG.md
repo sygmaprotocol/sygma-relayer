@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.5.0...v1.5.1) (2023-05-19)
+
+
+### Miscellaneous
+
+* add least authority audit report ([#174](https://github.com/sygmaprotocol/sygma-relayer/issues/174)) ([1457447](https://github.com/sygmaprotocol/sygma-relayer/commit/145744749d32405bafabd7b9b40f18f21e6d9c0d))
+* add more verbosity to some p2p comm logs ([#177](https://github.com/sygmaprotocol/sygma-relayer/issues/177)) ([ed65fa8](https://github.com/sygmaprotocol/sygma-relayer/commit/ed65fa893683695002cb397576d2da7d09a93a50))
+* updated audit report ([#176](https://github.com/sygmaprotocol/sygma-relayer/issues/176)) ([8bbf68d](https://github.com/sygmaprotocol/sygma-relayer/commit/8bbf68d62c99dbd98474a70f88290bb3b25cbc92))
+
 ## [1.5.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.4.1...v1.5.0) (2023-05-15)
 
 
