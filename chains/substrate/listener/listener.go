@@ -87,6 +87,8 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 					continue
 				}
 
+				l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
+
 				for _, handler := range l.eventHandlers {
 					err := handler.HandleEvents(evts, msgChan)
 					if err != nil {
