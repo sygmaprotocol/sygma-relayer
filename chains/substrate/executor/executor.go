@@ -116,22 +116,36 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	}
 
 	sigChn := make(chan interface{})
-	ctx := context.Background()
-	pool := pool.New().WithContext(ctx).WithCancelOnError()
-	pool.Go(func(ctx context.Context) error { return e.coordinator.Execute(ctx, signing, sigChn) })
-	pool.Go(func(ctx context.Context) error { return e.watchExecution(ctx, proposals, sigChn, sessionID) })
+	executionContext, cancelExecution := context.WithCancel(context.Background())
+	watchContext, cancelWatch := context.WithCancel(context.Background())
+	pool := pool.New().WithErrors()
+	pool.Go(func() error {
+		err := e.coordinator.Execute(executionContext, signing, sigChn)
+		if err != nil {
+			cancelWatch()
+		}
+
+		return err
+	})
+	pool.Go(func() error {
+		return e.watchExecution(watchContext, cancelExecution, proposals, sigChn, sessionID)
+	})
 	return pool.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
 	defer timeout.Stop()
+	defer cancelExecution()
+
 	for {
 		select {
 		case sigResult := <-sigChn:
 			{
+				cancelExecution()
+
 				signatureData := sigResult.(*common.SignatureData)
 				hash, sub, err := e.executeProposal(proposals, signatureData)
 				if err != nil {
