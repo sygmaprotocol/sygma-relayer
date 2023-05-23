@@ -192,8 +192,8 @@ func Run() error {
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
-				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
-				bridgePallet := substrate_pallet.NewPallet(client)
+				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
+				bridgePallet := substrate_pallet.NewPallet(substrateClient)
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
@@ -208,7 +208,7 @@ func Run() error {
 
 				executor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
 
-				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
+				substrateChain := substrate.NewSubstrateChain(substrateClient, substrateListener, nil, blockstore, config, executor)
 
 				chains = append(chains, substrateChain)
 			}
