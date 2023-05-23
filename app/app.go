@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -127,6 +128,10 @@ func Run() error {
 	}
 	blockstore := store.NewBlockStore(db)
 
+	// wait until executions are done and then stop further executions before exiting
+	exitLock := &sync.RWMutex{}
+	defer exitLock.Lock()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	chains := []relayer.RelayedChain{}
@@ -189,7 +194,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
-				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore)
+				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore, exitLock)
 
 				chain := evm.NewEVMChain(
 					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
@@ -229,8 +234,7 @@ func Run() error {
 				mh := substrateExecutor.NewSubstrateMessageHandler()
 				mh.RegisterMessageHandler(message.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
 
-				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
-
+				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := substrate.NewSubstrateChain(substrateClient, substrateListener, nil, blockstore, config, sExecutor)
 
 				chains = append(chains, substrateChain)

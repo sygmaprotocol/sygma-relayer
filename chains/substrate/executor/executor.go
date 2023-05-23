@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
@@ -52,6 +53,7 @@ type Executor struct {
 	bridge      BridgePallet
 	mh          MessageHandler
 	conn        *connection.Connection
+	exitLock    *sync.RWMutex
 }
 
 func NewExecutor(
@@ -62,6 +64,7 @@ func NewExecutor(
 	bridgePallet BridgePallet,
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
+	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
 		host:        host,
@@ -71,11 +74,15 @@ func NewExecutor(
 		bridge:      bridgePallet,
 		fetcher:     fetcher,
 		conn:        conn,
+		exitLock:    exitLock,
 	}
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
+	e.exitLock.RLock()
+	defer e.exitLock.RUnlock()
+
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
