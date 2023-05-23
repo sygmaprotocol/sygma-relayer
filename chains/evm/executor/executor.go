@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/binance-chain/tss-lib/common"
@@ -47,6 +48,7 @@ type Executor struct {
 	fetcher     signing.SaveDataFetcher
 	bridge      BridgeContract
 	mh          MessageHandler
+	exitLock    *sync.RWMutex
 }
 
 func NewExecutor(
@@ -56,6 +58,7 @@ func NewExecutor(
 	mh MessageHandler,
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
+	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
 		host:        host,
@@ -64,11 +67,15 @@ func NewExecutor(
 		mh:          mh,
 		bridge:      bridgeContract,
 		fetcher:     fetcher,
+		exitLock:    exitLock,
 	}
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(msgs []*message.Message) error {
+	e.exitLock.RLock()
+	defer e.exitLock.RUnlock()
+
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
