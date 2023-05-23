@@ -37,7 +37,9 @@ type SubstrateConfig struct {
 
 func (c *SubstrateConfig) String() string {
 	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, c.SubstrateNetwork)
-	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockInterval: '%s', BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d'`,
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', 
+							  LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockInterval: '%s', 
+                              BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d', SubstrateNetworkPrefix: "%d"`,
 		c.GeneralChainConfig.Name,
 		*c.GeneralChainConfig.Id,
 		c.GeneralChainConfig.Type,
@@ -50,6 +52,7 @@ func (c *SubstrateConfig) String() string {
 		c.BlockRetryInterval,
 		c.ChainID,
 		c.Tip,
+		c.SubstrateNetwork,
 	)
 }
 

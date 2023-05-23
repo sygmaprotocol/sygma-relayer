@@ -213,8 +213,8 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
-				client := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
-				bridgePallet := substrate_pallet.NewPallet(client)
+				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
+				bridgePallet := substrate_pallet.NewPallet(substrateClient)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
@@ -229,9 +229,9 @@ func Run() error {
 				mh := substrateExecutor.NewSubstrateMessageHandler()
 				mh.RegisterMessageHandler(message.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
 
-				executor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
+				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn)
 
-				substrateChain := substrate.NewSubstrateChain(substrateListener, nil, blockstore, config, executor)
+				substrateChain := substrate.NewSubstrateChain(substrateClient, substrateListener, nil, blockstore, config, sExecutor)
 
 				chains = append(chains, substrateChain)
 			}

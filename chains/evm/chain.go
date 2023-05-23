@@ -87,7 +87,12 @@ func (c *EVMChain) PollEvents(ctx context.Context, sysErr chan<- error, msgChan 
 		startBlock = head
 	}
 
-	startBlock = chains.CalculateStartingBlock(startBlock, c.blockInterval)
+	startBlock, err = chains.CalculateStartingBlock(startBlock, c.blockInterval)
+	if err != nil {
+		sysErr <- fmt.Errorf("error %w on CalculateStartingBlock domain %d", err, c.domainID)
+		return
+	}
+
 	c.logger.Info().Msgf("Starting block: %s", startBlock.String())
 
 	go c.listener.ListenToEvents(ctx, startBlock, msgChan, sysErr)
