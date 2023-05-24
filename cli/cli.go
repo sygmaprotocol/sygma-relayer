@@ -4,13 +4,14 @@
 package cli
 
 import (
-	"github.com/ChainSafe/sygma-relayer/cli/topology"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/sygma-relayer/cli/peer"
+	"github.com/ChainSafe/sygma-relayer/cli/topology"
+	"github.com/ChainSafe/sygma-relayer/cli/utils"
 )
 
 var (
@@ -29,7 +30,7 @@ func init() {
 }
 
 func Execute() {
-	rootCMD.AddCommand(runCMD, peer.PeerCLI, topology.TopologyCLI)
+	rootCMD.AddCommand(runCMD, peer.PeerCLI, topology.TopologyCLI, utils.UtilsCLI)
 	if err := rootCMD.Execute(); err != nil {
 		log.Fatal().Err(err).Msg("failed to execute root cmd")
 	}

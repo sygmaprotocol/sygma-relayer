@@ -11,6 +11,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -20,6 +21,7 @@ type BatchProposalExecutor interface {
 }
 
 type SubstrateChain struct {
+	client     *client.SubstrateClient
 	listener   EventListener
 	writer     ProposalExecutor
 	blockstore *store.BlockStore
@@ -36,8 +38,9 @@ type ProposalExecutor interface {
 	Execute(message *message.Message) error
 }
 
-func NewSubstrateChain(listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
+func NewSubstrateChain(client *client.SubstrateClient, listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
 	return &SubstrateChain{
+		client:     client,
 		listener:   listener,
 		writer:     writer,
 		blockstore: blockstore,
@@ -62,7 +65,21 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 		sysErr <- fmt.Errorf("error %w on getting last stored block", err)
 		return
 	}
-	startBlock = chains.CalculateStartingBlock(startBlock, c.config.BlockInterval)
+	// start from latest
+	if startBlock == nil {
+		head, err := c.client.LatestBlock()
+		if err != nil {
+			sysErr <- fmt.Errorf("error %w on getting latest block for domain %d", err, c.DomainID())
+			return
+		}
+		startBlock = head
+	}
+
+	startBlock, err = chains.CalculateStartingBlock(startBlock, c.config.BlockInterval)
+	if err != nil {
+		sysErr <- fmt.Errorf("error %w on CalculateStartingBlock domain %d", err, c.DomainID())
+		return
+	}
 
 	c.logger.Info().Msgf("Starting block: %s", startBlock.String())
 

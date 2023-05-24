@@ -16,11 +16,19 @@ func TestRunNewEVMConfigTestSuite(t *testing.T) {
 }
 
 func (s *UtilTestSuite) Test_CalculateStartingBlock_ProperAdjustment() {
-	res := CalculateStartingBlock(big.NewInt(104), big.NewInt(5))
+	res, err := CalculateStartingBlock(big.NewInt(104), big.NewInt(5))
 	s.Equal(big.NewInt(100), res)
+	s.Nil(err)
 }
 
 func (s *UtilTestSuite) Test_CalculateStartingBlock_NoAdjustment() {
-	res := CalculateStartingBlock(big.NewInt(200), big.NewInt(5))
+	res, err := CalculateStartingBlock(big.NewInt(200), big.NewInt(5))
 	s.Equal(big.NewInt(200), res)
+	s.Nil(err)
+}
+
+func (s *UtilTestSuite) Test_CalculateStartingBlock_Nil() {
+	res, err := CalculateStartingBlock(nil, nil)
+	s.Nil(res)
+	s.NotNil(err)
 }
