@@ -4,17 +4,17 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/big"
 	"sync"
 	"time"
 
-	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
-
-	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
@@ -84,7 +84,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Ha
 		return types.Hash{}, nil, fmt.Errorf("submission of extrinsic failed: %w", err)
 	}
 
-	hash, err := substrate.ExtrinsicHash(ext)
+	hash, err := ExtrinsicHash(ext)
 	if err != nil {
 		return types.Hash{}, nil, err
 	}
@@ -171,7 +171,7 @@ func (c *SubstrateClient) checkExtrinsicSuccess(extHash types.Hash, blockHash ty
 
 	for _, event := range evts {
 		index := event.Phase.AsApplyExtrinsic
-		hash, err := substrate.ExtrinsicHash(block.Block.Extrinsics[index])
+		hash, err := ExtrinsicHash(block.Block.Extrinsics[index])
 		if err != nil {
 			return err
 		}
@@ -189,4 +189,22 @@ func (c *SubstrateClient) checkExtrinsicSuccess(extHash types.Hash, blockHash ty
 	}
 
 	return fmt.Errorf("no event found")
+}
+
+func (c *SubstrateClient) LatestBlock() (*big.Int, error) {
+	block, err := c.Conn.Chain.GetBlockLatest()
+	if err != nil {
+		return nil, err
+	}
+	return big.NewInt(int64(block.Block.Header.Number)), nil
+}
+
+func ExtrinsicHash(ext types.Extrinsic) (types.Hash, error) {
+	extHash := bytes.NewBuffer([]byte{})
+	encoder := scale.NewEncoder(extHash)
+	err := ext.Encode(*encoder)
+	if err != nil {
+		return types.Hash{}, err
+	}
+	return types.NewHash(extHash.Bytes()), nil
 }
