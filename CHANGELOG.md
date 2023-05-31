@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.5.1...v1.6.0) (2023-05-31)
+
+
+### Features
+
+* wait until executions are over before exiting  ([#179](https://github.com/sygmaprotocol/sygma-relayer/issues/179)) ([d396d6f](https://github.com/sygmaprotocol/sygma-relayer/commit/d396d6f30ba6598d1c74d22c7ea74c4135398b54))
+
+
+### Bug Fixes
+
+* end singing tss process after signature is received ([#183](https://github.com/sygmaprotocol/sygma-relayer/issues/183)) ([36b6c6f](https://github.com/sygmaprotocol/sygma-relayer/commit/36b6c6f71e60aa34d6239cabe35e17e56a3d70be))
+* fix bug of calculateBock panic when latestBlock is true ([#182](https://github.com/sygmaprotocol/sygma-relayer/issues/182)) ([82c222c](https://github.com/sygmaprotocol/sygma-relayer/commit/82c222cfc5282b67b66dfa5e0897b9190d2b9d55))
+
+
+### Miscellaneous
+
+* bump core version to 1.3.1 ([#185](https://github.com/sygmaprotocol/sygma-relayer/issues/185)) ([bc60d6a](https://github.com/sygmaprotocol/sygma-relayer/commit/bc60d6a011bb76b306d1345ac26be15eab7a653f))
+* update license ([#187](https://github.com/sygmaprotocol/sygma-relayer/issues/187)) ([1980918](https://github.com/sygmaprotocol/sygma-relayer/commit/1980918290a91d77102eda1600d369754c31a33d))
+
 ## [1.5.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.5.0...v1.5.1) (2023-05-19)
 
 
