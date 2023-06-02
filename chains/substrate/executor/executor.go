@@ -152,6 +152,9 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 		case sigResult := <-sigChn:
 			{
 				cancelExecution()
+				if sigResult == nil {
+					return nil
+				}
 
 				signatureData := sigResult.(*common.SignatureData)
 				hash, sub, err := e.executeProposal(proposals, signatureData)
