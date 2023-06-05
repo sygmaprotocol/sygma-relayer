@@ -145,7 +145,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 			{
 				cancelExecution()
 				if sigResult == nil {
-					return nil
+					continue
 				}
 
 				signatureData := sigResult.(*common.SignatureData)

@@ -125,6 +125,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	sigChn := make(chan interface{})
 	executionContext, cancelExecution := context.WithCancel(context.Background())
 	watchContext, cancelWatch := context.WithCancel(context.Background())
+
 	pool := pool.New().WithErrors()
 	pool.Go(func() error {
 		err := e.coordinator.Execute(executionContext, signing, sigChn)
@@ -153,7 +154,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 			{
 				cancelExecution()
 				if sigResult == nil {
-					return nil
+					continue
 				}
 
 				signatureData := sigResult.(*common.SignatureData)
