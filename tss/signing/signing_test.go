@@ -67,8 +67,12 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		})
 	}
 
-	sig := <-resultChn
-	s.NotNil(sig)
+	sig1 := <-resultChn
+	sig2 := <-resultChn
+	s.NotEqual(sig1, sig2)
+	if sig1 == nil && sig2 == nil {
+		s.Fail("signature is nil")
+	}
 
 	time.Sleep(time.Millisecond * 100)
 	cancel()
