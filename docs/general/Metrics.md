@@ -4,14 +4,16 @@ Metrics are implemented via the OpenTelemetry [stack](https://opentelemetry.io/)
 ## Exported metrics
 The following metrics are exported:
 ```
-chainbridge.DepositEventCount (counter) - count of indexed deposits
-chainbridge.ExecutionErrorCount (counter) - count of executions that failed
-chainbridge.ExecutionLatencyPerRoute (histogram) - latency between indexing event and executing it per route
-chainbridge.ExecutionLatency (histogram) - latency between indexing event and executing it across all routes
-sygma.TotalRelayers (gauge) - number of relayers currently in the subset for MPC
-sygma.availableRelayers (gauge) - number of currently available relayers from the subset
-
+relayer.DepositEventCount (counter) - count of indexed deposits
+relayer.ExecutionErrorCount (counter) - count of executions that failed
+relayer.ExecutionLatencyPerRoute (histogram) - latency between indexing event and executing it per route
+relayer.ExecutionLatency (histogram) - latency between indexing event and executing it across all routes
+relayer.TotalRelayers (gauge) - number of relayers currently in the subset for MPC
+relayer.availableRelayers (gauge) - number of currently available relayers from the subset
+relayer.BlockDelta (gauge) - "Difference between chain head and current indexed block per domain
 ```
 
 ## Env variables
 - SYG_RELAYER_OPENTELEMETRYCOLLECTORURL - url of the opentelemetry collector application that collects metrics
+- SYG_RELAYER_ID - Set as a metrics tag (relayerid:0). used to distinguish one Relayer from another. NOTE: should be unique and if you are planning to run Sygma relayer please agree your relayerID with the team
+- SYG_RELAYER_ENV - Set as a metrics tag (env:test). Used to distinguish Relayer environment
