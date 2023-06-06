@@ -14,8 +14,6 @@ import (
 type SygmaMetrics struct {
 	opentelemetry.RelayerMetrics
 
-	meter api.Meter
-
 	DepositErrorRate  api.Int64Counter
 	TotalRelayers     api.Int64ObservableGauge
 	AvailableRelayers api.Int64ObservableGauge
