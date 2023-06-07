@@ -22,9 +22,10 @@ type Retry struct {
 }
 
 const (
-	CodeUpdatedEvent      = "System.CodeUpdated"
-	ExtrinsicFailedEvent  = "System.ExtrinsicFailed"
-	ExtrinsicSuccessEvent = "System.ExtrinsicSuccess"
-	RetryEvent            = "SygmaBridge.Retry"
-	DepositEvent          = "SygmaBridge.Deposit"
+	CodeUpdatedEvent            = "System.CodeUpdated"
+	ExtrinsicFailedEvent        = "System.ExtrinsicFailed"
+	ExtrinsicSuccessEvent       = "System.ExtrinsicSuccess"
+	RetryEvent                  = "SygmaBridge.Retry"
+	DepositEvent                = "SygmaBridge.Deposit"
+	FailedHandlerExecutionEvent = "SygmaBridge.FailedHandlerExecution"
 )
