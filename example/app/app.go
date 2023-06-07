@@ -103,6 +103,20 @@ func Run() error {
 	exitLock := &sync.RWMutex{}
 	defer exitLock.Lock()
 
+	mp, err := opentelemetry.InitMetricProvider(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := mp.Shutdown(context.Background()); err != nil {
+			log.Error().Msgf("Error shutting down meter provider: %v", err)
+		}
+	}()
+	sygmaMetrics, err := metrics.NewSygmaMetrics(mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
+	if err != nil {
+		panic(err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	chains := []relayer.RelayedChain{}
@@ -168,7 +182,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
-				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
+				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore, exitLock)
 
 				chain := evm.NewEVMChain(
@@ -222,17 +236,11 @@ func Run() error {
 		}
 	}
 
-	meter, err := opentelemetry.DefaultMeter(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
-	if err != nil {
-		panic(err)
-	}
-	metrics := metrics.NewTelemetry(meter, configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
-
-	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, metrics)
+	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
 	r := relayer.NewRelayer(
 		chains,
-		metrics,
+		sygmaMetrics,
 	)
 
 	errChn := make(chan error)

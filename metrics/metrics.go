@@ -5,44 +5,66 @@ package metrics
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"go.opentelemetry.io/otel/metric"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"go.opentelemetry.io/otel/attribute"
+	api "go.opentelemetry.io/otel/metric"
 )
 
-type Metrics struct {
-	opentelemetry.ChainbridgeMetrics
-	DepositErrorRate  metric.Int64Counter
-	TotalRelayers     metric.Int64GaugeObserver
-	AvailableRelayers metric.Int64GaugeObserver
-	ExecutionLatency  metric.Int64Histogram
+type SygmaMetrics struct {
+	opentelemetry.RelayerMetrics
+
+	DepositErrorRate  api.Int64Counter
+	TotalRelayers     api.Int64ObservableGauge
+	AvailableRelayers api.Int64ObservableGauge
+	ExecutionLatency  api.Int64Histogram
 
 	TotalRelayerCount     *int64
 	AvailableRelayerCount *int64
 }
 
 // NewMetrics creates an instance of metrics
-func NewMetrics(meter metric.Meter, env, relayerID string) *Metrics {
-	totalRelayerCount := new(int64)
-	availableRelayerCount := new(int64)
-	return &Metrics{
-		ChainbridgeMetrics: *opentelemetry.NewChainbridgeMetrics(meter),
-		TotalRelayers: metric.Must(meter).NewInt64GaugeObserver(
-			fmt.Sprintf("sygma.{%s}.Relayer-{%s}.TotalRelayers", env, relayerID),
-			func(ctx context.Context, result metric.Int64ObserverResult) {
-				result.Observe(*totalRelayerCount)
-			},
-			metric.WithDescription("Total number of relayers currently in the subset"),
-		),
-		AvailableRelayers: metric.Must(meter).NewInt64GaugeObserver(
-			fmt.Sprintf("sygma.{%s}.Relayer-{%s}.AvailableRelayers", env, relayerID),
-			func(ctx context.Context, result metric.Int64ObserverResult) {
-				result.Observe(*availableRelayerCount)
-			},
-			metric.WithDescription("Available number of relayers currently in the subset"),
-		),
-		TotalRelayerCount:     totalRelayerCount,
-		AvailableRelayerCount: availableRelayerCount,
+func NewSygmaMetrics(meter api.Meter, env, relayerID string) (*SygmaMetrics, error) {
+	relayerMetrics, err := opentelemetry.NewRelayerMetrics(meter, attribute.String("relayerid", relayerID), attribute.String("env", env))
+	if err != nil {
+		return nil, err
 	}
+
+	totalRelayerGauge := new(int64)
+	availableRelayerGauge := new(int64)
+	totalRelayersCount, err := meter.Int64ObservableGauge(
+		"relayer.TotalRelayers",
+		api.WithInt64Callback(func(context context.Context, result api.Int64Observer) error {
+			result.Observe(*availableRelayerGauge, relayerMetrics.Opts)
+			return nil
+		}),
+		api.WithDescription("Total number of relayers currently in the subset"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	availableRelayersCount, err := meter.Int64ObservableGauge(
+		"relayer.AvalableRelayers",
+		api.WithInt64Callback(func(context context.Context, result api.Int64Observer) error {
+			result.Observe(*availableRelayerGauge, relayerMetrics.Opts)
+			return nil
+		}),
+		api.WithDescription("Available number of relayers currently in the subset"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SygmaMetrics{
+		RelayerMetrics:        *relayerMetrics,
+		TotalRelayers:         totalRelayersCount,
+		AvailableRelayers:     availableRelayersCount,
+		TotalRelayerCount:     totalRelayerGauge,
+		AvailableRelayerCount: availableRelayerGauge,
+	}, nil
+}
+
+func (t *SygmaMetrics) TrackRelayerStatus(unavailable peer.IDSlice, all peer.IDSlice) {
+	*t.TotalRelayerCount = int64(len(all))
+	*t.AvailableRelayerCount = int64(len(all) - len(unavailable))
 }

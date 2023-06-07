@@ -13,11 +13,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Metrics interface {
+type RelayerStatusMeter interface {
 	TrackRelayerStatus(unavailable peer.IDSlice, all peer.IDSlice)
 }
 
-func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metrics Metrics) {
+func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metrics RelayerStatusMeter) {
 	healthComm := p2p.NewCommunication(h, "p2p/health")
 	for {
 		time.Sleep(interval)
