@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.6.0...v1.7.0) (2023-06-07)
+
+
+### Features
+
+* update otlp sdk version and add metric tags ([#192](https://github.com/sygmaprotocol/sygma-relayer/issues/192)) ([ba919d6](https://github.com/sygmaprotocol/sygma-relayer/commit/ba919d6e2e0e4533146917d1b486bab1928771ab))
+
+
+### Bug Fixes
+
+* fix extrinsic failed event not throwing error ([#191](https://github.com/sygmaprotocol/sygma-relayer/issues/191)) ([c45f3ee](https://github.com/sygmaprotocol/sygma-relayer/commit/c45f3ee438e99b1addd7d208e3aa5057ce5904de))
+
 ## [1.6.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.5.1...v1.6.0) (2023-05-31)
 
 
