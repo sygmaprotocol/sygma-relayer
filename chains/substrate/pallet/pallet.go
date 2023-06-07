@@ -4,7 +4,6 @@
 package pallet
 
 import (
-	"math/big"
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
@@ -69,9 +68,10 @@ func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
 		Str("resourceID", hexutil.Encode(prop.ResourceID[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.Conn.Call(res, "sygma_isProposalExecuted", big.NewInt(int64(prop.DepositNonce)), big.NewInt(int64(prop.OriginDomainID)))
+	err := p.Conn.Call(&res, "sygma_isProposalExecuted", prop.DepositNonce, prop.OriginDomainID)
 	if err != nil {
 		return false, err
 	}
+
 	return res, nil
 }
