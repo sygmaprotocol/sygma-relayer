@@ -183,6 +183,9 @@ func (c *SubstrateClient) checkExtrinsicSuccess(extHash types.Hash, blockHash ty
 		if event.Name == events.ExtrinsicFailedEvent {
 			return fmt.Errorf("extrinsic failed")
 		}
+		if event.Name == events.FailedHandlerExecutionEvent {
+			return fmt.Errorf("extrinsic failed with failed handler execution")
+		}
 		if event.Name == events.ExtrinsicSuccessEvent {
 			return nil
 		}

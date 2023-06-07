@@ -199,6 +199,8 @@ func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.S
 
 				if s.coordinator {
 					s.resultChn <- &sig
+				} else {
+					s.resultChn <- nil
 				}
 
 				return nil
