@@ -9,7 +9,7 @@ RUN go mod download
 RUN go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" -o /bridge ./example/
 
 # final stage
-FROM debian:stretch-slim
+FROM debian:stable-slim
 COPY --from=builder /bridge ./
 RUN chmod +x ./bridge
 
