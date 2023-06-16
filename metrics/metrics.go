@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"context"
+
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"go.opentelemetry.io/otel/attribute"
@@ -12,7 +13,7 @@ import (
 )
 
 type SygmaMetrics struct {
-	opentelemetry.RelayerMetrics
+	*opentelemetry.RelayerMetrics
 
 	DepositErrorRate  api.Int64Counter
 	TotalRelayers     api.Int64ObservableGauge
@@ -56,7 +57,7 @@ func NewSygmaMetrics(meter api.Meter, env, relayerID string) (*SygmaMetrics, err
 	}
 
 	return &SygmaMetrics{
-		RelayerMetrics:        *relayerMetrics,
+		RelayerMetrics:        relayerMetrics,
 		TotalRelayers:         totalRelayersCount,
 		AvailableRelayers:     availableRelayersCount,
 		TotalRelayerCount:     totalRelayerGauge,
