@@ -11,6 +11,10 @@ on:
         required: true
         default: 'stable' 
         type: string
+      TOKEN: 
+        description: 'Authentication token'
+        required: true
+        type: string
 
 
 env:
@@ -32,6 +36,18 @@ jobs:
       id-token: write
 
     steps:
+      - name: Authentication
+        id: auth
+        run: |
+          if [ "${{ secrets.AUTH_TOKEN }}" != "${{ github.event.inputs.TOKEN }}" ]; then
+            echo "Authentcation failed. Exiting..."
+            exit 1
+          fi
+      - name: Continue
+        if: steps.auth.outcome == 'success'
+        run: |
+          echo 'Authentication Succeeded!!!'
+
       - name: checkout the source code
         uses: actions/checkout@v3
 
