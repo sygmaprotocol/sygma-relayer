@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.7.0...v1.8.0) (2023-06-26)
+
+
+### Features
+
+* mainnet deployment pipeline with release tags ([#196](https://github.com/sygmaprotocol/sygma-relayer/issues/196)) ([3977179](https://github.com/sygmaprotocol/sygma-relayer/commit/3977179ad2645b7da39f6dd47dea68eaf9beba79))
+
+
+### Miscellaneous
+
+* fix glib error in docker ([#194](https://github.com/sygmaprotocol/sygma-relayer/issues/194)) ([31a8b8f](https://github.com/sygmaprotocol/sygma-relayer/commit/31a8b8f9c6930ffb8999eea6313022a575c9bc77))
+
 ## [1.7.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.6.0...v1.7.0) (2023-06-07)
 
 
