@@ -27,7 +27,7 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 
 func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
 	for _, e := range evts {
-		if e.Name == events.CouncilExecutedEvent {
+		if e.Name == events.ParachainUpdatedEvent {
 			log.Info().Msgf("Updating substrate metadata")
 
 			err := eh.conn.UpdateMetatdata()
