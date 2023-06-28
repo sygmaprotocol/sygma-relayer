@@ -41,7 +41,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 
 	evts := []*parser.Event{
 		{
-			Name: "System.CodeUpdated",
+			Name: "Council.Executed",
 		},
 	}
 	msgChan := make(chan []*message.Message, 1)
