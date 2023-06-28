@@ -64,7 +64,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	s.conn.EXPECT().UpdateMetatdata().Return(nil)
 	evts := []*parser.Event{
 		{
-			Name: "System.CodeUpdated",
+			Name: "Council.Executed",
 		},
 	}
 	msgChan := make(chan []*message.Message, 1)
