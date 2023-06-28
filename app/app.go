@@ -233,6 +233,11 @@ func Run() error {
 					panic(err)
 				}
 				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
+				err = substrateClient.Conn.UpdateMetatdata()
+				if err != nil {
+					panic(err)
+				}
+
 				bridgePallet := substrate_pallet.NewPallet(substrateClient)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
