@@ -41,7 +41,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 
 	evts := []*parser.Event{
 		{
-			Name: "System.CodeUpdated",
+			Name: "ParachainSystem.ValidationFunctionApplied",
 		},
 	}
 	msgChan := make(chan []*message.Message, 1)
@@ -64,7 +64,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 	s.conn.EXPECT().UpdateMetatdata().Return(nil)
 	evts := []*parser.Event{
 		{
-			Name: "System.CodeUpdated",
+			Name: "ParachainSystem.ValidationFunctionApplied",
 		},
 	}
 	msgChan := make(chan []*message.Message, 1)
