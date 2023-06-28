@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.8.0...v1.8.1) (2023-06-28)
+
+
+### Bug Fixes
+
+* substrate metadata update event not caught ([#198](https://github.com/sygmaprotocol/sygma-relayer/issues/198)) ([ce0b9bc](https://github.com/sygmaprotocol/sygma-relayer/commit/ce0b9bc7f715dccabe7100942bd642f48d02d93d))
+
 ## [1.8.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.7.0...v1.8.0) (2023-06-26)
 
 
