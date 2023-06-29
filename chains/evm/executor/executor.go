@@ -26,7 +26,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 )
 
-const TRANSFER_GAS_COST = 100000
+const TRANSFER_GAS_COST = 200000
 
 var (
 	executionCheckPeriod = time.Minute
