@@ -26,6 +26,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 )
 
+const TRANSFER_GAS_COST = 200000
+
 var (
 	executionCheckPeriod = time.Minute
 	signingTimeout       = 30 * time.Minute
@@ -189,6 +191,8 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 	l, ok := proposals[0].Metadata.Data["gasLimit"]
 	if ok {
 		gasLimit = l.(uint64)
+	} else {
+		gasLimit = uint64(TRANSFER_GAS_COST * len(proposals))
 	}
 
 	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
