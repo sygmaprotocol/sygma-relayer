@@ -5,6 +5,9 @@ package listener
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"math/big"
 	"time"
 
@@ -19,7 +22,7 @@ import (
 )
 
 type EventHandler interface {
-	HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error
+	HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error
 }
 type ChainConnection interface {
 	UpdateMetatdata() error
@@ -59,6 +62,9 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 			case <-ctx.Done():
 				return
 			default:
+				tp := otel.GetTracerProvider()
+				ctxWithSpan, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.SubstrateListener.ListenToEvents")
+
 				hash, err := l.conn.GetFinalizedHead()
 				if err != nil {
 					l.log.Error().Err(err).Msg("Failed to fetch finalized header")
@@ -82,8 +88,8 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
-
-				evts, err := l.fetchEvents(startBlock, endBlock)
+				// This context will share context between fetchEvents and HandleEvents. Might be a better idea to refactor it in future.
+				evts, err := l.fetchEvents(ctxWithSpan, startBlock, endBlock)
 				if err != nil {
 					l.log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
 					time.Sleep(l.blockRetryInterval)
@@ -91,7 +97,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 				}
 
 				for _, handler := range l.eventHandlers {
-					err := handler.HandleEvents(evts, msgChan)
+					err := handler.HandleEvents(ctxWithSpan, evts, msgChan)
 					if err != nil {
 						l.log.Error().Err(err).Msg("Error handling substrate events")
 						continue
@@ -102,28 +108,36 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 					l.log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 				}
 				startBlock.Add(startBlock, l.blockInterval)
+				span.End()
 			}
 		}
 	}()
 }
 
-func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
+func (l *SubstrateListener) fetchEvents(ctx context.Context, startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
+	tp := otel.GetTracerProvider()
+	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.SubstrateListener.fetchEvents")
+	defer span.End()
+	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
+
 	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
 		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 
 		evt, err := l.conn.GetBlockEvents(hash)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 		evts = append(evts, evt...)
 
 	}
-
+	span.SetStatus(codes.Ok, "Events fetched")
 	return evts, nil
 }

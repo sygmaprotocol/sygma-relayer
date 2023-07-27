@@ -17,7 +17,7 @@ import (
 )
 
 type BatchProposalExecutor interface {
-	Execute(msgs []*message.Message) error
+	Execute(ctx context.Context, msgs []*message.Message) error
 }
 
 type SubstrateChain struct {
@@ -35,7 +35,7 @@ type EventListener interface {
 }
 
 type ProposalExecutor interface {
-	Execute(message *message.Message) error
+	Execute(ctx context.Context, message *message.Message) error
 }
 
 func NewSubstrateChain(client *client.SubstrateClient, listener EventListener, writer ProposalExecutor, blockstore *store.BlockStore, config *SubstrateConfig, executor BatchProposalExecutor) *SubstrateChain {
@@ -86,8 +86,8 @@ func (c *SubstrateChain) PollEvents(ctx context.Context, sysErr chan<- error, ms
 	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore, msgChan)
 }
 
-func (c *SubstrateChain) Write(msgs []*message.Message) error {
-	err := c.executor.Execute(msgs)
+func (c *SubstrateChain) Write(ctx context.Context, msgs []*message.Message) error {
+	err := c.executor.Execute(ctx, msgs)
 	if err != nil {
 		c.logger.Err(err).Msgf("error writing messages %+v on network %d", msgs, c.DomainID())
 		return err

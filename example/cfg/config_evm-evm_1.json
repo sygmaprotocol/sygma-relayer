@@ -9,9 +9,11 @@
         "url": "test.url",
         "encryptionKey": "test-enc-key"
       },
-      "commHealthCheckInterval": "24h"
+      "commHealthCheckInterval": "5m"
     },
-    "opentelemetryCollectorURL": "http://otel-collector:4318"
+    "opentelemetryCollectorURL": "http://otel-collector:4318",
+    "env": "local",
+    "id": "1"
   },
   "domains": [
     {

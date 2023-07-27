@@ -18,7 +18,7 @@ import (
 )
 
 type BatchProposalExecutor interface {
-	Execute(msgs []*message.Message) error
+	Execute(ctx context.Context, msgs []*message.Message) error
 }
 
 type EVMChain struct {
@@ -53,13 +53,12 @@ func NewEVMChain(
 	}
 }
 
-func (c *EVMChain) Write(msgs []*message.Message) error {
-	err := c.executor.Execute(msgs)
+func (c *EVMChain) Write(ctx context.Context, msgs []*message.Message) error {
+	err := c.executor.Execute(ctx, msgs)
 	if err != nil {
 		log.Err(err).Str("domainID", string(c.domainID)).Msgf("error writing messages %+v", msgs)
 		return err
 	}
-
 	return nil
 }
 

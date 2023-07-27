@@ -79,15 +79,16 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(msgs []*message.Message) error {
+func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
+		log.Info().Msgf("Executing message %s", m.String())
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to handle message %s with error: %w", m.String(), err)
 		}
 
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)

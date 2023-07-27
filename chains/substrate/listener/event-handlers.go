@@ -4,6 +4,10 @@
 package listener
 
 import (
+	"context"
+	"encoding/hex"
+	"go.opentelemetry.io/otel/codes"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -13,6 +17,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type SystemUpdateEventHandler struct {
@@ -59,43 +65,53 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
+	tp := otel.GetTracerProvider()
+	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	defer span.End()
+	logger := eh.log.With().Str("trace_id", span.SpanContext().TraceID().String()).Logger()
 	domainDeposits := make(map[uint8][]*message.Message)
+
+	eventIDS := make([]string, 0)
 
 	for _, evt := range evts {
 		if evt.Name == events.DepositEvent {
+			eventIDS = append(eventIDS, hex.EncodeToString(evt.EventID[:]))
 			func(evt parser.Event) {
 				defer func() {
 					if r := recover(); r != nil {
-						log.Error().Msgf("panic occured while handling deposit %+v", evt)
+						logger.Error().Msgf("panic occured while handling deposit %+v", evt)
 					}
 				}()
 
 				var d events.Deposit
 				err := mapstructure.Decode(evt.Fields, &d)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					log.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					log.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
-				eh.log.Info().Msgf("Resolved deposit message %+v", d)
-
+				logger.Info().Str("msg_id", m.ID()).Msgf("Resolved deposit message %s", m.String())
+				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg_id", m.ID()), attribute.String("msg_type", string(m.Type))))
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)
 		}
 	}
-
+	span.SetAttributes(attribute.StringSlice("eventIDs", eventIDS))
 	for _, deposits := range domainDeposits {
 		go func(d []*message.Message) {
 			msgChan <- d
 		}(deposits)
 	}
+	span.SetStatus(codes.Ok, "Substrate events handled")
 	return nil
 }
 
@@ -115,7 +131,11 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 	}
 }
 
-func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (rh *RetryEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
+	tp := otel.GetTracerProvider()
+	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	defer span.End()
+	logger := rh.log.With().Str("trace_id", span.SpanContext().TraceID().String()).Logger()
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err
@@ -132,7 +152,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 			err := func(evt parser.Event) error {
 				defer func() {
 					if r := recover(); r != nil {
-						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
+						logger.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
 				var er events.Retry
@@ -142,17 +162,19 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 				}
 				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
 				if big.NewInt(finalizedBlockNumber.Int64()).Cmp(er.DepositOnBlockHeight.Int) == -1 {
-					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
+					logger.Info().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
 				}
 
 				bh, err := rh.conn.GetBlockHash(er.DepositOnBlockHeight.Uint64())
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
 				bEvts, err := rh.conn.GetBlockEvents(bh)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
@@ -161,14 +183,16 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 						var d events.Deposit
 						err = mapstructure.Decode(event.Fields, &d)
 						if err != nil {
+							span.SetStatus(codes.Error, err.Error())
 							return err
 						}
 						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 						if err != nil {
+							span.SetStatus(codes.Error, err.Error())
 							return err
 						}
 
-						rh.log.Info().Msgf("Resolved retry message %+v", d)
+						logger.Info().Msgf("Resolved retry message %+v", d)
 
 						domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 					}
@@ -177,6 +201,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 				return nil
 			}(*evt)
 			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
 				return err
 			}
 		}
@@ -185,5 +210,6 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
+	span.SetStatus(codes.Ok, "Retry events handled")
 	return nil
 }

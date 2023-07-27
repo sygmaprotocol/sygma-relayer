@@ -6,6 +6,10 @@ package executor
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"sync"
 	"time"
@@ -72,23 +76,30 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(msgs []*message.Message) error {
+func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
+	tp := otel.GetTracerProvider()
+	_, span := tp.Tracer("relayer-execute").Start(ctx, "relayer.sygma.Execute")
+	defer span.End()
+
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
+		log.Info().Str("msg_id", m.ID()).Msgf("Executing message %s", m.String())
+		span.AddEvent("Executing message", traceapi.WithAttributes(attribute.String("msg_id", m.ID()), attribute.String("msg_type", string(m.Type))))
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to handle message %s with error: %w", m.String(), err)
 		}
 		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
 		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 		if isExecuted {
-			log.Info().Msgf("Prop %p already executed", prop)
+			log.Info().Str("msg_id", m.ID()).Msgf("Prop %p already executed", prop)
 			continue
 		}
 
@@ -100,6 +111,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 
 	propHash, err := e.bridge.ProposalsHash(proposals)
 	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
@@ -113,12 +125,13 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		e.comm,
 		e.fetcher)
 	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
 	sigChn := make(chan interface{})
-	executionContext, cancelExecution := context.WithCancel(context.Background())
-	watchContext, cancelWatch := context.WithCancel(context.Background())
+	executionContext, cancelExecution := context.WithCancel(ctx)
+	watchContext, cancelWatch := context.WithCancel(ctx)
 	pool := pool.New().WithErrors()
 	pool.Go(func() error {
 		err := e.coordinator.Execute(executionContext, signing, sigChn)

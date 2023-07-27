@@ -1,23 +1,40 @@
-# The Licensed Work is (c) 2022 Sygma
-# SPDX-License-Identifier: LGPL-3.0-only
-
 receivers:
   otlp:
     protocols:
       grpc:
       http:
 
-exporters:
-  prometheus:
-    endpoint: 0.0.0.0:8889
-    namespace: default
+processors:
+  batch:
+    timeout: 10s
+    send_batch_max_size: 1000
+    send_batch_size: 100
 
-extensions:
-  health_check:
+exporters:
+  datadog:
+    retry_on_failure:
+      enabled: true
+    api:
+      site: 'datadoghq.com'
+      key: ''
+    metrics:
+      sums:
+        cumulative_monotonic_mode: raw_value
+      histograms:
+        mode: distributions
+  logging:
+    loglevel: debug
+    sampling_initial: 5
+    sampling_thereafter: 200
+
 
 service:
-  extensions: [health_check]
   pipelines:
     metrics:
-      exporters: [prometheus]
       receivers: [otlp]
+      processors:  [batch]
+      exporters: [datadog]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [datadog]
