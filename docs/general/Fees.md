@@ -37,8 +37,14 @@ It always collects fee in token that is being transferred, so it only makes sens
 
 ![](/docs/resources/percentage-fee-general.png)
 
+#### Deposit flow
 
-### Dynamic fee strategy
+1) Calculate the final fee
+   - Based on resourceID, domainsID and amount request a final fee amount that will be required to execute the deposit.
+2) Execute deposit
+   - Send the appropriate token amount based on the calculated final fee when executing the deposit.
+
+### Dynamic fee strategy (EVM only)
 
 This strategy utilizes the [Sygma Fee Oracle service](https://github.com/sygmaprotocol/sygma-fee-oracle), which issues
 fee estimates with details on the gas price for the destination chain. In addition, fee oracle can provide price
