@@ -31,12 +31,7 @@ currency of the source chain**.
 This strategy calculates fee amount based on the amount of token being transferred. 
 It always collects fee in token that is being transferred, so it only makes sense for fungible token routes.
 
-F - fee amount
-L - lower bound (minimal fee amount)
-H - high bound (maximal fee amount)
-BPS - percentage fee defined as base points BPS
-
-![](/docs/resources/percentage-formula-general.png | width=100)
+<img src="/docs/resources/percentage-formula-general.png" data-canonical-src="/docs/resources/percentage-formula-general.png" width="386" height="267" />
 
 *On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
 
