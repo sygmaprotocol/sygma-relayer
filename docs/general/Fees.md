@@ -38,6 +38,11 @@ BPS - percentage fee defined as base points BPS
 
 ![](/docs/resources/equation.png)
 
+*On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
+
+![](/docs/resources/percentage-fee-general.png)
+
+
 ### Dynamic fee strategy
 
 This strategy utilizes the [Sygma Fee Oracle service](https://github.com/sygmaprotocol/sygma-fee-oracle), which issues
