@@ -10,9 +10,9 @@ every potential destination domain, with this mapping also outlining all potenti
 
 Fee strategy defines a set of rules on how fees should be charged when executing deposits on the source chain.
 
-### Static fee strategy
+### Fixed fee strategy
 
-This strategy always requires a predefined static fee amount per deposit. **It can only collect fees in the native
+This strategy always requires a predefined fixed fee amount per deposit. **It can only collect fees in the native
 currency of the source chain**.
 
 *On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
@@ -25,6 +25,18 @@ currency of the source chain**.
     - Based on resourceID and domainsID, request a final fee amount that will be required to execute the deposit.
 2) Execute deposit
     - Send the appropriate base currency amount based on the calculated final fee when executing the deposit.
+
+### Percentage based fee strategy
+
+This strategy calculates fee amount based on the amount of token being transferred. 
+It always collects fee in token that is being transferred, so it only makes sense for fungible token routes.
+
+F - fee amount
+L - lower bound (minimal fee amount)
+H - high bound (maximal fee amount)
+BPS - percentage fee defined as base points BPS
+
+![](/docs/resources/equation.png)
 
 ### Dynamic fee strategy
 
