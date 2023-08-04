@@ -36,7 +36,7 @@ L - lower bound (minimal fee amount)
 H - high bound (maximal fee amount)
 BPS - percentage fee defined as base points BPS
 
-![](/docs/resources/percentage-formula-general.png)
+![](/docs/resources/percentage-formula-general.png | width=100)
 
 *On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
 
