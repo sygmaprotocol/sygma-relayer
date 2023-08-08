@@ -4,6 +4,7 @@
 package listener_test
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -141,7 +142,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			Fields: d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(context.TODO(), evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -200,7 +201,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 			Fields: d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(context.TODO(), evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -257,7 +258,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 			Fields: d2,
 		},
 	}
-	err := s.depositEventHandler.HandleEvents(evts, msgChan)
+	err := s.depositEventHandler.HandleEvents(context.TODO(), evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -287,7 +288,7 @@ func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 
 	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID)
 	msgChan := make(chan []*message.Message, 2)
-	err := retryHandler.HandleEvents([]*parser.Event{}, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), []*parser.Event{}, msgChan)
 
 	s.NotNil(err)
 }
@@ -312,7 +313,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 		},
 	}
 
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -338,7 +339,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 			Fields: rtry,
 		},
 	}
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -365,7 +366,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 			Fields: rtry,
 		},
 	}
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -392,7 +393,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 			Fields: rtry,
 		},
 	}
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 
 	s.Nil(err)
 	s.Equal(len(msgChan), 0)
@@ -467,7 +468,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 			Fields: rtry,
 		},
 	}
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -552,7 +553,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 			Fields: rtry,
 		},
 	}
-	err := retryHandler.HandleEvents(evts, msgChan)
+	err := retryHandler.HandleEvents(context.TODO(), evts, msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)

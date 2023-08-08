@@ -4,6 +4,7 @@
 package comm_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -75,6 +76,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	}()
 
 	err := s.testCommunications[2].Broadcast(
+		context.Background(),
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
@@ -111,6 +113,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_E
 	}()
 
 	err := s.testCommunications[2].Broadcast(
+		context.Background(),
 		[]peer.ID{s.testHosts[0].ID(), externalHost.ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
@@ -143,6 +146,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	}()
 
 	err := s.testCommunications[2].Broadcast(
+		context.Background(),
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,
@@ -155,6 +159,7 @@ func (s *CommunicationIntegrationTestSuite) TestCommunication_BroadcastMessage_S
 	s.testCommunications[0].UnSubscribe(firstSubID)
 
 	err = s.testCommunications[2].Broadcast(
+		context.Background(),
 		[]peer.ID{s.testHosts[0].ID(), s.testHosts[1].ID()},
 		nil,
 		comm.CoordinatorPingMsg,

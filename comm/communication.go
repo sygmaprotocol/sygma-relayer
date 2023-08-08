@@ -4,6 +4,8 @@
 package comm
 
 import (
+	"context"
+
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
@@ -11,6 +13,7 @@ import (
 type WrappedMessage struct {
 	MessageType MessageType `json:"message_type"`
 	SessionID   string      `json:"message_id"`
+	TraceID     string      `json:"trace_id"`
 	Payload     []byte      `json:"payload"`
 	From        peer.ID     `json:"-"`
 }
@@ -21,7 +24,7 @@ type Communication interface {
 	CloseSession(sessionID string)
 	// Broadcast sends message to provided peers
 	// If error has occurred on sending any message, broadcast will be aborted and error will be sent to errChan
-	Broadcast(peers peer.IDSlice, msg []byte, msgType MessageType, sessionID string) error
+	Broadcast(ctx context.Context, peers peer.IDSlice, msg []byte, msgType MessageType, sessionID string) error
 	// Subscribe subscribes provided channel to a specific message type for a provided session
 	// Returns SubscriptionID - unique identifier of created subscription that is used to unsubscribe from subscription
 	Subscribe(sessionID string, msgType MessageType, channel chan *WrappedMessage) SubscriptionID

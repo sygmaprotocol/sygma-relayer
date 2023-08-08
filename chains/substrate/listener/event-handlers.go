@@ -66,10 +66,9 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
-	tp := otel.GetTracerProvider()
-	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
 	defer span.End()
-	logger := eh.log.With().Str("trace_id", span.SpanContext().TraceID().String()).Logger()
+	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	eventIDS := make([]string, 0)
@@ -88,19 +87,19 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 				err := mapstructure.Decode(evt.Fields, &d)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
-					log.Error().Err(err).Msgf("%v", err)
+					logger.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
-					log.Error().Err(err).Msgf("%v", err)
+					logger.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
-				logger.Info().Str("msg_id", m.ID()).Msgf("Resolved deposit message %s", m.String())
-				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg_id", m.ID()), attribute.String("msg_type", string(m.Type))))
+				logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
+				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)
 		}
@@ -132,10 +131,9 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 }
 
 func (rh *RetryEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
-	tp := otel.GetTracerProvider()
-	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
 	defer span.End()
-	logger := rh.log.With().Str("trace_id", span.SpanContext().TraceID().String()).Logger()
+	logger := rh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err

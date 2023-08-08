@@ -6,6 +6,10 @@ package tss
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"sync"
 	"time"
 
@@ -33,6 +37,7 @@ type TssProcess interface {
 	Retryable() bool
 	StartParams(readyMap map[peer.ID]bool) []byte
 	SessionID() string
+	TraceID() string
 	ValidCoordinators() []peer.ID
 }
 
@@ -69,10 +74,11 @@ func NewCoordinator(
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}) error {
+	logger := log.With().Str("dd.trace_id", tssProcess.TraceID()).Logger()
 	sessionID := tssProcess.SessionID()
 	value, ok := c.pendingProcesses[sessionID]
 	if ok && value {
-		log.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
+		logger.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
 		return fmt.Errorf("process already pending")
 	}
 
@@ -93,7 +99,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
 
-	log.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.Pretty())
+	logger.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.String())
 
 	p.Go(func(ctx context.Context) error {
 		err := c.start(ctx, tssProcess, coordinator, resultChn, []peer.ID{})
@@ -184,7 +190,7 @@ func (c *Coordinator) watchExecution(ctx context.Context, tssProcess TssProcess,
 		case msg := <-failChn:
 			{
 				// ignore messages that are not from coordinator
-				if msg.From.Pretty() != coordinator.Pretty() {
+				if msg.From.String() != coordinator.String() {
 					continue
 				}
 
@@ -196,7 +202,7 @@ func (c *Coordinator) watchExecution(ctx context.Context, tssProcess TssProcess,
 
 // start initiates listeners for coordinator and participants with static calculated coordinator
 func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordinator peer.ID, resultChn chan interface{}, excludedPeers []peer.ID) error {
-	if coordinator.Pretty() == c.host.ID().Pretty() {
+	if coordinator.String() == c.host.ID().String() {
 		return c.initiate(ctx, tssProcess, resultChn, excludedPeers)
 	} else {
 		return c.waitForStart(ctx, tssProcess, resultChn, coordinator, c.CoordinatorTimeout)
@@ -216,10 +222,10 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
-func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
+func (c *Coordinator) broadcastInitiateMsg(ctx context.Context, sessionID string) {
 	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
 	_ = c.communication.Broadcast(
-		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID,
+		ctx, c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID,
 	)
 }
 
@@ -227,6 +233,9 @@ func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
+	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.tss.Coordinator.initiate")
+	defer span.End()
+	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	readyChan := make(chan *comm.WrappedMessage)
 	readyMap := make(map[peer.ID]bool)
 	readyMap[c.host.ID()] = true
@@ -236,35 +245,38 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 
 	ticker := time.NewTicker(c.InitiatePeriod)
 	defer ticker.Stop()
-	c.broadcastInitiateMsg(tssProcess.SessionID())
+	c.broadcastInitiateMsg(ctxWithSpan, tssProcess.SessionID())
 	for {
 		select {
 		case wMsg := <-readyChan:
 			{
-				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
+				logger.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
+				span.AddEvent("Received ready message", traceapi.WithAttributes(attribute.String("tss.msg.from", wMsg.From.String()), attribute.String("tss.msg.sessionID", tssProcess.SessionID())))
 				if !slices.Contains(excludedPeers, wMsg.From) {
 					readyMap[wMsg.From] = true
 				}
 				ready, err := tssProcess.Ready(readyMap, excludedPeers)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 				if !ready {
 					continue
 				}
-
+				span.AddEvent("Ready for start", traceapi.WithAttributes(attribute.String("tss.session.id", tssProcess.SessionID())))
 				startParams := tssProcess.StartParams(readyMap)
 				startMsgBytes, err := common.MarshalStartMessage(startParams)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
-				_ = c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
-				return tssProcess.Run(ctx, true, resultChn, startParams)
+				_ = c.communication.Broadcast(ctxWithSpan, c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
+				return tssProcess.Run(ctxWithSpan, true, resultChn, startParams)
 			}
 		case <-ticker.C:
 			{
-				c.broadcastInitiateMsg(tssProcess.SessionID())
+				c.broadcastInitiateMsg(ctxWithSpan, tssProcess.SessionID())
 			}
 		case <-ctx.Done():
 			{
@@ -283,6 +295,10 @@ func (c *Coordinator) waitForStart(
 	coordinator peer.ID,
 	timeout time.Duration,
 ) error {
+	ctxWithInternalSpan, internalSpan := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.tss.Coordinator.waitForStart")
+	defer internalSpan.End()
+	//logger := log.With().Str("dd.trace_id", internalSpan.SpanContext().TraceID().String()).Logger()
+
 	msgChan := make(chan *comm.WrappedMessage)
 	startMsgChn := make(chan *comm.WrappedMessage)
 
@@ -297,32 +313,55 @@ func (c *Coordinator) waitForStart(
 		select {
 		case wMsg := <-msgChan:
 			{
-				coordinatorTimeoutTicker.Reset(timeout)
+				tID, err := traceapi.TraceIDFromHex(wMsg.TraceID)
+				if err != nil {
+					log.Warn().Str("traceID", wMsg.TraceID).Msg("TraceID is wrong")
+				}
+				ctxWithRemoteTrace := traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})
+				ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, ctxWithRemoteTrace), "relayer.sygma.tss.Coordinator.InitMessage")
+				defer span.End()
+				logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 
-				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
+				coordinatorTimeoutTicker.Reset(timeout)
+				span.AddEvent("Received initiate message", traceapi.WithAttributes(attribute.String("tss.msg.coordinator", wMsg.From.String()), attribute.String("tss.session.id", tssProcess.SessionID())))
+				logger.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
 				_ = c.communication.Broadcast(
-					peer.IDSlice{wMsg.From}, []byte{}, comm.TssReadyMsg, tssProcess.SessionID(),
+					ctxWithSpan, peer.IDSlice{wMsg.From}, []byte{}, comm.TssReadyMsg, tssProcess.SessionID(),
 				)
 			}
 		case startMsg := <-startMsgChn:
 			{
-				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received start message from %s", startMsg.From)
+				tID, err := traceapi.TraceIDFromHex(startMsg.TraceID)
+				if err != nil {
+					log.Warn().Str("traceID", startMsg.TraceID).Msg("TraceID is wrong")
+				}
+				ctxWithRemoteTrace := traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})
+				ctxWithRemoteSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, ctxWithRemoteTrace), "relayer.sygma.tss.Coordinator.StartMessage")
+				defer span.End()
+				logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
+
+				logger.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received start message from %s", startMsg.From)
+				span.AddEvent("Received start message", traceapi.WithAttributes(attribute.String("tss.msg.coordinator", startMsg.From.String()), attribute.String("tss.session.id", tssProcess.SessionID())))
 
 				// having startMsg.From as "" is special case when peer is not selected in subset
 				// but should wait for start message if existing singing process fails
 				if coordinator != "" && startMsg.From != coordinator {
-					return fmt.Errorf(
+					err := fmt.Errorf(
 						"start message received from peer %s that is not coordinator %s",
-						startMsg.From.Pretty(), coordinator.Pretty(),
+						startMsg.From.String(), coordinator.String(),
 					)
+					span.SetStatus(codes.Error, err.Error())
+
+					return err
 				}
 
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
-				return tssProcess.Run(ctx, false, resultChn, msg.Params)
+				return tssProcess.Run(ctxWithRemoteSpan, false, resultChn, msg.Params)
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{

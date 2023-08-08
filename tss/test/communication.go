@@ -4,6 +4,7 @@
 package tsstest
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -24,6 +25,7 @@ type TestCommunication struct {
 }
 
 func (tc *TestCommunication) Broadcast(
+	ctx context.Context,
 	peers peer.IDSlice,
 	msg []byte,
 	msgType comm.MessageType,

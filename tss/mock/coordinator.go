@@ -118,6 +118,20 @@ func (mr *MockTssProcessMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockTssProcess)(nil).Stop))
 }
 
+// TraceID mocks base method.
+func (m *MockTssProcess) TraceID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TraceID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// TraceID indicates an expected call of TraceID.
+func (mr *MockTssProcessMockRecorder) TraceID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TraceID", reflect.TypeOf((*MockTssProcess)(nil).TraceID))
+}
+
 // ValidCoordinators mocks base method.
 func (m *MockTssProcess) ValidCoordinators() []peer.ID {
 	m.ctrl.T.Helper()

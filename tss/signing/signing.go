@@ -44,6 +44,7 @@ type Signing struct {
 func NewSigning(
 	msg *big.Int,
 	sessionID string,
+	traceID string,
 	host host.Host,
 	comm comm.Communication,
 	fetcher SaveDataFetcher,
@@ -63,7 +64,8 @@ func NewSigning(
 			Communication: comm,
 			Peers:         key.Peers,
 			SID:           sessionID,
-			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
+			TID:           traceID,
+			Log:           log.With().Str("SessionID", sessionID).Str("dd.trace_id", traceID).Str("Process", "signing").Logger(),
 			Cancel:        func() {},
 		},
 		key: key,
@@ -88,7 +90,7 @@ func (s *Signing) Run(
 		return err
 	}
 
-	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
+	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().String()), common.PartiesFromPeers(peerSubset)) {
 		return &errors.SubsetError{Peer: s.Host.ID()}
 	}
 
@@ -96,7 +98,7 @@ func (s *Signing) Run(
 	parties := common.PartiesFromPeers(s.Peers)
 	s.PopulatePartyStore(parties)
 	pCtx := tss.NewPeerContext(parties)
-	tssParams, err := tss.NewParameters(tss.S256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+	tssParams, err := tss.NewParameters(tss.S256(), pCtx, s.PartyStore[s.Host.ID().String()], len(parties), s.key.Threshold)
 	if err != nil {
 		return err
 	}

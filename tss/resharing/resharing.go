@@ -43,7 +43,7 @@ type Resharing struct {
 }
 
 func NewResharing(
-	sessionID string,
+	sessionID, traceID string,
 	threshold int,
 	host host.Host,
 	comm comm.Communication,
@@ -65,7 +65,8 @@ func NewResharing(
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
-			Log:           log.With().Str("SessionID", sessionID).Str("Process", "resharing").Logger(),
+			TID:           traceID,
+			Log:           log.With().Str("SessionID", sessionID).Str("dd.trace_id", traceID).Str("Process", "resharing").Logger(),
 			Cancel:        func() {},
 		},
 		key:          key,
@@ -98,7 +99,7 @@ func (r *Resharing) Run(
 		tss.S256(),
 		oldCtx,
 		newCtx,
-		r.PartyStore[r.Host.ID().Pretty()],
+		r.PartyStore[r.Host.ID().String()],
 		len(oldParties),
 		startParams.OldThreshold,
 		len(newParties),

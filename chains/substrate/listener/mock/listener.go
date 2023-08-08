@@ -5,6 +5,7 @@
 package mock_listener
 
 import (
+	context "context"
 	reflect "reflect"
 
 	message "github.com/ChainSafe/chainbridge-core/relayer/message"
@@ -37,17 +38,17 @@ func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
 }
 
 // HandleEvents mocks base method.
-func (m *MockEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (m *MockEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvents", evts, msgChan)
+	ret := m.ctrl.Call(m, "HandleEvents", ctx, evts, msgChan)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleEvents indicates an expected call of HandleEvents.
-func (mr *MockEventHandlerMockRecorder) HandleEvents(evts, msgChan interface{}) *gomock.Call {
+func (mr *MockEventHandlerMockRecorder) HandleEvents(ctx, evts, msgChan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), evts, msgChan)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), ctx, evts, msgChan)
 }
 
 // MockChainConnection is a mock of ChainConnection interface.

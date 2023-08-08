@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	traceapi "go.opentelemetry.io/otel/trace"
 
 	comm "github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -54,15 +55,18 @@ func (c Libp2pCommunication) CloseSession(sessionID string) {
 }
 
 func (c Libp2pCommunication) Broadcast(
+	ctx context.Context,
 	peers peer.IDSlice,
 	msg []byte,
 	msgType comm.MessageType,
 	sessionID string,
 ) error {
+	span := traceapi.SpanFromContext(ctx)
 	hostID := c.h.ID()
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
+		TraceID:     span.SpanContext().TraceID().String(),
 		Payload:     msg,
 		From:        hostID,
 	}

@@ -4,6 +4,7 @@
 package listener_test
 
 import (
+	"context"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"math/big"
@@ -47,7 +48,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryEvent{}, fmt.Errorf("error"))
 
 	msgChan := make(chan []*message.Message, 1)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -76,7 +77,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 	).Return(&message.Message{DepositNonce: 2}, nil)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -121,7 +122,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 	).Return(&message.Message{DepositNonce: 2}, nil)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -168,7 +169,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 	).Return(&message.Message{DepositNonce: 2}, nil)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -212,7 +213,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 	).Return(&message.Message{DepositNonce: 2}, nil)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -243,7 +244,7 @@ func (s *DepositHandlerTestSuite) Test_FetchDepositFails() {
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]*coreEvents.Deposit{}, fmt.Errorf("error"))
 
 	msgChan := make(chan []*message.Message, 1)
-	err := s.depositEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.depositEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 
 	s.NotNil(err)
 	s.Equal(len(msgChan), 0)
@@ -287,7 +288,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.depositEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.depositEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -334,7 +335,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	)
 
 	msgChan := make(chan []*message.Message, 2)
-	err := s.depositEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.depositEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
@@ -400,7 +401,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	)
 
 	msgChan := make(chan []*message.Message, 3)
-	err := s.depositEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.depositEventHandler.HandleEvent(context.TODO(), big.NewInt(0), big.NewInt(5), msgChan)
 	msgs1 := <-msgChan
 	msgs2 := <-msgChan
 

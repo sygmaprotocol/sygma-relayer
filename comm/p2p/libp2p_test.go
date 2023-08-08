@@ -4,6 +4,7 @@
 package p2p_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -172,24 +173,26 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessag
 	communications[1].SubscribeTo("1", comm.CoordinatorPingMsg, msgChn)
 	communications[1].SubscribeTo("2", comm.TssKeySignMsg, msgChn)
 
-	err := communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1")
+	err := communications[0].Broadcast(context.TODO(), []peer.ID{testHosts[1].ID()}, []byte{}, comm.CoordinatorPingMsg, "1")
 	s.Nil(err)
 	pingMsg := <-msgChn
 
 	msgBytes, _ := common.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
-	err = communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2")
+	err = communications[0].Broadcast(context.Background(), []peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2")
 	s.Nil(err)
 	largeMsg := <-msgChn
 
 	s.Equal(pingMsg, &comm.WrappedMessage{
 		MessageType: comm.CoordinatorPingMsg,
 		SessionID:   "1",
+		TraceID:     "00000000000000000000000000000000",
 		Payload:     []byte{},
 		From:        testHosts[0].ID(),
 	})
 	s.Equal(largeMsg, &comm.WrappedMessage{
 		MessageType: comm.TssKeySignMsg,
 		SessionID:   "2",
+		TraceID:     "00000000000000000000000000000000",
 		Payload:     msgBytes,
 		From:        testHosts[0].ID(),
 	})

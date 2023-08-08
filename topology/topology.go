@@ -4,6 +4,7 @@
 package topology
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -21,6 +22,16 @@ import (
 type NetworkTopology struct {
 	Peers     []*peer.AddrInfo
 	Threshold int
+}
+
+func (nt NetworkTopology) String() string {
+	var peers = bytes.Buffer{}
+	for _, v := range nt.Peers {
+		peers.WriteString(v.String())
+		peers.WriteString(";")
+	}
+	peers.WriteString(fmt.Sprintf("Threshold: %d", nt.Threshold))
+	return peers.String()
 }
 
 func (nt NetworkTopology) IsAllowedPeer(peer peer.ID) bool {

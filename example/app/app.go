@@ -58,7 +58,6 @@ import (
 )
 
 func Run() error {
-	log.Debug().Msg("RUNNUNG EXAMPLE APP")
 	configuration := &config.Config{}
 	configuration, err := config.GetConfigFromFile(viper.GetString(flags.ConfigFlagName), configuration)
 	if err != nil {

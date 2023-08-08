@@ -38,7 +38,7 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.Threshold, host, &communication, s.MockStorer)
+		keygen := keygen.NewKeygen("keygen", "traceID1", s.Threshold, host, &communication, s.MockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
@@ -67,7 +67,7 @@ func (s *KeygenTestSuite) Test_KeygenTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen2", s.Threshold, host, &communication, s.MockStorer)
+		keygen := keygen.NewKeygen("keygen2", "traceID1", s.Threshold, host, &communication, s.MockStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
 		coordinator.TssTimeout = time.Millisecond

@@ -6,6 +6,9 @@ package common
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"runtime/debug"
 
@@ -27,6 +30,7 @@ type Party interface {
 type BaseTss struct {
 	Host          host.Host
 	SID           string
+	TID           string
 	Party         Party
 	PartyStore    map[string]*tss.PartyID
 	Communication comm.Communication
@@ -46,6 +50,8 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
 func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
+	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessInboundMessages")
+	defer span.End()
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf(string(debug.Stack()))
@@ -56,6 +62,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 		select {
 		case wMsg := <-msgChan:
 			{
+				span.AddEvent("Process inbound message", traceapi.WithAttributes(attribute.String("p2pmsg.from", wMsg.From.String()), attribute.String("p2pmsg.type", wMsg.MessageType.String())))
 				b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
 				msg, err := UnmarshalTssMessage(wMsg.Payload)
@@ -65,7 +72,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 
 				ok, err := b.Party.UpdateFromBytes(
 					msg.MsgBytes,
-					b.PartyStore[wMsg.From.Pretty()],
+					b.PartyStore[wMsg.From.String()],
 					msg.IsBroadcast,
 					new(big.Int).SetBytes([]byte(b.SID)))
 				if !ok {
@@ -81,6 +88,8 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
 func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
+	contextWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
+	defer span.End()
 	for {
 		select {
 		case msg := <-outChn:
@@ -102,7 +111,8 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 				}
 
 				b.Log.Debug().Msgf("sending message to %s", peers)
-				err = b.Communication.Broadcast(peers, msgBytes, messageType, b.SessionID())
+				span.AddEvent("Process outbound message", traceapi.WithAttributes(attribute.String("p2pmsg.peers", fmt.Sprintf("%s", peers)), attribute.String("p2pmsg.type", messageType.String())))
+				err = b.Communication.Broadcast(contextWithSpan, peers, msgBytes, messageType, b.SessionID())
 				if err != nil {
 					return err
 				}
@@ -126,4 +136,8 @@ func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 
 func (b *BaseTss) SessionID() string {
 	return b.SID
+}
+
+func (b *BaseTss) TraceID() string {
+	return b.TID
 }

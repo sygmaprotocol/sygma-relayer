@@ -43,9 +43,11 @@ func (s *TopologyTestSuite) Test_ProcessRawTopology_ValidTopology() {
 	})
 	s.Nil(err)
 	s.Equal(2, topology.Threshold)
-	s.Equal("QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT", topology.Peers[0].ID.Pretty())
-	s.Equal("QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK", topology.Peers[1].ID.Pretty())
-	s.Equal("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX", topology.Peers[2].ID.Pretty())
+	s.Equal("QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT", topology.Peers[0].ID.String())
+	s.Equal("QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK", topology.Peers[1].ID.String())
+	s.Equal("QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX", topology.Peers[2].ID.String())
+
+	s.Equal(topology.String(), "{QmeTuMtdpPB7zKDgmobEwSvxodrf5aFVSmBXX3SQJVjJaT: [/dns4/relayer2/tcp/9001]};{QmYAYuLUPNwYEBYJaKHcE7NKjUhiUV8txx2xDXHvcYa1xK: [/dns4/relayer3/tcp/9002]};{QmcvEg7jGvuxdsUFRUiE4VdrL2P1Yeju5L83BsJvvXz7zX: [/dns4/relayer1/tcp/9000]};Threshold: 2")
 }
 
 func (s *TopologyTestSuite) Test_ProcessRawTopology_InvalidPeerAddress() {

@@ -176,6 +176,7 @@ require (
 )
 
 replace (
+	github.com/ChainSafe/chainbridge-core v1.4.1 => github.com/ChainSafe/chainbridge-core v1.4.2-0.20230803102628-1a13e1bc62cc
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/binance-chain/tss-lib => github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684
 

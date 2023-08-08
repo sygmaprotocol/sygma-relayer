@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"time"
 
@@ -62,9 +63,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 			case <-ctx.Done():
 				return
 			default:
-				tp := otel.GetTracerProvider()
-				ctxWithSpan, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.SubstrateListener.ListenToEvents")
-
+				ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.SubstrateListener.ListenToEvents")
 				hash, err := l.conn.GetFinalizedHead()
 				if err != nil {
 					l.log.Error().Err(err).Msg("Failed to fetch finalized header")
@@ -115,8 +114,7 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 }
 
 func (l *SubstrateListener) fetchEvents(ctx context.Context, startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
-	tp := otel.GetTracerProvider()
-	_, span := tp.Tracer("relayer-listener").Start(ctx, "relayer.sygma.SubstrateListener.fetchEvents")
+	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.SubstrateListener.fetchEvents")
 	defer span.End()
 	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 
@@ -135,8 +133,10 @@ func (l *SubstrateListener) fetchEvents(ctx context.Context, startBlock *big.Int
 			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
+		for _, e := range evt {
+			span.AddEvent("Event fetched", traceapi.WithAttributes(attribute.String("event.name", e.Name)))
+		}
 		evts = append(evts, evt...)
-
 	}
 	span.SetStatus(codes.Ok, "Events fetched")
 	return evts, nil

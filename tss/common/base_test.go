@@ -139,7 +139,7 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
 	}, nil)
 	s.mockMessage.EXPECT().IsBroadcast().Return(true)
-	s.mockCommunication.EXPECT().Broadcast(baseTss.Peers, gomock.Any(), comm.TssKeyGenMsg, "keygen").Return(nil)
+	s.mockCommunication.EXPECT().Broadcast(gomock.Any(), baseTss.Peers, gomock.Any(), comm.TssKeyGenMsg, "keygen").Return(nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	p := pool.New().WithContext(ctx).WithCancelOnError()

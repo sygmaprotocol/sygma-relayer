@@ -5,6 +5,7 @@
 package mock_comm
 
 import (
+	context "context"
 	reflect "reflect"
 
 	comm "github.com/ChainSafe/sygma-relayer/comm"
@@ -36,17 +37,17 @@ func (m *MockCommunication) EXPECT() *MockCommunicationMockRecorder {
 }
 
 // Broadcast mocks base method.
-func (m *MockCommunication) Broadcast(peers peer.IDSlice, msg []byte, msgType comm.MessageType, sessionID string) error {
+func (m *MockCommunication) Broadcast(ctx context.Context, peers peer.IDSlice, msg []byte, msgType comm.MessageType, sessionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Broadcast", peers, msg, msgType, sessionID)
+	ret := m.ctrl.Call(m, "Broadcast", ctx, peers, msg, msgType, sessionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Broadcast indicates an expected call of Broadcast.
-func (mr *MockCommunicationMockRecorder) Broadcast(peers, msg, msgType, sessionID interface{}) *gomock.Call {
+func (mr *MockCommunicationMockRecorder) Broadcast(ctx, peers, msg, msgType, sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), peers, msg, msgType, sessionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockCommunication)(nil).Broadcast), ctx, peers, msg, msgType, sessionID)
 }
 
 // CloseSession mocks base method.

@@ -4,6 +4,7 @@
 package comm
 
 import (
+	"context"
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -18,7 +19,7 @@ func ExecuteCommHealthCheck(communication Communication, peers peer.IDSlice) []*
 	log.Debug().Msgf("ExecuteCommHealthCheck for peers %s", peers.String())
 	errors := make([]*CommunicationError, 0)
 	for _, p := range peers {
-		err := communication.Broadcast([]peer.ID{p}, []byte{}, Unknown, sessionID)
+		err := communication.Broadcast(context.Background(), []peer.ID{p}, []byte{}, Unknown, sessionID)
 		if err != nil {
 			errors = append(errors, err.(*CommunicationError))
 		}
