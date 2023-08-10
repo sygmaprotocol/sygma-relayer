@@ -83,8 +83,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
-		logger.Info().Str("msg.id", m.ID()).Msgf("Message to execute %s", m.String())
-		span.AddEvent("Message to execute received", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+		logger.Debug().Str("msg.id", m.ID()).Msgf("Message to execute %s", m.String())
+		span.AddEvent("Message to execute received", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
 			return fmt.Errorf("failed to handle message %s with error: %w", m.String(), err)
@@ -97,11 +97,11 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 		}
 		if isExecuted {
 			logger.Info().Str("msg.id", m.ID()).Msgf("Message already executed %s", m.String())
-			span.AddEvent("Message already executed", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+			span.AddEvent("Message already executed", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 			continue
 		}
 		logger.Info().Str("msg.id", m.ID()).Msgf("Executing message %s", m.String())
-		span.AddEvent("Executing message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+		span.AddEvent("Executing message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 		proposals = append(proposals, evmProposal)
 	}
 	if len(proposals) == 0 {
@@ -174,7 +174,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
-				logger.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				logger.Debug().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
@@ -182,7 +182,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				logger.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
+				logger.Debug().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
 				span.AddEvent("Proposals executed", traceapi.WithAttributes(attribute.String("tss.session.id", sessionID)))
 				return nil
 			}

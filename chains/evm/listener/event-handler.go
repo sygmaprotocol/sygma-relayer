@@ -98,7 +98,7 @@ func (eh *DepositEventHandler) HandleEvent(
 			}
 			logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s in block range: %s-%s", m.String(), startBlock.String(), endBlock.String())
 			// Events should eventually replace most of the logs
-			span.AddEvent("Resolved deposit message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+			span.AddEvent("Resolved deposit message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 			if m.Type == PermissionlessGenericTransfer {
 				msgChan <- []*message.Message{m}
 				return

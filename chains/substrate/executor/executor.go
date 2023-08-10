@@ -92,8 +92,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
-		logger.Info().Str("msg.id", m.ID()).Msgf("Message to execute %s", m.String())
-		span.AddEvent("Message to execute received", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+		logger.Debug().Str("msg.id", m.ID()).Msgf("Message to execute %s", m.String())
+		span.AddEvent("Message to execute received", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
 			return fmt.Errorf("failed to handle message %s with error: %w", m.String(), err)
@@ -105,8 +105,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 			return err
 		}
 		if isExecuted {
-			logger.Info().Str("msg.id", m.ID()).Msgf("Message already executed %s", m.String())
-			span.AddEvent("Message already executed", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+			logger.Debug().Str("msg.id", m.ID()).Msgf("Message already executed %s", m.String())
+			span.AddEvent("Message already executed", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 			continue
 		}
 

@@ -98,8 +98,8 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 					return
 				}
 
-				logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
-				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.type", string(m.Type))))
+				logger.Debug().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
+				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)
 		}
