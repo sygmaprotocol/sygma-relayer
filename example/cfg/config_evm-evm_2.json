@@ -11,7 +11,7 @@
       },
       "commHealthCheckInterval": "5m"
     },
-    "opentelemetryCollectorURL": "http://jaeger:4318",
+    "opentelemetryCollectorURL": "http://otel-collector:4318",
     "env": "local",
     "id": "2"
   },

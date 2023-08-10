@@ -11,17 +11,22 @@ processors:
     send_batch_size: 100
 
 exporters:
-  datadog:
+  otlp:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
     retry_on_failure:
       enabled: true
-    api:
-      site: 'datadoghq.com'
-      key: ''
-    metrics:
-      sums:
-        cumulative_monotonic_mode: raw_value
-      histograms:
-        mode: distributions
+
+  prometheus:
+    endpoint: "otel-collector:8889"
+    namespace: relayer
+    send_timestamps: true
+    enable_open_metrics: true
+    add_metric_suffixes: false
+    resource_to_telemetry_conversion:
+      enabled: true
+
   logging:
     loglevel: debug
     sampling_initial: 5
@@ -33,8 +38,8 @@ service:
     metrics:
       receivers: [otlp]
       processors:  [batch]
-      exporters: [prometheus]
+      exporters: [prometheus, logging]
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [jaeger]
+      exporters: [otlp]

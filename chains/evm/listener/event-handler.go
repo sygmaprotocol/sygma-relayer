@@ -373,7 +373,7 @@ func (eh *RefreshEventHandler) HandleEvent(
 	)
 	span.AddEvent("Resharing event found", traceapi.WithAttributes(
 		attribute.String("topology.hash", endBlock.String()),
-		attribute.String("topology.map", fmt.Sprintf("%s", topology.String())),
+		attribute.String("topology.map", topology.String()),
 	),
 	)
 
