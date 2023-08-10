@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"runtime/debug"
@@ -62,13 +63,19 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 		select {
 		case wMsg := <-msgChan:
 			{
-				span.AddEvent("Process inbound message", traceapi.WithAttributes(attribute.String("p2pmsg.from", wMsg.From.String()), attribute.String("p2pmsg.type", wMsg.MessageType.String())))
 				b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
 				msg, err := UnmarshalTssMessage(wMsg.Payload)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
+				span.AddEvent("Process inbound message", traceapi.WithAttributes(
+					attribute.String("p2pmsg.from", wMsg.From.String()),
+					attribute.String("p2pmsg.type", wMsg.MessageType.String()),
+					attribute.Bool("p2pmsg.IsBroadcast", msg.IsBroadcast),
+					attribute.String("p2pmsg.IsBroadcast", fmt.Sprintf("%x", msg.MsgBytes)),
+				))
 
 				ok, err := b.Party.UpdateFromBytes(
 					msg.MsgBytes,
@@ -102,16 +109,23 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 
 				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
 				peers, err := b.BroadcastPeers(msg)
 				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
 
 				b.Log.Debug().Msgf("sending message to %s", peers)
-				span.AddEvent("Process outbound message", traceapi.WithAttributes(attribute.String("p2pmsg.peers", fmt.Sprintf("%s", peers)), attribute.String("p2pmsg.type", messageType.String())))
+				span.AddEvent("Process outbound message", traceapi.WithAttributes(
+					attribute.String("p2pmsg.peers", fmt.Sprintf("%s", peers)),
+					attribute.String("p2pmsg.type", messageType.String()),
+					attribute.Bool("p2pmsg.IsBroadcast", msg.IsBroadcast()),
+					attribute.String("p2pmsg.full", msg.String()),
+				))
 				err = b.Communication.Broadcast(contextWithSpan, peers, msgBytes, messageType, b.SessionID())
 				if err != nil {
 					return err
@@ -125,7 +139,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 	}
 }
 
-// BroccastPeers returns peers that should receive the tss message
+// BroadcastPeers returns peers that should receive the tss message
 func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 	if msg.IsBroadcast() {
 		return b.Peers, nil
