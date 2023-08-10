@@ -221,7 +221,7 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
-	span.AddEvent("Deposit executed", traceapi.WithAttributes(attribute.String("tx.hash", hash.String())))
+	span.AddEvent("Deposit execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.String())))
 	return hash, err
 }
 

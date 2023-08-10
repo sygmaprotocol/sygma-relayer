@@ -46,7 +46,7 @@ type BridgePallet interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
 	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
-	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
+	TrackExtrinsic(ctx context.Context, extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
 }
 
 type Executor struct {
@@ -86,7 +86,7 @@ func NewExecutor(
 func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
-	spancContext, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.Execute")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.Execute")
 	defer span.End()
 	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 
@@ -138,8 +138,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	}
 
 	sigChn := make(chan interface{})
-	executionContext, cancelExecution := context.WithCancel(spancContext)
-	watchContext, cancelWatch := context.WithCancel(spancContext)
+	executionContext, cancelExecution := context.WithCancel(ctx)
+	watchContext, cancelWatch := context.WithCancel(ctx)
 
 	pool := pool.New().WithErrors()
 	pool.Go(func() error {
@@ -157,7 +157,7 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 }
 
 func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.watchExecution")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.watchExecution")
 	defer span.End()
 	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	ticker := time.NewTicker(executionCheckPeriod)
@@ -176,14 +176,14 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				}
 
 				signatureData := sigResult.(*common.SignatureData)
-				hash, sub, err := e.executeProposal(ctxWithSpan, proposals, signatureData)
+				hash, sub, err := e.executeProposal(ctx, proposals, signatureData)
 				if err != nil {
-					_ = e.comm.Broadcast(ctxWithSpan, e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
+					_ = e.comm.Broadcast(ctx, e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					span.SetStatus(codes.Error, fmt.Errorf("executing proposel has failed %w", err).Error())
 					return err
 				}
 
-				return e.bridge.TrackExtrinsic(hash, sub)
+				return e.bridge.TrackExtrinsic(ctx, hash, sub)
 			}
 		case <-ticker.C:
 			{
@@ -223,7 +223,7 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		return types.Hash{}, nil, err
 	}
 
-	span.AddEvent("Deposit executed", traceapi.WithAttributes(attribute.String("tx.hash", hash.Hex())))
+	span.AddEvent("Deposit execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.Hex())))
 	return hash, sub, err
 }
 

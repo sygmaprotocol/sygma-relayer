@@ -7,6 +7,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"sync"
 	"time"
@@ -95,8 +99,10 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Ha
 	return hash, sub, nil
 }
 
-func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
+func (c *SubstrateClient) TrackExtrinsic(ctx context.Context, extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.TrackExtrinsic")
+	defer span.End()
 	defer sub.Unsubscribe()
 	defer cancel()
 	subChan := sub.Chan()
@@ -106,10 +112,22 @@ func (c *SubstrateClient) TrackExtrinsic(extHash types.Hash, sub *author.Extrins
 			{
 				if status.IsInBlock {
 					log.Debug().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
+					span.AddEvent("Extrinsic is in block", traceapi.WithAttributes(
+						attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsInBlock)),
+						attribute.String("extrinsic.hash", extHash.Hex()),
+					))
 				}
 				if status.IsFinalized {
 					log.Info().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
-					return c.checkExtrinsicSuccess(extHash, status.AsFinalized)
+					span.AddEvent("Extrinsic is finalised", traceapi.WithAttributes(
+						attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsFinalized)),
+						attribute.String("extrinsic.hash", extHash.Hex()),
+					))
+					err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
+					if err != nil {
+						span.SetStatus(codes.Error, err.Error())
+					}
+					return err
 				}
 			}
 		case <-ctx.Done():
