@@ -77,7 +77,7 @@ func NewExecutor(
 func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.Execute")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.Execute")
 	defer span.End()
 	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 
@@ -133,8 +133,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	}
 
 	sigChn := make(chan interface{})
-	executionContext, cancelExecution := context.WithCancel(ctxWithSpan)
-	watchContext, cancelWatch := context.WithCancel(ctxWithSpan)
+	executionContext, cancelExecution := context.WithCancel(ctx)
+	watchContext, cancelWatch := context.WithCancel(ctx)
 	pool := pool.New().WithErrors()
 	pool.Go(func() error {
 		err := e.coordinator.Execute(executionContext, signing, sigChn)

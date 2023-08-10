@@ -87,7 +87,6 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
-				// This context will share context between fetchEvents and HandleEvents. Might be a better idea to refactor it in future.
 				evts, err := l.fetchEvents(ctxWithSpan, startBlock, endBlock)
 				if err != nil {
 					l.log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
