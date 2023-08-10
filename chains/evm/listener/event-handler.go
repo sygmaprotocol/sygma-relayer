@@ -93,7 +93,7 @@ func (eh *DepositEventHandler) HandleEvent(
 				logger.Error().Err(err).Str("start block", startBlock.String()).Str(
 					"end block", endBlock.String(),
 				).Uint8("domainID", eh.domainID).Msgf("%v", err)
-				span.SetStatus(codes.Error, err.Error())
+				span.RecordError(err)
 				return
 			}
 			logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s in block range: %s-%s", m.String(), startBlock.String(), endBlock.String())

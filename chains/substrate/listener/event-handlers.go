@@ -86,14 +86,14 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 				var d events.Deposit
 				err := mapstructure.Decode(evt.Fields, &d)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
+					span.RecordError(err)
 					logger.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
+					span.RecordError(err)
 					logger.Error().Err(err).Msgf("%v", err)
 					return
 				}
