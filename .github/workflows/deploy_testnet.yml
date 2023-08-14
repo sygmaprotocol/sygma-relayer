@@ -10,6 +10,7 @@ on:
 
 env:
   AWS_REGION: '${{ secrets.AWS_REGION }}'
+  AWS_REGION_2: '${{ secrets.AWS_REGION_2 }}'
   ENVIRONMENT: 'TESTNET'
   REGISTRY: 'ghcr.io'
   TAG: 'stable'
@@ -77,7 +78,7 @@ jobs:
           repository: sygmaprotocol/devops
           token: ${{ secrets.GHCR_TOKEN }}
 
-      - name: render jinja2 templates to task definition json files
+      - name: region_1
         uses: cuchi/jinja2-action@v1.2.0
         with:
           template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
@@ -88,17 +89,43 @@ jobs:
             awsAccountId=${{ env.AWS_TESTNET }}
             awsRegion=${{ env.AWS_REGION }}
 
-      - name: configure aws credentials
+      - name: region_2
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}_2.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_TESTNET }}
+            awsRegion=${{ env.AWS_REGION_2 }}
+            
+      - name: configure aws credentials region_1
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GithubActions
 
-      - name: deploy task definition
+      - name: deploy region_1 task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+      - name: configure aws credentials region_2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ env.AWS_REGION_2 }}
+          role-session-name: GithubActions
+
+      - name: deploy region_2 task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}_2.json'
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
