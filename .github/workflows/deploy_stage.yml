@@ -6,11 +6,13 @@ name: sygma/deploy/stage
 on:
   push:
     branches:
-      - main
+      - test-multi-region
 
 env:
   AWS_REGION: '${{ secrets.AWS_REGION }}'
+  AWS_REGION_2: '${{ secrets.AWS_REGION_2 }}'
   ENVIRONMENT: STAGE
+  ENVIRONMENT_2: TESTNET
   AWS_STAGE: '${{ secrets.AWS_ARN }}'
   REGISTRY: 'ghcr.io'
   TAG: 'latest'
@@ -81,6 +83,17 @@ jobs:
             awsAccountId=${{ env.AWS_STAGE }}
             awsRegion=${{ env.AWS_REGION }}
 
+      - name: render jinja2 region 2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT_2 }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT_2 }}_2.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ env.AWS_REGION_2 }}
+
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -94,4 +107,19 @@ jobs:
           task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+      - name: configure aws credentials REGION_2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT_2 }}-chainbridge
+          aws-region: ${{ env.AWS_REGION_2 }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition REGION_2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT_2 }}_2.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT_2 }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT_2 }}'
           wait-for-service-stability: true
