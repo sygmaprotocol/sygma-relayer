@@ -82,6 +82,7 @@ jobs:
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_STAGE }}
             awsRegion=${{ env.AWS_REGION }}
+            awsEfs=${{ secrets.TESTNET_EFS_1 }}
 
       - name: render jinja2 region 2 templates to task definition json files
         uses: cuchi/jinja2-action@v1.2.0
@@ -93,6 +94,7 @@ jobs:
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_STAGE }}
             awsRegion=${{ env.AWS_REGION_2 }}
+            awsEfs=${{ secrets.TESTNET_EFS_2 }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
