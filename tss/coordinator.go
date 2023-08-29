@@ -118,10 +118,12 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		return nil
 	}
 
+	span.RecordError(err)
 	if !tssProcess.Retryable() {
+		span.SetStatus(codes.Error, "Process is not retryable. Returning error")
 		return err
 	}
-
+	span.AddEvent("Retrying tssProcess")
 	return c.handleError(ctx, err, tssProcess, resultChn)
 }
 
