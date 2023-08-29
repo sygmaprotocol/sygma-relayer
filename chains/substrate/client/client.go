@@ -100,7 +100,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Ha
 }
 
 func (c *SubstrateClient) TrackExtrinsic(ctx context.Context, extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*10)
 	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.TrackExtrinsic")
 	defer span.End()
 	defer sub.Unsubscribe()
