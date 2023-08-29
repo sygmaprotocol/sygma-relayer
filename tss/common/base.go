@@ -95,7 +95,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
 func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
+	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
 	defer span.End()
 	for {
 		select {
@@ -123,11 +123,13 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 				span.AddEvent("Process outbound message", traceapi.WithAttributes(
 					attribute.String("p2pmsg.peers", fmt.Sprintf("%s", peers)),
 					attribute.String("p2pmsg.type", messageType.String()),
-					attribute.Bool("p2pmsg.IsBroadcast", msg.IsBroadcast()),
+					attribute.Bool("p2pmsg.IsBroadcast", routing.IsBroadcast),
 					attribute.String("p2pmsg.full", msg.String()),
 				))
-				err = b.Communication.Broadcast(ctx, peers, msgBytes, messageType, b.SessionID())
+				err = b.Communication.Broadcast(ctxWithSpan, peers, msgBytes, messageType, b.SessionID())
 				if err != nil {
+					span.RecordError(err)
+					span.SetStatus(codes.Error, "error on broadcasting message")
 					return err
 				}
 			}
@@ -151,8 +153,3 @@ func (b *BaseTss) BroadcastPeers(msg tss.Message) ([]peer.ID, error) {
 func (b *BaseTss) SessionID() string {
 	return b.SID
 }
-
-//
-//func (b *BaseTss) TraceID() string {
-//	return b.TID
-//}

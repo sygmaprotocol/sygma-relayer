@@ -134,6 +134,8 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		Communication: s.mockCommunication,
 	}
 	s.mockMessage.EXPECT().String().Return("MSG")
+	s.mockMessage.EXPECT().String().Return("MSG")
+
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
 		IsBroadcast: true,
 		From:        common.CreatePartyID("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54"),
