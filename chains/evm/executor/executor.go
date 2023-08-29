@@ -173,7 +173,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
-				logger.Debug().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				logger.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
@@ -220,7 +220,7 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
-	span.AddEvent("Deposit execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.String())))
+	span.AddEvent("Proposal execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.String())))
 	return hash, err
 }
 

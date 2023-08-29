@@ -87,18 +87,18 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 				err := mapstructure.Decode(evt.Fields, &d)
 				if err != nil {
 					span.RecordError(err)
-					logger.Error().Err(err).Msgf("%v", err)
+					span.SetStatus(codes.Error, err.Error())
 					return
 				}
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
 					span.RecordError(err)
-					logger.Error().Err(err).Msgf("%v", err)
+					span.SetStatus(codes.Error, err.Error())
 					return
 				}
 
-				logger.Debug().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
+				logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
 				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)

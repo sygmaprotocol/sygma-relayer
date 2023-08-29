@@ -222,7 +222,7 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		return types.Hash{}, nil, err
 	}
 
-	span.AddEvent("Deposit execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.Hex())))
+	span.AddEvent("Proposal execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.Hex())))
 	return hash, sub, err
 }
 
