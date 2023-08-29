@@ -128,7 +128,6 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	signing, err := signing.NewSigning(
 		msg,
 		e.sessionID(propHash),
-		span.SpanContext().TraceID().String(),
 		e.host,
 		e.comm,
 		e.fetcher)

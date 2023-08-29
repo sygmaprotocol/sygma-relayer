@@ -35,7 +35,7 @@ type Keygen struct {
 }
 
 func NewKeygen(
-	sessionID, traceID string,
+	sessionID string,
 	threshold int,
 	host host.Host,
 	comm comm.Communication,
@@ -49,8 +49,7 @@ func NewKeygen(
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
-			TID:           traceID,
-			Log:           log.With().Str("SessionID", sessionID).Str("dd.trace_id", traceID).Str("Process", "keygen").Logger(),
+			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
 			Cancel:        func() {},
 		},
 		storer:    storer,

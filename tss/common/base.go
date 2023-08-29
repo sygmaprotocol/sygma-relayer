@@ -95,7 +95,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
 func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
-	contextWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
 	defer span.End()
 	for {
 		select {
@@ -126,7 +126,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					attribute.Bool("p2pmsg.IsBroadcast", msg.IsBroadcast()),
 					attribute.String("p2pmsg.full", msg.String()),
 				))
-				err = b.Communication.Broadcast(contextWithSpan, peers, msgBytes, messageType, b.SessionID())
+				err = b.Communication.Broadcast(ctx, peers, msgBytes, messageType, b.SessionID())
 				if err != nil {
 					return err
 				}
@@ -152,6 +152,7 @@ func (b *BaseTss) SessionID() string {
 	return b.SID
 }
 
-func (b *BaseTss) TraceID() string {
-	return b.TID
-}
+//
+//func (b *BaseTss) TraceID() string {
+//	return b.TID
+//}

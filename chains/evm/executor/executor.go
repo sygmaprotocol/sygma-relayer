@@ -39,7 +39,7 @@ type MessageHandler interface {
 
 type BridgeContract interface {
 	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
+	ExecuteProposals(ctx context.Context, proposals []*chains.Proposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
 	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
 }
 
@@ -123,7 +123,6 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	signing, err := signing.NewSigning(
 		msg,
 		e.sessionID(propHash),
-		span.SpanContext().TraceID().String(),
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -148,7 +147,7 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 }
 
 func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.watchExecution")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.watchExecution")
 	defer span.End()
 	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	ticker := time.NewTicker(executionCheckPeriod)
@@ -167,9 +166,9 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				}
 
 				signatureData := sigResult.(*common.SignatureData)
-				hash, err := e.executeProposal(ctxWithSpan, proposals, signatureData)
+				hash, err := e.executeProposal(ctx, proposals, signatureData)
 				if err != nil {
-					_ = e.comm.Broadcast(ctxWithSpan, e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
+					_ = e.comm.Broadcast(ctx, e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					span.SetStatus(codes.Error, fmt.Errorf("executing proposel has failed %w", err).Error())
 					return err
 				}
@@ -200,7 +199,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 }
 
 func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
-	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.executeProposal")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.executeProposal")
 	defer span.End()
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
@@ -214,7 +213,7 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		gasLimit = l.(uint64)
 	}
 
-	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
+	hash, err := e.bridge.ExecuteProposals(ctx, proposals, sig, transactor.TransactOptions{
 		GasLimit: gasLimit,
 	})
 	if err != nil {

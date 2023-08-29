@@ -198,6 +198,7 @@ func (c *BridgeContract) ExecuteProposal(
 }
 
 func (c *BridgeContract) ExecuteProposals(
+	ctx context.Context,
 	proposals []*chains.Proposal,
 	signature []byte,
 	opts transactor.TransactOptions,

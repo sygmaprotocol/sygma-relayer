@@ -37,7 +37,6 @@ type TssProcess interface {
 	Retryable() bool
 	StartParams(readyMap map[peer.ID]bool) []byte
 	SessionID() string
-	TraceID() string
 	ValidCoordinators() []peer.ID
 }
 
@@ -74,11 +73,14 @@ func NewCoordinator(
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
 func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}) error {
-	logger := log.With().Str("dd.trace_id", tssProcess.TraceID()).Logger()
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.Coordinator.Execute")
+	defer span.End()
+	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	sessionID := tssProcess.SessionID()
 	value, ok := c.pendingProcesses[sessionID]
 	if ok && value {
 		logger.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
+		span.SetStatus(codes.Error, "process already pending")
 		return fmt.Errorf("process already pending")
 	}
 
@@ -100,7 +102,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
 
 	logger.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.String())
-
+	span.AddEvent("Coordinator selected", traceapi.WithAttributes(attribute.String("tss.coordinator", coordinator.String())))
 	p.Go(func(ctx context.Context) error {
 		err := c.start(ctx, tssProcess, coordinator, resultChn, []peer.ID{})
 		if err == nil {
@@ -297,7 +299,6 @@ func (c *Coordinator) waitForStart(
 ) error {
 	ctxWithInternalSpan, internalSpan := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.tss.Coordinator.waitForStart")
 	defer internalSpan.End()
-	//logger := log.With().Str("dd.trace_id", internalSpan.SpanContext().TraceID().String()).Logger()
 
 	msgChan := make(chan *comm.WrappedMessage)
 	startMsgChn := make(chan *comm.WrappedMessage)

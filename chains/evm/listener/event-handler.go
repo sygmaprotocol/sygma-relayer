@@ -69,11 +69,11 @@ func (eh *DepositEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.DepositEventHandler.HandleEvent")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.DepositEventHandler.HandleEvent")
 	defer span.End()
 	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
-	deposits, err := eh.eventListener.FetchDeposits(ctxWithSpan, eh.bridgeAddress, startBlock, endBlock)
+	deposits, err := eh.eventListener.FetchDeposits(ctx, eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
@@ -150,11 +150,11 @@ func (eh *RetryEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RetryEventHandler.HandleEvent")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RetryEventHandler.HandleEvent")
 	defer span.End()
 	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
-	retryEvents, err := eh.eventListener.FetchRetryEvents(ctxWithSpan, eh.bridgeAddress, startBlock, endBlock)
+	retryEvents, err := eh.eventListener.FetchRetryEvents(ctx, eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
@@ -243,7 +243,7 @@ func (eh *KeygenEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.KeygenEventHandler.HandleEvent")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.KeygenEventHandler.HandleEvent")
 	defer span.End()
 	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
@@ -254,7 +254,7 @@ func (eh *KeygenEventHandler) HandleEvent(
 	}
 
 	keygenEvents, err := eh.eventListener.FetchKeygenEvents(
-		ctxWithSpan, eh.bridgeAddress, startBlock, endBlock,
+		ctx, eh.bridgeAddress, startBlock, endBlock,
 	)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
@@ -274,13 +274,12 @@ func (eh *KeygenEventHandler) HandleEvent(
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(
 		eh.sessionID(keygenBlockNumber),
-		span.SpanContext().TraceID().String(),
 		eh.threshold,
 		eh.host,
 		eh.communication,
 		eh.storer)
 	span.SetStatus(codes.Ok, "Keygen event handled")
-	return eh.coordinator.Execute(ctxWithSpan, keygen, make(chan interface{}, 1))
+	return eh.coordinator.Execute(ctx, keygen, make(chan interface{}, 1))
 }
 
 func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
@@ -334,12 +333,12 @@ func (eh *RefreshEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RefreshEventHandler.HandleEvent")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RefreshEventHandler.HandleEvent")
 	defer span.End()
 	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	refreshEvents, err := eh.eventListener.FetchRefreshEvents(
-		ctxWithSpan, eh.bridgeAddress, startBlock, endBlock,
+		ctx, eh.bridgeAddress, startBlock, endBlock,
 	)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
@@ -379,14 +378,13 @@ func (eh *RefreshEventHandler) HandleEvent(
 
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock),
-		span.SpanContext().TraceID().String(),
 		topology.Threshold,
 		eh.host,
 		eh.communication,
 		eh.storer,
 	)
 	span.SetStatus(codes.Ok, "Resharing event handled")
-	return eh.coordinator.Execute(ctxWithSpan, resharing, make(chan interface{}, 1))
+	return eh.coordinator.Execute(ctx, resharing, make(chan interface{}, 1))
 }
 
 func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
