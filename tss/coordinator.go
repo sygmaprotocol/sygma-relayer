@@ -237,7 +237,7 @@ func (c *Coordinator) broadcastInitiateMsg(ctx context.Context, sessionID string
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.tss.Coordinator.initiate")
+	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.tss.Coordinator.initiate")
 	defer span.End()
 	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	readyChan := make(chan *comm.WrappedMessage)
@@ -249,7 +249,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 
 	ticker := time.NewTicker(c.InitiatePeriod)
 	defer ticker.Stop()
-	c.broadcastInitiateMsg(ctxWithSpan, tssProcess.SessionID())
+	c.broadcastInitiateMsg(ctx, tssProcess.SessionID())
 	for {
 		select {
 		case wMsg := <-readyChan:
@@ -275,12 +275,12 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 					return err
 				}
 
-				_ = c.communication.Broadcast(ctxWithSpan, c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
-				return tssProcess.Run(ctxWithSpan, true, resultChn, startParams)
+				_ = c.communication.Broadcast(ctx, c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
+				return tssProcess.Run(ctx, true, resultChn, startParams)
 			}
 		case <-ticker.C:
 			{
-				c.broadcastInitiateMsg(ctxWithSpan, tssProcess.SessionID())
+				c.broadcastInitiateMsg(ctx, tssProcess.SessionID())
 			}
 		case <-ctx.Done():
 			{
@@ -320,9 +320,8 @@ func (c *Coordinator) waitForStart(
 				if err != nil {
 					log.Warn().Str("traceID", wMsg.TraceID).Msg("TraceID is wrong")
 				}
-				ctxWithRemoteTrace := traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})
-				ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, ctxWithRemoteTrace), "relayer.sygma.tss.Coordinator.InitMessage")
-				defer span.End()
+
+				ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})), "relayer.sygma.tss.Coordinator.InitMessage")
 				logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 
 				coordinatorTimeoutTicker.Reset(timeout)
@@ -331,6 +330,7 @@ func (c *Coordinator) waitForStart(
 				_ = c.communication.Broadcast(
 					ctxWithSpan, peer.IDSlice{wMsg.From}, []byte{}, comm.TssReadyMsg, tssProcess.SessionID(),
 				)
+				span.End()
 			}
 		case startMsg := <-startMsgChn:
 			{
@@ -338,8 +338,7 @@ func (c *Coordinator) waitForStart(
 				if err != nil {
 					log.Warn().Str("traceID", startMsg.TraceID).Msg("TraceID is wrong")
 				}
-				ctxWithRemoteTrace := traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})
-				ctxWithRemoteSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, ctxWithRemoteTrace), "relayer.sygma.tss.Coordinator.StartMessage")
+				ctxWithRemoteSpan, span := otel.Tracer("relayer-sygma").Start(traceapi.ContextWithSpanContext(ctxWithInternalSpan, traceapi.NewSpanContext(traceapi.SpanContextConfig{TraceID: tID, Remote: true})), "relayer.sygma.tss.Coordinator.StartMessage")
 				defer span.End()
 				logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 

@@ -14,7 +14,7 @@ type CoordinatorError struct {
 }
 
 func (ce *CoordinatorError) Error() string {
-	return fmt.Sprintf("coordinator %s non-responsive", ce.Peer.Pretty())
+	return fmt.Sprintf("coordinator %s non-responsive", ce.Peer.String())
 }
 
 type SubsetError struct {
