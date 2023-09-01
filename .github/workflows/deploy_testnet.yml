@@ -87,6 +87,7 @@ jobs:
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_TESTNET }}
             awsRegion=${{ env.AWS_REGION }}
+            awsEfs=${{ secrets.TESTNET_EFS_1 }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
