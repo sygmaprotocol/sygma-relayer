@@ -111,6 +111,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	}
 
 	if !tssProcess.Retryable() {
+		tssProcess.Stop()
 		return err
 	}
 
