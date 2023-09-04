@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.9.0...v1.9.1) (2023-09-04)
+
+
+### Bug Fixes
+
+* fixed efs id  ([#212](https://github.com/sygmaprotocol/sygma-relayer/issues/212)) ([c3ad702](https://github.com/sygmaprotocol/sygma-relayer/commit/c3ad702f38038f83213be5a2c74ddb8d5195b53c))
+
+
+### Miscellaneous
+
+* added efs interpolation ([#214](https://github.com/sygmaprotocol/sygma-relayer/issues/214)) ([f723b4d](https://github.com/sygmaprotocol/sygma-relayer/commit/f723b4d550d7cc592e0a87dd310f675cda9e6386))
+* fix typo ([#215](https://github.com/sygmaprotocol/sygma-relayer/issues/215)) ([1410b08](https://github.com/sygmaprotocol/sygma-relayer/commit/1410b08822fba93d8cda7e8053f7a208698e08d0))
+
 ## [1.9.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.8.1...v1.9.0) (2023-09-01)
 
 
