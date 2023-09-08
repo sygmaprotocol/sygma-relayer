@@ -21,7 +21,7 @@ func StartCommunicationHealthCheckJob(h host.Host, interval time.Duration, metri
 	healthComm := p2p.NewCommunication(h, "p2p/health")
 	for {
 		time.Sleep(interval)
-		log.Info().Msg("Starting communication health check")
+		log.Debug().Msg("Starting communication health check")
 
 		all := h.Peerstore().Peers()
 		unavailable := make(peer.IDSlice, 0)

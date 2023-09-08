@@ -25,6 +25,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+const TRANSFER_GAS_COST = 200000
+
 var (
 	executionCheckPeriod = time.Minute
 	signingTimeout       = 30 * time.Minute
@@ -195,6 +197,8 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 	l, ok := proposals[0].Metadata.Data["gasLimit"]
 	if ok {
 		gasLimit = l.(uint64)
+	} else {
+		gasLimit = uint64(TRANSFER_GAS_COST * len(proposals))
 	}
 
 	hash, err := e.bridge.ExecuteProposals(ctx, proposals, sig, transactor.TransactOptions{

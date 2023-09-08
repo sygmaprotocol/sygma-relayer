@@ -10,10 +10,10 @@ every potential destination domain, with this mapping also outlining all potenti
 
 Fee strategy defines a set of rules on how fees should be charged when executing deposits on the source chain.
 
-### Static fee strategy
+### Fixed fee strategy
 
-This strategy always requires a predefined static fee amount per deposit. **It can only collect fees in the native
-currency of the source chain**.
+This strategy always requires a predefined fixed fee amount per deposit. **EVM imlementation can only collect fees in the native
+currency of the source chain, while Substrate implementation allows for fee to be collected in any configured asset**.
 
 *On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
 
@@ -26,7 +26,26 @@ currency of the source chain**.
 2) Execute deposit
     - Send the appropriate base currency amount based on the calculated final fee when executing the deposit.
 
-### Dynamic fee strategy
+### Percentage based fee strategy
+
+This strategy calculates fee amount based on the amount of token being transferred. 
+
+It always collects fee in token that is being transferred, so it only makes sense for fungible token routes.
+
+<img src="/docs/resources/percentage-formula-general.png" data-canonical-src="/docs/resources/percentage-formula-general.png" width="386" height="267" />
+
+*On the diagram below, we use [Sygma SDK](https://github.com/sygmaprotocol/sygma-sdk) for interaction with all services.*
+
+![](/docs/resources/percentage-fee-general.png)
+
+#### Deposit flow
+
+1) Calculate the final fee
+   - Based on resourceID, domainsID and amount, request a final fee amount that will be required to execute the deposit.
+2) Execute deposit
+   - Send the appropriate token amount based on the calculated final fee when executing the deposit.
+
+### Dynamic fee strategy (EVM only)
 
 This strategy utilizes the [Sygma Fee Oracle service](https://github.com/sygmaprotocol/sygma-fee-oracle), which issues
 fee estimates with details on the gas price for the destination chain. In addition, fee oracle can provide price

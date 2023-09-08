@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.9.0...v1.9.1) (2023-09-04)
+
+
+### Bug Fixes
+
+* fixed efs id  ([#212](https://github.com/sygmaprotocol/sygma-relayer/issues/212)) ([c3ad702](https://github.com/sygmaprotocol/sygma-relayer/commit/c3ad702f38038f83213be5a2c74ddb8d5195b53c))
+
+
+### Miscellaneous
+
+* added efs interpolation ([#214](https://github.com/sygmaprotocol/sygma-relayer/issues/214)) ([f723b4d](https://github.com/sygmaprotocol/sygma-relayer/commit/f723b4d550d7cc592e0a87dd310f675cda9e6386))
+* fix typo ([#215](https://github.com/sygmaprotocol/sygma-relayer/issues/215)) ([1410b08](https://github.com/sygmaprotocol/sygma-relayer/commit/1410b08822fba93d8cda7e8053f7a208698e08d0))
+
+## [1.9.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.8.1...v1.9.0) (2023-09-01)
+
+
+### Features
+
+* calculate gas based on proposal count ([#202](https://github.com/sygmaprotocol/sygma-relayer/issues/202)) ([3da4977](https://github.com/sygmaprotocol/sygma-relayer/commit/3da4977a812bae442f765796182a8b3c8fd67e86))
+
+
+### Bug Fixes
+
+* fix-bug-with-locked-keystore ([#211](https://github.com/sygmaprotocol/sygma-relayer/issues/211)) ([abffaf4](https://github.com/sygmaprotocol/sygma-relayer/commit/abffaf4f0ec480c6bf428599ee4fb3568b08adcc))
+
+
+### Miscellaneous
+
+* multi regional deployment ([#208](https://github.com/sygmaprotocol/sygma-relayer/issues/208)) ([c24c540](https://github.com/sygmaprotocol/sygma-relayer/commit/c24c540439ed107e4aba21b04a1d9add1a4e6bd0))
+* percentage fee strategy docs ([#206](https://github.com/sygmaprotocol/sygma-relayer/issues/206)) ([800cddf](https://github.com/sygmaprotocol/sygma-relayer/commit/800cddfdf077a7c915448c00ffebffa7bb344dd3))
+* revert changes to 1980918 ([#209](https://github.com/sygmaprotocol/sygma-relayer/issues/209)) ([5900dca](https://github.com/sygmaprotocol/sygma-relayer/commit/5900dca2f0bf323a48c3af88b14ff060fba7b110))
+
 ## [1.8.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.8.0...v1.8.1) (2023-06-28)
 
 
