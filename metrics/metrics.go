@@ -6,7 +6,7 @@ package metrics
 import (
 	"context"
 
-	"github.com/ChainSafe/chainbridge-core/opentelemetry"
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -14,7 +14,7 @@ import (
 )
 
 type SygmaMetrics struct {
-	*opentelemetry.RelayerMetrics
+	*observability.RelayerMetrics
 
 	DepositErrorRate  api.Int64Counter
 	TotalRelayers     api.Int64ObservableGauge
@@ -28,7 +28,7 @@ type SygmaMetrics struct {
 // NewSygmaMetrics creates an instance of metrics
 func NewSygmaMetrics(meter api.Meter, env, relayerID string) (*SygmaMetrics, error) {
 	log.Debug().Str("relayerID", relayerID).Str("env", env).Msgf("Initialising new metrics")
-	relayerMetrics, err := opentelemetry.NewRelayerMetrics(meter, attribute.String("relayerid", relayerID), attribute.String("env", env))
+	relayerMetrics, err := observability.NewRelayerMetrics(meter, attribute.String("relayerid", relayerID), attribute.String("env", env))
 	if err != nil {
 		return nil, err
 	}

@@ -7,10 +7,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel"
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"sync"
 	"time"
@@ -101,7 +99,7 @@ func (c *SubstrateClient) Transact(method string, args ...interface{}) (types.Ha
 
 func (c *SubstrateClient) TrackExtrinsic(ctx context.Context, extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute*10)
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.substrate.TrackExtrinsic")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.substrate.TrackExtrinsic")
 	defer span.End()
 	defer sub.Unsubscribe()
 	defer cancel()
@@ -111,27 +109,15 @@ func (c *SubstrateClient) TrackExtrinsic(ctx context.Context, extHash types.Hash
 		case status := <-subChan:
 			{
 				if status.IsInBlock {
-					log.Debug().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic in block with hash: %#x", status.AsInBlock)
-					span.AddEvent("Extrinsic is in block", traceapi.WithAttributes(
-						attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsInBlock)),
-						attribute.String("extrinsic.hash", extHash.Hex()),
-					))
+					observability.LogAndEvent(logger.Debug(), span, "Extrinsic in block", attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsInBlock)), attribute.String("extrinsic.hash", extHash.Hex()))
 				}
 				if status.IsFinalized {
-					log.Info().Str("extrinsic", extHash.Hex()).Msgf("Extrinsic is finalized in block with hash: %#x", status.AsFinalized)
-					span.AddEvent("Extrinsic is finalised", traceapi.WithAttributes(
-						attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsFinalized)),
-						attribute.String("extrinsic.hash", extHash.Hex()),
-					))
-					err := c.checkExtrinsicSuccess(extHash, status.AsFinalized)
-					if err != nil {
-						span.SetStatus(codes.Error, err.Error())
-					}
-					return err
+					observability.LogAndEvent(logger.Info(), span, "Extrinsic has been finalized", attribute.String("extrinsic.block", fmt.Sprintf("%x", status.AsInBlock)), attribute.String("extrinsic.hash", extHash.Hex()))
+					return c.checkExtrinsicSuccess(extHash, status.AsFinalized)
 				}
 			}
 		case <-ctx.Done():
-			return fmt.Errorf("extrinsic has timed out")
+			return observability.LogAndRecordErrorWithStatus(&logger, span, fmt.Errorf("extrinsic has timed out"), "failed Tracking extrinsic")
 		}
 	}
 }

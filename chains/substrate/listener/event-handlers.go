@@ -6,10 +6,12 @@ package listener
 import (
 	"context"
 	"encoding/hex"
-	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
+	"errors"
+	"fmt"
+	"github.com/status-im/keycard-go/hexutils"
 	"math/big"
 
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
@@ -17,8 +19,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type SystemUpdateEventHandler struct {
@@ -66,9 +68,8 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
-	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	_, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.SubstrateFungibleTransferEventHandler.HandleEvents")
 	defer span.End()
-	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	eventIDS := make([]string, 0)
@@ -79,27 +80,28 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 			func(evt parser.Event) {
 				defer func() {
 					if r := recover(); r != nil {
-						logger.Error().Msgf("panic occured while handling deposit %+v", evt)
+						_ = observability.LogAndRecordError(&logger, span, errors.New("panic"), "failed to  while handle deposit", attribute.String("event.id", hex.EncodeToString(evt.EventID[:])))
 					}
 				}()
 
 				var d events.Deposit
 				err := mapstructure.Decode(evt.Fields, &d)
 				if err != nil {
-					span.RecordError(err)
-					span.SetStatus(codes.Error, err.Error())
+					_ = observability.LogAndRecordError(&logger, span, err, "failed to Decode mapstructure")
 					return
 				}
+
+				observability.SetSpanAndLoggerAttrs(&logger, span, d.TraceEventAttributes()...)
 
 				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 				if err != nil {
 					span.RecordError(err)
 					span.SetStatus(codes.Error, err.Error())
+					_ = observability.LogAndRecordError(&logger, span, err, "failed to HandleDeposit", attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String()))
 					return
 				}
 
-				logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s", m.String())
-				span.AddEvent("Resolved message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
+				observability.LogAndEvent(logger.Info(), span, "Resolved deposit message", attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String()))
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)
 		}
@@ -110,7 +112,6 @@ func (eh *FungibleTransferEventHandler) HandleEvents(ctx context.Context, evts [
 			msgChan <- d
 		}(deposits)
 	}
-	span.SetStatus(codes.Ok, "Substrate events handled")
 	return nil
 }
 
@@ -131,49 +132,50 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 }
 
 func (rh *RetryEventHandler) HandleEvents(ctx context.Context, evts []*parser.Event, msgChan chan []*message.Message) error {
-	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.FungibleTransferEventHandler.HandleEvents")
+	_, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.SubstrateRetryEventHandler.HandleEvent")
 	defer span.End()
-	logger := rh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
-		return err
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to GetFinalizedHead")
 	}
 	finalized, err := rh.conn.GetBlock(hash)
 	if err != nil {
-		return err
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to GetBlock")
+
 	}
 	finalizedBlockNumber := big.NewInt(int64(finalized.Block.Header.Number))
 
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, evt := range evts {
 		if evt.Name == events.RetryEvent {
+			observability.SetSpanAndLoggerAttrs(&logger, span, attribute.String("evt.ID", hexutils.BytesToHex(evt.EventID[:])))
 			err := func(evt parser.Event) error {
 				defer func() {
 					if r := recover(); r != nil {
 						logger.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
+						_ = observability.LogAndRecordError(&logger, span, fmt.Errorf(fmt.Sprintf("%s", r)), "failed to handle retry event")
+
 					}
 				}()
 				var er events.Retry
 				err = mapstructure.Decode(evt.Fields, &er)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to Decode evt %w", err)
 				}
 				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
 				if big.NewInt(finalizedBlockNumber.Int64()).Cmp(er.DepositOnBlockHeight.Int) == -1 {
-					logger.Info().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
+					logger.Debug().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
 					return nil
 				}
 
 				bh, err := rh.conn.GetBlockHash(er.DepositOnBlockHeight.Uint64())
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					return err
+					return fmt.Errorf("failed to GetBlockHash evt %w", err)
 				}
 
 				bEvts, err := rh.conn.GetBlockEvents(bh)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					return err
+					return fmt.Errorf("failed to GetBlockEvents evt %w", err)
 				}
 
 				for _, event := range bEvts {
@@ -186,28 +188,22 @@ func (rh *RetryEventHandler) HandleEvents(ctx context.Context, evts []*parser.Ev
 						}
 						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
 						if err != nil {
-							span.SetStatus(codes.Error, err.Error())
-							return err
+							return fmt.Errorf("failed to HandleDeposit %w", err)
 						}
-
-						logger.Info().Msgf("Resolved retry message %+v", d)
-
 						domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+						observability.LogAndEvent(logger.Info(), span, "resolved Deposit to retry", d.TraceEventAttributes()...)
 					}
 				}
-
 				return nil
 			}(*evt)
 			if err != nil {
-				span.SetStatus(codes.Error, err.Error())
-				return err
+				return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to Handle Substrate Retry event")
+
 			}
 		}
 	}
-
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
-	span.SetStatus(codes.Ok, "Retry events handled")
 	return nil
 }

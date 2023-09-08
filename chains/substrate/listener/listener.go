@@ -5,10 +5,9 @@ package listener
 
 import (
 	"context"
-	"go.opentelemetry.io/otel"
+	"github.com/ChainSafe/chainbridge-core/observability"
+	"github.com/status-im/keycard-go/hexutils"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"time"
 
@@ -63,16 +62,18 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 			case <-ctx.Done():
 				return
 			default:
-				ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.SubstrateListener.ListenToEvents")
+				ctxWithSpan, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.SubstrateListener.ListenToEvents")
 				hash, err := l.conn.GetFinalizedHead()
 				if err != nil {
-					l.log.Error().Err(err).Msg("Failed to fetch finalized header")
+					_ = observability.LogAndRecordError(&logger, span, err, "unable to get GetFinalizedHead")
+					span.End()
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
 				head, err := l.conn.GetBlock(hash)
 				if err != nil {
-					l.log.Error().Err(err).Msg("Failed to fetch block")
+					_ = observability.LogAndRecordError(&logger, span, err, "unable to call GetBlock")
+					span.End()
 					time.Sleep(l.blockRetryInterval)
 					continue
 				}
@@ -82,28 +83,33 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 				}
 				endBlock.Add(startBlock, l.blockInterval)
 
+				observability.SetSpanAndLoggerAttrs(&logger, span, attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
+
 				// Sleep if finalized is less then current block
 				if big.NewInt(int64(head.Block.Header.Number)).Cmp(endBlock) == -1 {
 					time.Sleep(l.blockRetryInterval)
+					observability.LogAndEvent(logger.Debug(), span, "finalized is less then current block")
+					span.End()
 					continue
 				}
 				evts, err := l.fetchEvents(ctxWithSpan, startBlock, endBlock)
 				if err != nil {
-					l.log.Err(err).Msgf("Failed fetching events for block range %s-%s", startBlock, endBlock)
+					_ = observability.LogAndRecordError(&logger, span, err, "failed fetching events for block range")
 					time.Sleep(l.blockRetryInterval)
+					span.End()
 					continue
 				}
 
 				for _, handler := range l.eventHandlers {
 					err := handler.HandleEvents(ctxWithSpan, evts, msgChan)
 					if err != nil {
-						l.log.Error().Err(err).Msg("Error handling substrate events")
+						_ = observability.LogAndRecordError(&logger, span, err, "failed handling substrate events")
 						continue
 					}
 				}
 				err = blockstore.StoreBlock(startBlock, domainID)
 				if err != nil {
-					l.log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
+					_ = observability.LogAndRecordError(&logger, span, err, "failed to write latest block to blockstore")
 				}
 				startBlock.Add(startBlock, l.blockInterval)
 				span.End()
@@ -113,30 +119,24 @@ func (l *SubstrateListener) ListenToEvents(ctx context.Context, startBlock *big.
 }
 
 func (l *SubstrateListener) fetchEvents(ctx context.Context, startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
-	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.SubstrateListener.fetchEvents")
+	_, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.SubstrateListener.fetchEvents", attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	defer span.End()
-	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
-
-	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
 		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			return nil, err
+			return nil, observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to call GetBlockHash")
 		}
 
 		evt, err := l.conn.GetBlockEvents(hash)
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			return nil, err
+			return nil, observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to call GetBlockEvents")
 		}
 		for _, e := range evt {
-			span.AddEvent("Event fetched", traceapi.WithAttributes(attribute.String("event.name", e.Name)))
+			observability.LogAndEvent(logger.Debug(), span, "Event fetched", attribute.String("event.name", e.Name), attribute.String("event.ID", hexutils.BytesToHex(e.EventID[:])))
 		}
 		evts = append(evts, evt...)
 	}
-	span.SetStatus(codes.Ok, "Events fetched")
 	return evts, nil
 }

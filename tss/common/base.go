@@ -6,10 +6,9 @@ package common
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel"
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
 	"math/big"
 	"runtime/debug"
 
@@ -51,11 +50,11 @@ func (b *BaseTss) PopulatePartyStore(parties tss.SortedPartyIDs) {
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
 func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
-	_, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessInboundMessages")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.tss.BaseTss.ProcessInboundMessages")
 	defer span.End()
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf(string(debug.Stack()))
+			_ = observability.LogAndRecordError(&logger, span, fmt.Errorf(string(debug.Stack())), "paniced on ProcessingInboundMessage")
 		}
 	}()
 
@@ -63,27 +62,24 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 		select {
 		case wMsg := <-msgChan:
 			{
-				b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
-
 				msg, err := UnmarshalTssMessage(wMsg.Payload)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
 					return err
 				}
-				span.AddEvent("Process inbound message", traceapi.WithAttributes(
+				observability.LogAndEvent(logger.Debug(), span, "processed inbound message",
 					attribute.String("p2pmsg.from", wMsg.From.String()),
 					attribute.String("p2pmsg.type", wMsg.MessageType.String()),
 					attribute.Bool("p2pmsg.IsBroadcast", msg.IsBroadcast),
 					attribute.String("p2pmsg.IsBroadcast", fmt.Sprintf("%x", msg.MsgBytes)),
-				))
-
+				)
 				ok, err := b.Party.UpdateFromBytes(
 					msg.MsgBytes,
 					b.PartyStore[wMsg.From.String()],
 					msg.IsBroadcast,
 					new(big.Int).SetBytes([]byte(b.SID)))
 				if !ok {
-					return err
+					return observability.LogAndRecordErrorWithStatus(&logger, span, err, "Not ok updating Party from message Bytes")
 				}
 			}
 		case <-ctx.Done():
@@ -95,42 +91,36 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
 func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
-	ctxWithSpan, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.BaseTss.ProcessOutboundMessages")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.tss.BaseTss.ProcessOutboundMessages")
 	defer span.End()
 	for {
 		select {
 		case msg := <-outChn:
 			{
-				b.Log.Debug().Msg(msg.String())
 				wireBytes, routing, err := msg.WireBytes()
 				if err != nil {
-					return err
+					return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to encode recived TSS message bytes")
 				}
 
 				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					return err
+					return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to marshal TSS message")
 				}
 
 				peers, err := b.BroadcastPeers(msg)
 				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					return err
+					return observability.LogAndRecordErrorWithStatus(&logger, span, err, "failed to broadcast a message")
 				}
 
-				b.Log.Debug().Msgf("sending message to %s", peers)
-				span.AddEvent("Process outbound message", traceapi.WithAttributes(
+				observability.LogAndEvent(logger.Debug(), span, "Processed outbound message",
 					attribute.String("p2pmsg.peers", fmt.Sprintf("%s", peers)),
 					attribute.String("p2pmsg.type", messageType.String()),
 					attribute.Bool("p2pmsg.IsBroadcast", routing.IsBroadcast),
 					attribute.String("p2pmsg.full", msg.String()),
-				))
-				err = b.Communication.Broadcast(ctxWithSpan, peers, msgBytes, messageType, b.SessionID())
+				)
+				err = b.Communication.Broadcast(ctx, peers, msgBytes, messageType, b.SessionID())
 				if err != nil {
-					span.RecordError(err)
-					span.SetStatus(codes.Error, "error on broadcasting message")
-					return err
+					return observability.LogAndRecordErrorWithStatus(&logger, span, err, "error on broadcasting message")
 				}
 			}
 		case <-ctx.Done():

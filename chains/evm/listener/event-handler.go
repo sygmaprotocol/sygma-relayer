@@ -5,7 +5,9 @@ package listener
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"math/big"
 	"strings"
 
@@ -25,10 +27,8 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
 )
 
 type EventListener interface {
@@ -69,36 +69,28 @@ func (eh *DepositEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.DepositEventHandler.HandleEvent")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.DepositEventHandler.HandleEvent", attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	defer span.End()
-	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
-	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	deposits, err := eh.eventListener.FetchDeposits(ctx, eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
+		return observability.LogAndRecordErrorWithStatus(nil, span, err, "unable to fetch deposit events")
 	}
 	domainDeposits := make(map[uint8][]*message.Message)
 	for _, d := range deposits {
 		func(d *events.Deposit) {
 			defer func() {
 				if r := recover(); r != nil {
-					logger.Error().Err(err).Msgf("panic occured while handling deposit %+v", d)
+					_ = observability.LogAndRecordError(&logger, span, errors.New("panic"), "failed to  while handle deposit", d.TraceEventAttributes()...)
 				}
 			}()
 			m, err := eh.depositHandler.HandleDeposit(
 				eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse,
 			)
 			if err != nil {
-				logger.Error().Err(err).Str("start block", startBlock.String()).Str(
-					"end block", endBlock.String(),
-				).Uint8("domainID", eh.domainID).Msgf("%v", err)
-				span.RecordError(err)
+				_ = observability.LogAndRecordError(&logger, span, err, "failed to HandleDeposit", append(d.TraceEventAttributes(), attribute.Int("deposit.srcdomainId", int(eh.domainID)))...)
 				return
 			}
-			logger.Info().Str("msg.id", m.ID()).Msgf("Resolved deposit message %s in block range: %s-%s", m.String(), startBlock.String(), endBlock.String())
-			// Events should eventually replace most of the logs
-			span.AddEvent("Resolved deposit message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
+			observability.LogAndEvent(logger.Info(), span, "Resolved deposit message", attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String()))
 			if m.Type == PermissionlessGenericTransfer {
 				msgChan <- []*message.Message{m}
 				return
@@ -110,7 +102,6 @@ func (eh *DepositEventHandler) HandleEvent(
 	for _, deposits := range domainDeposits {
 		msgChan <- deposits
 	}
-	span.SetStatus(codes.Ok, "Deposits handled")
 	return nil
 }
 
@@ -150,30 +141,24 @@ func (eh *RetryEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RetryEventHandler.HandleEvent")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.RetryEventHandler.HandleEvent", attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	defer span.End()
-	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
-	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	retryEvents, err := eh.eventListener.FetchRetryEvents(ctx, eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "unable to fetch retry events because")
 	}
-
 	retriesByDomain := make(map[uint8][]*message.Message)
 	for _, event := range retryEvents {
-		span.AddEvent("Fetched Retry event", traceapi.WithAttributes(attribute.String("event.retry.hashToRetry", event.TxHash)))
 		func(event hubEvents.RetryEvent) {
 			defer func() {
 				if r := recover(); r != nil {
-					logger.Error().Err(err).Msgf("panic occured while handling retry event %+v", event)
+					_ = observability.LogAndRecordError(&logger, span, fmt.Errorf("panic"), "failed to handle retry event")
 				}
 			}()
 
 			deposits, err := eh.eventListener.FetchDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
 			if err != nil {
-				span.SetStatus(codes.Error, err.Error())
-				logger.Error().Err(err).Msgf("Unable to fetch deposit events from event %+v", event)
+				_ = observability.LogAndRecordError(&logger, span, err, "failed to fetch DepositEvent for retry")
 				return
 			}
 
@@ -183,15 +168,10 @@ func (eh *RetryEventHandler) HandleEvent(
 					d.ResourceID, d.Data, d.HandlerResponse,
 				)
 				if err != nil {
-					logger.Error().Err(err).Msgf("Failed handling deposit %+v", d)
-					span.RecordError(err)
+					_ = observability.LogAndRecordError(&logger, span, err, "failed to fetch HandleDeposit for retry")
 					continue
 				}
-
-				logger.Info().Msgf(
-					"Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String(),
-				)
-				span.AddEvent("Resolved message to retry", traceapi.WithAttributes(attribute.String("msg.id", msg.ID()), attribute.String("msg.type", string(msg.Type))))
+				observability.LogAndEvent(logger.Info(), span, "Resolved retry message", attribute.String("event.retry.hashToRetry", event.TxHash), attribute.String("msg.id", msg.ID()), attribute.String("msg.type", string(msg.Type)))
 				retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
 			}
 		}(event)
@@ -200,7 +180,6 @@ func (eh *RetryEventHandler) HandleEvent(
 	for _, retries := range retriesByDomain {
 		msgChan <- retries
 	}
-	span.SetStatus(codes.Ok, "Retry events handled")
 	return nil
 }
 
@@ -243,10 +222,8 @@ func (eh *KeygenEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.KeygenEventHandler.HandleEvent")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.KeygenEventHandler.HandleEvent", attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	defer span.End()
-	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
-	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	key, err := eh.storer.GetKeyshare()
 	if (key.Threshold != 0) && (err == nil) {
 		span.SetStatus(codes.Ok, "Keyshare already generated")
@@ -257,29 +234,22 @@ func (eh *KeygenEventHandler) HandleEvent(
 		ctx, eh.bridgeAddress, startBlock, endBlock,
 	)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "unable to fetch keygen events")
 	}
 
 	if len(keygenEvents) == 0 {
 		span.SetStatus(codes.Ok, "No Keygen events to handle")
 		return nil
 	}
-
-	logger.Info().Msgf(
-		"Resolved keygen message in block range: %s-%s", startBlock.String(), endBlock.String(),
-	)
-	span.AddEvent("Keygen event found", traceapi.WithAttributes(attribute.String("event.keygen.tx.hash", keygenEvents[0].TxHash.String())))
-
+	observability.LogAndEvent(logger.Info(), span, "Resolved keygen message", attribute.String("event.keygen.tx.hash", keygenEvents[0].TxHash.String()))
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
-	keygen := keygen.NewKeygen(
+	kg := keygen.NewKeygen(
 		eh.sessionID(keygenBlockNumber),
 		eh.threshold,
 		eh.host,
 		eh.communication,
 		eh.storer)
-	span.SetStatus(codes.Ok, "Keygen event handled")
-	return eh.coordinator.Execute(ctx, keygen, make(chan interface{}, 1))
+	return eh.coordinator.Execute(ctx, kg, make(chan interface{}, 1))
 }
 
 func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
@@ -333,16 +303,13 @@ func (eh *RefreshEventHandler) HandleEvent(
 	endBlock *big.Int,
 	msgChan chan []*message.Message,
 ) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.RefreshEventHandler.HandleEvent")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "relayer-sygma", "relayer.sygma.RefreshEventHandler.HandleEvent", attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
 	defer span.End()
-	span.SetAttributes(attribute.String("startBlock", startBlock.String()), attribute.String("endBlock", endBlock.String()))
-	logger := eh.log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	refreshEvents, err := eh.eventListener.FetchRefreshEvents(
 		ctx, eh.bridgeAddress, startBlock, endBlock,
 	)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "unable to fetch keygen events")
 	}
 	if len(refreshEvents) == 0 {
 		return nil
@@ -350,31 +317,23 @@ func (eh *RefreshEventHandler) HandleEvent(
 
 	hash := refreshEvents[len(refreshEvents)-1].Hash
 	if hash == "" {
-		span.SetStatus(codes.Error, "hash cannot be empty string")
-		return fmt.Errorf("hash cannot be empty string")
+		return observability.LogAndRecordErrorWithStatus(&logger, span, fmt.Errorf("hash cannot be empty string"), "unable to handle refresh event")
 	}
+	observability.SetSpanAndLoggerAttrs(&logger, span, attribute.String("topology.hash", hash))
 	topology, err := eh.topologyProvider.NetworkTopology(hash)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "unable to fetch topology")
+
 	}
 	err = eh.topologyStore.StoreTopology(topology)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "unable to store topology")
 	}
 
 	eh.connectionGate.SetTopology(topology)
 	p2p.LoadPeers(eh.host, topology.Peers)
 
-	logger.Info().Msgf(
-		"Resolved refresh message in block range: %s-%s", startBlock.String(), endBlock.String(),
-	)
-	span.AddEvent("Resharing event found", traceapi.WithAttributes(
-		attribute.String("topology.hash", endBlock.String()),
-		attribute.String("topology.map", topology.String()),
-	),
-	)
+	observability.LogAndEvent(logger.Info(), span, "Resolved refresh message", attribute.String("topology.map", topology.String()))
 
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock),

@@ -18,6 +18,7 @@ require (
 	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.9.0
+	github.com/status-im/keycard-go v0.0.0-20211004132608-c32310e39b86
 	github.com/stretchr/testify v1.8.3
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0
@@ -176,7 +177,7 @@ require (
 )
 
 replace (
-	github.com/ChainSafe/chainbridge-core v1.4.1 => github.com/ChainSafe/chainbridge-core v1.4.2-0.20230803102628-1a13e1bc62cc
+	github.com/ChainSafe/chainbridge-core v1.4.1 => github.com/ChainSafe/chainbridge-core v1.4.2-0.20230908141401-caa0d827875a
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/binance-chain/tss-lib => github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684
 

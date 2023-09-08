@@ -54,6 +54,7 @@ func NewBridgeContract(
 }
 
 func (c *BridgeContract) deposit(
+	ctx context.Context,
 	resourceID types.ResourceID,
 	destDomainID uint8,
 	data []byte,
@@ -61,6 +62,7 @@ func (c *BridgeContract) deposit(
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	return c.ExecuteTransaction(
+		ctx,
 		"deposit",
 		opts,
 		destDomainID, resourceID, data, feeData,
@@ -68,6 +70,7 @@ func (c *BridgeContract) deposit(
 }
 
 func (c *BridgeContract) Erc20Deposit(
+	ctx context.Context,
 	recipient []byte,
 	amount *big.Int,
 	resourceID types.ResourceID,
@@ -89,7 +92,7 @@ func (c *BridgeContract) Erc20Deposit(
 		data = deposit.ConstructErc20DepositDataWithPriority(recipient, amount, opts.Priority)
 	}
 
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
+	txHash, err := c.deposit(ctx, resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -98,6 +101,7 @@ func (c *BridgeContract) Erc20Deposit(
 }
 
 func (c *BridgeContract) Erc721Deposit(
+	ctx context.Context,
 	tokenId *big.Int,
 	metadata string,
 	recipient common.Address,
@@ -120,7 +124,7 @@ func (c *BridgeContract) Erc721Deposit(
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
 
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
+	txHash, err := c.deposit(ctx, resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -129,6 +133,7 @@ func (c *BridgeContract) Erc721Deposit(
 }
 
 func (c *BridgeContract) GenericDeposit(
+	ctx context.Context,
 	metadata []byte,
 	resourceID types.ResourceID,
 	destDomainID uint8,
@@ -142,7 +147,7 @@ func (c *BridgeContract) GenericDeposit(
 		Msgf("Generic deposit")
 	data := deposit.ConstructGenericDepositData(metadata)
 
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
+	txHash, err := c.deposit(ctx, resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)
 		return nil, err
@@ -151,6 +156,7 @@ func (c *BridgeContract) GenericDeposit(
 }
 
 func (c *BridgeContract) PermissionlessGenericDeposit(
+	ctx context.Context,
 	metadata []byte,
 	executeFunctionSig string,
 	executeContractAddress *common.Address,
@@ -168,6 +174,7 @@ func (c *BridgeContract) PermissionlessGenericDeposit(
 		Msgf("Permissionless Generic deposit")
 	data := ConstructPermissionlessGenericDepositData(metadata, []byte(executeFunctionSig), executeContractAddress.Bytes(), depositor.Bytes(), maxFee)
 	txHash, err := c.deposit(
+		ctx,
 		resourceID,
 		destDomainID,
 		data,
@@ -182,6 +189,7 @@ func (c *BridgeContract) PermissionlessGenericDeposit(
 }
 
 func (c *BridgeContract) ExecuteProposal(
+	ctx context.Context,
 	proposal *chains.Proposal,
 	signature []byte,
 	opts transactor.TransactOptions,
@@ -191,6 +199,7 @@ func (c *BridgeContract) ExecuteProposal(
 		Str("resourceID", hexutil.Encode(proposal.ResourceID[:])).
 		Msgf("Execute proposal")
 	return c.ExecuteTransaction(
+		ctx,
 		"executeProposal",
 		opts,
 		proposal.OriginDomainID, proposal.DepositNonce, proposal.Data, proposal.ResourceID, signature,
@@ -214,6 +223,7 @@ func (c *BridgeContract) ExecuteProposals(
 	}
 
 	return c.ExecuteTransaction(
+		ctx,
 		"executeProposals",
 		opts,
 		bridgeProposals,
@@ -254,7 +264,7 @@ func (c *BridgeContract) GetHandlerAddressForResourceID(
 	return out, nil
 }
 
-func (c *BridgeContract) Retry(hash common.Hash, opts transactor.TransactOptions) (*common.Hash, error) {
+func (c *BridgeContract) Retry(ctx context.Context, hash common.Hash, opts transactor.TransactOptions) (*common.Hash, error) {
 	log.Debug().Msgf("Retrying deposit from transaction: %s", hash.Hex())
-	return c.ExecuteTransaction("retry", opts, hash.Hex())
+	return c.ExecuteTransaction(ctx, "retry", opts, hash.Hex())
 }

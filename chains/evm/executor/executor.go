@@ -6,6 +6,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"github.com/ChainSafe/chainbridge-core/observability"
 	"math/big"
 	"sync"
 	"time"
@@ -20,12 +21,8 @@ import (
 	"github.com/binance-chain/tss-lib/common"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	traceapi "go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -77,31 +74,26 @@ func NewExecutor(
 func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.Execute")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "sygma-relayer", "relayer.sygma.evm.Execute")
 	defer span.End()
-	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 
 	proposals := make([]*chains.Proposal, 0)
 	for _, m := range msgs {
-		logger.Debug().Str("msg.id", m.ID()).Msgf("Message to execute %s", m.String())
-		span.AddEvent("Message to execute received", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
+		observability.LogAndEvent(logger.Debug(), span, "Message to execute received", attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String()))
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
-			return fmt.Errorf("failed to handle message %s with error: %w", m.String(), err)
+			return observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to handle message")
 		}
 		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
 		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			return err
+			return observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to call IsProposalExecuted")
 		}
 		if isExecuted {
-			logger.Info().Str("msg.id", m.ID()).Msgf("Message already executed %s", m.String())
-			span.AddEvent("Message already executed", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
+			observability.LogAndEvent(logger.Info(), span, "Message already executed")
 			continue
 		}
-		logger.Info().Str("msg.id", m.ID()).Msgf("Executing message %s", m.String())
-		span.AddEvent("Executing message", traceapi.WithAttributes(attribute.String("msg.id", m.ID()), attribute.String("msg.full", m.String())))
+		observability.LogAndEvent(logger.Info(), span, "Executing message")
 		proposals = append(proposals, evmProposal)
 	}
 	if len(proposals) == 0 {
@@ -110,13 +102,11 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 
 	propHash, err := e.bridge.ProposalsHash(proposals)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to build ProposalsHash")
 	}
 
 	sessionID := e.sessionID(propHash)
-
-	span.AddEvent("SessionID created", traceapi.WithAttributes(attribute.String("tss.session.id", sessionID)))
+	observability.SetAttrsToSpanAnLogger(&logger, span, attribute.String("tss.session.id", sessionID))
 
 	msg := big.NewInt(0)
 	msg.SetBytes(propHash)
@@ -127,8 +117,7 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 		e.comm,
 		e.fetcher)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to create NewSigning")
 	}
 
 	sigChn := make(chan interface{})
@@ -147,9 +136,8 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 }
 
 func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.watchExecution")
+	ctx, span, logger := observability.CreateSpanAndLoggerFromContext(ctx, "sygma-relayer", "relayer.sygma.evm.watchExecution")
 	defer span.End()
-	logger := log.With().Str("dd.trace_id", span.SpanContext().TraceID().String()).Logger()
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -169,11 +157,9 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				hash, err := e.executeProposal(ctx, proposals, signatureData)
 				if err != nil {
 					_ = e.comm.Broadcast(ctx, e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
-					span.SetStatus(codes.Error, fmt.Errorf("executing proposel has failed %w", err).Error())
-					return err
+					return observability.LogAndRecordErrorWithStatus(nil, span, err, "executing proposal has failed")
 				}
-
-				logger.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				observability.LogAndEvent(logger.Info(), span, "Sent proposals execution with", attribute.String("tx.hash", hash.String()), attribute.String("tss.session.id", sessionID))
 			}
 		case <-ticker.C:
 			{
@@ -181,14 +167,12 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				logger.Debug().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
-				span.AddEvent("Proposals executed", traceapi.WithAttributes(attribute.String("tss.session.id", sessionID)))
+				observability.LogAndEvent(logger.Info(), span, "Proposals executed", attribute.String("tss.session.id", sessionID))
 				return nil
 			}
 		case <-timeout.C:
 			{
-				span.SetStatus(codes.Error, fmt.Errorf("execution timed out in %s", signingTimeout).Error())
-				return fmt.Errorf("execution timed out in %s", signingTimeout)
+				return observability.LogAndRecordErrorWithStatus(nil, span, fmt.Errorf("execution timed out in %s", signingTimeout), "failed to watchExecution")
 			}
 		case <-ctx.Done():
 			{
@@ -199,7 +183,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 }
 
 func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
-	ctx, span := otel.Tracer("relayer-sygma").Start(ctx, "relayer.sygma.evm.executeProposal")
+	ctx, span, _ := observability.CreateSpanAndLoggerFromContext(ctx, "sygma-relayer", "relayer.sygma.evm.executeProposal")
 	defer span.End()
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
@@ -217,10 +201,8 @@ func (e *Executor) executeProposal(ctx context.Context, proposals []*chains.Prop
 		GasLimit: gasLimit,
 	})
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return nil, observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to ExecuteProposals")
 	}
-	span.AddEvent("Proposal execution sent", traceapi.WithAttributes(attribute.String("tx.hash", hash.String())))
 	return hash, err
 }
 

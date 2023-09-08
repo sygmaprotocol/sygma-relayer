@@ -4,7 +4,10 @@
 package events
 
 import (
+	"fmt"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/status-im/keycard-go/hexutils"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Deposit struct {
@@ -14,6 +17,14 @@ type Deposit struct {
 	TransferType types.U8      `mapstructure:"sygma_traits_TransferType"`
 	CallData     []byte        `mapstructure:"deposit_data"`
 	Handler      [1]byte       `mapstructure:"handler_response"`
+}
+
+func (d *Deposit) TraceEventAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("deposit.dstdomain", int(d.DestDomainID)),
+		attribute.String("deposit.rID", fmt.Sprintf("%x", d.ResourceID)),
+		attribute.String("deposit.callData", hexutils.BytesToHex(d.CallData)),
+	}
 }
 
 type Retry struct {
