@@ -119,7 +119,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		return observability.LogAndRecordErrorWithStatus(&logger, span, err, "Process is not retryable. Returning error")
 	}
 
-	}
 	observability.LogAndEvent(logger.Info(), span, "Retrying tssProcess")
 	return c.handleError(ctx, err, tssProcess, resultChn)
 }
