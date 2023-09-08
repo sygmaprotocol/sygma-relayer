@@ -92,10 +92,10 @@ func (e *Executor) Execute(ctx context.Context, msgs []*message.Message) error {
 			return observability.LogAndRecordErrorWithStatus(nil, span, err, "failed to call IsProposalExecuted")
 		}
 		if isExecuted {
-			observability.LogAndEvent(logger.Info(), span, "Message already executed")
+			observability.LogAndEvent(logger.Info(), span, "Message already executed", attribute.String("msg.id", m.ID()))
 			continue
 		}
-		observability.LogAndEvent(logger.Info(), span, "Executing message")
+		observability.LogAndEvent(logger.Info(), span, "Executing message", attribute.String("msg.id", m.ID()))
 		proposals = append(proposals, evmProposal)
 	}
 	if len(proposals) == 0 {
