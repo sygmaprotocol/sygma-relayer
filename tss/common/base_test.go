@@ -86,7 +86,6 @@ func (s *BaseTssTestSuite) Test_PopulatePartyStore() {
 func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidWireBytes() {
 	outChn := make(chan tss.Message)
 	baseTss := common.BaseTss{}
-	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{}, errors.New("error"))
 
 	p := pool.New().WithContext(context.Background()).WithCancelOnError()
@@ -106,7 +105,6 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_InvalidBroadcastPeers() 
 		IsBroadcast: true,
 		From:        common.CreatePartyID("invalid"),
 	}, nil)
-	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().IsBroadcast().Return(false)
 	s.mockMessage.EXPECT().GetTo().Return([]*tss.PartyID{common.CreatePartyID("invalid")})
 
@@ -133,7 +131,6 @@ func (s *BaseTssTestSuite) Test_ProcessOutboundMessages_ValidMessage() {
 		SID:           "keygen",
 		Communication: s.mockCommunication,
 	}
-	s.mockMessage.EXPECT().String().Return("MSG")
 	s.mockMessage.EXPECT().String().Return("MSG")
 
 	s.mockMessage.EXPECT().WireBytes().Return([]byte{}, &tss.MessageRouting{
