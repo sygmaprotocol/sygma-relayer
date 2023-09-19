@@ -187,14 +187,7 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	var gasLimit uint64
-	l, ok := proposals[0].Metadata.Data["gasLimit"]
-	if ok {
-		gasLimit = l.(uint64)
-	} else {
-		gasLimit = uint64(TRANSFER_GAS_COST * len(proposals))
-	}
-
+	gasLimit := uint64(TRANSFER_GAS_COST * len(proposals))
 	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
 		GasLimit: gasLimit,
 	})
