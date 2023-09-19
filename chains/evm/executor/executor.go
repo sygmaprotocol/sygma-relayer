@@ -213,6 +213,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 				proposals: make([]*chains.Proposal, 0),
 				gasLimit:  0,
 			}
+			gasLimit = 0
 			batches = append(batches, currentBatch)
 		}
 
