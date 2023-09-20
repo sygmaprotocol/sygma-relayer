@@ -184,7 +184,6 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 	}
 	batches[0] = currentBatch
 
-	var gasLimit uint64
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
@@ -207,13 +206,12 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 		} else {
 			propGasLimit = uint64(TRANSFER_GAS_COST)
 		}
-		gasLimit += propGasLimit
-		if gasLimit >= MAX_TRANSACTION_COST {
+		currentBatch.gasLimit += propGasLimit
+		if currentBatch.gasLimit >= MAX_TRANSACTION_COST {
 			currentBatch = Batch{
 				proposals: make([]*chains.Proposal, 0),
 				gasLimit:  0,
 			}
-			gasLimit = 0
 			batches = append(batches, currentBatch)
 		}
 
