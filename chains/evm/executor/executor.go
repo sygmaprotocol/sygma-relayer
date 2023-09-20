@@ -91,6 +91,10 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 
 	p := pool.New().WithErrors()
 	for _, batch := range batches {
+		if len(batch.proposals) == 0 {
+			continue
+		}
+
 		b := batch
 		p.Go(func() error {
 			propHash, err := e.bridge.ProposalsHash(b.proposals)
@@ -130,7 +134,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, batch Batch, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, batch *Batch, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -176,9 +180,9 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
-	batches := make([]Batch, 1)
-	currentBatch := Batch{
+func (e *Executor) proposalBatches(msgs []*message.Message) ([]*Batch, error) {
+	batches := make([]*Batch, 1)
+	currentBatch := &Batch{
 		proposals: make([]*chains.Proposal, 0),
 		gasLimit:  0,
 	}
@@ -189,6 +193,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
 		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
 		if err != nil {
@@ -208,7 +213,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 		}
 		currentBatch.gasLimit += propGasLimit
 		if currentBatch.gasLimit >= MAX_TRANSACTION_COST {
-			currentBatch = Batch{
+			currentBatch = &Batch{
 				proposals: make([]*chains.Proposal, 0),
 				gasLimit:  0,
 			}
@@ -221,7 +226,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]Batch, error) {
 	return batches, nil
 }
 
-func (e *Executor) executeBatch(batch Batch, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
