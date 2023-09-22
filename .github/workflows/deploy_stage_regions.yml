@@ -1,0 +1,107 @@
+# The Licensed Work is (c) 2022 Sygma
+# SPDX-License-Identifier: LGPL-3.0-only
+
+name: sygma_deploy_devnet_to_regions
+
+on:
+  workflow_dispatch:
+    inputs:
+      region_2:
+        description: 'Regional deployment'
+        required: true
+        default: 'region' 
+        type: string
+      region_3:
+        description: 'Regional deployment'
+        required: true
+        default: 'region' 
+        type: string
+
+env:
+  ENVIRONMENT: STAGE
+  AWS_STAGE: '${{ secrets.AWS_ARN }}'
+  REGISTRY: 'ghcr.io'
+  TAG: 'latest'
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        relayer_id_region_2: [3]
+        relayer_id_region_3: [4]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+        
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: render jinja2 templates to task definition json files region 2
+        if: ${{ github.event.inputs.region_2 }} == ${{ github.secret.DEVNET_REGION_2}}
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id_region_2 }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id_region_2 }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ secrets.DEVNET_REGION_2 }}
+            awsEfs=${{ secrets.DEVNET_EFS_2 }}
+
+      - name: configure aws credentials
+        if: ${{ github.event.inputs.region_2 }} == ${{ github.secret.DEVNET_REGION_2}}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ secrets.AWS_REGION_2 }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition to region_2
+        if: ${{ github.event.inputs.region_2 }} == ${{ github.secret.DEVNET_REGION_2}}
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id_region_2 }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id_region_2 }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+      - name: render jinja2 templates to task definition json files region 3
+        if: ${{ github.event.inputs.region_3 }} == ${{ github.secret.DEVNET_REGION_3}}
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id_region_3 }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id_region_3 }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ secrets.AWS_REGION_3 }}
+            awsEfs=${{ secrets.DEVNET_EFS_3 }}
+
+      - name: configure aws credentials
+        if: ${{ github.event.inputs.region_3 }} == ${{ github.secret.DEVNET_REGION_3}}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ env.AWS_REGION_3 }}
+          role-session-name: GithubActions     
+
+      - name: deploy task definition to region 3
+        if: ${{ github.event.inputs.region_3 }} == ${{ github.secret.DEVNET_REGION_3}}
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id_region_3 }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id_region_3 }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
