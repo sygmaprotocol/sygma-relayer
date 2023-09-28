@@ -9,7 +9,6 @@ on:
       - main
 
 env:
-  AWS_REGION: '${{ secrets.AWS_REGION }}'
   ENVIRONMENT: STAGE
   AWS_STAGE: '${{ secrets.AWS_ARN }}'
   REGISTRY: 'ghcr.io'
@@ -46,15 +45,15 @@ jobs:
           context: .
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
-
-
-  deploy:
+          
+          ######################## region 1 ########################
+  deploy_reg_1:
     needs: push
-    name: deploy
+    name: deploy region 1
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        relayer_id: [0, 1, 2, 3, 4]
+        relayer_id: [0, 1, 2]
 
     permissions:
       contents: read
@@ -79,14 +78,114 @@ jobs:
           variables: |
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_STAGE }}
-            awsRegion=${{ env.AWS_REGION }}
+            awsRegion=${{ secrets.AWS_REGION }}
             awsEfs=${{ secrets.DEVNET_EFS_1 }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+          ######################## region 2 ########################
+  deploy_reg_2:
+    needs: push
+    name: deploy region 2
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        relayer_id: [3]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+        
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: render jinja2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ secrets.DEVNET_REGION_2 }}
+            awsEfs=${{ secrets.DEVNET_EFS_2 }}
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ secrets.DEVNET_REGION_2 }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+          ######################## region 3 ########################
+  deploy_reg_3:
+    needs: push
+    name: deploy region 3
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        relayer_id: [4]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+        
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: render jinja2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_STAGE }}
+            awsRegion=${{ secrets.AWS_REGION_3 }}
+            awsEfs=${{ secrets.DEVNET_EFS_3 }}
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ secrets.AWS_REGION_3 }}
           role-session-name: GithubActions
 
       - name: deploy task definition
