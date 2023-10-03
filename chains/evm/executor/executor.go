@@ -27,7 +27,6 @@ import (
 )
 
 const TRANSFER_GAS_COST = 200000
-const MAX_TRANSACTION_COST = 25000000
 
 type Batch struct {
 	proposals []*chains.Proposal
@@ -50,13 +49,14 @@ type BridgeContract interface {
 }
 
 type Executor struct {
-	coordinator *tss.Coordinator
-	host        host.Host
-	comm        comm.Communication
-	fetcher     signing.SaveDataFetcher
-	bridge      BridgeContract
-	mh          MessageHandler
-	exitLock    *sync.RWMutex
+	coordinator       *tss.Coordinator
+	host              host.Host
+	comm              comm.Communication
+	fetcher           signing.SaveDataFetcher
+	bridge            BridgeContract
+	mh                MessageHandler
+	exitLock          *sync.RWMutex
+	transactionMaxGas uint64
 }
 
 func NewExecutor(
@@ -67,15 +67,17 @@ func NewExecutor(
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
 	exitLock *sync.RWMutex,
+	transactionMaxGas uint64,
 ) *Executor {
 	return &Executor{
-		host:        host,
-		comm:        comm,
-		coordinator: coordinator,
-		mh:          mh,
-		bridge:      bridgeContract,
-		fetcher:     fetcher,
-		exitLock:    exitLock,
+		host:              host,
+		comm:              comm,
+		coordinator:       coordinator,
+		mh:                mh,
+		bridge:            bridgeContract,
+		fetcher:           fetcher,
+		exitLock:          exitLock,
+		transactionMaxGas: transactionMaxGas,
 	}
 }
 
@@ -212,7 +214,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]*Batch, error) {
 			propGasLimit = uint64(TRANSFER_GAS_COST)
 		}
 		currentBatch.gasLimit += propGasLimit
-		if currentBatch.gasLimit >= MAX_TRANSACTION_COST {
+		if currentBatch.gasLimit >= e.transactionMaxGas {
 			currentBatch = &Batch{
 				proposals: make([]*chains.Proposal, 0),
 				gasLimit:  0,

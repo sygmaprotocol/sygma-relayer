@@ -183,7 +183,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
 				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
 				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
-				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore, exitLock)
+				executor := executor.NewExecutor(host, communication, coordinator, mh, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
 				chain := evm.NewEVMChain(
 					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
