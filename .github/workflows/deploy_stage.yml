@@ -128,14 +128,14 @@ jobs:
           variables: |
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_STAGE }}
-            awsRegion=${{ secrets.DEVNET_REGION_2 }}
+            awsRegion=${{ secrets.AWS_REGION_2 }}
             awsEfs=${{ secrets.DEVNET_EFS_2 }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_STAGE }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ secrets.DEVNET_REGION_2 }}
+          aws-region: ${{ secrets.AWS_REGION_2 }}
           role-session-name: GithubActions
 
       - name: deploy task definition
