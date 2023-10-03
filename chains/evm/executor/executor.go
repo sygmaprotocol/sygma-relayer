@@ -200,7 +200,7 @@ func (e *Executor) proposalBatches(msgs []*message.Message) ([]*Batch, error) {
 			return nil, err
 		}
 		if isExecuted {
-			log.Info().Msgf("Prop %p already executed", prop)
+			log.Info().Msgf("Proposal %p already executed", prop)
 			continue
 		}
 
