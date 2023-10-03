@@ -7,9 +7,8 @@ on:
   release:
     types:
       - published
-
+      
 env:
-  AWS_REGION: '${{ secrets.AWS_REGION }}'
   ENVIRONMENT: 'TESTNET'
   REGISTRY: 'ghcr.io'
   TAG: 'stable'
@@ -55,13 +54,14 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
 
+          ######################## region 1 ########################
   deploy:
     needs: push
     name: deploy
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        relayer_id: [0, 1, 2]
+        relayer_id: [0, 1]
 
     permissions:
       contents: read
@@ -86,14 +86,66 @@ jobs:
           variables: |
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_TESTNET }}
-            awsRegion=${{ env.AWS_REGION }}
+            awsRegion=${{ secrets.AWS_REGION }}
             awsEfs=${{ secrets.TESTNET_EFS_1 }}
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GithubActions
+
+      - name: deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
+
+          ######################## region 2 ########################
+
+          ######################## region 3 ########################
+  deploy_reg_3:
+    needs: push
+    name: deploy region 3
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        relayer_id: [2]
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+        
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: render jinja2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            relayerId=${{ matrix.relayer_id }}
+            awsAccountId=${{ env.AWS_TESTNET }}
+            awsRegion=${{ secrets.AWS_REGION_3 }}
+            awsEfs=${{ secrets.TESTNET_EFS_3 }}
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ secrets.AWS_REGION_3 }}
           role-session-name: GithubActions
 
       - name: deploy task definition
