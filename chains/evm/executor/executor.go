@@ -28,6 +28,11 @@ import (
 
 const TRANSFER_GAS_COST = 200000
 
+type Batch struct {
+	proposals []*chains.Proposal
+	gasLimit  uint64
+}
+
 var (
 	executionCheckPeriod = time.Minute
 	signingTimeout       = 30 * time.Minute
@@ -44,13 +49,14 @@ type BridgeContract interface {
 }
 
 type Executor struct {
-	coordinator *tss.Coordinator
-	host        host.Host
-	comm        comm.Communication
-	fetcher     signing.SaveDataFetcher
-	bridge      BridgeContract
-	mh          MessageHandler
-	exitLock    *sync.RWMutex
+	coordinator       *tss.Coordinator
+	host              host.Host
+	comm              comm.Communication
+	fetcher           signing.SaveDataFetcher
+	bridge            BridgeContract
+	mh                MessageHandler
+	exitLock          *sync.RWMutex
+	transactionMaxGas uint64
 }
 
 func NewExecutor(
@@ -61,15 +67,17 @@ func NewExecutor(
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
 	exitLock *sync.RWMutex,
+	transactionMaxGas uint64,
 ) *Executor {
 	return &Executor{
-		host:        host,
-		comm:        comm,
-		coordinator: coordinator,
-		mh:          mh,
-		bridge:      bridgeContract,
-		fetcher:     fetcher,
-		exitLock:    exitLock,
+		host:              host,
+		comm:              comm,
+		coordinator:       coordinator,
+		mh:                mh,
+		bridge:            bridgeContract,
+		fetcher:           fetcher,
+		exitLock:          exitLock,
+		transactionMaxGas: transactionMaxGas,
 	}
 }
 
@@ -78,63 +86,57 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	proposals := make([]*chains.Proposal, 0)
-	for _, m := range msgs {
-		prop, err := e.mh.HandleMessage(m)
-		if err != nil {
-			return err
-		}
-		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
-		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
-		if err != nil {
-			return err
-		}
-		if isExecuted {
-			log.Info().Msgf("Prop %p already executed", prop)
+	batches, err := e.proposalBatches(msgs)
+	if err != nil {
+		return err
+	}
+
+	p := pool.New().WithErrors()
+	for _, batch := range batches {
+		if len(batch.proposals) == 0 {
 			continue
 		}
 
-		proposals = append(proposals, evmProposal)
-	}
-	if len(proposals) == 0 {
-		return nil
-	}
+		b := batch
+		p.Go(func() error {
+			propHash, err := e.bridge.ProposalsHash(b.proposals)
+			if err != nil {
+				return err
+			}
 
-	propHash, err := e.bridge.ProposalsHash(proposals)
-	if err != nil {
-		return err
+			sessionID := e.sessionID(propHash)
+			msg := big.NewInt(0)
+			msg.SetBytes(propHash)
+			signing, err := signing.NewSigning(
+				msg,
+				e.sessionID(propHash),
+				e.host,
+				e.comm,
+				e.fetcher)
+			if err != nil {
+				return err
+			}
+
+			sigChn := make(chan interface{})
+			executionContext, cancelExecution := context.WithCancel(context.Background())
+			watchContext, cancelWatch := context.WithCancel(context.Background())
+			ep := pool.New().WithErrors()
+			ep.Go(func() error {
+				err := e.coordinator.Execute(executionContext, signing, sigChn)
+				if err != nil {
+					cancelWatch()
+				}
+
+				return err
+			})
+			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID) })
+			return ep.Wait()
+		})
 	}
-
-	sessionID := e.sessionID(propHash)
-	msg := big.NewInt(0)
-	msg.SetBytes(propHash)
-	signing, err := signing.NewSigning(
-		msg,
-		e.sessionID(propHash),
-		e.host,
-		e.comm,
-		e.fetcher)
-	if err != nil {
-		return err
-	}
-
-	sigChn := make(chan interface{})
-	executionContext, cancelExecution := context.WithCancel(context.Background())
-	watchContext, cancelWatch := context.WithCancel(context.Background())
-	pool := pool.New().WithErrors()
-	pool.Go(func() error {
-		err := e.coordinator.Execute(executionContext, signing, sigChn)
-		if err != nil {
-			cancelWatch()
-		}
-
-		return err
-	})
-	pool.Go(func() error { return e.watchExecution(watchContext, cancelExecution, proposals, sigChn, sessionID) })
-	return pool.Wait()
+	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, batch *Batch, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -151,7 +153,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				}
 
 				signatureData := sigResult.(*common.SignatureData)
-				hash, err := e.executeProposal(proposals, signatureData)
+				hash, err := e.executeBatch(batch, signatureData)
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
@@ -161,7 +163,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 			}
 		case <-ticker.C:
 			{
-				if !e.areProposalsExecuted(proposals, sessionID) {
+				if !e.areProposalsExecuted(batch.proposals, sessionID) {
 					continue
 				}
 
@@ -180,23 +182,61 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
+func (e *Executor) proposalBatches(msgs []*message.Message) ([]*Batch, error) {
+	batches := make([]*Batch, 1)
+	currentBatch := &Batch{
+		proposals: make([]*chains.Proposal, 0),
+		gasLimit:  0,
+	}
+	batches[0] = currentBatch
+
+	for _, m := range msgs {
+		prop, err := e.mh.HandleMessage(m)
+		if err != nil {
+			return nil, err
+		}
+
+		evmProposal := chains.NewProposal(prop.Source, prop.Destination, prop.DepositNonce, prop.ResourceId, prop.Data, prop.Metadata)
+		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
+		if err != nil {
+			return nil, err
+		}
+		if isExecuted {
+			log.Info().Msgf("Proposal %p already executed", prop)
+			continue
+		}
+
+		var propGasLimit uint64
+		l, ok := evmProposal.Metadata.Data["gasLimit"]
+		if ok {
+			propGasLimit = l.(uint64)
+		} else {
+			propGasLimit = uint64(TRANSFER_GAS_COST)
+		}
+		currentBatch.gasLimit += propGasLimit
+		if currentBatch.gasLimit >= e.transactionMaxGas {
+			currentBatch = &Batch{
+				proposals: make([]*chains.Proposal, 0),
+				gasLimit:  0,
+			}
+			batches = append(batches, currentBatch)
+		}
+
+		currentBatch.proposals = append(currentBatch.proposals, evmProposal)
+	}
+
+	return batches, nil
+}
+
+func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureData) (*ethCommon.Hash, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
 	sig = append(sig[:], signatureData.SignatureRecovery...)
 	sig[len(sig)-1] += 27 // Transform V from 0/1 to 27/28
 
-	var gasLimit uint64
-	l, ok := proposals[0].Metadata.Data["gasLimit"]
-	if ok {
-		gasLimit = l.(uint64)
-	} else {
-		gasLimit = uint64(TRANSFER_GAS_COST * len(proposals))
-	}
-
-	hash, err := e.bridge.ExecuteProposals(proposals, sig, transactor.TransactOptions{
-		GasLimit: gasLimit,
+	hash, err := e.bridge.ExecuteProposals(batch.proposals, sig, transactor.TransactOptions{
+		GasLimit: batch.gasLimit,
 	})
 	if err != nil {
 		return nil, err
