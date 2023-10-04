@@ -65,7 +65,7 @@ type RawEVMConfig struct {
 	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"500000000000"`
 	GasMultiplier            float64         `mapstructure:"gasMultiplier" default:"1"`
 	GasIncreasePercentage    int64           `mapstructure:"gasIncreasePercentage" default:"15"`
-	GasLimit                 int64           `mapstructure:"gasLimit" default:"2000000"`
+	GasLimit                 int64           `mapstructure:"gasLimit" default:"15000000"`
 	StartBlock               int64           `mapstructure:"startBlock"`
 	BlockConfirmations       int64           `mapstructure:"blockConfirmations" default:"10"`
 	BlockInterval            int64           `mapstructure:"blockInterval" default:"5"`
