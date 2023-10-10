@@ -1,0 +1,50 @@
+name: sygma/deploy/relayer-stage
+
+on:
+  workflow_dispatch:
+
+env:
+  CHART_NAME: 'relayer-devnet'
+  CHART_PATH: './relayers/gcp/helm-charts/sygma-relayer'
+  HELM_VALUES_PATH: './relayers/gcp/helm-charts/sygma-relayer/relayer-devnet-values.yaml'
+  NAMESPACE: 'sygma-relayer'
+
+
+jobs:
+   deploy:
+    name: sygma-relayer-deploy
+    runs-on: ubuntu-latest
+
+    permissions: 
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+
+      - name: checkout gcp repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          ref: feat/sygma-relayer-gcp
+          token: ${{ secrets.GHCR_TOKEN }}
+
+      - name: set up google cloud sdk
+        uses: google-github-actions/setup-gcloud@v0.3.0
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Install gcloud auth plugin
+        run: gcloud components install gke-gcloud-auth-plugin
+
+      - name: get gke credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GCP_CLUSTER_NAME }} --zone ${{ secrets.GCP_CLUSTER_REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: deploy helm chart
+        run: |
+          helm upgrade --install ${{ env.CHART_NAME }} ${{ env.CHART_PATH }}  -f ${{ env.HELM_VALUES_PATH }} --create-namespace --namespace ${{ env.NAMESPACE }}
+          kubectl delete pod -l app.kubernetes.io/name=relayer-stage
