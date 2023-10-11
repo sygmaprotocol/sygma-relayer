@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.10.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.9.1...v1.10.0) (2023-10-10)
+
+
+### Features
+
+* enable generic transaction batching ([#217](https://github.com/sygmaprotocol/sygma-relayer/issues/217)) ([67a5ae7](https://github.com/sygmaprotocol/sygma-relayer/commit/67a5ae78dcb4cf5986b74c634bc3e341fd5e3cef))
+
+
+### Miscellaneous
+
+* enabled region_1 pipeline ([#225](https://github.com/sygmaprotocol/sygma-relayer/issues/225)) ([fe2df97](https://github.com/sygmaprotocol/sygma-relayer/commit/fe2df979646002d2cd90800ef5bc7e2dbe613978))
+* multi region deployment ([#219](https://github.com/sygmaprotocol/sygma-relayer/issues/219)) ([6b42706](https://github.com/sygmaprotocol/sygma-relayer/commit/6b427066b21b7b647476fb98f9c1c9162cbc371e))
+* testing regional deployment ([#224](https://github.com/sygmaprotocol/sygma-relayer/issues/224)) ([ae91338](https://github.com/sygmaprotocol/sygma-relayer/commit/ae91338e07652f3c1a2b3a66356fd8f1e475cda2))
+* testnet regional deployment ([#222](https://github.com/sygmaprotocol/sygma-relayer/issues/222)) ([d46d870](https://github.com/sygmaprotocol/sygma-relayer/commit/d46d870a720fd56c1d2ffed737cb24df0ddc3519))
+* update aws region ([#221](https://github.com/sygmaprotocol/sygma-relayer/issues/221)) ([bc47380](https://github.com/sygmaprotocol/sygma-relayer/commit/bc47380923447c14a6302e0c92835eb360207af9))
+
 ## [1.9.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.9.0...v1.9.1) (2023-09-04)
 
 
