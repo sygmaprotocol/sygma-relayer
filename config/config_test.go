@@ -109,7 +109,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
 				ElectionWaitTime: 2 * time.Second,
-				BullyWaitTime:    25 * time.Second,
+				BullyWaitTime:    3 * time.Minute,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{
@@ -214,7 +214,7 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 				PingBackOff:      1 * time.Second,
 				PingInterval:     1 * time.Second,
 				ElectionWaitTime: 2 * time.Second,
-				BullyWaitTime:    25 * time.Second,
+				BullyWaitTime:    3 * time.Minute,
 			},
 		},
 		ChainConfigs: []map[string]interface{}{
@@ -411,7 +411,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						PingBackOff:      1 * time.Second,
 						PingInterval:     1 * time.Second,
 						ElectionWaitTime: 2 * time.Second,
-						BullyWaitTime:    25 * time.Second,
+						BullyWaitTime:    3 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
