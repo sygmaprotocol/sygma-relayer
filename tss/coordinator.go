@@ -298,6 +298,11 @@ func (c *Coordinator) waitForStart(
 		select {
 		case wMsg := <-msgChan:
 			{
+				if coordinator != "" && wMsg.From != coordinator {
+					log.Warn().Msgf("Received initate message from a peer %s that is not the coordinator %s", wMsg.From.Pretty(), coordinator.Pretty())
+					continue
+				}
+
 				coordinatorTimeoutTicker.Reset(timeout)
 
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("sent ready message to %s", wMsg.From)
@@ -312,10 +317,8 @@ func (c *Coordinator) waitForStart(
 				// having startMsg.From as "" is special case when peer is not selected in subset
 				// but should wait for start message if existing singing process fails
 				if coordinator != "" && startMsg.From != coordinator {
-					return fmt.Errorf(
-						"start message received from peer %s that is not coordinator %s",
-						startMsg.From.Pretty(), coordinator.Pretty(),
-					)
+					log.Warn().Msgf("Received start message from a peer %s that is not the coordinator %s", startMsg.From.Pretty(), coordinator.Pretty())
+					continue
 				}
 
 				msg, err := common.UnmarshalStartMessage(startMsg.Payload)

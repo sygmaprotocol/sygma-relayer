@@ -67,7 +67,7 @@ type RawBullyConfig struct {
 	PingBackOff      string `mapstructure:"PingBackOff" json:"pingBackOff" default:"1s"`
 	PingInterval     string `mapstructure:"PingInterval" json:"pingInterval" default:"1s"`
 	ElectionWaitTime string `mapstructure:"ElectionWaitTime" json:"electionWaitTime" default:"2s"`
-	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime" default:"25s"`
+	BullyWaitTime    string `mapstructure:"BullyWaitTime" json:"bullyWaitTime" default:"3m"`
 }
 
 func (c *RawRelayerConfig) Validate() error {
