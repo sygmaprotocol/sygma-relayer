@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.0...v1.10.1) (2023-10-19)
+
+
+### Bug Fixes
+
+* invalid bully restart ([#227](https://github.com/sygmaprotocol/sygma-relayer/issues/227)) ([884b58d](https://github.com/sygmaprotocol/sygma-relayer/commit/884b58d286acbf9b07028adb2cfaddc35a96c42a))
+* listeners not retrying failed event handlers ([#229](https://github.com/sygmaprotocol/sygma-relayer/issues/229)) ([37567c9](https://github.com/sygmaprotocol/sygma-relayer/commit/37567c945e5808f176b81cf5e2aac847a44fa7c4))
+
+
+### Miscellaneous
+
+* update readme file ([#210](https://github.com/sygmaprotocol/sygma-relayer/issues/210)) ([17f796f](https://github.com/sygmaprotocol/sygma-relayer/commit/17f796f16c4fd1332b2679b11028999f16814f9a))
+
 ## [1.10.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.9.1...v1.10.0) (2023-10-10)
 
 
