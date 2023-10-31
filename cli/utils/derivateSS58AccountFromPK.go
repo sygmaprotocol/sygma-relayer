@@ -5,6 +5,7 @@ package utils
 
 import (
 	"fmt"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +32,7 @@ func init() {
 }
 
 func derivateSS58(cmd *cobra.Command, args []string) error {
-	account, err := signature.KeyringPairFromSecret(privateKey, networkID)
+	account, err := signature.KeyringPairFromSecret(privateKey, uint16(networkID))
 	if err != nil {
 		return err
 	}

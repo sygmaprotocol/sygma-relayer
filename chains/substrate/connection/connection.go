@@ -74,8 +74,8 @@ func (c *Connection) UpdateMetatdata() error {
 }
 
 func (c *Connection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
-	provider := state.NewProvider(c.State)
-	eventRetriever, err := retriever.NewDefaultEventRetriever(provider)
+	provider := state.NewEventProvider(c.State)
+	eventRetriever, err := retriever.NewDefaultEventRetriever(provider, c.State)
 	if err != nil {
 		return nil, err
 	}
