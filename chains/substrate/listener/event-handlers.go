@@ -72,7 +72,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 				}()
 
 				var d events.Deposit
-				err := mapstructure.Decode(evt.Fields, &d)
+				err := mapstructure.Decode(evt.Fields[0].Value, &d)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
@@ -136,7 +136,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 					}
 				}()
 				var er events.Retry
-				err = mapstructure.Decode(evt.Fields, &er)
+				err = mapstructure.Decode(evt.Fields[0].Value, &er)
 				if err != nil {
 					return err
 				}
@@ -159,7 +159,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 				for _, event := range bEvts {
 					if event.Name == events.DepositEvent {
 						var d events.Deposit
-						err = mapstructure.Decode(event.Fields, &d)
+						err = mapstructure.Decode(event.Fields[0].Value, &d)
 						if err != nil {
 							return err
 						}
