@@ -136,13 +136,23 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d1},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
 			},
 		},
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d2},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
 			},
 		},
 	}
@@ -199,13 +209,23 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d1},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
 			},
 		},
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d2},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
 			},
 		},
 	}
@@ -260,13 +280,23 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d1},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
 			},
 		},
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d2},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
 			},
 		},
 	}
@@ -322,7 +352,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Retry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}
@@ -351,7 +381,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Retry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}
@@ -380,7 +410,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Retry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}
@@ -409,7 +439,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Retry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}
@@ -447,13 +477,23 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d1},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
 			},
 		},
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d2},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
 			},
 		},
 	}
@@ -490,7 +530,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Retry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}
@@ -532,7 +572,12 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d1},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
 			},
 		},
 	}
@@ -540,7 +585,12 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		{
 			Name: "SygmaBridge.Deposit",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridge.Deposit", Value: d2},
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
 			},
 		},
 	}
@@ -577,13 +627,13 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridgeRetry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 		{
 			Name: "SygmaBridge.Retry",
 			Fields: registry.DecodedFields{
-				&registry.DecodedField{Name: "SygmaBridgeRetry", Value: rtry},
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
 			},
 		},
 	}

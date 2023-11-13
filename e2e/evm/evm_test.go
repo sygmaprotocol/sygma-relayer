@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/types"
+	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -300,7 +301,8 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
-	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
+	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
+	hash := substrateTypes.NewHash(byteArrayToHash)
 
 	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
 	s.Nil(err)
@@ -334,7 +336,8 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
 	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
-	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
+	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
+	hash := substrateTypes.NewHash(byteArrayToHash)
 	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(address,bytes32,address)"))[:4])
 	contractAddress := assetStoreContract2.ContractAddress()
 	maxFee := big.NewInt(200000)

@@ -31,12 +31,12 @@ type SubstrateConfig struct {
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
-	SubstrateNetwork   uint8
+	SubstrateNetwork   uint16
 	Tip                uint64
 }
 
 func (c *SubstrateConfig) String() string {
-	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, uint16(c.SubstrateNetwork))
+	kp, _ := signature.KeyringPairFromSecret(c.GeneralChainConfig.Key, c.SubstrateNetwork)
 	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', 
 							  LatestBlock: '%t', Key address: '%s', StartBlock: '%s', BlockInterval: '%s', 
                               BlockRetryInterval: '%s', ChainID: '%d', Tip: '%d', SubstrateNetworkPrefix: "%d"`,
@@ -90,7 +90,7 @@ func NewSubstrateConfig(chainConfig map[string]interface{}) (*SubstrateConfig, e
 		BlockRetryInterval: time.Duration(c.BlockRetryInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockInterval:      big.NewInt(c.BlockInterval),
-		SubstrateNetwork:   uint8(c.SubstrateNetwork),
+		SubstrateNetwork:   uint16(c.SubstrateNetwork),
 		Tip:                uint64(c.Tip),
 	}
 

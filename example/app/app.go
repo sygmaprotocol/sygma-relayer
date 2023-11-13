@@ -204,7 +204,7 @@ func Run() error {
 					panic(err)
 				}
 
-				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, uint16(config.SubstrateNetwork))
+				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, config.SubstrateNetwork)
 				if err != nil {
 					panic(err)
 				}
