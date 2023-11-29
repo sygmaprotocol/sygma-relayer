@@ -4,6 +4,7 @@
 
 ## Components
 
+- **[CLI commands](/docs/general/CLI.md)** - overview of CLI commands
 - **[Fees](/docs/general/Fees.md)** - high-level overview of handling fees
 - **[Relayers](/docs/Home.md)** - relayer technical documentation
 - **[Topology Map](/docs/general/Topology.md)** - overview of topology map usage

@@ -31,6 +31,7 @@ Topology should be encrypted with AES using CTR mode.
 IPFS should return hex formatted IV + data. To help you there are 2 utility CLI described below.
 
 ## Utility CLI
+For more details on all CLI commands you can check out [CLI commands page](/docs/general/CLI.md).
 
 `./relayer topology encrypt --path ./topology.json --encryptionKey 123` 
 This command will encrypt provided topology and output corresponding hash and encrypted toplogy in hex representation (iv + data)
