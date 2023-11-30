@@ -9,7 +9,7 @@ ADD . /src
 WORKDIR /src
 RUN cd /src && echo $(ls -1 /src)
 RUN go mod download
-RUN go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore" -o /bridge .
+RUN go build -ldflags "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore -X github.com/ChainSafe/sygma-relayer/app.Version=$(sed -n '0,/## \[\([0-9.]*\)\]/s/.*\[\([0-9.]*\)\].*/\1/p' CHANGELOG.md)" -o /bridge .
 
 # final stage
 FROM debian:stable-slim
