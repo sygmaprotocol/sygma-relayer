@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.1...v1.10.2) (2023-11-30)
+
+
+### Miscellaneous
+
+* add version on startup ([#240](https://github.com/sygmaprotocol/sygma-relayer/issues/240)) ([e86c9d9](https://github.com/sygmaprotocol/sygma-relayer/commit/e86c9d9b31cc24bce542f99bab1d774863dab608))
+* update codeowners ([#237](https://github.com/sygmaprotocol/sygma-relayer/issues/237)) ([a6be32a](https://github.com/sygmaprotocol/sygma-relayer/commit/a6be32a19dbfe2b856840fd1995fde2dcfb14f91))
+
 ## [1.10.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.0...v1.10.1) (2023-10-19)
 
 
