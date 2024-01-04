@@ -10,28 +10,77 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
+
+	"github.com/ChainSafe/sygma-relayer/chains"
 )
 
-func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, bridgeAddress common.Address) (*proposal.Proposal, error) {
-	executeFunctionSignature, ok := msg.Payload[0].([]byte)
+const (
+	TransferProposalType  proposal.ProposalType = "Transfer"
+	ERC20                 message.MessageType   = "erc20"
+	ERC721                message.MessageType   = "erc721"
+	PermissionedGeneric   message.MessageType   = "permissionedGeneric"
+	PermissionlessGeneric message.MessageType   = "permissionlessGeneric"
+)
+
+type TransferMessageData struct {
+	DepositNonce uint64
+	ResourceId   [32]byte
+	Payload      []interface{}
+	Metadata     map[string]interface{}
+}
+
+type TransferMessage struct {
+	Source      uint8
+	Destination uint8
+	Data        TransferMessageData
+	Type        message.MessageType
+}
+
+type TransferMessageHandler struct{}
+
+func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+
+	transferMessage := &TransferMessage{
+		Source:      msg.Source,
+		Destination: msg.Destination,
+		Data:        msg.Data.(TransferMessageData),
+		Type:        msg.Type,
+	}
+
+	switch msg.Type {
+	case ERC20:
+		return ERC20MessageHandler(transferMessage)
+	case ERC721:
+		return ERC721MessageHandler(transferMessage)
+	case PermissionedGeneric:
+		return GenericMessageHandler(transferMessage)
+	case PermissionlessGeneric:
+		return PermissionlessGenericMessageHandler(transferMessage)
+	}
+	return nil, errors.New("wrong message type passed while handling message")
+}
+
+func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+
+	executeFunctionSignature, ok := msg.Data.Payload[0].([]byte)
 	if !ok {
 		return nil, errors.New("wrong function signature format")
 	}
-	executeContractAddress, ok := msg.Payload[1].([]byte)
+	executeContractAddress, ok := msg.Data.Payload[1].([]byte)
 	if !ok {
 		return nil, errors.New("wrong contract address format")
 	}
-	maxFee, ok := msg.Payload[2].([]byte)
+	maxFee, ok := msg.Data.Payload[2].([]byte)
 	if !ok {
 		return nil, errors.New("wrong max fee format")
 	}
-	depositor, ok := msg.Payload[3].([]byte)
+	depositor, ok := msg.Data.Payload[3].([]byte)
 	if !ok {
 		return nil, errors.New("wrong depositor data format")
 	}
-	executionData, ok := msg.Payload[4].([]byte)
+	executionData, ok := msg.Data.Payload[4].([]byte)
 	if !ok {
 		return nil, errors.New("wrong execution data format")
 	}
@@ -49,6 +98,73 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	data.Write(depositor)
 
 	data.Write(executionData)
+	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
+}
 
-	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
+func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+	if len(msg.Data.Payload) != 2 {
+		return nil, errors.New("malformed payload. Len  of payload should be 2")
+	}
+	amount, ok := msg.Data.Payload[0].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload amount format")
+	}
+	recipient, ok := msg.Data.Payload[1].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload recipient format")
+	}
+	var data []byte
+	data = append(data, common.LeftPadBytes(amount, 32)...) // amount (uint256)
+	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
+	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
+	data = append(data, recipient...)                             // recipient ([]byte)
+
+	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
+		msg.Data.ResourceId, msg.Data.Metadata, data, TransferProposalType), nil
+}
+
+func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+
+	if len(msg.Data.Payload) != 3 {
+		return nil, errors.New("malformed payload. Len  of payload should be 3")
+	}
+	tokenID, ok := msg.Data.Payload[0].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload tokenID format")
+	}
+	recipient, ok := msg.Data.Payload[1].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload recipient format")
+	}
+	metadata, ok := msg.Data.Payload[2].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload metadata format")
+	}
+	data := bytes.Buffer{}
+	data.Write(common.LeftPadBytes(tokenID, 32))
+	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
+	data.Write(common.LeftPadBytes(recipientLen, 32))
+	data.Write(recipient)
+	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
+	data.Write(common.LeftPadBytes(metadataLen, 32))
+	data.Write(metadata)
+	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
+}
+
+func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+	if len(msg.Data.Payload) != 1 {
+		return nil, errors.New("malformed payload. Len  of payload should be 1")
+	}
+	metadata, ok := msg.Data.Payload[0].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload metadata format")
+	}
+	data := bytes.Buffer{}
+	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
+	data.Write(common.LeftPadBytes(metadataLen, 32)) // length of metadata (uint256)
+	data.Write(metadata)
+	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
 func NewProposal(source, destination uint8, depositNonce uint64, resourceId types.ResourceID, data []byte, metadata message.Metadata) *Proposal {
@@ -22,6 +23,31 @@ func NewProposal(source, destination uint8, depositNonce uint64, resourceId type
 		Destination:    destination,
 		Data:           data,
 		Metadata:       metadata,
+	}
+}
+
+type TransferProposalData struct {
+	DepositNonce uint64
+	ResourceId   [32]byte
+	Metadata     map[string]interface{}
+	Data         []byte
+}
+
+func NewTransferProposal(source, destination uint8, depositNonce uint64,
+	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *proposal.Proposal {
+
+	transferProposal := TransferProposalData{
+		DepositNonce: depositNonce,
+		ResourceId:   resourceId,
+		Metadata:     metadata,
+		Data:         data,
+	}
+
+	return &proposal.Proposal{
+		Source:      source,
+		Destination: destination,
+		Data:        transferProposal,
+		Type:        propType,
 	}
 }
 

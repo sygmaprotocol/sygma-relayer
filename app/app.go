@@ -19,7 +19,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/monitored"
-	coreExecutor "github.com/ChainSafe/chainbridge-core/chains/evm/executor"
 	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/flags"
@@ -55,6 +54,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+
+	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
 var Version string
@@ -157,7 +158,6 @@ func Run() error {
 			{
 				config, err := evm.NewEVMConfig(chainConfig)
 				panicOnError(err)
-
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
@@ -176,30 +176,10 @@ func Run() error {
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
-				mh := coreExecutor.NewEVMMessageHandler(bridgeContract)
+				mh := coreMessage.NewMessageHandler()
 				for _, handler := range config.Handlers {
-					switch handler.Type {
-					case "erc20":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, listener.Erc20DepositHandler)
-							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC20MessageHandler)
-						}
-					case "permissionedGeneric":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, coreListener.GenericDepositHandler)
-							mh.RegisterMessageHandler(handler.Address, coreExecutor.GenericMessageHandler)
-						}
-					case "permissionlessGeneric":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
-							mh.RegisterMessageHandler(handler.Address, executor.PermissionlessGenericMessageHandler)
-						}
-					case "erc721":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
-							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
-						}
-					}
+					depositHandler.RegisterDepositHandler(handler.Address, listener.TransferDepositHandler)
+					mh.RegisterMessageHandler("transfer", &executor.TransferMessageHandler{})
 				}
 				depositListener := coreEvents.NewListener(client)
 				tssListener := events.NewListener(client)
