@@ -26,6 +26,13 @@ func NewProposal(source, destination uint8, depositNonce uint64, resourceId type
 	}
 }
 
+type TransferProposal struct {
+	Source      uint8
+	Destination uint8
+	Data        TransferProposalData
+	Type        proposal.ProposalType
+}
+
 type TransferProposalData struct {
 	DepositNonce uint64
 	ResourceId   [32]byte
