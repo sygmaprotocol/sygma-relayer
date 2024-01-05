@@ -10,12 +10,13 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/listener"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	hubEvents "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -34,12 +35,13 @@ type EventListener interface {
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*hubEvents.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]hubEvents.RetryEvent, error)
 	FetchDepositEvent(event hubEvents.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
+	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
 }
 
 type RetryEventHandler struct {
 	log                zerolog.Logger
 	eventListener      EventListener
-	depositHandler     listener.DepositHandler
+	depositHandler     DepositHandler
 	bridgeAddress      common.Address
 	bridgeABI          abi.ABI
 	domainID           uint8
@@ -49,7 +51,7 @@ type RetryEventHandler struct {
 func NewRetryEventHandler(
 	logC zerolog.Context,
 	eventListener EventListener,
-	depositHandler listener.DepositHandler,
+	depositHandler DepositHandler,
 	bridgeAddress common.Address,
 	domainID uint8,
 	blockConfirmations *big.Int,
@@ -69,14 +71,14 @@ func NewRetryEventHandler(
 func (eh *RetryEventHandler) HandleEvent(
 	startBlock *big.Int,
 	endBlock *big.Int,
-	msgChan chan []*message.Message,
+	msgChan chan []*coreMessage.Message,
 ) error {
 	retryEvents, err := eh.eventListener.FetchRetryEvents(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch retry events because of: %+v", err)
 	}
 
-	retriesByDomain := make(map[uint8][]*message.Message)
+	retriesByDomain := make(map[uint8][]*coreMessage.Message)
 	for _, event := range retryEvents {
 		func(event hubEvents.RetryEvent) {
 			defer func() {
@@ -152,7 +154,6 @@ func NewKeygenEventHandler(
 func (eh *KeygenEventHandler) HandleEvent(
 	startBlock *big.Int,
 	endBlock *big.Int,
-	msgChan chan []*message.Message,
 ) error {
 	key, err := eh.storer.GetKeyshare()
 	if (key.Threshold != 0) && (err == nil) {
@@ -227,7 +228,6 @@ func NewRefreshEventHandler(
 func (eh *RefreshEventHandler) HandleEvent(
 	startBlock *big.Int,
 	endBlock *big.Int,
-	msgChan chan []*message.Message,
 ) error {
 	refreshEvents, err := eh.eventListener.FetchRefreshEvents(
 		context.Background(), eh.bridgeAddress, startBlock, endBlock,
@@ -267,4 +267,60 @@ func (eh *RefreshEventHandler) HandleEvent(
 
 func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
 	return fmt.Sprintf("resharing-%s", block.String())
+}
+
+type DepositHandler interface {
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*coreMessage.Message, error)
+}
+
+type DepositEventHandler struct {
+	eventListener  EventListener
+	depositHandler DepositHandler
+
+	bridgeAddress common.Address
+	domainID      uint8
+}
+
+func NewDepositEventHandler(eventListener EventListener, depositHandler DepositHandler, bridgeAddress common.Address, domainID uint8) *DepositEventHandler {
+	return &DepositEventHandler{
+		eventListener:  eventListener,
+		depositHandler: depositHandler,
+		bridgeAddress:  bridgeAddress,
+		domainID:       domainID,
+	}
+}
+
+func (eh *DepositEventHandler) HandleEvent(startBlock *big.Int, endBlock *big.Int, msgChan chan []*coreMessage.Message) error {
+	deposits, err := eh.eventListener.FetchDeposits(context.Background(), eh.bridgeAddress, startBlock, endBlock)
+	if err != nil {
+		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
+	}
+
+	domainDeposits := make(map[uint8][]*coreMessage.Message)
+	for _, d := range deposits {
+		func(d *events.Deposit) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Err(err).Msgf("panic occured while handling deposit %+v", d)
+				}
+			}()
+
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
+			if err != nil {
+				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
+				return
+			}
+
+			log.Debug().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+		}(d)
+	}
+
+	for _, deposits := range domainDeposits {
+		go func(d []*coreMessage.Message) {
+			msgChan <- d
+		}(deposits)
+	}
+
+	return nil
 }

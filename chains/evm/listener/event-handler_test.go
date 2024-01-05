@@ -15,10 +15,12 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
+
 	"github.com/ChainSafe/chainbridge-core/types"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock"
 	mock_coreListener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock/core"
@@ -47,7 +49,7 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryEvent{}, fmt.Errorf("error"))
 
-	msgChan := make(chan []*message.Message, 1)
+	msgChan := make(chan []*coreMessage.Message, 1)
 	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
 
 	s.NotNil(err)
@@ -74,14 +76,20 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 		d.ResourceID,
 		d.Data,
 		d.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 2}, nil)
+	).Return(&coreMessage.Message{
+		Data: executor.TransferMessageData{
+			DepositNonce: 2,
+		},
+	}, nil)
 
-	msgChan := make(chan []*message.Message, 2)
+	msgChan := make(chan []*coreMessage.Message, 2)
 	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
+	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}})
 }
 
 func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues() {
@@ -111,7 +119,9 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 1}, fmt.Errorf("error"))
+	).Return(&coreMessage.Message{Data: executor.TransferMessageData{
+		DepositNonce: 1,
+	}}, fmt.Errorf("error"))
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d2.DestinationDomainID,
@@ -119,14 +129,18 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 2}, nil)
+	).Return(&coreMessage.Message{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}, nil)
 
-	msgChan := make(chan []*message.Message, 2)
+	msgChan := make(chan []*coreMessage.Message, 2)
 	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
+	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}})
 }
 
 func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue() {
@@ -166,14 +180,18 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 2}, nil)
+	).Return(&coreMessage.Message{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}, nil)
 
-	msgChan := make(chan []*message.Message, 2)
+	msgChan := make(chan []*coreMessage.Message, 2)
 	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{DepositNonce: 2}})
+	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}})
 }
 
 func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
@@ -202,7 +220,9 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 1}, nil)
+	).Return(&coreMessage.Message{Data: executor.TransferMessageData{
+		DepositNonce: 1,
+	}}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d2.DestinationDomainID,
@@ -210,12 +230,18 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{DepositNonce: 2}, nil)
+	).Return(&coreMessage.Message{Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}, nil)
 
-	msgChan := make(chan []*message.Message, 2)
+	msgChan := make(chan []*coreMessage.Message, 2)
 	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
 	msgs := <-msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{DepositNonce: 1}, {DepositNonce: 2}})
+	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
+		DepositNonce: 1,
+	}}, {Data: executor.TransferMessageData{
+		DepositNonce: 2,
+	}}})
 }
