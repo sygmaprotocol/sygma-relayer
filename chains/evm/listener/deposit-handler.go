@@ -15,10 +15,6 @@ const (
 	PermissionlessGenericTransfer message.TransferType = "PermissionlessGenericTransfer"
 )
 
-func TransferDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
-	return nil, nil
-}
-
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
 func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	if len(calldata) < 76 {

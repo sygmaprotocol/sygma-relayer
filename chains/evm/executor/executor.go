@@ -17,7 +17,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
@@ -183,14 +182,8 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 	batches[0] = currentBatch
 
 	for _, prop := range proposals {
-		prop := &chains.TransferProposal{
-			Source:      prop.Source,
-			Destination: prop.Destination,
-			Data:        prop.Data.(chains.TransferProposalData),
-			Type:        prop.Type,
-		}
-		evmProposal := chains.NewTransferProposal(prop.Source, prop.Destination, prop.Data.DepositNonce, prop.Data.ResourceId, prop.Data.Metadata, prop.Data.Data, TransferProposalType)
-		isExecuted, err := e.bridge.IsProposalExecuted(evmProposal)
+
+		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil {
 			return nil, err
 		}
@@ -200,7 +193,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		}
 
 		var propGasLimit uint64
-		l, ok := evmProposal.Data.(TransferMessageData).Metadata["gasLimit"]
+		l, ok := prop.Data.(TransferMessageData).Metadata["gasLimit"]
 		if ok {
 			propGasLimit = l.(uint64)
 		} else {
@@ -215,7 +208,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 			batches = append(batches, currentBatch)
 		}
 
-		currentBatch.proposals = append(currentBatch.proposals, evmProposal)
+		currentBatch.proposals = append(currentBatch.proposals, prop)
 	}
 
 	return batches, nil

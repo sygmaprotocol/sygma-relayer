@@ -178,7 +178,7 @@ func Run() error {
 				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
 				mh := coreMessage.NewMessageHandler()
 				for _, handler := range config.Handlers {
-					depositHandler.RegisterDepositHandler(handler.Address, listener.TransferDepositHandler)
+					depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
 					mh.RegisterMessageHandler("transfer", &executor.TransferMessageHandler{})
 				}
 				depositListener := coreEvents.NewListener(client)
