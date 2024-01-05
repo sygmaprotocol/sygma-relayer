@@ -22,7 +22,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
-	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
@@ -50,7 +49,6 @@ type Executor struct {
 	comm              comm.Communication
 	fetcher           signing.SaveDataFetcher
 	bridge            BridgeContract
-	mh                *message.MessageHandler
 	exitLock          *sync.RWMutex
 	transactionMaxGas uint64
 }
@@ -59,7 +57,6 @@ func NewExecutor(
 	host host.Host,
 	comm comm.Communication,
 	coordinator *tss.Coordinator,
-	mh *message.MessageHandler,
 	bridgeContract BridgeContract,
 	fetcher signing.SaveDataFetcher,
 	exitLock *sync.RWMutex,
@@ -69,7 +66,6 @@ func NewExecutor(
 		host:              host,
 		comm:              comm,
 		coordinator:       coordinator,
-		mh:                mh,
 		bridge:            bridgeContract,
 		fetcher:           fetcher,
 		exitLock:          exitLock,

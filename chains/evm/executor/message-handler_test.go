@@ -11,6 +11,8 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
 
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
@@ -42,7 +44,8 @@ func (s *Erc20HandlerTestSuite) SetupTest()     {}
 func (s *Erc20HandlerTestSuite) TearDownTest()  {}
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
-	message := &executor.TransferMessage{
+
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -53,16 +56,18 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
 		},
+		Type: executor.ERC20,
 	}
 
-	prop, err := executor.ERC20MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
 	s.NotNil(prop)
 }
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -72,9 +77,11 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
 				[]byte{2}, // amount
 			},
 		},
+		Type: executor.ERC20,
 	}
 
-	prop, err := executor.ERC20MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -83,7 +90,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -94,9 +101,11 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
 		},
+		Type: executor.ERC20,
 	}
 
-	prop, err := executor.ERC20MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -104,7 +113,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 }
 
 func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -115,9 +124,11 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
 				"incorrectRecipient", // recipientAddress
 			},
 		},
+		Type: executor.ERC20,
 	}
 
-	prop, err := executor.ERC20MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -140,7 +151,7 @@ func (s *Erc721HandlerTestSuite) TearDownTest()  {}
 
 func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -152,16 +163,18 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 				[]byte{}, // metadata
 			},
 		},
+		Type: executor.ERC721,
 	}
 
-	prop, err := executor.ERC721MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
 	s.NotNil(prop)
 }
 
 func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -171,9 +184,11 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
 				[]byte{2}, // tokenID
 			},
 		},
+		Type: executor.ERC721,
 	}
 
-	prop, err := executor.ERC721MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -182,7 +197,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
 
 func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -194,9 +209,11 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 				[]byte{}, // metadata
 			},
 		},
+		Type: executor.ERC721,
 	}
 
-	prop, err := executor.ERC721MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -205,7 +222,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 
 func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -217,9 +234,11 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 				[]byte{}, // metadata
 			},
 		},
+		Type: executor.ERC721,
 	}
 
-	prop, err := executor.ERC721MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -228,7 +247,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 
 func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
 
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -240,9 +259,11 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
 				"incorrectMetadata", // metadata
 			},
 		},
+		Type: executor.ERC721,
 	}
 
-	prop, err := executor.ERC721MessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -263,7 +284,7 @@ func (s *GenericHandlerTestSuite) TearDownSuite() {}
 func (s *GenericHandlerTestSuite) SetupTest()     {}
 func (s *GenericHandlerTestSuite) TearDownTest()  {}
 func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -273,16 +294,18 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 				[]byte{}, // metadata
 			},
 		},
+		Type: executor.PermissionedGeneric,
 	}
 
-	prop, err := executor.GenericMessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
 	s.NotNil(prop)
 }
 
 func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -290,9 +313,11 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 			ResourceId:   [32]byte{0},
 			Payload:      []interface{}{},
 		},
+		Type: executor.PermissionedGeneric,
 	}
 
-	prop, err := executor.GenericMessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -300,7 +325,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 }
 
 func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: executor.TransferMessageData{
@@ -310,8 +335,10 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
 				"incorrectMetadata", // metadata
 			},
 		},
+		Type: executor.PermissionedGeneric,
 	}
-	prop, err := executor.GenericMessageHandler(message)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -351,7 +378,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		HandlerResponse:     []byte{},
 	}
 	sourceID := uint8(1)
-	message := &executor.TransferMessage{
+	message := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
 		Data: executor.TransferMessageData{
@@ -364,19 +391,20 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 				depositor.Bytes(),
 				hash,
 			},
-		}}
+		},
+		Type: executor.PermissionlessGeneric,
+	}
 
-	prop, err := executor.PermissionlessGenericMessageHandler(
-		message,
-	)
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000030d4000001402091eeff969b33a5ce8a729dae325879bf76f90145c1f5961696bad2e73f73417f07ef55c62a2dc5b307868617368")
 	expected := chains.NewTransferProposal(
 		message.Source,
 		message.Destination,
-		message.Data.DepositNonce,
-		message.Data.ResourceId,
-		message.Data.Metadata,
+		message.Data.(executor.TransferMessageData).DepositNonce,
+		message.Data.(executor.TransferMessageData).ResourceId,
+		message.Data.(executor.TransferMessageData).Metadata,
 		expectedData,
 		executor.TransferProposalType,
 	)
