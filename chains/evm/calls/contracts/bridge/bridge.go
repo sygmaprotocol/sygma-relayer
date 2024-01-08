@@ -71,7 +71,7 @@ func (c *BridgeContract) ExecuteProposal(
 func (c *BridgeContract) ExecuteProposals(
 	proposals []*chains.TransferProposal,
 	signature []byte,
-	opts transactor.TransactOptions,
+	opts coreTransactor.TransactOptions,
 ) (*common.Hash, error) {
 	bridgeProposals := make([]chains.TransferProposal, 0)
 	for _, prop := range proposals {
