@@ -8,6 +8,8 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
+	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -120,4 +122,29 @@ func ProposalsHash(proposals []*Proposal, chainID int64, verifContract string, b
 
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
+}
+
+type TransferMessageData struct {
+	DepositNonce uint64
+	ResourceId   [32]byte
+	Metadata     map[string]interface{}
+	Payload      []interface{}
+}
+
+func NewTransferMessage(source, destination uint8, depositNonce uint64,
+	resourceId [32]byte, metadata map[string]interface{}, payload []interface{}, msgType coreMessage.MessageType) *coreMessage.Message {
+
+	transferMessage := TransferMessageData{
+		DepositNonce: depositNonce,
+		ResourceId:   resourceId,
+		Metadata:     metadata,
+		Payload:      payload,
+	}
+
+	return &coreMessage.Message{
+		Source:      source,
+		Destination: destination,
+		Data:        transferMessage,
+		Type:        msgType,
+	}
 }

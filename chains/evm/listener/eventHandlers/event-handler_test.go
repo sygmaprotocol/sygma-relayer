@@ -1,7 +1,7 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: LGPL-3.0-only
 
-package listener_test
+package eventHandlers_test
 
 import (
 	"fmt"
@@ -21,17 +21,18 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock"
 	mock_coreListener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock/core"
 )
 
 type RetryEventHandlerTestSuite struct {
 	suite.Suite
-	retryEventHandler  *listener.RetryEventHandler
+	retryEventHandler  *eventHandlers.RetryEventHandler
 	mockDepositHandler *mock_coreListener.MockDepositHandler
 	mockEventListener  *mock_listener.MockEventListener
 	domainID           uint8
+	msgChan            chan []*coreMessage.Message
 }
 
 func TestRunRetryEventHandlerTestSuite(t *testing.T) {
@@ -43,17 +44,17 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
 	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
-	s.retryEventHandler = listener.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5))
+	s.msgChan = make(chan []*coreMessage.Message, 1)
+	s.retryEventHandler = eventHandlers.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5), s.msgChan)
 }
 
 func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryEvent{}, fmt.Errorf("error"))
 
-	msgChan := make(chan []*coreMessage.Message, 1)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)
-	s.Equal(len(msgChan), 0)
+	s.Equal(len(s.msgChan), 0)
 }
 
 func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues() {
@@ -82,9 +83,9 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 		},
 	}, nil)
 
-	msgChan := make(chan []*coreMessage.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
-	msgs := <-msgChan
+	s.msgChan = make(chan []*coreMessage.Message, 2)
+	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	msgs := <-s.msgChan
 
 	s.Nil(err)
 	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
@@ -133,9 +134,9 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		DepositNonce: 2,
 	}}, nil)
 
-	msgChan := make(chan []*coreMessage.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
-	msgs := <-msgChan
+	s.msgChan = make(chan []*coreMessage.Message, 2)
+	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	msgs := <-s.msgChan
 
 	s.Nil(err)
 	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
@@ -184,9 +185,9 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		DepositNonce: 2,
 	}}, nil)
 
-	msgChan := make(chan []*coreMessage.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
-	msgs := <-msgChan
+	s.msgChan = make(chan []*coreMessage.Message, 2)
+	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	msgs := <-s.msgChan
 
 	s.Nil(err)
 	s.Equal(msgs, []*coreMessage.Message{{Data: executor.TransferMessageData{
@@ -235,7 +236,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 	}}, nil)
 
 	msgChan := make(chan []*coreMessage.Message, 2)
-	err := s.retryEventHandler.HandleEvent(big.NewInt(0), big.NewInt(5), msgChan)
+	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-msgChan
 
 	s.Nil(err)

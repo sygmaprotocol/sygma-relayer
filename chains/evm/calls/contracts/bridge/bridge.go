@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
+
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
@@ -20,6 +21,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
+	coreTransactor "github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
 const bridgeVersion = "3.1.0"
@@ -198,17 +201,19 @@ func (c *BridgeContract) ExecuteProposal(
 }
 
 func (c *BridgeContract) ExecuteProposals(
-	proposals []*chains.Proposal,
+	proposals []*proposal.Proposal,
 	signature []byte,
-	opts transactor.TransactOptions,
+	opts coreTransactor.TransactOptions,
 ) (*common.Hash, error) {
-	bridgeProposals := make([]chains.Proposal, 0)
+	bridgeProposals := make([]proposal.Proposal, 0)
 	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, chains.Proposal{
-			OriginDomainID: prop.OriginDomainID,
-			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceID,
-			Data:           prop.Data,
+		bridgeProposals = append(bridgeProposals, proposal.Proposal{
+			Source: prop.Source,
+			Data: chains.TransferProposalData{
+				DepositNonce: prop.Data.(chains.TransferProposalData).DepositNonce,
+				ResourceId:   prop.Data.(chains.TransferProposalData).ResourceId,
+				Data:         prop.Data.(chains.TransferProposalData).Data,
+			},
 		})
 	}
 
@@ -220,7 +225,7 @@ func (c *BridgeContract) ExecuteProposals(
 	)
 }
 
-func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
+func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
 	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		return []byte{}, err
@@ -228,7 +233,7 @@ func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, er
 	return chains.ProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
 }
 
-func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {
+func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) {
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
 		Str("resourceID", hexutil.Encode(p.ResourceID[:])).
@@ -242,7 +247,7 @@ func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {
 }
 
 func (c *BridgeContract) GetHandlerAddressForResourceID(
-	resourceID types.ResourceID,
+	resourceID [32]byte,
 ) (common.Address, error) {
 	log.Debug().Msgf("Getting handler address for resource %s", hexutil.Encode(resourceID[:]))
 	res, err := c.CallContract("_resourceIDToHandlerAddress", resourceID)
