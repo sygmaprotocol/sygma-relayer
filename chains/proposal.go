@@ -69,13 +69,25 @@ type Proposal struct {
 	Metadata       message.Metadata
 }
 
-func ProposalsHash(proposals []*Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+func ProposalsHash(proposals []*proposal.Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
+		transferProposal := &TransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data: TransferProposalData{
+				DepositNonce: prop.Data.(TransferProposalData).DepositNonce,
+				ResourceId:   prop.Data.(TransferProposalData).ResourceId,
+				Metadata:     prop.Data.(TransferProposalData).Metadata,
+				Data:         prop.Data.(TransferProposalData).Data,
+			},
+			Type: prop.Type,
+		}
 		formattedProps[i] = map[string]interface{}{
-			"originDomainID": math.NewHexOrDecimal256(int64(prop.OriginDomainID)),
-			"depositNonce":   math.NewHexOrDecimal256(int64(prop.DepositNonce)),
-			"resourceID":     hexutil.Encode(prop.ResourceID[:]),
+			"originDomainID": math.NewHexOrDecimal256(int64(transferProposal.Source)),
+			"depositNonce":   math.NewHexOrDecimal256(int64(transferProposal.Data.DepositNonce)),
+			"resourceID":     hexutil.Encode(transferProposal.Data.ResourceId[:]),
 			"data":           prop.Data,
 		}
 	}

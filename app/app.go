@@ -14,10 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/monitored"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
@@ -40,7 +37,10 @@ import (
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+	coreClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	sygmaListener "github.com/sygmaprotocol/sygma-core/chains/evm/listener"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -161,7 +161,7 @@ func Run() error {
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
+				client, err := coreClient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				panicOnError(err)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
@@ -171,7 +171,7 @@ func Run() error {
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
-				t := monitored.NewMonitoredTransactor(evmtransaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				t := monitored.NewMonitoredTransactor(transaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
 				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 

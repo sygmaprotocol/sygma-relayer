@@ -9,10 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains"
@@ -21,7 +18,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
-	coreTransactor "github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+
+	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/contracts"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
@@ -35,7 +35,7 @@ type BridgeProposal struct {
 }
 
 type ChainClient interface {
-	calls.ContractCallerDispatcher
+	client.Client
 	ChainID(ctx context.Context) (*big.Int, error)
 }
 
@@ -203,7 +203,7 @@ func (c *BridgeContract) ExecuteProposal(
 func (c *BridgeContract) ExecuteProposals(
 	proposals []*proposal.Proposal,
 	signature []byte,
-	opts coreTransactor.TransactOptions,
+	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	bridgeProposals := make([]proposal.Proposal, 0)
 	for _, prop := range proposals {
@@ -234,11 +234,22 @@ func (c *BridgeContract) ProposalsHash(proposals []*proposal.Proposal) ([]byte, 
 }
 
 func (c *BridgeContract) IsProposalExecuted(p *proposal.Proposal) (bool, error) {
+	transferProposal := &chains.TransferProposal{
+		Source:      p.Source,
+		Destination: p.Destination,
+		Data: chains.TransferProposalData{
+			DepositNonce: p.Data.(chains.TransferProposalData).DepositNonce,
+			ResourceId:   p.Data.(chains.TransferProposalData).ResourceId,
+			Metadata:     p.Data.(chains.TransferProposalData).Metadata,
+			Data:         p.Data.(chains.TransferProposalData).Data,
+		},
+		Type: p.Type,
+	}
 	log.Debug().
-		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(p.ResourceID[:])).
+		Str("depositNonce", strconv.FormatUint(transferProposal.Data.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(transferProposal.Data.ResourceId[:])).
 		Msg("Getting is proposal executed")
-	res, err := c.CallContract("isProposalExecuted", p.OriginDomainID, big.NewInt(int64(p.DepositNonce)))
+	res, err := c.CallContract("isProposalExecuted", p.Source, big.NewInt(int64(p.Data.(chains.TransferProposalData).DepositNonce)))
 	if err != nil {
 		return false, err
 	}
