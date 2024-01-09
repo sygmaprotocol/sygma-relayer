@@ -9,11 +9,12 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -35,24 +36,29 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
 	message := &message.Message{
-		Source:       1,
-		Destination:  2,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{1},
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			[]byte{2}, // amount
-			recipient,
+		Source:      1,
+		Destination: 2,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{1},
+			Payload: []interface{}{
+				[]byte{2}, // amount
+				recipient,
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "FungibleTransfer",
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
-	expectedProp := &chains.Proposal{
-		OriginDomainID: 1,
-		Destination:    2,
-		DepositNonce:   1,
-		ResourceID:     [32]byte{1},
-		Data:           data,
+	expectedProp := &proposal.Proposal{
+		Source:      1,
+		Destination: 2,
+		Data: chains.TransferProposalData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{1},
+			Data:         data,
+		},
+		Type: "Transfer",
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -63,15 +69,17 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
 	message := &message.Message{
-		Source:       1,
-		Destination:  0,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{1},
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			[]byte{2}, // amount
+		Source:      1,
+		Destination: 0,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{1},
+			Payload: []interface{}{
+				[]byte{2}, // amount
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "FungibleTransfer",
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -83,16 +91,18 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectAmount() {
 	message := &message.Message{
-		Source:       1,
-		Destination:  0,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			"incorrectAmount", // amount
-			[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
+		Source:      1,
+		Destination: 0,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				"incorrectAmount", // amount
+				[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "FungibleTransfer",
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -104,16 +114,18 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectRecipient() {
 	message := &message.Message{
-		Source:       1,
-		Destination:  0,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			[]byte{2},            // amount
-			"incorrectRecipient", // recipientAddress
+		Source:      1,
+		Destination: 0,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]byte{2},            // amount
+				"incorrectRecipient", // recipientAddress
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "FungibleTransfer",
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -128,34 +140,38 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
 	messageData := &message.Message{
-		Source:       1,
-		Destination:  0,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			[]byte{2}, // amount
-			recipient,
+		Source:      1,
+		Destination: 0,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]byte{2}, // amount
+				recipient,
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "FungibleTransfer",
 	}
 
 	invalidMessageData := &message.Message{
-		Source:       1,
-		Destination:  0,
-		DepositNonce: 1,
-		ResourceId:   [32]byte{0},
-		Type:         message.NonFungibleTransfer,
-		Payload: []interface{}{
-			[]byte{2}, // amount
-			recipient,
+		Source:      1,
+		Destination: 0,
+		Data: chains.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]byte{2}, // amount
+				recipient,
+			},
 		},
-		Metadata: message.Metadata{},
+
+		Type: "NonFungibleTransfer",
 	}
 
 	depositMessageHandler := executor.NewSubstrateMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler(message.FungibleTransfer, executor.FungibleTransferMessageHandler)
+	depositMessageHandler.RegisterMessageHandler("FungibleTransfer", executor.FungibleTransferMessageHandler)
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)

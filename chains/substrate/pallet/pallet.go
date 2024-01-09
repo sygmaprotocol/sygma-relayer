@@ -10,6 +10,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
@@ -58,7 +59,7 @@ func (p *Pallet) ExecuteProposals(
 	)
 }
 
-func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
+func (p *Pallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
 	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 

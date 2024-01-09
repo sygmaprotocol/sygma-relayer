@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
@@ -22,7 +21,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -35,13 +35,13 @@ var (
 )
 
 type MessageHandler interface {
-	HandleMessage(m *message.Message) (*chains.Proposal, error)
+	HandleMessage(m *message.Message) (*proposal.Proposal, error)
 }
 
 type BridgePallet interface {
-	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
-	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
+	IsProposalExecuted(p *proposal.Proposal) (bool, error)
+	ExecuteProposals(proposals []*proposal.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
+	ProposalsHash(proposals []*proposal.Proposal) ([]byte, error)
 	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
 }
 
@@ -83,7 +83,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	proposals := make([]*chains.Proposal, 0)
+	proposals := make([]*proposal.Proposal, 0)
 	for _, m := range msgs {
 		prop, err := e.mh.HandleMessage(m)
 		if err != nil {
@@ -141,7 +141,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 	return pool.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*proposal.Proposal, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -187,7 +187,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
+func (e *Executor) executeProposal(proposals []*proposal.Proposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
@@ -202,7 +202,7 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 	return hash, sub, err
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*chains.Proposal, sessionID string) bool {
+func (e *Executor) areProposalsExecuted(proposals []*proposal.Proposal, sessionID string) bool {
 	for _, prop := range proposals {
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil || !isExecuted {
