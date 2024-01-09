@@ -35,7 +35,6 @@ genmocks:
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
 	mockgen -source=./chains/substrate/listener/listener.go -destination=./chains/substrate/listener/mock/listener.go
 	mockgen -source=./chains/substrate/listener/event-handlers.go -destination=./chains/substrate/listener/mock/handlers.go
-	mockgen -destination=chains/evm/listener/mock/core/listener.go github.com/ChainSafe/chainbridge-core/chains/evm/listener EventListener,DepositHandler
 	mockgen -source=./topology/topology.go -destination=./topology/mock/topology.go
 
 

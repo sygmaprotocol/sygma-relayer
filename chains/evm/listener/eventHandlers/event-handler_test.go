@@ -22,14 +22,13 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
-	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock"
-	mock_coreListener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/mock/core"
+	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers/mock"
 )
 
 type RetryEventHandlerTestSuite struct {
 	suite.Suite
 	retryEventHandler  *eventHandlers.RetryEventHandler
-	mockDepositHandler *mock_coreListener.MockDepositHandler
+	mockDepositHandler *mock_listener.MockDepositHandler
 	mockEventListener  *mock_listener.MockEventListener
 	domainID           uint8
 	msgChan            chan []*coreMessage.Message
@@ -43,7 +42,7 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
-	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
+	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*coreMessage.Message, 1)
 	s.retryEventHandler = eventHandlers.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5), s.msgChan)
 }
