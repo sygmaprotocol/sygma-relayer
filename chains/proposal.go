@@ -17,6 +17,11 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
+const (
+	TransferProposalType proposal.ProposalType   = "Transfer"
+	TransferMessageType  coreMessage.MessageType = "Transfer"
+)
+
 func NewProposal(source, destination uint8, depositNonce uint64, resourceId types.ResourceID, data []byte, metadata message.Metadata) *Proposal {
 	return &Proposal{
 		OriginDomainID: source,

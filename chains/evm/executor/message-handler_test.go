@@ -406,7 +406,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		message.Data.(executor.TransferMessageData).ResourceId,
 		message.Data.(executor.TransferMessageData).Metadata,
 		expectedData,
-		executor.TransferProposalType,
+		chains.TransferProposalType,
 	)
 	s.Nil(err)
 	s.Equal(expected, prop)

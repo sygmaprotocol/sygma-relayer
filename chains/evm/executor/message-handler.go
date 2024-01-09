@@ -17,11 +17,10 @@ import (
 )
 
 const (
-	TransferProposalType  proposal.ProposalType = "Transfer"
-	ERC20                 message.MessageType   = "erc20"
-	ERC721                message.MessageType   = "erc721"
-	PermissionedGeneric   message.MessageType   = "permissionedGeneric"
-	PermissionlessGeneric message.MessageType   = "permissionlessGeneric"
+	ERC20                 message.MessageType = "erc20"
+	ERC721                message.MessageType = "erc721"
+	PermissionedGeneric   message.MessageType = "permissionedGeneric"
+	PermissionlessGeneric message.MessageType = "permissionlessGeneric"
 )
 
 type TransferMessageData struct {
@@ -99,7 +98,7 @@ func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Propos
 
 	data.Write(executionData)
 	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
-		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), chains.TransferProposalType), nil
 }
 
 func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
@@ -121,7 +120,7 @@ func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	data = append(data, recipient...)                             // recipient ([]byte)
 
 	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
-		msg.Data.ResourceId, msg.Data.Metadata, data, TransferProposalType), nil
+		msg.Data.ResourceId, msg.Data.Metadata, data, chains.TransferProposalType), nil
 }
 
 func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
@@ -150,7 +149,7 @@ func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	data.Write(common.LeftPadBytes(metadataLen, 32))
 	data.Write(metadata)
 	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
-		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), chains.TransferProposalType), nil
 }
 
 func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
@@ -166,5 +165,5 @@ func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	data.Write(common.LeftPadBytes(metadataLen, 32)) // length of metadata (uint256)
 	data.Write(metadata)
 	return chains.NewTransferProposal(msg.Source, msg.Destination, msg.Data.DepositNonce,
-		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), TransferProposalType), nil
+		msg.Data.ResourceId, msg.Data.Metadata, data.Bytes(), chains.TransferProposalType), nil
 }
