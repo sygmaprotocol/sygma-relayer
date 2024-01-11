@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.2...v1.10.3) (2024-01-11)
+
+
+### Miscellaneous
+
+* bump dependencies ([#244](https://github.com/sygmaprotocol/sygma-relayer/issues/244)) ([621f81c](https://github.com/sygmaprotocol/sygma-relayer/commit/621f81c121fc2f6f4c6c9b871f3d4fa063f91d2d))
+
 ## [1.10.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.1...v1.10.2) (2023-11-30)
 
 
