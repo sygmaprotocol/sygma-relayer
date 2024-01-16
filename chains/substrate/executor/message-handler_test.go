@@ -14,7 +14,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/stretchr/testify/suite"
@@ -36,7 +35,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	message := &message.Message{
+	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 2,
 		Data: chains.TransferMessageData{
@@ -70,7 +69,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
-	message := &message.Message{
+	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -93,7 +92,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectAmount() {
-	message := &message.Message{
+	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -117,7 +116,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectRecipient() {
-	message := &message.Message{
+	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -144,7 +143,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	messageData := &message.Message{
+	messageData := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -159,7 +158,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type: substrateChain.FungibleTransfer,
 	}
 
-	invalidMessageData := &message.Message{
+	invalidMessageData := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
