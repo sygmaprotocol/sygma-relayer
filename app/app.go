@@ -179,8 +179,26 @@ func Run() error {
 				mh := coreMessage.NewMessageHandler()
 				for _, handler := range config.Handlers {
 
-					depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.PermissionlessGenericDepositHandler{})
-					mh.RegisterMessageHandler("transfer", &executor.TransferMessageHandler{})
+					mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
+
+					switch handler.Type {
+					case "erc20":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
+						}
+					case "permissionedGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.GenericDepositHandler{})
+						}
+					case "permissionlessGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.PermissionlessGenericDepositHandler{})
+						}
+					case "erc721":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc721DepositHandler{})
+						}
+					}
 				}
 				depositListener := events.NewListener(client)
 				tssListener := events.NewListener(client)

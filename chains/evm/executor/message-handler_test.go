@@ -399,13 +399,15 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	prop, err := mh.HandleMessage(message)
 
 	expectedData, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000030d4000001402091eeff969b33a5ce8a729dae325879bf76f90145c1f5961696bad2e73f73417f07ef55c62a2dc5b307868617368")
-	expected := chains.NewTransferProposal(
+	expected := chains.NewProposal(
 		message.Source,
 		message.Destination,
-		message.Data.(executor.TransferMessageData).DepositNonce,
-		message.Data.(executor.TransferMessageData).ResourceId,
-		message.Data.(executor.TransferMessageData).Metadata,
-		expectedData,
+		chains.TransferProposalData{
+			DepositNonce: message.Data.(executor.TransferMessageData).DepositNonce,
+			ResourceId:   message.Data.(executor.TransferMessageData).ResourceId,
+			Metadata:     message.Data.(executor.TransferMessageData).Metadata,
+			Data:         expectedData,
+		},
 		chains.TransferProposalType,
 	)
 	s.Nil(err)

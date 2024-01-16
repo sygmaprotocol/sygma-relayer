@@ -22,17 +22,6 @@ const (
 	TransferMessageType  coreMessage.MessageType = "Transfer"
 )
 
-func NewProposal(source, destination uint8, depositNonce uint64, resourceId types.ResourceID, data []byte, metadata message.Metadata) *Proposal {
-	return &Proposal{
-		OriginDomainID: source,
-		DepositNonce:   depositNonce,
-		ResourceID:     resourceId,
-		Destination:    destination,
-		Data:           data,
-		Metadata:       metadata,
-	}
-}
-
 type TransferProposal struct {
 	Source      uint8
 	Destination uint8
@@ -48,19 +37,28 @@ type TransferProposalData struct {
 }
 
 func NewTransferProposal(source, destination uint8, depositNonce uint64,
-	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *proposal.Proposal {
+	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *TransferProposal {
 
-	transferProposal := TransferProposalData{
+	transferProposalData := TransferProposalData{
 		DepositNonce: depositNonce,
 		ResourceId:   resourceId,
 		Metadata:     metadata,
 		Data:         data,
 	}
 
+	return &TransferProposal{
+		Source:      source,
+		Destination: destination,
+		Data:        transferProposalData,
+		Type:        propType,
+	}
+}
+
+func NewProposal(source uint8, destination uint8, data interface{}, propType proposal.ProposalType) *proposal.Proposal {
 	return &proposal.Proposal{
 		Source:      source,
 		Destination: destination,
-		Data:        transferProposal,
+		Data:        data,
 		Type:        propType,
 	}
 }
@@ -74,7 +72,7 @@ type Proposal struct {
 	Metadata       message.Metadata
 }
 
-func ProposalsHash(proposals []*proposal.Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
 
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
@@ -82,10 +80,10 @@ func ProposalsHash(proposals []*proposal.Proposal, chainID int64, verifContract 
 			Source:      prop.Source,
 			Destination: prop.Destination,
 			Data: TransferProposalData{
-				DepositNonce: prop.Data.(TransferProposalData).DepositNonce,
-				ResourceId:   prop.Data.(TransferProposalData).ResourceId,
-				Metadata:     prop.Data.(TransferProposalData).Metadata,
-				Data:         prop.Data.(TransferProposalData).Data,
+				DepositNonce: prop.Data.DepositNonce,
+				ResourceId:   prop.Data.ResourceId,
+				Metadata:     prop.Data.Metadata,
+				Data:         prop.Data.Data,
 			},
 			Type: prop.Type,
 		}
