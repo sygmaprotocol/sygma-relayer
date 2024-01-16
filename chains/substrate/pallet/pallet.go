@@ -39,16 +39,16 @@ func NewPallet(
 }
 
 func (p *Pallet) ExecuteProposals(
-	proposals []*chains.Proposal,
+	proposals []*proposal.Proposal,
 	signature []byte,
 ) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
-			OriginDomainID: prop.OriginDomainID,
-			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceID,
-			Data:           prop.Data,
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.Data.(chains.TransferProposalData).DepositNonce,
+			ResourceID:     prop.Data.(chains.TransferProposalData).ResourceId,
+			Data:           prop.Data.(chains.TransferProposalData).Data,
 		})
 	}
 
@@ -63,13 +63,26 @@ func (p *Pallet) ProposalsHash(proposals []*proposal.Proposal) ([]byte, error) {
 	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
-func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
+func (p *Pallet) IsProposalExecuted(prop *proposal.Proposal) (bool, error) {
+
+	transferProposal := &chains.TransferProposal{
+		Source:      prop.Source,
+		Destination: prop.Destination,
+		Data: chains.TransferProposalData{
+			DepositNonce: prop.Data.(chains.TransferProposalData).DepositNonce,
+			ResourceId:   prop.Data.(chains.TransferProposalData).ResourceId,
+			Metadata:     prop.Data.(chains.TransferProposalData).Metadata,
+			Data:         prop.Data.(chains.TransferProposalData).Data,
+		},
+		Type: prop.Type,
+	}
+
 	log.Debug().
-		Str("depositNonce", strconv.FormatUint(prop.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(prop.ResourceID[:])).
+		Str("depositNonce", strconv.FormatUint(transferProposal.Data.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(transferProposal.Data.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.Conn.Call(&res, "sygma_isProposalExecuted", prop.DepositNonce, prop.OriginDomainID)
+	err := p.Conn.Call(&res, "sygma_isProposalExecuted", transferProposal.Data.DepositNonce, transferProposal.Source)
 	if err != nil {
 		return false, err
 	}
