@@ -25,5 +25,10 @@ func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 	}
 
 	// generic handler has specific payload length and doesn't support arbitrary metadata
-	return chains.NewTransferMessage(sourceID, destId, nonce, resourceID, nil, payload, GenericTransfer), nil
+	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+		DepositNonce: nonce,
+		ResourceId:   resourceID,
+		Metadata:     nil,
+		Payload:      payload,
+	}, GenericTransfer), nil
 }

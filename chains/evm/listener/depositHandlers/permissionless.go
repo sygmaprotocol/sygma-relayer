@@ -44,5 +44,10 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destId ui
 
 	metadata["gasLimit"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
 
-	return chains.NewTransferMessage(sourceID, destId, nonce, resourceID, metadata, payload, PermissionlessGenericTransfer), nil
+	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+		DepositNonce: nonce,
+		ResourceId:   resourceID,
+		Metadata:     metadata,
+		Payload:      payload,
+	}, PermissionlessGenericTransfer), nil
 }

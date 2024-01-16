@@ -146,20 +146,12 @@ type TransferMessageData struct {
 	Payload      []interface{}
 }
 
-func NewTransferMessage(source, destination uint8, depositNonce uint64,
-	resourceId [32]byte, metadata map[string]interface{}, payload []interface{}, msgType coreMessage.MessageType) *coreMessage.Message {
-
-	transferMessage := TransferMessageData{
-		DepositNonce: depositNonce,
-		ResourceId:   resourceId,
-		Metadata:     metadata,
-		Payload:      payload,
-	}
+func NewMessage(source, destination uint8, data interface{}, msgType coreMessage.MessageType) *coreMessage.Message {
 
 	return &coreMessage.Message{
 		Source:      source,
 		Destination: destination,
-		Data:        transferMessage,
+		Data:        data,
 		Type:        msgType,
 	}
 }

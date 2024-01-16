@@ -47,5 +47,10 @@ func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint
 		metadata,
 	}
 
-	return chains.NewTransferMessage(sourceID, destId, nonce, resourceID, meta, payload, ERC721Transfer), nil
+	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+		DepositNonce: nonce,
+		ResourceId:   resourceID,
+		Metadata:     meta,
+		Payload:      payload,
+	}, ERC721Transfer), nil
 }

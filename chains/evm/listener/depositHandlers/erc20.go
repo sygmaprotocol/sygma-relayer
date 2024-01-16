@@ -33,6 +33,10 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint6
 		amount,
 		recipientAddress,
 	}
-
-	return chains.NewTransferMessage(sourceID, destId, nonce, resourceID, nil, payload, ERC20Transfer), nil
+	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+		DepositNonce: nonce,
+		ResourceId:   resourceID,
+		Metadata:     nil,
+		Payload:      payload,
+	}, ERC20Transfer), nil
 }
