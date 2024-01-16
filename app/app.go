@@ -247,7 +247,7 @@ func Run() error {
 				mh := substrateExecutor.NewSubstrateMessageHandler()
 				mh.RegisterMessageHandler("FungibleTransfer", substrateExecutor.FungibleTransferMessageHandler)
 
-				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, mh, bridgePallet, keyshareStore, conn, exitLock)
+				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := substrate.NewSubstrateChain(substrateClient, substrateListener, nil, blockstore, config, sExecutor)
 
 				chains = append(chains, substrateChain)

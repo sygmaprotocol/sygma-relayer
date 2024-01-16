@@ -17,7 +17,7 @@ import (
 )
 
 type Handlers map[message.MessageType]MessageHandlerFunc
-type MessageHandlerFunc func(m *message.Message) (*proposal.Proposal, error)
+type MessageHandlerFunc func(m *chains.TransferMessage) (*proposal.Proposal, error)
 
 type SubstrateMessageHandler struct {
 	handlers Handlers
@@ -32,25 +32,14 @@ func NewSubstrateMessageHandler() *SubstrateMessageHandler {
 	}
 }
 
-func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.Proposal, error) {
-	transferMessage := &chains.TransferMessage{
-		Source:      m.Source,
-		Destination: m.Destination,
-		Data: chains.TransferMessageData{
-			DepositNonce: m.Data.(chains.TransferMessageData).DepositNonce,
-			ResourceId:   m.Data.(chains.TransferMessageData).ResourceId,
-			Metadata:     m.Data.(chains.TransferMessageData).Metadata,
-			Payload:      m.Data.(chains.TransferMessageData).Payload,
-		},
-		Type: m.Type,
-	}
+func (mh *SubstrateMessageHandler) HandleMessage(m *chains.TransferMessage) (*proposal.Proposal, error) {
 
 	// Based on handler that was registered on BridgeContract
 	handleMessage, err := mh.matchTransferTypeHandlerFunc(m.Type)
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Str("type", string(transferMessage.Type)).Uint8("src", transferMessage.Source).Uint8("dst", transferMessage.Destination).Uint64("nonce", transferMessage.Data.DepositNonce).Str("resourceID", fmt.Sprintf("%x", transferMessage.Data.ResourceId)).Msg("Handling new message")
+	log.Info().Str("type", string(m.Type)).Uint8("src", m.Source).Uint8("dst", m.Destination).Uint64("nonce", m.Data.DepositNonce).Str("resourceID", fmt.Sprintf("%x", m.Data.ResourceId)).Msg("Handling new message")
 	prop, err := handleMessage(m)
 	if err != nil {
 		return nil, err
@@ -77,27 +66,16 @@ func (mh *SubstrateMessageHandler) RegisterMessageHandler(transferType message.M
 	mh.handlers[transferType] = handler
 }
 
-func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, error) {
-	transferMessage := &chains.TransferMessage{
-		Source:      m.Source,
-		Destination: m.Destination,
-		Data: chains.TransferMessageData{
-			DepositNonce: m.Data.(chains.TransferMessageData).DepositNonce,
-			ResourceId:   m.Data.(chains.TransferMessageData).ResourceId,
-			Metadata:     m.Data.(chains.TransferMessageData).Metadata,
-			Payload:      m.Data.(chains.TransferMessageData).Payload,
-		},
-		Type: m.Type,
-	}
+func FungibleTransferMessageHandler(m *chains.TransferMessage) (*proposal.Proposal, error) {
 
-	if len(transferMessage.Data.Payload) != 2 {
+	if len(m.Data.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
 	}
-	amount, ok := transferMessage.Data.Payload[0].([]byte)
+	amount, ok := m.Data.Payload[0].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload amount format")
 	}
-	recipient, ok := transferMessage.Data.Payload[1].([]byte)
+	recipient, ok := m.Data.Payload[1].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload recipient format")
 	}
@@ -107,5 +85,10 @@ func FungibleTransferMessageHandler(m *message.Message) (*proposal.Proposal, err
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
-	return chains.NewTransferProposal(transferMessage.Source, transferMessage.Destination, transferMessage.Data.DepositNonce, transferMessage.Data.ResourceId, transferMessage.Data.Metadata, data, chains.TransferProposalType), nil
+	return chains.NewProposal(m.Source, m.Destination, chains.TransferProposalData{
+		DepositNonce: m.Data.DepositNonce,
+		ResourceId:   m.Data.ResourceId,
+		Metadata:     m.Data.Metadata,
+		Data:         data,
+	}, chains.TransferProposalType), nil
 }
