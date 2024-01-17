@@ -46,7 +46,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 			},
 		},
 
-		Type: "FungibleTransfer",
+		Type: executor.FungibleTransfer,
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &proposal.Proposal{
@@ -78,7 +78,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: "FungibleTransfer",
+		Type: executor.FungibleTransfer,
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -101,7 +101,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: "FungibleTransfer",
+		Type: executor.FungibleTransfer,
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -124,7 +124,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: "FungibleTransfer",
+		Type: executor.FungibleTransfer,
 	}
 
 	prop, err := executor.FungibleTransferMessageHandler(message)
@@ -150,7 +150,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 			},
 		},
 
-		Type: "FungibleTransfer",
+		Type: executor.FungibleTransfer,
 	}
 
 	invalidMessageData := &chains.TransferMessage{
@@ -170,7 +170,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 
 	depositMessageHandler := executor.NewSubstrateMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler("FungibleTransfer", executor.FungibleTransferMessageHandler)
+	depositMessageHandler.RegisterMessageHandler(executor.FungibleTransfer, executor.FungibleTransferMessageHandler)
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)
