@@ -6,7 +6,6 @@ package listener
 import (
 	"math/big"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
@@ -14,6 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
 type SystemUpdateEventHandler struct {
@@ -26,12 +26,12 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 	}
 }
 
-func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event) error {
 	for _, e := range evts {
 		if e.Name == events.ParachainUpdatedEvent {
 			log.Info().Msgf("Updating substrate metadata")
 
-			err := eh.conn.UpdateMetatdata()
+			err := eh.conn.UpdateMetadata()
 			if err != nil {
 				log.Error().Err(err).Msg("Unable to update Metadata")
 				return err
@@ -111,6 +111,7 @@ type FungibleTransferEventHandler struct {
 	domainID       uint8
 	depositHandler DepositHandler
 	log            zerolog.Logger
+	msgChan        chan []*message.Message
 }
 
 func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
@@ -121,7 +122,7 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event) error {
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	for _, evt := range evts {
@@ -153,7 +154,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 
 	for _, deposits := range domainDeposits {
 		go func(d []*message.Message) {
-			msgChan <- d
+			eh.msgChan <- d
 		}(deposits)
 	}
 	return nil
@@ -164,6 +165,7 @@ type RetryEventHandler struct {
 	domainID       uint8
 	depositHandler DepositHandler
 	log            zerolog.Logger
+	msgChan        chan []*message.Message
 }
 
 func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8) *RetryEventHandler {
@@ -175,7 +177,7 @@ func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHan
 	}
 }
 
-func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event) error {
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err
@@ -241,7 +243,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 	}
 
 	for _, deposits := range domainDeposits {
-		msgChan <- deposits
+		rh.msgChan <- deposits
 	}
 	return nil
 }

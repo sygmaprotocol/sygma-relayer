@@ -34,7 +34,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
-	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -43,6 +42,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
+	substrate_listener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -244,7 +244,8 @@ func Run() error {
 				eventHandlers := make([]substrate_listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
 				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id))
-				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
+
+				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := coreMessage.NewMessageHandler()
 				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
