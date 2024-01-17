@@ -10,6 +10,8 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
+// ŠTO S fetchEvents????
+
 type Connection interface {
 	GetFinalizedHead() (types.Hash, error)
 	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
