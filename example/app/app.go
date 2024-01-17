@@ -15,6 +15,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -37,8 +39,6 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"

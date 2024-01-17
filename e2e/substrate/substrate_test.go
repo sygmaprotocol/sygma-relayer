@@ -8,11 +8,11 @@ import (
 	"encoding/binary"
 
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 
 	"math/big"
 	"testing"

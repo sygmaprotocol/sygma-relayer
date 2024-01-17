@@ -26,12 +26,18 @@ func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler
 	}
 }
 
-func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event) error {
+func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+
+	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
 	for _, e := range evts {
 		if e.Name == events.ParachainUpdatedEvent {
 			log.Info().Msgf("Updating substrate metadata")
 
-			err := eh.conn.UpdateMetadata()
+			err := eh.conn.UpdateMetatdata()
 			if err != nil {
 				log.Error().Err(err).Msg("Unable to update Metadata")
 				return err
@@ -114,15 +120,22 @@ type FungibleTransferEventHandler struct {
 	msgChan        chan []*message.Message
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
+		msgChan:        msgChan,
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
+
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	for _, evt := range evts {
@@ -168,16 +181,23 @@ type RetryEventHandler struct {
 	msgChan        chan []*message.Message
 }
 
-func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message) *RetryEventHandler {
 	return &RetryEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		conn:           conn,
 		log:            logC.Logger(),
+		msgChan:        msgChan,
 	}
 }
 
-func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event) error {
+func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	evts, err := FetchEvents(startBlock, endBlock, rh.conn)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
+
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err

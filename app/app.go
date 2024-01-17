@@ -20,7 +20,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
@@ -34,6 +33,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
@@ -42,7 +42,9 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
-	substrate_listener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
+	core_substrate_listener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -233,6 +235,7 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
+
 				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(substrateClient)
 
@@ -240,12 +243,12 @@ func Run() error {
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
-				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
-				eventHandlers := make([]substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id))
+				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrate_listener.FungibleTransferHandler)
+				eventHandlers := make([]core_substrate_listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1)))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
 
-				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
+				substrateListener := core_substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := coreMessage.NewMessageHandler()
 				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})

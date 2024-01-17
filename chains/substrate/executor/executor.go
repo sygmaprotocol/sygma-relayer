@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"

@@ -7,7 +7,8 @@ import (
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
