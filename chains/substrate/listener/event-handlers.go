@@ -37,7 +37,7 @@ func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *
 		if e.Name == events.ParachainUpdatedEvent {
 			log.Info().Msgf("Updating substrate metadata")
 
-			err := eh.conn.UpdateMetatdata()
+			err := eh.conn.UpdateMetadata()
 			if err != nil {
 				log.Error().Err(err).Msg("Unable to update Metadata")
 				return err
