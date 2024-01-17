@@ -36,17 +36,6 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) UnpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
-	var dl Deposit
-
-	err := abi.UnpackIntoInterface(&dl, "Deposit", data)
-	if err != nil {
-		return &Deposit{}, err
-	}
-
-	return &dl, nil
-}
-
 func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*Deposit, error) {
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(DepositSig), startBlock, endBlock)
 	if err != nil {
@@ -55,7 +44,7 @@ func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Add
 	deposits := make([]*Deposit, 0)
 
 	for _, dl := range logs {
-		d, err := l.UnpackDeposit(l.abi, dl.Data)
+		d, err := l.unpackDeposit(l.abi, dl.Data)
 		if err != nil {
 			log.Error().Msgf("failed unpacking deposit event log: %v", err)
 			continue
@@ -70,7 +59,18 @@ func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Add
 	return deposits, nil
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
+func (l *Listener) unpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
+	var dl Deposit
+
+	err := abi.UnpackIntoInterface(&dl, "Deposit", data)
+	if err != nil {
+		return &Deposit{}, err
+	}
+
+	return &dl, nil
+}
+
+func (l *Listener) FetchRetryDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
 	depositEvents := make([]Deposit, 0)
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)

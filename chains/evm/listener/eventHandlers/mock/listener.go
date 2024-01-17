@@ -39,21 +39,6 @@ func (m *MockEventListener) EXPECT() *MockEventListenerMockRecorder {
 	return m.recorder
 }
 
-// FetchDepositEvent mocks base method.
-func (m *MockEventListener) FetchDepositEvent(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchDepositEvent", event, bridgeAddress, blockConfirmations)
-	ret0, _ := ret[0].([]events.Deposit)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchDepositEvent indicates an expected call of FetchDepositEvent.
-func (mr *MockEventListenerMockRecorder) FetchDepositEvent(event, bridgeAddress, blockConfirmations interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchDepositEvent", reflect.TypeOf((*MockEventListener)(nil).FetchDepositEvent), event, bridgeAddress, blockConfirmations)
-}
-
 // FetchDeposits mocks base method.
 func (m *MockEventListener) FetchDeposits(ctx context.Context, address common.Address, startBlock, endBlock *big.Int) ([]*events.Deposit, error) {
 	m.ctrl.T.Helper()
@@ -97,6 +82,21 @@ func (m *MockEventListener) FetchRefreshEvents(ctx context.Context, address comm
 func (mr *MockEventListenerMockRecorder) FetchRefreshEvents(ctx, address, startBlock, endBlock interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRefreshEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRefreshEvents), ctx, address, startBlock, endBlock)
+}
+
+// FetchRetryDepositEvent mocks base method.
+func (m *MockEventListener) FetchRetryDepositEvent(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchRetryDepositEvent", event, bridgeAddress, blockConfirmations)
+	ret0, _ := ret[0].([]events.Deposit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchRetryDepositEvent indicates an expected call of FetchRetryDepositEvent.
+func (mr *MockEventListenerMockRecorder) FetchRetryDepositEvent(event, bridgeAddress, blockConfirmations interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryDepositEvent", reflect.TypeOf((*MockEventListener)(nil).FetchRetryDepositEvent), event, bridgeAddress, blockConfirmations)
 }
 
 // FetchRetryEvents mocks base method.

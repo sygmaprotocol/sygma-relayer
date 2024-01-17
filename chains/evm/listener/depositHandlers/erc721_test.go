@@ -136,7 +136,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 	metadata := []byte("metadata.url")
 
-	calldata := bridge.ConstructErc721DepositDataWithPriority(recipient.Bytes(), big.NewInt(2), metadata, uint8(1))
+	calldata := bridge.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},

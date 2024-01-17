@@ -84,12 +84,8 @@ func (c *BridgeContract) Erc20Deposit(
 		Uint8("destDomainID", destDomainID).
 		Hex("feeData", feeData).
 		Msgf("ERC20 deposit")
-	var data []byte
-	if opts.Priority == 0 {
-		data = deposit.ConstructErc20DepositData(recipient, amount)
-	} else {
-		data = deposit.ConstructErc20DepositDataWithPriority(recipient, amount, opts.Priority)
-	}
+
+	data := deposit.ConstructErc20DepositData(recipient, amount)
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
@@ -115,12 +111,8 @@ func (c *BridgeContract) Erc721Deposit(
 		Uint8("destDomainID", destDomainID).
 		Hex("feeData", feeData).
 		Msgf("ERC721 deposit")
-	var data []byte
-	if opts.Priority == 0 {
-		data = deposit.ConstructErc721DepositData(recipient.Bytes(), tokenId, []byte(metadata))
-	} else {
-		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
-	}
+
+	data := deposit.ConstructErc721DepositData(recipient.Bytes(), tokenId, []byte(metadata))
 
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
