@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	substrate_chain "github.com/ChainSafe/sygma-relayer/chains/substrate"
