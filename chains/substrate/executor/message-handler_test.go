@@ -16,6 +16,8 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
+	substrate_chain "github.com/ChainSafe/sygma-relayer/chains/substrate"
+
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,7 +49,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 			},
 		},
 
-		Type: executor.FungibleTransfer,
+		Type: substrate_chain.FungibleTransfer,
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &proposal.Proposal{
@@ -80,7 +82,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: executor.FungibleTransfer,
+		Type: substrate_chain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -104,7 +106,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: executor.FungibleTransfer,
+		Type: substrate_chain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -128,7 +130,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: executor.FungibleTransfer,
+		Type: substrate_chain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -155,7 +157,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 			},
 		},
 
-		Type: executor.FungibleTransfer,
+		Type: substrate_chain.FungibleTransfer,
 	}
 
 	invalidMessageData := &message.Message{

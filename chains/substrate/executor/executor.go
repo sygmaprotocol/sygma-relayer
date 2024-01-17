@@ -14,7 +14,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
-	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
@@ -27,10 +26,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
-)
-
-const (
-	FungibleTransfer message.MessageType = "FungibleTransfer"
 )
 
 var (

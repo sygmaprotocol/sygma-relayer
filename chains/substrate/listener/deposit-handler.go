@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -34,7 +35,7 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
 	var depositType message.MessageType
 	if transferType == FungibleTransfer {
-		depositType = "FungibleTransfer"
+		depositType = substrate.FungibleTransfer
 	} else {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
 	}
@@ -93,5 +94,5 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 		DepositNonce: uint64(nonce),
 		ResourceId:   resourceID,
 		Payload:      payload,
-	}, "FungibleTransfer"), nil
+	}, substrate.FungibleTransfer), nil
 }
