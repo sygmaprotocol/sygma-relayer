@@ -5,14 +5,8 @@ package listener
 
 import (
 	"math/big"
-	"strings"
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -33,23 +27,7 @@ type ChainConnection interface {
 	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
 }
 
-type SubstrateListener struct {
-	conn ChainConnection
-	abi  abi.ABI
-	log  zerolog.Logger
-}
-
-func NewListener(conn ChainConnection) *SubstrateListener {
-	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
-
-	return &SubstrateListener{
-		conn: conn,
-		abi:  abi,
-		log:  log.With().Uint8("domainID", substrate.SubstrateConfig.GeneralChainConfig.Id).Logger(),
-	}
-}
-
-func (l *SubstrateListener) fetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
+func FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
 	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*parser.Event, 0)
