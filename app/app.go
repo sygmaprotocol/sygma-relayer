@@ -20,7 +20,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/relayer"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
@@ -58,6 +57,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
+	"github.com/sygmaprotocol/sygma-core/relayer"
 	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -154,7 +154,7 @@ func Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	chains := []relayer.RelayedChain{}
+	chains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -216,7 +216,7 @@ func Run() error {
 
 				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains = append(chains, chain)
+				chains[0] = chain
 			}
 		case "substrate":
 			{
@@ -252,7 +252,7 @@ func Run() error {
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains = append(chains, substrateChain)
+				chains[1] = substrateChain
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
@@ -261,13 +261,10 @@ func Run() error {
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
-	r := relayer.NewRelayer(
-		chains,
-		sygmaMetrics,
-	)
+	r := relayer.NewRelayer(chains)
 
-	errChn := make(chan error)
-	go r.Start(ctx, errChn)
+	msgChan := make(chan []*coreMessage.Message)
+	go r.Start(ctx, msgChan)
 
 	sysErr := make(chan os.Signal, 1)
 	signal.Notify(sysErr,
@@ -285,9 +282,6 @@ func Run() error {
 	}
 
 	select {
-	case err := <-errChn:
-		log.Error().Err(err).Msg("failed to listen and serve")
-		return err
 	case sig := <-sysErr:
 		log.Info().Msgf("terminating got ` [%v] signal", sig)
 		return nil
