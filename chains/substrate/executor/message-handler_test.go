@@ -145,7 +145,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	messageData := &chains.TransferMessage{
+	messageData := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -160,7 +160,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type: substrate_chain.FungibleTransfer,
 	}
 
-	invalidMessageData := &chains.TransferMessage{
+	invalidMessageData := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
