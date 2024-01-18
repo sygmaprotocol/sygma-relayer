@@ -35,7 +35,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 2,
 		Data: chains.TransferMessageData{
@@ -69,7 +69,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -92,7 +92,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectAmount() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -116,7 +116,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectRecipient() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
