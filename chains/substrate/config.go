@@ -20,6 +20,10 @@ const (
 	FungibleTransfer message.MessageType = "FungibleTransfer"
 )
 
+const (
+	FungibleTransfer message.MessageType = "FungibleTransfer"
+)
+
 type RawSubstrateConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	ChainID                  int64  `mapstructure:"chainID"`
