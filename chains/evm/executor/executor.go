@@ -22,6 +22,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
 const TRANSFER_GAS_COST = 200000
@@ -73,7 +74,8 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(proposals []*chains.TransferProposal) error {
+func (e *Executor) Execute(proposals []*proposal.Proposal) error {
+
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
@@ -173,7 +175,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) proposalBatches(proposals []*chains.TransferProposal) ([]*Batch, error) {
+func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, error) {
 	batches := make([]*Batch, 1)
 	currentBatch := &Batch{
 		proposals: make([]*chains.TransferProposal, 0),
@@ -182,18 +184,24 @@ func (e *Executor) proposalBatches(proposals []*chains.TransferProposal) ([]*Bat
 	batches[0] = currentBatch
 
 	for _, prop := range proposals {
+		transferProposal := &chains.TransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data:        prop.Data.(chains.TransferProposalData),
+			Type:        prop.Type,
+		}
 
-		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)
 		if err != nil {
 			return nil, err
 		}
 		if isExecuted {
-			log.Info().Msgf("Proposal %p already executed", prop)
+			log.Info().Msgf("Proposal %p already executed", transferProposal)
 			continue
 		}
 
 		var propGasLimit uint64
-		l, ok := prop.Data.Metadata["gasLimit"]
+		l, ok := transferProposal.Data.Metadata["gasLimit"]
 		if ok {
 			propGasLimit = l.(uint64)
 		} else {
@@ -208,7 +216,7 @@ func (e *Executor) proposalBatches(proposals []*chains.TransferProposal) ([]*Bat
 			batches = append(batches, currentBatch)
 		}
 
-		currentBatch.proposals = append(currentBatch.proposals, prop)
+		currentBatch.proposals = append(currentBatch.proposals, transferProposal)
 	}
 
 	return batches, nil

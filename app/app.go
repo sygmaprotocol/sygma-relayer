@@ -37,6 +37,7 @@ import (
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+	coreEvm "github.com/sygmaprotocol/sygma-core/chains/evm"
 	coreClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
@@ -211,10 +212,7 @@ func Run() error {
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
-				chain := evm.NewEVMChain(
-					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
-					config.BlockInterval, config.GeneralChainConfig.FreshStart, config.GeneralChainConfig.LatestBlock,
-				)
+				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
 				chains = append(chains, chain)
 			}
