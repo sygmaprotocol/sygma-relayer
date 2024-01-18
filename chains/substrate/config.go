@@ -11,8 +11,13 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
+)
+
+const (
+	FungibleTransfer message.MessageType = "FungibleTransfer"
 )
 
 type RawSubstrateConfig struct {

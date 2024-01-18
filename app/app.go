@@ -30,8 +30,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
