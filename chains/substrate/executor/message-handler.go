@@ -32,15 +32,20 @@ func NewSubstrateMessageHandler() *SubstrateMessageHandler {
 	}
 }
 
-func (mh *SubstrateMessageHandler) HandleMessage(m *chains.TransferMessage) (*proposal.Proposal, error) {
-
+func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.Proposal, error) {
+	transferMessage := &chains.TransferMessage{
+		Source:      m.Source,
+		Destination: m.Destination,
+		Data:        m.Data.(chains.TransferMessageData),
+		Type:        m.Type,
+	}
 	// Based on handler that was registered on BridgeContract
-	handleMessage, err := mh.matchTransferTypeHandlerFunc(m.Type)
+	handleMessage, err := mh.matchTransferTypeHandlerFunc(transferMessage.Type)
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Str("type", string(m.Type)).Uint8("src", m.Source).Uint8("dst", m.Destination).Uint64("nonce", m.Data.DepositNonce).Str("resourceID", fmt.Sprintf("%x", m.Data.ResourceId)).Msg("Handling new message")
-	prop, err := handleMessage(m)
+	log.Info().Str("type", string(transferMessage.Type)).Uint8("src", transferMessage.Source).Uint8("dst", transferMessage.Destination).Uint64("nonce", transferMessage.Data.DepositNonce).Str("resourceID", fmt.Sprintf("%x", transferMessage.Data.ResourceId)).Msg("Handling new message")
+	prop, err := handleMessage(transferMessage)
 	if err != nil {
 		return nil, err
 	}

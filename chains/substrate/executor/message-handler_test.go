@@ -13,6 +13,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/stretchr/testify/suite"
@@ -138,7 +139,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	messageData := &chains.TransferMessage{
+	messageData := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -153,7 +154,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type: executor.FungibleTransfer,
 	}
 
-	invalidMessageData := &chains.TransferMessage{
+	invalidMessageData := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
