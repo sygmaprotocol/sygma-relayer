@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +30,7 @@ func (s *Erc721HandlerTestSuite) TearDownTest()  {}
 func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 
-	calldata := bridge.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), []byte{})
+	calldata := evm.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), []byte{})
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -96,7 +96,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 	metadata := []byte("metadata.url")
 
-	calldata := bridge.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
+	calldata := evm.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -136,7 +136,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 	metadata := []byte("metadata.url")
 
-	calldata := bridge.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
+	calldata := evm.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},

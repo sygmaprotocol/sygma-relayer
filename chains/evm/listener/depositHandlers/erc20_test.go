@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
@@ -35,7 +35,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
 	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
 
-	calldata := bridge.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
+	calldata := evm.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -74,7 +74,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
 	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
 
-	calldata := bridge.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
+	calldata := evm.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},

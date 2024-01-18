@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -62,7 +62,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 
 func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 	metadata := []byte("")
-	calldata := bridge.ConstructGenericDepositData(metadata)
+	calldata := evm.ConstructGenericDepositData(metadata)
 
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
@@ -105,7 +105,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 
 func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 	metadata := []byte("0xdeadbeef")
-	calldata := bridge.ConstructGenericDepositData(metadata)
+	calldata := evm.ConstructGenericDepositData(metadata)
 
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,

@@ -12,8 +12,8 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -39,7 +39,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	metadata := make(map[string]interface{})
 	metadata["gasLimit"] = uint64(200000)
 
-	calldata := bridge.ConstructPermissionlessGenericDepositData(
+	calldata := evm.ConstructPermissionlessGenericDepositData(
 		hash[:],
 		functionSig,
 		contractAddress.Bytes(),

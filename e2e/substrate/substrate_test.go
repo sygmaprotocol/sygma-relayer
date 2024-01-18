@@ -7,12 +7,12 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 
 	"math/big"
 	"testing"
@@ -206,9 +206,10 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	pk := []substrateTypes.U8{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
 
 	recipientMultilocation := substrate.ConstructRecipientData(pk)
-	_, err = bridgeContract1.Erc20Deposit(recipientMultilocation, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
-		Value: s.evmConfig.BasicFee,
-	})
+
+	erc20DepositData := evm.ConstructErc20DepositData(recipientMultilocation, amountToDeposit)
+	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.evmConfig.BasicFee}, 3, s.evmConfig.Erc20LockReleaseResourceID, erc20DepositData, nil)
+
 	s.Nil(err)
 
 	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore.Balance, substrate.SubstratePK.PublicKey)

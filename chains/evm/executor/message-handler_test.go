@@ -14,8 +14,8 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 )
@@ -362,7 +362,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	maxFee := big.NewInt(200000)
 	var metadata []byte
 	metadata = append(metadata, hash[:]...)
-	calldata := bridge.ConstructPermissionlessGenericDepositData(
+	calldata := evm.ConstructPermissionlessGenericDepositData(
 		metadata,
 		functionSig,
 		contractAddress.Bytes(),
