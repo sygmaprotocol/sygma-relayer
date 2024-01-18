@@ -246,8 +246,8 @@ func Run() error {
 				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id))
 				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
 
-				mh := substrateExecutor.NewSubstrateMessageHandler()
-				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
+				mh := coreMessage.NewMessageHandler()
+				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)

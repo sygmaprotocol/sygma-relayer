@@ -35,7 +35,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	recipientAddr := *(*[]types.U8)(unsafe.Pointer(&substrate.SubstratePK.PublicKey))
 	recipient := substrate.ConstructRecipientData(recipientAddr)
 
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 2,
 		Data: chains.TransferMessageData{
@@ -61,14 +61,15 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 		Type: "Transfer",
 	}
 
-	prop, err := executor.FungibleTransferMessageHandler(message)
+	mh := executor.SubstrateMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
 	s.Equal(prop, expectedProp)
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectDataLen() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -82,7 +83,8 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 		Type: executor.FungibleTransfer,
 	}
 
-	prop, err := executor.FungibleTransferMessageHandler(message)
+	mh := executor.SubstrateMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -90,7 +92,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectAmount() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -105,7 +107,8 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 		Type: executor.FungibleTransfer,
 	}
 
-	prop, err := executor.FungibleTransferMessageHandler(message)
+	mh := executor.SubstrateMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -113,7 +116,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 }
 
 func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageIncorrectRecipient() {
-	message := &chains.TransferMessage{
+	message := &message.Message{
 		Source:      1,
 		Destination: 0,
 		Data: chains.TransferMessageData{
@@ -128,7 +131,8 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 		Type: executor.FungibleTransfer,
 	}
 
-	prop, err := executor.FungibleTransferMessageHandler(message)
+	mh := executor.SubstrateMessageHandler{}
+	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
 	s.NotNil(err)
@@ -169,9 +173,9 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 		Type: "NonFungibleTransfer",
 	}
 
-	depositMessageHandler := executor.NewSubstrateMessageHandler()
+	depositMessageHandler := message.NewMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler(executor.FungibleTransfer, executor.FungibleTransferMessageHandler)
+	depositMessageHandler.RegisterMessageHandler(executor.FungibleTransfer, &executor.SubstrateMessageHandler{})
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)
