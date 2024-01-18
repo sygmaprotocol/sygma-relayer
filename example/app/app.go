@@ -48,7 +48,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/ChainSafe/sygma-relayer/config"

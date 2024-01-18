@@ -26,11 +26,11 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc721"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/chainbridge-core/keystore"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
@@ -208,10 +208,9 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 	var feeDataHash = "00000000000000000000000000000000000000000000000000011f667bbfc00000000000000000000000000000000000000000000000000006bb5a99744a9000000000000000000000000000000000000000000000000000000000174876e80000000000000000000000000000000000000000000000000000000000698d283a0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 	var feeData = evm.ConstructFeeData(feeOracleSignature, feeDataHash, amountToDeposit)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
-		transactor.TransactOptions{
-			Priority: uint8(2), // fast
-		})
+	erc20DepositData := evm.ConstructErc20DepositData(dstAddr.Bytes(), amountToDeposit)
+	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{}, 2, s.config1.Erc20ResourceID, erc20DepositData, feeData)
+
 	s.Nil(err)
 
 	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
@@ -269,11 +268,9 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	_, err = erc721Contract2.Owner(tokenId)
 	s.Error(err)
 
-	depositTxHash, err := bridgeContract1.Erc721Deposit(
-		tokenId, metadata, dstAddr, s.config1.Erc721ResourceID, 2, nil, transactor.TransactOptions{
-			Value: s.config1.BasicFee,
-		},
-	)
+	erc721DepositData := evm.ConstructErc721DepositData(dstAddr.Bytes(), tokenId, []byte(metadata))
+	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, 2, s.config1.Erc721ResourceID, erc721DepositData, nil)
+
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
@@ -307,9 +304,9 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
 	s.Nil(err)
 
-	depositTxHash, err := bridgeContract1.GenericDeposit(hash[:], s.config1.GenericResourceID, 2, nil, transactor.TransactOptions{
-		Value: s.config1.BasicFee,
-	})
+	genericDepositData := evm.ConstructGenericDepositData(hash[:])
+	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, 2, s.config1.GenericResourceID, genericDepositData, nil)
+
 	s.Nil(err)
 
 	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
@@ -346,9 +343,8 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	metadata = append(metadata, common.LeftPadBytes(hash[:], 32)...)
 	metadata = append(metadata, common.LeftPadBytes(depositor.Bytes(), 32)...)
 
-	_, err := bridgeContract1.PermissionlessGenericDeposit(metadata, functionSig, contractAddress, &depositor, maxFee, s.config1.PermissionlessGenericResourceID, 2, nil, transactor.TransactOptions{
-		Value: s.config1.BasicFee,
-	})
+	permissionlessGenericDepositData := evm.ConstructPermissionlessGenericDepositData(metadata, []byte(functionSig), contractAddress.Bytes(), depositor.Bytes(), maxFee)
+	_, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, 2, s.config1.PermissionlessGenericResourceID, permissionlessGenericDepositData, nil)
 	s.Nil(err)
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
@@ -372,11 +368,9 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
 
-	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
-		transactor.TransactOptions{
-			Priority: uint8(2), // fast
-			Value:    s.config1.BasicFee,
-		})
+	erc20DepositData := evm.ConstructErc20DepositData(dstAddr.Bytes(), amountToDeposit)
+	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, 2, s.config1.Erc20LockReleaseResourceID, erc20DepositData, nil)
+
 	s.Nil(err)
 
 	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
@@ -429,10 +423,10 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	var wg sync.WaitGroup
 	for i := 0; i < numOfDeposits; i++ {
 		go func() {
-			_, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, feeData,
-				transactor.TransactOptions{
-					Priority: uint8(2), // fast
-				})
+
+			erc20DepositData := evm.ConstructErc20DepositData(dstAddr.Bytes(), amountToDeposit)
+			_, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{}, 2, s.config1.Erc20ResourceID, erc20DepositData, feeData)
+
 			wg.Add(1)
 			defer wg.Done()
 			s.Nil(err)

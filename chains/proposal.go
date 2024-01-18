@@ -8,6 +8,8 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
+	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -15,16 +17,10 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
-func NewProposal(source, destination uint8, depositNonce uint64, resourceId types.ResourceID, data []byte, metadata message.Metadata) *Proposal {
-	return &Proposal{
-		OriginDomainID: source,
-		DepositNonce:   depositNonce,
-		ResourceID:     resourceId,
-		Destination:    destination,
-		Data:           data,
-		Metadata:       metadata,
-	}
-}
+const (
+	TransferProposalType proposal.ProposalType   = "Transfer"
+	TransferMessageType  coreMessage.MessageType = "Transfer"
+)
 
 type TransferProposal struct {
 	Source      uint8
@@ -41,19 +37,28 @@ type TransferProposalData struct {
 }
 
 func NewTransferProposal(source, destination uint8, depositNonce uint64,
-	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *proposal.Proposal {
+	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *TransferProposal {
 
-	transferProposal := TransferProposalData{
+	transferProposalData := TransferProposalData{
 		DepositNonce: depositNonce,
 		ResourceId:   resourceId,
 		Metadata:     metadata,
 		Data:         data,
 	}
 
+	return &TransferProposal{
+		Source:      source,
+		Destination: destination,
+		Data:        transferProposalData,
+		Type:        propType,
+	}
+}
+
+func NewProposal(source uint8, destination uint8, data interface{}, propType proposal.ProposalType) *proposal.Proposal {
 	return &proposal.Proposal{
 		Source:      source,
 		Destination: destination,
-		Data:        transferProposal,
+		Data:        data,
 		Type:        propType,
 	}
 }
@@ -67,13 +72,25 @@ type Proposal struct {
 	Metadata       message.Metadata
 }
 
-func ProposalsHash(proposals []*Proposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
+		transferProposal := &TransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data: TransferProposalData{
+				DepositNonce: prop.Data.DepositNonce,
+				ResourceId:   prop.Data.ResourceId,
+				Metadata:     prop.Data.Metadata,
+				Data:         prop.Data.Data,
+			},
+			Type: prop.Type,
+		}
 		formattedProps[i] = map[string]interface{}{
-			"originDomainID": math.NewHexOrDecimal256(int64(prop.OriginDomainID)),
-			"depositNonce":   math.NewHexOrDecimal256(int64(prop.DepositNonce)),
-			"resourceID":     hexutil.Encode(prop.ResourceID[:]),
+			"originDomainID": math.NewHexOrDecimal256(int64(transferProposal.Source)),
+			"depositNonce":   math.NewHexOrDecimal256(int64(transferProposal.Data.DepositNonce)),
+			"resourceID":     hexutil.Encode(transferProposal.Data.ResourceId[:]),
 			"data":           prop.Data,
 		}
 	}
@@ -120,4 +137,21 @@ func ProposalsHash(proposals []*Proposal, chainID int64, verifContract string, b
 
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
+}
+
+type TransferMessageData struct {
+	DepositNonce uint64
+	ResourceId   [32]byte
+	Metadata     map[string]interface{}
+	Payload      []interface{}
+}
+
+func NewMessage(source, destination uint8, data interface{}, msgType coreMessage.MessageType) *coreMessage.Message {
+
+	return &coreMessage.Message{
+		Source:      source,
+		Destination: destination,
+		Data:        data,
+		Type:        msgType,
+	}
 }

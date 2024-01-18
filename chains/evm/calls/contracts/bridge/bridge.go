@@ -9,17 +9,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog/log"
+
+	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/contracts"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 )
 
 const bridgeVersion = "3.1.0"
@@ -32,7 +31,7 @@ type BridgeProposal struct {
 }
 
 type ChainClient interface {
-	calls.ContractCallerDispatcher
+	client.Client
 	ChainID(ctx context.Context) (*big.Int, error)
 }
 
@@ -53,162 +52,36 @@ func NewBridgeContract(
 	}
 }
 
-func (c *BridgeContract) deposit(
-	resourceID types.ResourceID,
-	destDomainID uint8,
-	data []byte,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	return c.ExecuteTransaction(
-		"deposit",
-		opts,
-		destDomainID, resourceID, data, feeData,
-	)
-}
-
-func (c *BridgeContract) Erc20Deposit(
-	recipient []byte,
-	amount *big.Int,
-	resourceID types.ResourceID,
-	destDomainID uint8,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("recipient", hexutil.Encode(recipient)).
-		Str("resourceID", hexutil.Encode(resourceID[:])).
-		Str("amount", amount.String()).
-		Uint8("destDomainID", destDomainID).
-		Hex("feeData", feeData).
-		Msgf("ERC20 deposit")
-	var data []byte
-	if opts.Priority == 0 {
-		data = deposit.ConstructErc20DepositData(recipient, amount)
-	} else {
-		data = deposit.ConstructErc20DepositDataWithPriority(recipient, amount, opts.Priority)
-	}
-
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
-	}
-	return txHash, err
-}
-
-func (c *BridgeContract) Erc721Deposit(
-	tokenId *big.Int,
-	metadata string,
-	recipient common.Address,
-	resourceID types.ResourceID,
-	destDomainID uint8,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("recipient", recipient.String()).
-		Str("resourceID", hexutil.Encode(resourceID[:])).
-		Str("tokenID", tokenId.String()).
-		Uint8("destDomainID", destDomainID).
-		Hex("feeData", feeData).
-		Msgf("ERC721 deposit")
-	var data []byte
-	if opts.Priority == 0 {
-		data = deposit.ConstructErc721DepositData(recipient.Bytes(), tokenId, []byte(metadata))
-	} else {
-		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
-	}
-
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
-	}
-	return txHash, err
-}
-
-func (c *BridgeContract) GenericDeposit(
-	metadata []byte,
-	resourceID types.ResourceID,
-	destDomainID uint8,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("resourceID", hexutil.Encode(resourceID[:])).
-		Uint8("destDomainID", destDomainID).
-		Hex("feeData", feeData).
-		Msgf("Generic deposit")
-	data := deposit.ConstructGenericDepositData(metadata)
-
-	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
-	}
-	return txHash, err
-}
-
-func (c *BridgeContract) PermissionlessGenericDeposit(
-	metadata []byte,
-	executeFunctionSig string,
-	executeContractAddress *common.Address,
-	depositor *common.Address,
-	maxFee *big.Int,
-	resourceID types.ResourceID,
-	destDomainID uint8,
-	feeData []byte,
-	opts transactor.TransactOptions,
-) (*common.Hash, error) {
-	log.Debug().
-		Str("resourceID", hexutil.Encode(resourceID[:])).
-		Uint8("destDomainID", destDomainID).
-		Hex("feeData", feeData).
-		Msgf("Permissionless Generic deposit")
-	data := ConstructPermissionlessGenericDepositData(metadata, []byte(executeFunctionSig), executeContractAddress.Bytes(), depositor.Bytes(), maxFee)
-	txHash, err := c.deposit(
-		resourceID,
-		destDomainID,
-		data,
-		feeData,
-		opts,
-	)
-	if err != nil {
-		log.Error().Err(err)
-		return nil, err
-	}
-	return txHash, err
-}
-
 func (c *BridgeContract) ExecuteProposal(
-	proposal *chains.Proposal,
+	proposal *chains.TransferProposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
 	log.Debug().
-		Str("depositNonce", strconv.FormatUint(proposal.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(proposal.ResourceID[:])).
+		Str("depositNonce", strconv.FormatUint(proposal.Data.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(proposal.Data.ResourceId[:])).
 		Msgf("Execute proposal")
 	return c.ExecuteTransaction(
 		"executeProposal",
 		opts,
-		proposal.OriginDomainID, proposal.DepositNonce, proposal.Data, proposal.ResourceID, signature,
+		proposal.Source, proposal.Data.DepositNonce, proposal.Data, proposal.Data.ResourceId, signature,
 	)
 }
 
 func (c *BridgeContract) ExecuteProposals(
-	proposals []*chains.Proposal,
+	proposals []*chains.TransferProposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
-	bridgeProposals := make([]chains.Proposal, 0)
+	bridgeProposals := make([]chains.TransferProposal, 0)
 	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, chains.Proposal{
-			OriginDomainID: prop.OriginDomainID,
-			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceID,
-			Data:           prop.Data,
+		bridgeProposals = append(bridgeProposals, chains.TransferProposal{
+			Source: prop.Source,
+			Data: chains.TransferProposalData{
+				DepositNonce: prop.Data.DepositNonce,
+				ResourceId:   prop.Data.ResourceId,
+				Data:         prop.Data.Data,
+			},
 		})
 	}
 
@@ -220,7 +93,7 @@ func (c *BridgeContract) ExecuteProposals(
 	)
 }
 
-func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
+func (c *BridgeContract) ProposalsHash(proposals []*chains.TransferProposal) ([]byte, error) {
 	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		return []byte{}, err
@@ -228,12 +101,13 @@ func (c *BridgeContract) ProposalsHash(proposals []*chains.Proposal) ([]byte, er
 	return chains.ProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
 }
 
-func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {
+func (c *BridgeContract) IsProposalExecuted(p *chains.TransferProposal) (bool, error) {
+
 	log.Debug().
-		Str("depositNonce", strconv.FormatUint(p.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(p.ResourceID[:])).
+		Str("depositNonce", strconv.FormatUint(p.Data.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(p.Data.ResourceId[:])).
 		Msg("Getting is proposal executed")
-	res, err := c.CallContract("isProposalExecuted", p.OriginDomainID, big.NewInt(int64(p.DepositNonce)))
+	res, err := c.CallContract("isProposalExecuted", p.Source, big.NewInt(int64(p.Data.DepositNonce)))
 	if err != nil {
 		return false, err
 	}
@@ -242,7 +116,7 @@ func (c *BridgeContract) IsProposalExecuted(p *chains.Proposal) (bool, error) {
 }
 
 func (c *BridgeContract) GetHandlerAddressForResourceID(
-	resourceID types.ResourceID,
+	resourceID [32]byte,
 ) (common.Address, error) {
 	log.Debug().Msgf("Getting handler address for resource %s", hexutil.Encode(resourceID[:]))
 	res, err := c.CallContract("_resourceIDToHandlerAddress", resourceID)

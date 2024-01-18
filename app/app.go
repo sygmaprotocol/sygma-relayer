@@ -14,12 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	coreEvents "github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/monitored"
-	coreListener "github.com/ChainSafe/chainbridge-core/chains/evm/listener"
 	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/chainbridge-core/logger"
@@ -32,7 +27,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
+	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
@@ -41,6 +37,11 @@ import (
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
+	coreEvm "github.com/sygmaprotocol/sygma-core/chains/evm"
+	coreClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -161,7 +162,7 @@ func Run() error {
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := evmclient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
+				client, err := coreClient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				panicOnError(err)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
@@ -171,31 +172,47 @@ func Run() error {
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
-				t := monitored.NewMonitoredTransactor(evmtransaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				t := monitored.NewMonitoredTransactor(transaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
 				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
-				depositHandler := coreListener.NewETHDepositHandler(bridgeContract)
+				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
 				mh := coreMessage.NewMessageHandler()
 				for _, handler := range config.Handlers {
-					depositHandler.RegisterDepositHandler(handler.Address, listener.PermissionlessGenericDepositHandler)
-					mh.RegisterMessageHandler("transfer", &executor.TransferMessageHandler{})
+
+					mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
+
+					switch handler.Type {
+					case "erc20":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
+						}
+					case "permissionedGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.GenericDepositHandler{})
+						}
+					case "permissionlessGeneric":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.PermissionlessGenericDepositHandler{})
+						}
+					case "erc721":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc721DepositHandler{})
+						}
+					}
 				}
-				depositListener := coreEvents.NewListener(client)
+				depositListener := events.NewListener(client)
 				tssListener := events.NewListener(client)
-				eventHandlers := make([]coreListener.EventHandler, 0)
+				eventHandlers := make([]listener.EventHandler, 0)
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				eventHandlers = append(eventHandlers, coreListener.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id))
-				eventHandlers = append(eventHandlers, listener.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
-				eventHandlers = append(eventHandlers, listener.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, listener.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations))
-				evmListener := coreListener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, make(chan []*coreMessage.Message, 1)))
+				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
-				chain := evm.NewEVMChain(
-					client, evmListener, executor, blockstore, *config.GeneralChainConfig.Id, config.StartBlock,
-					config.BlockInterval, config.GeneralChainConfig.FreshStart, config.GeneralChainConfig.LatestBlock,
-				)
+				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
 				chains = append(chains, chain)
 			}
