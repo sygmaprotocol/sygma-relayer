@@ -64,8 +64,8 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{}, fmt.Errorf("error"))
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{}, fmt.Errorf("error"))
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d.DestinationDomainID,
@@ -106,8 +106,8 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -156,8 +156,8 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -206,7 +206,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvent(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
+	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,

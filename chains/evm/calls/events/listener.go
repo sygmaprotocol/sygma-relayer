@@ -70,7 +70,7 @@ func (l *Listener) unpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
 	return &dl, nil
 }
 
-func (l *Listener) FetchRetryDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
+func (l *Listener) FetchRetryDepositEvents(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
 	depositEvents := make([]Deposit, 0)
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)

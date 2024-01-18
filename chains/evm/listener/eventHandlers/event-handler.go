@@ -32,7 +32,7 @@ type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryEvent, error)
-	FetchRetryDepositEvent(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
+	FetchRetryDepositEvents(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
 }
 
@@ -87,7 +87,7 @@ func (eh *RetryEventHandler) HandleEvents(
 				}
 			}()
 
-			deposits, err := eh.eventListener.FetchRetryDepositEvent(event, eh.bridgeAddress, eh.blockConfirmations)
+			deposits, err := eh.eventListener.FetchRetryDepositEvents(event, eh.bridgeAddress, eh.blockConfirmations)
 			if err != nil {
 				eh.log.Error().Err(err).Msgf("Unable to fetch deposit events from event %+v", event)
 				return
