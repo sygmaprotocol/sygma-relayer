@@ -30,6 +30,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
+
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
@@ -248,7 +250,7 @@ func Run() error {
 				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, substrateExecutor.FungibleTransferMessageHandler)
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
-				substrateChain := substrate.NewSubstrateChain(substrateClient, substrateListener, nil, blockstore, config, sExecutor)
+				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 
 				chains = append(chains, substrateChain)
 			}

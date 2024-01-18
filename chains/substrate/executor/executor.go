@@ -15,6 +15,7 @@ import (
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -75,13 +76,24 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(proposals []*chains.TransferProposal) error {
+func (e *Executor) Execute(proposals []*proposal.Proposal) error {
+
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
+	transferProposals := make([]*chains.TransferProposal, 0)
+
 	for _, prop := range proposals {
 
-		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+		transferProposal := &chains.TransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data:        prop.Data.(chains.TransferProposalData),
+			Type:        prop.Type,
+		}
+		transferProposals = append(transferProposals, transferProposal)
+
+		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)
 		if err != nil {
 			return err
 		}
@@ -95,7 +107,7 @@ func (e *Executor) Execute(proposals []*chains.TransferProposal) error {
 		return nil
 	}
 
-	propHash, err := e.bridge.ProposalsHash(proposals)
+	propHash, err := e.bridge.ProposalsHash(transferProposals)
 	if err != nil {
 		return err
 	}
@@ -127,7 +139,7 @@ func (e *Executor) Execute(proposals []*chains.TransferProposal) error {
 		return err
 	})
 	pool.Go(func() error {
-		return e.watchExecution(watchContext, cancelExecution, proposals, sigChn, sessionID)
+		return e.watchExecution(watchContext, cancelExecution, transferProposals, sigChn, sessionID)
 	})
 	return pool.Wait()
 }
