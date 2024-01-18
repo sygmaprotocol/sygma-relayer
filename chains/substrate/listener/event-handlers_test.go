@@ -78,6 +78,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 
 type DepositHandlerTestSuite struct {
 	suite.Suite
+	mockConn            *mock_events.MockChainConnection
 	depositEventHandler *listener.FungibleTransferEventHandler
 	mockDepositHandler  *mock_events.MockDepositHandler
 	domainID            uint8
@@ -92,6 +93,7 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
+	s.mockConn = mock_events.NewMockChainConnection(ctrl)
 	s.mockDepositHandler = mock_events.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_events.NewMockConnection(ctrl)

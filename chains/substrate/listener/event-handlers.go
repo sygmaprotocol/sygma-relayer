@@ -115,6 +115,7 @@ type DepositHandler interface {
 
 type FungibleTransferEventHandler struct {
 	domainID       uint8
+	conn           ChainConnection
 	depositHandler DepositHandler
 	log            zerolog.Logger
 	msgChan        chan []*message.Message
