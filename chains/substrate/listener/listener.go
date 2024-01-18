@@ -20,7 +20,6 @@ type ChainConnection interface {
 }
 
 func FetchEvents(startBlock *big.Int, endBlock *big.Int, conn ChainConnection) ([]*parser.Event, error) {
-	l.log.Debug().Msgf("Fetching substrate events for block range %s-%s", startBlock, endBlock)
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {

@@ -7,48 +7,10 @@ package mock_listener
 import (
 	reflect "reflect"
 
-	message "github.com/ChainSafe/chainbridge-core/relayer/message"
 	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 )
-
-// MockEventHandler is a mock of EventHandler interface.
-type MockEventHandler struct {
-	ctrl     *gomock.Controller
-	recorder *MockEventHandlerMockRecorder
-}
-
-// MockEventHandlerMockRecorder is the mock recorder for MockEventHandler.
-type MockEventHandlerMockRecorder struct {
-	mock *MockEventHandler
-}
-
-// NewMockEventHandler creates a new mock instance.
-func NewMockEventHandler(ctrl *gomock.Controller) *MockEventHandler {
-	mock := &MockEventHandler{ctrl: ctrl}
-	mock.recorder = &MockEventHandlerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
-	return m.recorder
-}
-
-// HandleEvents mocks base method.
-func (m *MockEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvents", evts, msgChan)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// HandleEvents indicates an expected call of HandleEvents.
-func (mr *MockEventHandlerMockRecorder) HandleEvents(evts, msgChan interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), evts, msgChan)
-}
 
 // MockChainConnection is a mock of ChainConnection interface.
 type MockChainConnection struct {

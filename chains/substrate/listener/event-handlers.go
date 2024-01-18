@@ -115,17 +115,19 @@ type DepositHandler interface {
 
 type FungibleTransferEventHandler struct {
 	domainID       uint8
+	conn           ChainConnection
 	depositHandler DepositHandler
 	log            zerolog.Logger
 	msgChan        chan []*message.Message
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, conn ChainConnection, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
+		conn:           conn,
 	}
 }
 
