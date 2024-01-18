@@ -175,7 +175,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) proposalBatches(proposals []*chains.TransferProposal) ([]*Batch, error) {
+func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, error) {
 	batches := make([]*Batch, 1)
 	currentBatch := &Batch{
 		proposals: make([]*chains.TransferProposal, 0),
