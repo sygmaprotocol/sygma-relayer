@@ -39,8 +39,8 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
-	s.mockDepositHandler = mock_coreListener.NewMockDepositHandler(ctrl)
-	s.msgChan = make(chan []*coreMessage.Message, 1)
+	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
+	s.msgChan = make(chan []*message.Message, 1)
 	s.retryEventHandler = eventHandlers.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5), s.msgChan)
 }
 

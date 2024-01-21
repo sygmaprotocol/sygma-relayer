@@ -177,7 +177,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 
 	depositMessageHandler := message.NewMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler(executor.FungibleTransfer, &executor.SubstrateMessageHandler{})
+	depositMessageHandler.RegisterMessageHandler(substrate_chain.FungibleTransfer, &executor.SubstrateMessageHandler{})
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)
