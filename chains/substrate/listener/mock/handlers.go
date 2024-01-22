@@ -5,12 +5,52 @@
 package mock_listener
 
 import (
+	big "math/big"
 	reflect "reflect"
 
+	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 	message "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
+
+// MockEventListener is a mock of EventListener interface.
+type MockEventListener struct {
+	ctrl     *gomock.Controller
+	recorder *MockEventListenerMockRecorder
+}
+
+// MockEventListenerMockRecorder is the mock recorder for MockEventListener.
+type MockEventListenerMockRecorder struct {
+	mock *MockEventListener
+}
+
+// NewMockEventListener creates a new mock instance.
+func NewMockEventListener(ctrl *gomock.Controller) *MockEventListener {
+	mock := &MockEventListener{ctrl: ctrl}
+	mock.recorder = &MockEventListenerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEventListener) EXPECT() *MockEventListenerMockRecorder {
+	return m.recorder
+}
+
+// FetchEvents mocks base method.
+func (m *MockEventListener) FetchEvents(startBlock, endBlock *big.Int) ([]*parser.Event, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchEvents", startBlock, endBlock)
+	ret0, _ := ret[0].([]*parser.Event)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchEvents indicates an expected call of FetchEvents.
+func (mr *MockEventListenerMockRecorder) FetchEvents(startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchEvents", reflect.TypeOf((*MockEventListener)(nil).FetchEvents), startBlock, endBlock)
+}
 
 // MockDepositHandler is a mock of DepositHandler interface.
 type MockDepositHandler struct {
