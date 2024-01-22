@@ -127,12 +127,13 @@ type FungibleTransferEventHandler struct {
 	eventListener  EventListener
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, eventListener EventListener) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
+		eventListener:  eventListener,
 	}
 }
 

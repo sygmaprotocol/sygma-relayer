@@ -244,7 +244,7 @@ func Run() error {
 				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrate_listener.FungibleTransferHandler)
 				eventListener := substrate_listener.NewListener(conn)
 				eventHandlers := make([]core_substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1)))
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1), eventListener))
 				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1), eventListener))
 
 				substrateListener := core_substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)

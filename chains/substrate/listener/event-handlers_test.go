@@ -24,9 +24,9 @@ import (
 
 type SystemUpdateHandlerTestSuite struct {
 	suite.Suite
-	conn                *mock_events.MockConnection
+	mockConn            *mock_events.MockConnection
 	systemUpdateHandler *listener.SystemUpdateEventHandler
-	eventListener       *mock_events.MockEventListener
+	mockEventListener   *mock_events.MockEventListener
 }
 
 func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
@@ -35,36 +35,41 @@ func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
 
 func (s *SystemUpdateHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-	s.conn = mock_events.NewMockConnection(ctrl)
-	s.eventListener = mock_events.NewMockEventListener(ctrl)
-	s.systemUpdateHandler = listener.NewSystemUpdateEventHandler(s.conn, s.eventListener)
+	s.mockConn = mock_events.NewMockConnection(ctrl)
+	s.mockEventListener = mock_events.NewMockEventListener(ctrl)
+	s.systemUpdateHandler = listener.NewSystemUpdateEventHandler(s.mockConn, s.mockEventListener)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
-	s.conn.EXPECT().UpdateMetatdata().Return(fmt.Errorf("error"))
+	s.mockConn.EXPECT().UpdateMetatdata().Return(fmt.Errorf("error"))
+	evts := []*parser.Event{
+		{
+			Name: "ParachainSystem.ValidationFunctionApplied",
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "ParachainSystem.ValidationFunctionApplied",
-	// 	},
-	// }
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return([]*parser.Event{}, nil)
+
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	s.Nil(err)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
-	s.conn.EXPECT().UpdateMetatdata().Return(nil)
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "ParachainSystem.ValidationFunctionApplied",
-	// 	},
-	// }
+	s.mockConn.EXPECT().UpdateMetatdata().Return(nil)
+	evts := []*parser.Event{
+		{
+			Name: "ParachainSystem.ValidationFunctionApplied",
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.Nil(err)
@@ -72,11 +77,11 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 
 type DepositHandlerTestSuite struct {
 	suite.Suite
-	mockConn            *mock_events.MockChainConnection
 	depositEventHandler *listener.FungibleTransferEventHandler
 	mockDepositHandler  *mock_events.MockDepositHandler
 	domainID            uint8
 	msgChan             chan []*message.Message
+	mockEventListener   *mock_events.MockEventListener
 }
 
 func TestRunDepositHandlerTestSuite(t *testing.T) {
@@ -86,10 +91,10 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	s.mockConn = mock_events.NewMockChainConnection(ctrl)
 	s.mockDepositHandler = mock_events.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
-	s.depositEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.mockConn, s.domainID, s.mockDepositHandler, s.msgChan)
+	s.mockEventListener = mock_events.NewMockEventListener(ctrl)
+	s.depositEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockEventListener)
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
@@ -124,36 +129,39 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2["deposit_nonce"],
 		d2["resource_id"],
 		d2["deposit_data"],
-		d1["sygma_traits_TransferType"],
+		d2["sygma_traits_TransferType"],
 	).Return(
 		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
-	// 		},
-	// 	},
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
-	// 		},
-	// 	},
-	// }
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
+			},
+		},
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
+			},
+		},
+	}
+
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-s.msgChan
 
@@ -201,30 +209,33 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		nil,
 	)
 
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
-	// 		},
-	// 	},
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
-	// 		},
-	// 	},
-	// }
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
+			},
+		},
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
+			},
+		},
+	}
+
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-s.msgChan
 
@@ -271,30 +282,33 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		nil,
 	)
 
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
-	// 		},
-	// 	},
-	// 	{
-	// 		Name: "SygmaBridge.Deposit",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
-	// 			&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
-	// 			&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
-	// 			&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
-	// 			&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
-	// 			&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
-	// 		},
-	// 	},
-	// }
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d1["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d1["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d1["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d1["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d1["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d1["handler_response"]},
+			},
+		},
+		{
+			Name: "SygmaBridge.Deposit",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "dest_domain_id", Value: d2["dest_domain_id"]},
+				&registry.DecodedField{Name: "resource_id", Value: d2["resource_id"]},
+				&registry.DecodedField{Name: "deposit_nonce", Value: d2["deposit_nonce"]},
+				&registry.DecodedField{Name: "sygma_traits_TransferType", Value: d2["sygma_traits_TransferType"]},
+				&registry.DecodedField{Name: "deposit_data", Value: d2["deposit_data"]},
+				&registry.DecodedField{Name: "handler_response", Value: d2["handler_response"]},
+			},
+		},
+	}
+
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-s.msgChan
 
@@ -304,6 +318,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 
 type RetryHandlerTestSuite struct {
 	suite.Suite
+	retryHandler       *listener.RetryEventHandler
 	mockDepositHandler *mock_events.MockDepositHandler
 	mockConn           *mock_events.MockConnection
 	mockEventListener  *mock_events.MockEventListener
@@ -322,16 +337,15 @@ func (s *RetryHandlerTestSuite) SetupTest() {
 	s.mockConn = mock_events.NewMockConnection(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockEventListener = mock_events.NewMockEventListener(ctrl)
+	s.retryHandler = listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan, s.mockEventListener)
 
 }
 
 func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 
-	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, fmt.Errorf("error"))
 	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return([]*parser.Event{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan, s.mockEventListener)
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)
 }
@@ -344,21 +358,21 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 		},
 	}}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(101)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
 
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(101)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	s.Nil(err)
 	s.Equal(len(s.msgChan), 0)
 }
@@ -372,19 +386,20 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	}}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)
 	s.Equal(len(s.msgChan), 0)
@@ -400,19 +415,20 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)
 	s.Equal(len(s.msgChan), 0)
@@ -428,19 +444,20 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.Nil(err)
 	s.Equal(len(s.msgChan), 0)
@@ -518,19 +535,20 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-s.msgChan
 
 	s.Nil(err)
@@ -614,25 +632,26 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		nil,
 	)
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
-	// rtry := map[string]any{
-	// 	"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
-	// }
-	// evts := []*parser.Event{
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// 	{
-	// 		Name: "SygmaBridge.Retry",
-	// 		Fields: registry.DecodedFields{
-	// 			&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
-	// 		},
-	// 	},
-	// }
-	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+	rtry := map[string]any{
+		"deposit_on_block_height": types.NewU128(*big.NewInt(95)),
+	}
+	evts := []*parser.Event{
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+		{
+			Name: "SygmaBridge.Retry",
+			Fields: registry.DecodedFields{
+				&registry.DecodedField{Name: "deposit_on_block_height", Value: rtry["deposit_on_block_height"]},
+			},
+		},
+	}
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
+
+	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 	msgs := <-s.msgChan
 
 	s.Nil(err)

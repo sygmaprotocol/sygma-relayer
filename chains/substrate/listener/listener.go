@@ -6,8 +6,8 @@ package listener
 import (
 	"math/big"
 
-	"github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
 type Connection interface {
