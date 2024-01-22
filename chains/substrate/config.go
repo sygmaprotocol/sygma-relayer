@@ -13,7 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
-	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/ChainSafe/sygma-relayer/config/chain"
 )
 
 const (

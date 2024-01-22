@@ -14,13 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
-	"github.com/ChainSafe/chainbridge-core/flags"
-	"github.com/ChainSafe/chainbridge-core/logger"
-	"github.com/ChainSafe/chainbridge-core/lvldb"
-	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -28,7 +21,14 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
+	"github.com/sygmaprotocol/sygma-core/observability"
+	"github.com/sygmaprotocol/sygma-core/relayer"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/store"
+	"github.com/sygmaprotocol/sygma-core/store/lvldb"
 
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
@@ -56,9 +56,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-
-	"github.com/sygmaprotocol/sygma-core/relayer"
-	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
 var Version string
@@ -66,7 +63,7 @@ var Version string
 func Run() error {
 	var err error
 
-	configFlag := viper.GetString(flags.ConfigFlagName)
+	configFlag := viper.GetString(config.ConfigFlagName)
 	configURL := viper.GetString("config-url")
 
 	configuration := &config.Config{}
@@ -83,7 +80,7 @@ func Run() error {
 		panicOnError(err)
 	}
 
-	logger.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
+	observability.ConfigureLogger(configuration.RelayerConfig.LogLevel, os.Stdout)
 
 	log.Info().Msg("Successfully loaded configuration")
 
@@ -123,7 +120,7 @@ func Run() error {
 	// effectively it waits until old instance is killed
 	var db *lvldb.LVLDB
 	for {
-		db, err = lvldb.NewLvlDB(viper.GetString(flags.BlockstoreFlagName))
+		db, err = lvldb.NewLvlDB(viper.GetString(config.BlockstoreFlagName))
 		if err != nil {
 			log.Error().Err(err).Msg("Unable to connect to blockstore file, retry in 10 seconds")
 			time.Sleep(10 * time.Second)
@@ -138,7 +135,7 @@ func Run() error {
 	exitLock := &sync.RWMutex{}
 	defer exitLock.Lock()
 
-	mp, err := opentelemetry.InitMetricProvider(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
+	mp, err := observability.InitMetricProvider(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
 	if err != nil {
 		panic(err)
 	}
@@ -170,7 +167,7 @@ func Run() error {
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
-				gasPricer := evmgaspricer.NewLondonGasPriceClient(client, &evmgaspricer.GasPricerOpts{
+				gasPricer := gas.NewLondonGasPriceClient(client, &gas.GasPricerOpts{
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
@@ -179,7 +176,7 @@ func Run() error {
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
-				mh := coreMessage.NewMessageHandler()
+				mh := message.NewMessageHandler()
 				for _, handler := range config.Handlers {
 
 					mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
@@ -207,10 +204,10 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]listener.EventHandler, 0)
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, make(chan []*message.Message, 1)))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, make(chan []*coreMessage.Message, 1)))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, make(chan []*message.Message, 1)))
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
@@ -248,7 +245,7 @@ func Run() error {
 
 				substrateListener := core_substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
-				mh := coreMessage.NewMessageHandler()
+				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(substrate.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
@@ -265,7 +262,7 @@ func Run() error {
 
 	r := relayer.NewRelayer(chains)
 
-	msgChan := make(chan []*coreMessage.Message)
+	msgChan := make(chan []*message.Message)
 	go r.Start(ctx, msgChan)
 
 	sysErr := make(chan os.Signal, 1)

@@ -6,20 +6,17 @@ package chains
 import (
 	"fmt"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	"github.com/ChainSafe/chainbridge-core/types"
-	coreMessage "github.com/sygmaprotocol/sygma-core/relayer/message"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
 const (
-	TransferProposalType proposal.ProposalType   = "Transfer"
-	TransferMessageType  coreMessage.MessageType = "Transfer"
+	TransferProposalType proposal.ProposalType = "Transfer"
+	TransferMessageType  message.MessageType   = "Transfer"
 )
 
 type TransferProposal struct {
@@ -61,15 +58,6 @@ func NewProposal(source uint8, destination uint8, data interface{}, propType pro
 		Data:        data,
 		Type:        propType,
 	}
-}
-
-type Proposal struct {
-	OriginDomainID uint8            // Source domainID where message was initiated
-	DepositNonce   uint64           // Nonce for the deposit
-	ResourceID     types.ResourceID // change id -> ID
-	Data           []byte
-	Destination    uint8 // Destination domainID where message is to be sent
-	Metadata       message.Metadata
 }
 
 func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
@@ -143,7 +131,7 @@ type TransferMessage struct {
 	Source      uint8
 	Destination uint8
 	Data        TransferMessageData
-	Type        coreMessage.MessageType
+	Type        message.MessageType
 }
 
 type TransferMessageData struct {
@@ -153,9 +141,9 @@ type TransferMessageData struct {
 	Payload      []interface{}
 }
 
-func NewMessage(source, destination uint8, data interface{}, msgType coreMessage.MessageType) *coreMessage.Message {
+func NewMessage(source, destination uint8, data interface{}, msgType message.MessageType) *message.Message {
 
-	return &coreMessage.Message{
+	return &message.Message{
 		Source:      source,
 		Destination: destination,
 		Data:        data,

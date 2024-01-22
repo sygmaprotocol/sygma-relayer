@@ -9,11 +9,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ethereum/go-ethereum/common"
