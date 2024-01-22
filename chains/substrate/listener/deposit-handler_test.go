@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	substrate_chain "github.com/ChainSafe/sygma-relayer/chains/substrate"
+	substrateChain "github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
@@ -68,7 +68,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 				recipientAddressParsed,
 			},
 		},
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 
 	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
@@ -119,7 +119,7 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 
 	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
-	depositHandler.RegisterDepositHandler(substrate_chain.FungibleTransfer, listener.FungibleTransferHandler)
+	depositHandler.RegisterDepositHandler(substrateChain.FungibleTransfer, listener.FungibleTransferHandler)
 	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType)
 	s.Nil(err1)
 	s.NotNil(message1)

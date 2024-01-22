@@ -31,18 +31,18 @@ import (
 	"github.com/sygmaprotocol/sygma-core/store/lvldb"
 
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
-	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
-	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
+	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/metrics"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	coreEvm "github.com/sygmaprotocol/sygma-core/chains/evm"
-	coreClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
-	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	substrateClient "github.com/sygmaprotocol/sygma-core/chains/substrate/client"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
-	core_substrate_listener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
+	coreSubstrateListener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -161,7 +161,7 @@ func Run() error {
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
 				panicOnError(err)
 
-				client, err := coreClient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
+				client, err := evmClient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
 				panicOnError(err)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
@@ -231,19 +231,19 @@ func Run() error {
 					panic(err)
 				}
 
-				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
-				bridgePallet := substrate_pallet.NewPallet(substrateClient)
+				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
+				bridgePallet := substratePallet.NewPallet(substrateClient)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				depositHandler := substrate_listener.NewSubstrateDepositHandler()
-				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrate_listener.FungibleTransferHandler)
-				eventHandlers := make([]core_substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1), conn))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
+				depositHandler := substrateListener.NewSubstrateDepositHandler()
+				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrateListener.FungibleTransferHandler)
+				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*message.Message, 1), conn))
+				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*message.Message, 1)))
 
-				substrateListener := core_substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
+				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(substrate.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
