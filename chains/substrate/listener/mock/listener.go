@@ -7,8 +7,8 @@ package mock_listener
 import (
 	reflect "reflect"
 
+	types "github.com/centrifuge/go-substrate-rpc-client/types"
 	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
-	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
