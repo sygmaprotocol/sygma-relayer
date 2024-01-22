@@ -139,6 +139,13 @@ func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract s
 	return crypto.Keccak256(rawData), nil
 }
 
+type TransferMessage struct {
+	Source      uint8
+	Destination uint8
+	Data        TransferMessageData
+	Type        coreMessage.MessageType
+}
+
 type TransferMessageData struct {
 	DepositNonce uint64
 	ResourceId   [32]byte
