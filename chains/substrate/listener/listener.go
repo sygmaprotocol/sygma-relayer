@@ -6,8 +6,8 @@ package listener
 import (
 	"math/big"
 
+	"github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
 // ŠTO S fetchEvents????
@@ -24,12 +24,12 @@ func FetchEvents(startBlock *big.Int, endBlock *big.Int, conn Connection) ([]*pa
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
-		hash, err := conn.GetBlockHash(i.Uint64())
+		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
 			return nil, err
 		}
 
-		evt, err := conn.GetBlockEvents(hash)
+		evt, err := l.conn.GetBlockEvents(hash)
 		if err != nil {
 			return nil, err
 		}
