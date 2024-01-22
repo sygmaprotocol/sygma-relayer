@@ -24,8 +24,9 @@ import (
 
 type SystemUpdateHandlerTestSuite struct {
 	suite.Suite
-	conn                *mock_events.MockChainConnection
+	conn                *mock_events.MockConnection
 	systemUpdateHandler *listener.SystemUpdateEventHandler
+	eventListener       *mock_events.MockEventListener
 }
 
 func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
@@ -34,8 +35,9 @@ func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
 
 func (s *SystemUpdateHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-	s.conn = mock_events.NewMockChainConnection(ctrl)
-	s.systemUpdateHandler = listener.NewSystemUpdateEventHandler(s.conn)
+	s.conn = mock_events.NewMockConnection(ctrl)
+	s.eventListener = mock_events.NewMockEventListener(ctrl)
+	s.systemUpdateHandler = listener.NewSystemUpdateEventHandler(s.conn, s.eventListener)
 }
 
 func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
@@ -303,7 +305,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 type RetryHandlerTestSuite struct {
 	suite.Suite
 	mockDepositHandler *mock_events.MockDepositHandler
-	mockConn           *mock_events.MockChainConnection
+	mockConn           *mock_events.MockConnection
+	mockEventListener  *mock_events.MockEventListener
 	domainID           uint8
 	msgChan            chan []*message.Message
 }
@@ -316,15 +319,18 @@ func (s *RetryHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockDepositHandler = mock_events.NewMockDepositHandler(ctrl)
-	s.mockConn = mock_events.NewMockChainConnection(ctrl)
+	s.mockConn = mock_events.NewMockConnection(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
+	s.mockEventListener = mock_events.NewMockEventListener(ctrl)
 
 }
 
 func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
-	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, fmt.Errorf("error"))
 
-	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan)
+	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, fmt.Errorf("error"))
+	s.mockEventListener.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return([]*parser.Event{}, fmt.Errorf("error"))
+
+	retryHandler := listener.NewRetryEventHandler(zerolog.Context{}, s.mockConn, s.mockDepositHandler, s.domainID, s.msgChan, s.mockEventListener)
 	err := retryHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
 	s.NotNil(err)

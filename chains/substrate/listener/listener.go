@@ -6,29 +6,38 @@ package listener
 import (
 	"math/big"
 
+	"github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
-type ChainConnection interface {
-	UpdateMetatdata() error
-	GetHeaderLatest() (*types.Header, error)
-	GetBlockHash(blockNumber uint64) (types.Hash, error)
-	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
+type Connection interface {
 	GetFinalizedHead() (types.Hash, error)
 	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
+	GetBlockHash(blockNumber uint64) (types.Hash, error)
+	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
+	UpdateMetatdata() error
 }
 
-func FetchEvents(startBlock *big.Int, endBlock *big.Int, conn ChainConnection) ([]*parser.Event, error) {
+type Listener struct {
+	conn Connection
+}
+
+func NewListener(conn Connection) *Listener {
+	return &Listener{
+		conn: conn,
+	}
+}
+
+func (l *Listener) FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
-		hash, err := conn.GetBlockHash(i.Uint64())
+		hash, err := l.conn.GetBlockHash(i.Uint64())
 		if err != nil {
 			return nil, err
 		}
 
-		evt, err := conn.GetBlockEvents(hash)
+		evt, err := l.conn.GetBlockEvents(hash)
 		if err != nil {
 			return nil, err
 		}

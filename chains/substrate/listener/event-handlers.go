@@ -16,19 +16,25 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type SystemUpdateEventHandler struct {
-	conn ChainConnection
+type EventListener interface {
+	FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error)
 }
 
-func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler {
+type SystemUpdateEventHandler struct {
+	conn          Connection
+	eventListener EventListener
+}
+
+func NewSystemUpdateEventHandler(conn Connection, eventListener EventListener) *SystemUpdateEventHandler {
 	return &SystemUpdateEventHandler{
-		conn: conn,
+		conn:          conn,
+		eventListener: eventListener,
 	}
 }
 
 func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
 
-	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	evts, err := eh.eventListener.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -115,24 +121,23 @@ type DepositHandler interface {
 
 type FungibleTransferEventHandler struct {
 	domainID       uint8
-	conn           ChainConnection
 	depositHandler DepositHandler
 	log            zerolog.Logger
 	msgChan        chan []*message.Message
+	eventListener  EventListener
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, conn ChainConnection, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
-		conn:           conn,
 	}
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	evts, err := eh.eventListener.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -176,25 +181,27 @@ func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlo
 }
 
 type RetryEventHandler struct {
-	conn           ChainConnection
+	conn           Connection
 	domainID       uint8
 	depositHandler DepositHandler
 	log            zerolog.Logger
 	msgChan        chan []*message.Message
+	eventListener  EventListener
 }
 
-func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message, eventListener EventListener) *RetryEventHandler {
 	return &RetryEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		conn:           conn,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
+		eventListener:  eventListener,
 	}
 }
 
 func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := FetchEvents(startBlock, endBlock, rh.conn)
+	evts, err := rh.eventListener.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
