@@ -7,25 +7,24 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
+	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/signAndSend"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 
 	"math/big"
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 
 	"github.com/ethereum/go-ethereum"
@@ -53,11 +52,11 @@ func Test_EVMSubstrate(t *testing.T) {
 
 		Erc20Addr:        common.HexToAddress("0x37356a2B2EbF65e5Ea18BD93DeA6869769099739"),
 		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+		Erc20ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
 		Erc20LockReleaseAddr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
 		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
+		Erc20LockReleaseResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
 		BasicFeeHandlerAddr:      common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),
 		FeeHandlerWithOracleAddr: common.HexToAddress("0x30d704A60037DfE54e7e4D242Ea0cBC6125aE497"),
@@ -67,11 +66,11 @@ func Test_EVMSubstrate(t *testing.T) {
 	}
 
 	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	ethClient, err := evmclient.NewEVMClient(ETHEndpoint, pk)
+	ethClient, err := evmClient.NewEVMClient(ETHEndpoint, pk)
 	if err != nil {
 		panic(err)
 	}
-	gasPricer := dummy.NewStaticGasPriceDeterminant(ethClient, nil)
+	gasPricer := gas.NewStaticGasPriceDeterminant(ethClient, nil)
 
 	substrateConnection, err := connection.NewSubstrateConnection(SubstrateEndpoint)
 	if err != nil {
@@ -86,7 +85,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	suite.Run(
 		t,
 		NewEVMSubstrateTestSuite(
-			evmtransaction.NewTransaction,
+			transaction.NewTransaction,
 			ethClient,
 			substrateClient,
 			substrateConnection,
@@ -98,11 +97,11 @@ func Test_EVMSubstrate(t *testing.T) {
 }
 
 func NewEVMSubstrateTestSuite(
-	fabric calls.TxFabric,
+	fabric transaction.TxFabric,
 	evmClient TestClient,
 	substrateClient *client.SubstrateClient,
 	substrateConnection *connection.Connection,
-	gasPricer calls.GasPricer,
+	gasPricer signAndSend.GasPricer,
 	evmConfig evm.BridgeConfig,
 	substrateAssetID []byte,
 ) *IntegrationTestSuite {
@@ -119,11 +118,11 @@ func NewEVMSubstrateTestSuite(
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	fabric              calls.TxFabric
+	fabric              transaction.TxFabric
 	evmClient           TestClient
 	substrateClient     *client.SubstrateClient
 	substrateConnection *connection.Connection
-	gasPricer           calls.GasPricer
+	gasPricer           signAndSend.GasPricer
 	evmConfig           evm.BridgeConfig
 	substrateAssetID    []byte
 }
