@@ -132,6 +132,7 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 		domainID:       domainID,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
+		eventListener:  eventListener,
 	}
 }
 
