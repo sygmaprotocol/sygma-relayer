@@ -4,9 +4,9 @@
 package keystore
 
 import (
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
 	"github.com/ChainSafe/chainbridge-core/crypto/sr25519"
 	"github.com/centrifuge/go-substrate-rpc-client/signature"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 )
 
 // The Constant "keys". These are the name that the keys are based on. This can be expanded, but

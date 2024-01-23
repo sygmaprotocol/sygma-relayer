@@ -207,7 +207,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	recipientMultilocation := substrate.ConstructRecipientData(pk)
 
 	erc20DepositData := evm.ConstructErc20DepositData(recipientMultilocation, amountToDeposit)
-	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.evmConfig.BasicFee}, 3, s.evmConfig.Erc20LockReleaseResourceID, erc20DepositData, nil)
+	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.evmConfig.BasicFee}, uint8(3), s.evmConfig.Erc20LockReleaseResourceID, erc20DepositData, []byte{})
 
 	s.Nil(err)
 

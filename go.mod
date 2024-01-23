@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/ChainSafe/chainbridge-core v1.4.2
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
+	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.1.0
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.13.4
@@ -28,7 +29,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/bits-and-blooms/bitset v1.7.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/centrifuge/go-substrate-rpc-client v2.0.0+incompatible // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.3.0 // indirect
@@ -169,7 +169,6 @@ require (
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
