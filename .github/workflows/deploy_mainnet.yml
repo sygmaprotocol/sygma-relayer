@@ -1,7 +1,7 @@
 # The Licensed Work is (c) 2022 Sygma
 # SPDX-License-Identifier: BUSL-1.1
 
-name: sygma mainnet
+name: Sygma Mainnet
 
 on:
   workflow_dispatch:
