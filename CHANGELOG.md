@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.3...v1.10.4) (2024-01-31)
+
+
+### Miscellaneous
+
+* slack notify ([#249](https://github.com/sygmaprotocol/sygma-relayer/issues/249)) ([9d19568](https://github.com/sygmaprotocol/sygma-relayer/commit/9d19568447e8e652b2c8a5740d8128f03875135a))
+* workflow  renaming ([#251](https://github.com/sygmaprotocol/sygma-relayer/issues/251)) ([c7de390](https://github.com/sygmaprotocol/sygma-relayer/commit/c7de390f6a872d1ffdcf611540acf2d89b9b636d))
+
 ## [1.10.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.2...v1.10.3) (2024-01-11)
 
 
