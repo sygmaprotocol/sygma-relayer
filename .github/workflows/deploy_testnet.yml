@@ -54,6 +54,15 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
 
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+
           ######################## region 1 ########################
   deploy:
     needs: push
@@ -103,6 +112,15 @@ jobs:
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
+
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
 
           ######################## region 2 ########################
 
@@ -155,3 +173,12 @@ jobs:
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
+
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
