@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
@@ -61,25 +62,13 @@ func NewProposal(source uint8, destination uint8, data interface{}, propType pro
 }
 
 func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
-
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
-		transferProposal := &TransferProposal{
-			Source:      prop.Source,
-			Destination: prop.Destination,
-			Data: TransferProposalData{
-				DepositNonce: prop.Data.DepositNonce,
-				ResourceId:   prop.Data.ResourceId,
-				Metadata:     prop.Data.Metadata,
-				Data:         prop.Data.Data,
-			},
-			Type: prop.Type,
-		}
 		formattedProps[i] = map[string]interface{}{
-			"originDomainID": math.NewHexOrDecimal256(int64(transferProposal.Source)),
-			"depositNonce":   math.NewHexOrDecimal256(int64(transferProposal.Data.DepositNonce)),
-			"resourceID":     hexutil.Encode(transferProposal.Data.ResourceId[:]),
-			"data":           prop.Data,
+			"originDomainID": math.NewHexOrDecimal256(int64(prop.Source)),
+			"depositNonce":   math.NewHexOrDecimal256(int64(prop.Data.DepositNonce)),
+			"resourceID":     hexutil.Encode(prop.Data.ResourceId[:]),
+			"data":           prop.Data.Data,
 		}
 	}
 	message := apitypes.TypedDataMessage{
@@ -112,16 +101,18 @@ func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract s
 		},
 		Message: message,
 	}
-
+	log.Debug().Msg("I'm here2")
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
 		return []byte{}, err
 	}
+	log.Debug().Msg("I'm here2")
 
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
 		return []byte{}, err
 	}
+	log.Debug().Msg("I'm here2")
 
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil

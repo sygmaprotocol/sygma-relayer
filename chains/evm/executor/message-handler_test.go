@@ -47,7 +47,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -69,7 +69,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -92,7 +92,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -115,7 +115,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -153,7 +153,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -176,7 +176,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -199,7 +199,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -224,7 +224,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -249,7 +249,7 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -286,7 +286,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -307,7 +307,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload:      []interface{}{},
@@ -327,7 +327,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -380,7 +380,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	message := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: executor.TransferMessageData{
+		Data: chains.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -402,9 +402,9 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		message.Source,
 		message.Destination,
 		chains.TransferProposalData{
-			DepositNonce: message.Data.(executor.TransferMessageData).DepositNonce,
-			ResourceId:   message.Data.(executor.TransferMessageData).ResourceId,
-			Metadata:     message.Data.(executor.TransferMessageData).Metadata,
+			DepositNonce: message.Data.(chains.TransferMessageData).DepositNonce,
+			ResourceId:   message.Data.(chains.TransferMessageData).ResourceId,
+			Metadata:     message.Data.(chains.TransferMessageData).Metadata,
 			Data:         expectedData,
 		},
 		chains.TransferProposalType,

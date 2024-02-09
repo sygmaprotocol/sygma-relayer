@@ -72,7 +72,6 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(proposals []*proposal.Proposal) error {
-
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
@@ -83,8 +82,13 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		transferProposal := &chains.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data:        prop.Data.(chains.TransferProposalData),
-			Type:        prop.Type,
+			Data: chains.TransferProposalData{
+				DepositNonce: prop.Data.(chains.TransferProposalData).DepositNonce,
+				ResourceId:   prop.Data.(chains.TransferProposalData).ResourceId,
+				Metadata:     prop.Data.(chains.TransferProposalData).Metadata,
+				Data:         prop.Data.(chains.TransferProposalData).Data,
+			},
+			Type: prop.Type,
 		}
 		transferProposals = append(transferProposals, transferProposal)
 

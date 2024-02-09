@@ -14,6 +14,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 )
 
 const (
@@ -23,33 +24,23 @@ const (
 	PermissionlessGeneric message.MessageType = "permissionlessGeneric"
 )
 
-type TransferMessageData struct {
-	DepositNonce uint64
-	ResourceId   [32]byte
-	Payload      []interface{}
-	Metadata     map[string]interface{}
-}
-
-type TransferMessage struct {
-	Source      uint8
-	Destination uint8
-	Data        TransferMessageData
-	Type        message.MessageType
-}
-
 type TransferMessageHandler struct{}
 
 func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
 
-	transferMessage := &TransferMessage{
+	transferMessage := &chains.TransferMessage{
 		Source:      msg.Source,
 		Destination: msg.Destination,
-		Data:        msg.Data.(TransferMessageData),
+		Data:        msg.Data.(chains.TransferMessageData),
 		Type:        msg.Type,
 	}
 
 	switch msg.Type {
+	case "Transfer":
+		return ERC20MessageHandler(transferMessage)
 	case ERC20:
+		return ERC20MessageHandler(transferMessage)
+	case substrate.FungibleTransfer:
 		return ERC20MessageHandler(transferMessage)
 	case ERC721:
 		return ERC721MessageHandler(transferMessage)
@@ -61,7 +52,7 @@ func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.
 	return nil, errors.New("wrong message type passed while handling message")
 }
 
-func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func PermissionlessGenericMessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
 
 	executeFunctionSignature, ok := msg.Data.Payload[0].([]byte)
 	if !ok {
@@ -105,7 +96,7 @@ func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Propos
 	}, chains.TransferProposalType), nil
 }
 
-func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func ERC20MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
 	if len(msg.Data.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
 	}
@@ -131,7 +122,7 @@ func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	}, chains.TransferProposalType), nil
 }
 
-func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func ERC721MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
 
 	if len(msg.Data.Payload) != 3 {
 		return nil, errors.New("malformed payload. Len  of payload should be 3")
@@ -164,7 +155,7 @@ func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	}, chains.TransferProposalType), nil
 }
 
-func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func GenericMessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
 	if len(msg.Data.Payload) != 1 {
 		return nil, errors.New("malformed payload. Len  of payload should be 1")
 	}

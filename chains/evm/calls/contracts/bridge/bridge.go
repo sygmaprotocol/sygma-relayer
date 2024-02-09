@@ -73,17 +73,8 @@ func (c *BridgeContract) ExecuteProposals(
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
-	bridgeProposals := make([]chains.TransferProposal, 0)
-	for _, prop := range proposals {
-		bridgeProposals = append(bridgeProposals, chains.TransferProposal{
-			Source: prop.Source,
-			Data: chains.TransferProposalData{
-				DepositNonce: prop.Data.DepositNonce,
-				ResourceId:   prop.Data.ResourceId,
-				Data:         prop.Data.Data,
-			},
-		})
-	}
+	bridgeProposals := make([]*chains.TransferProposal, 0)
+	bridgeProposals = append(bridgeProposals, proposals...)
 
 	return c.ExecuteTransaction(
 		"executeProposals",

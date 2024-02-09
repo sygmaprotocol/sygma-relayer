@@ -119,8 +119,9 @@ func Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	msgChan := make(chan []*message.Message, 1)
+	msgChan := make(chan []*message.Message)
 	chains := make(map[uint8]relayer.RelayedChain)
+	i := uint8(1)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -151,9 +152,9 @@ func Run() error {
 
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
 				mh := message.NewMessageHandler()
+				mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
+				mh.RegisterMessageHandler("FungibleTransfer", &executor.TransferMessageHandler{})
 				for _, handler := range config.Handlers {
-
-					mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
 
 					switch handler.Type {
 					case "erc20":
@@ -187,7 +188,8 @@ func Run() error {
 
 				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[0] = chain
+				chains[i] = chain
+				i++
 			}
 		case "substrate":
 			{
@@ -227,7 +229,8 @@ func Run() error {
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[1] = substrateChain
+				chains[i] = substrateChain
+				i++
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))

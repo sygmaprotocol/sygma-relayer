@@ -109,16 +109,26 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 			if err != nil {
 				return err
 			}
+			log.Debug().Msgf("I'm hereeee")
 
 			sigChn := make(chan interface{})
 			executionContext, cancelExecution := context.WithCancel(context.Background())
+			log.Debug().Msgf("I'm hereeee")
+
 			watchContext, cancelWatch := context.WithCancel(context.Background())
+			log.Debug().Msgf("I'm hereeee")
+
 			ep := pool.New().WithErrors()
+			log.Debug().Msgf("I'm hereeee")
+
 			ep.Go(func() error {
 				err := e.coordinator.Execute(executionContext, signing, sigChn)
+				log.Debug().Msgf("I'm hereeee")
+
 				if err != nil {
 					cancelWatch()
 				}
+				log.Debug().Msgf("I'm hereeee")
 
 				return err
 			})
@@ -187,8 +197,13 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		transferProposal := &chains.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data:        prop.Data.(chains.TransferProposalData),
-			Type:        prop.Type,
+			Data: chains.TransferProposalData{
+				DepositNonce: prop.Data.(chains.TransferProposalData).DepositNonce,
+				ResourceId:   prop.Data.(chains.TransferProposalData).ResourceId,
+				Metadata:     prop.Data.(chains.TransferProposalData).Metadata,
+				Data:         prop.Data.(chains.TransferProposalData).Data,
+			},
+			Type: prop.Type,
 		}
 
 		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)
