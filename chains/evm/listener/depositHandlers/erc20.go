@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -38,5 +39,6 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint6
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
+		Type:         executor.ERC20,
 	}, "Transfer"), nil
 }

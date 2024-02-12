@@ -8,7 +8,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
@@ -23,8 +23,8 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 		Data:        m.Data.(chains.TransferMessageData),
 		Type:        m.Type,
 	}
-	switch transferMessage.Type {
-	case substrate.FungibleTransfer:
+	switch transferMessage.Data.Type {
+	case executor.ERC20:
 		return fungibleTransferMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")
@@ -54,5 +54,5 @@ func fungibleTransferMessageHandler(m *chains.TransferMessage) (*proposal.Propos
 		ResourceId:   m.Data.ResourceId,
 		Metadata:     m.Data.Metadata,
 		Data:         data,
-	}, chains.TransferProposalType), nil
+	}, "Transfer"), nil
 }

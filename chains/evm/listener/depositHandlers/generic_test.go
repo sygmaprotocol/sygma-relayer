@@ -9,6 +9,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -83,9 +84,10 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 			Payload: []interface{}{
 				metadata,
 			},
+			Type: executor.PermissionedGeneric,
 		},
 
-		Type: depositHandlers.GenericTransfer,
+		Type: "Transfer",
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}
@@ -126,9 +128,10 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 			Payload: []interface{}{
 				metadata,
 			},
+			Type: executor.PermissionedGeneric,
 		},
 
-		Type: depositHandlers.GenericTransfer,
+		Type: "Transfer",
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}

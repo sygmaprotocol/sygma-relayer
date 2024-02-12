@@ -78,7 +78,6 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
-
 	batches, err := e.proposalBatches(proposals)
 	if err != nil {
 		return err
@@ -92,6 +91,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 		b := batch
 		p.Go(func() error {
+
 			propHash, err := e.bridge.ProposalsHash(b.proposals)
 			if err != nil {
 				return err
@@ -106,36 +106,29 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				e.host,
 				e.comm,
 				e.fetcher)
+
 			if err != nil {
 				return err
 			}
-			log.Debug().Msgf("I'm hereeee")
-
 			sigChn := make(chan interface{})
 			executionContext, cancelExecution := context.WithCancel(context.Background())
-			log.Debug().Msgf("I'm hereeee")
 
 			watchContext, cancelWatch := context.WithCancel(context.Background())
-			log.Debug().Msgf("I'm hereeee")
 
 			ep := pool.New().WithErrors()
-			log.Debug().Msgf("I'm hereeee")
-
 			ep.Go(func() error {
 				err := e.coordinator.Execute(executionContext, signing, sigChn)
-				log.Debug().Msgf("I'm hereeee")
-
 				if err != nil {
 					cancelWatch()
 				}
-				log.Debug().Msgf("I'm hereeee")
-
 				return err
 			})
 			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID) })
+
 			return ep.Wait()
 		})
 	}
+
 	return p.Wait()
 }
 
@@ -157,11 +150,11 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 
 				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeBatch(batch, signatureData)
+
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
 				}
-
 				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
@@ -214,6 +207,9 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 			log.Info().Msgf("Proposal %p already executed", transferProposal)
 			continue
 		}
+		log.Debug().Msgf("%v", transferProposal)
+		log.Debug().Msgf("BUMPPP")
+		log.Debug().Msgf("%v", transferProposal.Data.Metadata)
 
 		var propGasLimit uint64
 		l, ok := transferProposal.Data.Metadata["gasLimit"]
@@ -247,6 +243,7 @@ func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureDat
 	hash, err := e.bridge.ExecuteProposals(batch.proposals, sig, transactor.TransactOptions{
 		GasLimit: batch.gasLimit,
 	})
+
 	if err != nil {
 		return nil, err
 	}

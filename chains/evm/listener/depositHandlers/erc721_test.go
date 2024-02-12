@@ -6,6 +6,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ethereum/go-ethereum/common"
@@ -55,9 +56,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 				recipientAddressParsed,
 				metadata,
 			},
+			Type: executor.ERC721,
 		},
 
-		Type: depositHandlers.ERC721Transfer,
+		Type: "Transfer",
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -121,9 +123,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 				recipientAddressParsed,
 				parsedMetadata,
 			},
+			Type: executor.ERC721,
 		},
 
-		Type: depositHandlers.ERC721Transfer,
+		Type: "Transfer",
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -173,9 +176,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 				recipientAddressParsed,
 				parsedMetadata,
 			},
+			Type: executor.ERC721,
 		},
 
-		Type: depositHandlers.ERC721Transfer,
+		Type: "Transfer",
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}

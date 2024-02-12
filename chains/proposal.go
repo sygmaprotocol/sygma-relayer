@@ -10,14 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
-)
-
-const (
-	TransferProposalType proposal.ProposalType = "Transfer"
-	TransferMessageType  message.MessageType   = "Transfer"
 )
 
 type TransferProposal struct {
@@ -101,19 +95,15 @@ func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract s
 		},
 		Message: message,
 	}
-	log.Debug().Msg("I'm here2")
 	domainSeparator, err := typedData.HashStruct("EIP712Domain", typedData.Domain.Map())
 	if err != nil {
 		return []byte{}, err
 	}
-	log.Debug().Msg("I'm here2")
 
 	typedDataHash, err := typedData.HashStruct(typedData.PrimaryType, typedData.Message)
 	if err != nil {
 		return []byte{}, err
 	}
-	log.Debug().Msg("I'm here2")
-
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
 }
@@ -125,11 +115,14 @@ type TransferMessage struct {
 	Type        message.MessageType
 }
 
+type TransferMessageType string
+
 type TransferMessageData struct {
 	DepositNonce uint64
 	ResourceId   [32]byte
 	Metadata     map[string]interface{}
 	Payload      []interface{}
+	Type         TransferMessageType
 }
 
 func NewMessage(source, destination uint8, data interface{}, msgType message.MessageType) *message.Message {

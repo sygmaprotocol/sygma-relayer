@@ -10,6 +10,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -59,8 +60,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 				amountParsed,
 				recipientAddressParsed,
 			},
+			Type: executor.ERC20,
 		},
-		Type: depositHandlers.ERC20Transfer,
+		Type: "Transfer",
 	}
 	erc20DepositHandler := depositHandlers.Erc20DepositHandler{}
 	message, err := erc20DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -101,8 +103,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 				amountParsed,
 				recipientAddressParsed,
 			},
+			Type: executor.ERC20,
 		},
-		Type: depositHandlers.ERC20Transfer,
+		Type: "Transfer",
 	}
 
 	erc20DepositHandler := depositHandlers.Erc20DepositHandler{}

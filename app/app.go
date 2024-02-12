@@ -247,7 +247,7 @@ func Run() error {
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := message.NewMessageHandler()
-				mh.RegisterMessageHandler(substrate.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
+				mh.RegisterMessageHandler("Transfer", &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)

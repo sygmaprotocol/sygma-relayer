@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -30,5 +31,6 @@ func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
-	}, GenericTransfer), nil
+		Type:         executor.PermissionedGeneric,
+	}, "Transfer"), nil
 }

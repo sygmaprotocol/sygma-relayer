@@ -54,8 +54,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
 				[]byte{2}, // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
+			Type: executor.ERC20,
 		},
-		Type: executor.ERC20,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -75,8 +76,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
+			Type: executor.ERC20,
 		},
-		Type: executor.ERC20,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -99,8 +101,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 				"incorrectAmount", // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
+			Type: executor.ERC20,
 		},
-		Type: executor.ERC20,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -122,8 +125,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
+			Type: executor.ERC20,
 		},
-		Type: executor.ERC20,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -161,8 +165,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
+			Type: executor.ERC721,
 		},
-		Type: executor.ERC721,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -182,8 +187,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
 			Payload: []interface{}{
 				[]byte{2}, // tokenID
 			},
+			Type: executor.ERC721,
 		},
-		Type: executor.ERC721,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -207,8 +213,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
+			Type: executor.ERC721,
 		},
-		Type: executor.ERC721,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -232,8 +239,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 				"incorrectRecipient",
 				[]byte{}, // metadata
 			},
+			Type: executor.ERC721,
 		},
-		Type: executor.ERC721,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -257,8 +265,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				"incorrectMetadata", // metadata
 			},
+			Type: executor.ERC721,
 		},
-		Type: executor.ERC721,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -292,8 +301,9 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 			Payload: []interface{}{
 				[]byte{}, // metadata
 			},
+			Type: executor.PermissionedGeneric,
 		},
-		Type: executor.PermissionedGeneric,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -311,8 +321,9 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload:      []interface{}{},
+			Type:         executor.PermissionedGeneric,
 		},
-		Type: executor.PermissionedGeneric,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -333,8 +344,9 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
 			Payload: []interface{}{
 				"incorrectMetadata", // metadata
 			},
+			Type: executor.PermissionedGeneric,
 		},
-		Type: executor.PermissionedGeneric,
+		Type: "Transfer",
 	}
 	mh := executor.TransferMessageHandler{}
 	prop, err := mh.HandleMessage(message)
@@ -390,8 +402,9 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 				depositor.Bytes(),
 				hash,
 			},
+			Type: executor.PermissionlessGeneric,
 		},
-		Type: executor.PermissionlessGeneric,
+		Type: "Transfer",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -407,7 +420,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 			Metadata:     message.Data.(chains.TransferMessageData).Metadata,
 			Data:         expectedData,
 		},
-		chains.TransferProposalType,
+		"Transfer",
 	)
 	s.Nil(err)
 	s.Equal(expected, prop)

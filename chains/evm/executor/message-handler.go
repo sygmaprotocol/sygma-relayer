@@ -14,14 +14,13 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 )
 
 const (
-	ERC20                 message.MessageType = "erc20"
-	ERC721                message.MessageType = "erc721"
-	PermissionedGeneric   message.MessageType = "permissionedGeneric"
-	PermissionlessGeneric message.MessageType = "permissionlessGeneric"
+	ERC20                 chains.TransferMessageType = "erc20"
+	ERC721                chains.TransferMessageType = "erc721"
+	PermissionedGeneric   chains.TransferMessageType = "permissionedGeneric"
+	PermissionlessGeneric chains.TransferMessageType = "permissionlessGeneric"
 )
 
 type TransferMessageHandler struct{}
@@ -35,12 +34,8 @@ func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.
 		Type:        msg.Type,
 	}
 
-	switch msg.Type {
-	case "Transfer":
-		return ERC20MessageHandler(transferMessage)
+	switch transferMessage.Data.Type {
 	case ERC20:
-		return ERC20MessageHandler(transferMessage)
-	case substrate.FungibleTransfer:
 		return ERC20MessageHandler(transferMessage)
 	case ERC721:
 		return ERC721MessageHandler(transferMessage)
@@ -93,7 +88,7 @@ func PermissionlessGenericMessageHandler(msg *chains.TransferMessage) (*proposal
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, "Transfer"), nil
 }
 
 func ERC20MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
@@ -119,7 +114,7 @@ func ERC20MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data,
-	}, chains.TransferProposalType), nil
+	}, "Transfer"), nil
 }
 
 func ERC721MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
@@ -152,7 +147,7 @@ func ERC721MessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, erro
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, "Transfer"), nil
 }
 
 func GenericMessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, error) {
@@ -172,5 +167,5 @@ func GenericMessageHandler(msg *chains.TransferMessage) (*proposal.Proposal, err
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, "Transfer"), nil
 }

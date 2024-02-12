@@ -7,6 +7,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 )
 
 type Erc721DepositHandler struct{}
@@ -52,5 +53,6 @@ func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint
 		ResourceId:   resourceID,
 		Metadata:     meta,
 		Payload:      payload,
-	}, ERC721Transfer), nil
+		Type:         executor.ERC721,
+	}, "Transfer"), nil
 }

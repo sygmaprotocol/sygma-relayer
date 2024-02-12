@@ -12,6 +12,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
@@ -70,8 +71,9 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 				executionData,
 			},
 			Metadata: metadata,
+			Type:     executor.PermissionlessGeneric,
 		},
-		Type: depositHandlers.PermissionlessGenericTransfer,
+		Type: "Transfer",
 	}
 
 	permissionlessGenericHandler := depositHandlers.PermissionlessGenericDepositHandler{}

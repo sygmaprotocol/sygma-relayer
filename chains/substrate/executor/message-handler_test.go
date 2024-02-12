@@ -10,8 +10,9 @@ import (
 	"unsafe"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	substrateChain "github.com/ChainSafe/sygma-relayer/chains/substrate"
+	evmExecutor "github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -46,9 +47,9 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 				[]byte{2}, // amount
 				recipient,
 			},
+			Type: evmExecutor.ERC20,
 		},
-
-		Type: substrateChain.FungibleTransfer,
+		Type: "Transfer",
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &proposal.Proposal{
@@ -79,9 +80,10 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
+			Type: evmExecutor.ERC20,
 		},
 
-		Type: substrateChain.FungibleTransfer,
+		Type: "Transfer",
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -103,9 +105,10 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 				"incorrectAmount", // amount
 				[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 			},
+			Type: evmExecutor.ERC20,
 		},
 
-		Type: substrateChain.FungibleTransfer,
+		Type: "Transfer",
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -127,9 +130,10 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
+			Type: evmExecutor.ERC20,
 		},
 
-		Type: substrateChain.FungibleTransfer,
+		Type: "Transfer",
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -154,9 +158,10 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 				[]byte{2}, // amount
 				recipient,
 			},
+			Type: evmExecutor.ERC20,
 		},
 
-		Type: substrateChain.FungibleTransfer,
+		Type: "Transfer",
 	}
 
 	invalidMessageData := &message.Message{
@@ -176,7 +181,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 
 	depositMessageHandler := message.NewMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler(substrateChain.FungibleTransfer, &executor.SubstrateMessageHandler{})
+	depositMessageHandler.RegisterMessageHandler("Transfer", &executor.SubstrateMessageHandler{})
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)
