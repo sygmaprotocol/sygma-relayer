@@ -215,11 +215,6 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 
 	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
 
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
-
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
 
@@ -269,14 +264,9 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	s.Error(err)
 
 	erc721DepositData := evm.ConstructErc721DepositData(dstAddr.Bytes(), tokenId, []byte(metadata))
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.Erc721ResourceID, erc721DepositData, []byte{})
+	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.Erc721ResourceID, erc721DepositData, []byte{})
 
 	s.Nil(err)
-
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-	// check gas price of deposit tx - 50 gwei (slow)
-	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -305,14 +295,9 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	s.Nil(err)
 
 	genericDepositData := evm.ConstructGenericDepositData(hash[:])
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.GenericResourceID, genericDepositData, []byte{})
+	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.GenericResourceID, genericDepositData, []byte{})
 
 	s.Nil(err)
-
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)

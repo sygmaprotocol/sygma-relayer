@@ -207,9 +207,6 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 			log.Info().Msgf("Proposal %p already executed", transferProposal)
 			continue
 		}
-		log.Debug().Msgf("%v", transferProposal)
-		log.Debug().Msgf("BUMPPP")
-		log.Debug().Msgf("%v", transferProposal.Data.Metadata)
 
 		var propGasLimit uint64
 		l, ok := transferProposal.Data.Metadata["gasLimit"]

@@ -153,7 +153,7 @@ func Run() error {
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
-				mh.RegisterMessageHandler("FungibleTransfer", &executor.TransferMessageHandler{})
+				//mh.RegisterMessageHandler("FungibleTransfer", &executor.TransferMessageHandler{})
 				for _, handler := range config.Handlers {
 
 					switch handler.Type {
@@ -228,7 +228,6 @@ func Run() error {
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
-
 				chains[i] = substrateChain
 				i++
 			}
