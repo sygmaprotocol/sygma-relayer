@@ -232,10 +232,6 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	tokenId := big.NewInt(int64(rand.Int()))
 	metadata := "metadata.url"
 
-	txOptions := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
-
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
 	// erc721 contract for evm1
@@ -249,9 +245,9 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 
 	// Mint token and give approval
 	// This is done here so token only exists on evm1
-	_, err := erc721Contract1.Mint(tokenId, metadata, s.client1.From(), txOptions)
+	_, err := erc721Contract1.Mint(tokenId, metadata, s.client1.From(), transactor.TransactOptions{})
 	s.Nil(err, "Mint failed")
-	_, err = erc721Contract1.Approve(tokenId, s.config1.Erc721HandlerAddr, txOptions)
+	_, err = erc721Contract1.Approve(tokenId, s.config1.Erc721HandlerAddr, transactor.TransactOptions{})
 	s.Nil(err, "Approve failed")
 
 	// Check on evm1 if initial owner is admin
@@ -364,16 +360,12 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	time.Sleep(time.Second * 15)
 
-	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
 
-	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
