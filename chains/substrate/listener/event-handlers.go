@@ -16,24 +16,19 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type EventListener interface {
-	FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error)
-}
-
 type SystemUpdateEventHandler struct {
 	conn Connection
 }
 
 func NewSystemUpdateEventHandler(conn Connection) *SystemUpdateEventHandler {
 	return &SystemUpdateEventHandler{
-		conn:          conn,
-		eventListener: eventListener,
+		conn: conn,
 	}
 }
 
 func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
 
-	evts, err := eh.eventListener.FetchEvents(startBlock, endBlock)
+	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -132,12 +127,12 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 		domainID:       domainID,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
-		eventListener:  eventListener,
+		conn:           conn,
 	}
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := eh.eventListener.FetchEvents(startBlock, endBlock)
+	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -186,7 +181,6 @@ type RetryEventHandler struct {
 	depositHandler DepositHandler
 	log            zerolog.Logger
 	msgChan        chan []*message.Message
-	eventListener  EventListener
 }
 
 func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message) *RetryEventHandler {
@@ -196,12 +190,11 @@ func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler 
 		conn:           conn,
 		log:            logC.Logger(),
 		msgChan:        msgChan,
-		eventListener:  eventListener,
 	}
 }
 
 func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := rh.eventListener.FetchEvents(startBlock, endBlock)
+	evts, err := FetchEvents(startBlock, endBlock, rh.conn)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err

@@ -242,7 +242,6 @@ func Run() error {
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrate_listener.FungibleTransferHandler)
-				eventListener := substrate_listener.NewListener(conn)
 				eventHandlers := make([]core_substrate_listener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1), conn))
 				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
