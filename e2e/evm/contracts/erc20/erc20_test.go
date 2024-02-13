@@ -6,20 +6,19 @@ import (
 
 	erc20 "github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 
-	mock_calls "github.com/ChainSafe/chainbridge-core/chains/evm/calls/mock"
-	mock_transactor "github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/mock"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/mock"
+	"go.uber.org/mock/gomock"
 )
 
 type ERC20ContractCallsTestSuite struct {
 	suite.Suite
-	gomockController                   *gomock.Controller
-	mockContractCallerDispatcherClient *mock_calls.MockContractCallerDispatcher
-	mockTransactor                     *mock_transactor.MockTransactor
-	erc20contract                      *erc20.ERC20Contract
+	gomockController *gomock.Controller
+	mockClient       *mock.MockClient
+	mockTransactor   *mock.MockTransactor
+	erc20contract    *erc20.ERC20Contract
 }
 
 var (
@@ -35,17 +34,17 @@ func (s *ERC20ContractCallsTestSuite) SetupSuite()    {}
 func (s *ERC20ContractCallsTestSuite) TearDownSuite() {}
 func (s *ERC20ContractCallsTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
-	s.mockContractCallerDispatcherClient = mock_calls.NewMockContractCallerDispatcher(s.gomockController)
-	s.mockTransactor = mock_transactor.NewMockTransactor(s.gomockController)
+	s.mockClient = mock.NewMockClient(s.gomockController)
+	s.mockTransactor = mock.NewMockTransactor(s.gomockController)
 	s.erc20contract = erc20.NewERC20Contract(
-		s.mockContractCallerDispatcherClient, common.HexToAddress(testContractAddress), s.mockTransactor,
+		s.mockClient, common.HexToAddress(testContractAddress), s.mockTransactor,
 	)
 }
 func (s *ERC20ContractCallsTestSuite) TearDownTest() {}
 
 func (s *ERC20ContractCallsTestSuite) TestErc20Contract_GetBalance_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,
@@ -87,8 +86,8 @@ func (s *ERC20ContractCallsTestSuite) TestErc20Contract_ApproveTokens_Success() 
 }
 
 func (s *ERC20ContractCallsTestSuite) TestErc20Contract_MinterRole_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,
@@ -102,8 +101,8 @@ func (s *ERC20ContractCallsTestSuite) TestErc20Contract_MinterRole_Success() {
 }
 
 func (s *ERC20ContractCallsTestSuite) TestErc20Contract_AddMinter_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,

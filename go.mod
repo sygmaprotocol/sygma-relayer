@@ -22,6 +22,7 @@ require (
 	github.com/sygmaprotocol/sygma-core v0.0.0-20240104134009-a7865e7a9ad6
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0
+	go.uber.org/mock v0.3.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 

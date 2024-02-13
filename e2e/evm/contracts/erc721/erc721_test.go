@@ -4,24 +4,22 @@ import (
 	"math/big"
 	"testing"
 
-	mock_calls "github.com/ChainSafe/chainbridge-core/chains/evm/calls/mock"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc721"
 
-	mock_transactor "github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/mock"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/mock"
+	"go.uber.org/mock/gomock"
 )
 
 type ERC721CallsTestSuite struct {
 	suite.Suite
-	gomockController                   *gomock.Controller
-	clientMock                         *mock_calls.MockClientDispatcher
-	mockContractCallerDispatcherClient *mock_calls.MockContractCallerDispatcher
-	mockTransactor                     *mock_transactor.MockTransactor
-	erc721ContractAddress              common.Address
-	erc721Contract                     *erc721.ERC721Contract
+	gomockController      *gomock.Controller
+	mockClient            *mock.MockClient
+	mockTransactor        *mock.MockTransactor
+	erc721ContractAddress common.Address
+	erc721Contract        *erc721.ERC721Contract
 }
 
 var (
@@ -36,11 +34,10 @@ func (s *ERC721CallsTestSuite) SetupSuite()    {}
 func (s *ERC721CallsTestSuite) TearDownSuite() {}
 func (s *ERC721CallsTestSuite) SetupTest() {
 	s.gomockController = gomock.NewController(s.T())
-	s.clientMock = mock_calls.NewMockClientDispatcher(s.gomockController)
-	s.mockContractCallerDispatcherClient = mock_calls.NewMockContractCallerDispatcher(s.gomockController)
-	s.mockTransactor = mock_transactor.NewMockTransactor(s.gomockController)
+	s.mockClient = mock.NewMockClient(s.gomockController)
+	s.mockTransactor = mock.NewMockTransactor(s.gomockController)
 	s.erc721ContractAddress = common.HexToAddress("0x9A0E6F91E6031C08326764655432f8F9c180fBa0")
-	s.erc721Contract = erc721.NewErc721Contract(s.mockContractCallerDispatcherClient, s.erc721ContractAddress, s.mockTransactor)
+	s.erc721Contract = erc721.NewErc721Contract(s.mockClient, s.erc721ContractAddress, s.mockTransactor)
 }
 func (s *ERC721CallsTestSuite) TearDownTest() {}
 
@@ -96,8 +93,8 @@ func (s *ERC721CallsTestSuite) TestERC721Contract_Approve_Success() {
 }
 
 func (s *ERC721CallsTestSuite) TestERC721Contract_AddMinter_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,
@@ -130,8 +127,8 @@ func (s *ERC721CallsTestSuite) TestERC721Contract_MintTokens_Success() {
 }
 
 func (s *ERC721CallsTestSuite) TestERC721Contract_Owner_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,
@@ -145,8 +142,8 @@ func (s *ERC721CallsTestSuite) TestERC721Contract_Owner_Success() {
 }
 
 func (s *ERC721CallsTestSuite) TestERC721Contract_MinterRole_Success() {
-	s.mockContractCallerDispatcherClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
-	s.mockContractCallerDispatcherClient.EXPECT().CallContract(
+	s.mockClient.EXPECT().From().Return(common.HexToAddress(testInteractorAddress))
+	s.mockClient.EXPECT().CallContract(
 		gomock.Any(),
 		gomock.Any(),
 		nil,
