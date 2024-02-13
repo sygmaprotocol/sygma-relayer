@@ -18,26 +18,16 @@ type Connection interface {
 	UpdateMetatdata() error
 }
 
-type Listener struct {
-	conn Connection
-}
-
-func NewListener(conn Connection) *Listener {
-	return &Listener{
-		conn: conn,
-	}
-}
-
-func (l *Listener) FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error) {
+func FetchEvents(startBlock *big.Int, endBlock *big.Int, conn Connection) ([]*parser.Event, error) {
 
 	evts := make([]*parser.Event, 0)
 	for i := new(big.Int).Set(startBlock); i.Cmp(endBlock) == -1; i.Add(i, big.NewInt(1)) {
-		hash, err := l.conn.GetBlockHash(i.Uint64())
+		hash, err := conn.GetBlockHash(i.Uint64())
 		if err != nil {
 			return nil, err
 		}
 
-		evt, err := l.conn.GetBlockEvents(hash)
+		evt, err := conn.GetBlockEvents(hash)
 		if err != nil {
 			return nil, err
 		}
