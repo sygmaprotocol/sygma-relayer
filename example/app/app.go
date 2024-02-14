@@ -217,10 +217,9 @@ func Run() error {
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrateListener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(transfer.ERC20Transfer, substrateListener.FungibleTransferHandler)
-				eventListener := substrateListener.NewListener(conn)
 				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, eventListener))
-				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, msgChan, eventListener))
+				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn))
+				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, msgChan))
 
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 

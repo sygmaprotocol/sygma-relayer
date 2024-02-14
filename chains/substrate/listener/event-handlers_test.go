@@ -26,7 +26,6 @@ type SystemUpdateHandlerTestSuite struct {
 	suite.Suite
 	mockConn            *mock_events.MockConnection
 	systemUpdateHandler *listener.SystemUpdateEventHandler
-	mockEventListener   *mock_events.MockEventListener
 }
 
 func TestRunSystemUpdateHandlerTestSuite(t *testing.T) {
