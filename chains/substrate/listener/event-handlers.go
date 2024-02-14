@@ -14,10 +14,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type EventListener interface {
-	FetchEvents(startBlock *big.Int, endBlock *big.Int) ([]*parser.Event, error)
-}
-
 type SystemUpdateEventHandler struct {
 	conn Connection
 }

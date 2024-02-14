@@ -20,8 +20,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectERC20MessagePayloadLen = errors.New("malformed payload. Len  of payload should be 2")
-var errIncorrectERC721MessagePayloadLen = errors.New("malformed payload. Len  of payload should be 3")
+var errIncorrectERC20PayloadLen = errors.New("malformed payload. Len  of payload should be 2")
+var errIncorrectERC721PayloadLen = errors.New("malformed payload. Len  of payload should be 3")
 var errIncorrectGenericPayloadLen = errors.New("malformed payload. Len  of payload should be 1")
 
 var errIncorrectAmount = errors.New("wrong payload amount format")
@@ -29,21 +29,21 @@ var errIncorrectRecipient = errors.New("wrong payload recipient format")
 var errIncorrectTokenID = errors.New("wrong payload tokenID format")
 var errIncorrectMetadata = errors.New("wrong payload metadata format")
 
-// ERC20Message
-type ERC20MessageHandlerTestSuite struct {
+// ERC20
+type ERC20HandlerTestSuite struct {
 	suite.Suite
 }
 
-func TestRunERC20MessageHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(ERC20MessageHandlerTestSuite))
+func TestRunERC20HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(ERC20HandlerTestSuite))
 }
 
-func (s *ERC20MessageHandlerTestSuite) SetupSuite()    {}
-func (s *ERC20MessageHandlerTestSuite) TearDownSuite() {}
-func (s *ERC20MessageHandlerTestSuite) SetupTest()     {}
-func (s *ERC20MessageHandlerTestSuite) TearDownTest()  {}
+func (s *ERC20HandlerTestSuite) SetupSuite()    {}
+func (s *ERC20HandlerTestSuite) TearDownSuite() {}
+func (s *ERC20HandlerTestSuite) SetupTest()     {}
+func (s *ERC20HandlerTestSuite) TearDownTest()  {}
 
-func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessage() {
+func (s *ERC20HandlerTestSuite) TestERC20HandleMessage() {
 
 	message := &message.Message{
 		Source:      1,
@@ -67,7 +67,7 @@ func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessage() {
 	s.NotNil(prop)
 }
 
-func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectDataLen() {
+func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
@@ -87,10 +87,10 @@ func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectDat
 
 	s.Nil(prop)
 	s.NotNil(err)
-	s.EqualError(err, errIncorrectERC20MessagePayloadLen.Error())
+	s.EqualError(err, errIncorrectERC20PayloadLen.Error())
 }
 
-func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectAmount() {
+func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectAmount() {
 
 	message := &message.Message{
 		Source:      1,
@@ -115,7 +115,7 @@ func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectAmo
 	s.EqualError(err, errIncorrectAmount.Error())
 }
 
-func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectRecipient() {
+func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectRecipient() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
@@ -139,21 +139,21 @@ func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectRec
 	s.EqualError(err, errIncorrectRecipient.Error())
 }
 
-// ERC721Message
-type ERC721MessageHandlerTestSuite struct {
+// ERC721
+type ERC721HandlerTestSuite struct {
 	suite.Suite
 }
 
-func TestRunERC721MessageHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(ERC721MessageHandlerTestSuite))
+func TestRunERC721HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(ERC721HandlerTestSuite))
 }
 
-func (s *ERC721MessageHandlerTestSuite) SetupSuite()    {}
-func (s *ERC721MessageHandlerTestSuite) TearDownSuite() {}
-func (s *ERC721MessageHandlerTestSuite) SetupTest()     {}
-func (s *ERC721MessageHandlerTestSuite) TearDownTest()  {}
+func (s *ERC721HandlerTestSuite) SetupSuite()    {}
+func (s *ERC721HandlerTestSuite) TearDownSuite() {}
+func (s *ERC721HandlerTestSuite) SetupTest()     {}
+func (s *ERC721HandlerTestSuite) TearDownTest()  {}
 
-func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerEmptyMetadata() {
+func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerEmptyMetadata() {
 
 	message := &message.Message{
 		Source:      1,
@@ -178,7 +178,7 @@ func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerEmptyMeta
 	s.NotNil(prop)
 }
 
-func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectDataLen() {
+func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
@@ -198,10 +198,10 @@ func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrect
 
 	s.Nil(prop)
 	s.NotNil(err)
-	s.EqualError(err, errIncorrectERC721MessagePayloadLen.Error())
+	s.EqualError(err, errIncorrectERC721PayloadLen.Error())
 }
 
-func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectAmount() {
+func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectAmount() {
 
 	message := &message.Message{
 		Source:      1,
@@ -227,7 +227,7 @@ func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrect
 	s.EqualError(err, errIncorrectTokenID.Error())
 }
 
-func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectRecipient() {
+func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectRecipient() {
 
 	message := &message.Message{
 		Source:      1,
@@ -253,7 +253,7 @@ func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrect
 	s.EqualError(err, errIncorrectRecipient.Error())
 }
 
-func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectMetadata() {
+func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectMetadata() {
 
 	message := &message.Message{
 		Source:      1,
