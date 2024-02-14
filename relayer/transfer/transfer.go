@@ -56,21 +56,3 @@ type TransferProposal struct {
 	Data        TransferProposalData
 	Type        proposal.ProposalType
 }
-
-func NewTransferProposal(source, destination uint8, depositNonce uint64,
-	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *TransferProposal {
-
-	transferProposalData := TransferProposalData{
-		DepositNonce: depositNonce,
-		ResourceId:   resourceId,
-		Metadata:     metadata,
-		Data:         data,
-	}
-
-	return &TransferProposal{
-		Source:      source,
-		Destination: destination,
-		Data:        transferProposalData,
-		Type:        propType,
-	}
-}
