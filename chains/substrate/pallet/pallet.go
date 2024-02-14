@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
@@ -39,7 +40,7 @@ func NewPallet(
 }
 
 func (p *Pallet) ExecuteProposals(
-	proposals []*chains.TransferProposal,
+	proposals []*transfer.TransferProposal,
 	signature []byte,
 ) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
@@ -59,11 +60,11 @@ func (p *Pallet) ExecuteProposals(
 	)
 }
 
-func (p *Pallet) ProposalsHash(proposals []*chains.TransferProposal) ([]byte, error) {
+func (p *Pallet) ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error) {
 	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
-func (p *Pallet) IsProposalExecuted(prop *chains.TransferProposal) (bool, error) {
+func (p *Pallet) IsProposalExecuted(prop *transfer.TransferProposal) (bool, error) {
 
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(prop.Data.DepositNonce, 10)).

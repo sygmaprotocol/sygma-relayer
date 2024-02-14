@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -53,16 +52,16 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
 				amountParsed,
 				recipientAddressParsed,
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 	erc20DepositHandler := depositHandlers.Erc20DepositHandler{}
 	message, err := erc20DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
@@ -96,16 +95,16 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventWithPriority() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
 				amountParsed,
 				recipientAddressParsed,
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	erc20DepositHandler := depositHandlers.Erc20DepositHandler{}

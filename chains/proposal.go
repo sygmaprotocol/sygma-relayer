@@ -6,6 +6,7 @@ package chains
 import (
 	"fmt"
 
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -13,38 +14,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
-
-type TransferProposal struct {
-	Source      uint8
-	Destination uint8
-	Data        TransferProposalData
-	Type        proposal.ProposalType
-}
-
-type TransferProposalData struct {
-	DepositNonce uint64
-	ResourceId   [32]byte
-	Metadata     map[string]interface{}
-	Data         []byte
-}
-
-func NewTransferProposal(source, destination uint8, depositNonce uint64,
-	resourceId [32]byte, metadata map[string]interface{}, data []byte, propType proposal.ProposalType) *TransferProposal {
-
-	transferProposalData := TransferProposalData{
-		DepositNonce: depositNonce,
-		ResourceId:   resourceId,
-		Metadata:     metadata,
-		Data:         data,
-	}
-
-	return &TransferProposal{
-		Source:      source,
-		Destination: destination,
-		Data:        transferProposalData,
-		Type:        propType,
-	}
-}
 
 func NewProposal(source uint8, destination uint8, data interface{}, propType proposal.ProposalType) *proposal.Proposal {
 	return &proposal.Proposal{
@@ -55,7 +24,7 @@ func NewProposal(source uint8, destination uint8, data interface{}, propType pro
 	}
 }
 
-func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
+func ProposalsHash(proposals []*transfer.TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
 		formattedProps[i] = map[string]interface{}{
@@ -106,23 +75,6 @@ func ProposalsHash(proposals []*TransferProposal, chainID int64, verifContract s
 	}
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
-}
-
-type TransferMessage struct {
-	Source      uint8
-	Destination uint8
-	Data        TransferMessageData
-	Type        message.MessageType
-}
-
-type TransferMessageType string
-
-type TransferMessageData struct {
-	DepositNonce uint64
-	ResourceId   [32]byte
-	Metadata     map[string]interface{}
-	Payload      []interface{}
-	Type         TransferMessageType
 }
 
 func NewMessage(source, destination uint8, data interface{}, msgType message.MessageType) *message.Message {

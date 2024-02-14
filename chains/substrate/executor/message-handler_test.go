@@ -9,9 +9,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
-	evmExecutor "github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -40,27 +39,27 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 2,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{1},
 			Payload: []interface{}{
 				[]byte{2}, // amount
 				recipient,
 			},
-			Type: evmExecutor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &proposal.Proposal{
 		Source:      1,
 		Destination: 2,
-		Data: chains.TransferProposalData{
+		Data: transfer.TransferProposalData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{1},
 			Data:         data,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferProposalType,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -74,16 +73,16 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{1},
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
-			Type: evmExecutor.ERC20,
+			Type: transfer.ERC20Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -98,17 +97,17 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				"incorrectAmount", // amount
 				[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 			},
-			Type: evmExecutor.ERC20,
+			Type: transfer.ERC20Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -123,17 +122,17 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 	message := &chains.TransferMessage{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
-			Type: evmExecutor.ERC20,
+			Type: transfer.ERC20Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -151,23 +150,23 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 	messageData := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2}, // amount
 				recipient,
 			},
-			Type: evmExecutor.ERC20,
+			Type: transfer.ERC20Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	invalidMessageData := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -181,7 +180,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 
 	depositMessageHandler := message.NewMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler("Transfer", &executor.SubstrateMessageHandler{})
+	depositMessageHandler.RegisterMessageHandler(transfer.TransferMessageType, &executor.SubstrateMessageHandler{})
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)

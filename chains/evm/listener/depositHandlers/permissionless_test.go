@@ -10,10 +10,9 @@ import (
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +59,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -71,9 +70,9 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 				executionData,
 			},
 			Metadata: metadata,
-			Type:     executor.PermissionlessGeneric,
+			Type:     transfer.PermissionlessGenericMessage,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	permissionlessGenericHandler := depositHandlers.PermissionlessGenericDepositHandler{}

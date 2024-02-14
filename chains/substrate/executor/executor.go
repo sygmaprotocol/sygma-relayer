@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
@@ -34,9 +34,9 @@ var (
 )
 
 type BridgePallet interface {
-	IsProposalExecuted(p *chains.TransferProposal) (bool, error)
-	ExecuteProposals(proposals []*chains.TransferProposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
-	ProposalsHash(proposals []*chains.TransferProposal) ([]byte, error)
+	IsProposalExecuted(p *transfer.TransferProposal) (bool, error)
+	ExecuteProposals(proposals []*transfer.TransferProposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
+	ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error)
 	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
 }
 
@@ -75,18 +75,18 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	transferProposals := make([]*chains.TransferProposal, 0)
+	transferProposals := make([]*transfer.TransferProposal, 0)
 
 	for _, prop := range proposals {
 
-		transferProposal := &chains.TransferProposal{
+		transferProposal := &transfer.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data: chains.TransferProposalData{
-				DepositNonce: prop.Data.(chains.TransferProposalData).DepositNonce,
-				ResourceId:   prop.Data.(chains.TransferProposalData).ResourceId,
-				Metadata:     prop.Data.(chains.TransferProposalData).Metadata,
-				Data:         prop.Data.(chains.TransferProposalData).Data,
+			Data: transfer.TransferProposalData{
+				DepositNonce: prop.Data.(transfer.TransferProposalData).DepositNonce,
+				ResourceId:   prop.Data.(transfer.TransferProposalData).ResourceId,
+				Metadata:     prop.Data.(transfer.TransferProposalData).Metadata,
+				Data:         prop.Data.(transfer.TransferProposalData).Data,
 			},
 			Type: prop.Type,
 		}
@@ -143,7 +143,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	return pool.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.TransferProposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*transfer.TransferProposal, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -189,7 +189,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.TransferProposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
+func (e *Executor) executeProposal(proposals []*transfer.TransferProposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
@@ -204,7 +204,7 @@ func (e *Executor) executeProposal(proposals []*chains.TransferProposal, signatu
 	return hash, sub, err
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*chains.TransferProposal, sessionID string) bool {
+func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal, sessionID string) bool {
 	for _, prop := range proposals {
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil || !isExecuted {

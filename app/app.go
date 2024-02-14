@@ -21,6 +21,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
 	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
@@ -180,7 +181,7 @@ func Run() error {
 				mh := message.NewMessageHandler()
 				for _, handler := range config.Handlers {
 
-					mh.RegisterMessageHandler("Transfer", &executor.TransferMessageHandler{})
+					mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
 
 					switch handler.Type {
 					case "erc20":
@@ -239,7 +240,7 @@ func Run() error {
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrateListener.NewSubstrateDepositHandler()
-				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrateListener.FungibleTransferHandler)
+				depositHandler.RegisterDepositHandler(transfer.ERC20Transfer, substrateListener.FungibleTransferHandler)
 				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
 				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*message.Message, 1), conn))
 				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*message.Message, 1)))
@@ -247,7 +248,7 @@ func Run() error {
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := message.NewMessageHandler()
-				mh.RegisterMessageHandler("Transfer", &substrateExecutor.SubstrateMessageHandler{})
+				mh.RegisterMessageHandler(transfer.TransferMessageType, &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)

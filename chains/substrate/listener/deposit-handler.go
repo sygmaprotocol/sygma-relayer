@@ -7,13 +7,13 @@ import (
 	"errors"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type DepositHandlers map[chains.TransferMessageType]DepositHandlerFunc
+type DepositHandlers map[transfer.TransferType]DepositHandlerFunc
 type DepositHandlerFunc func(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte) (*message.Message, error)
 
 type SubstrateDepositHandler struct {
@@ -28,14 +28,14 @@ const (
 // handler functions for processing deposit events
 func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 	return &SubstrateDepositHandler{
-		depositHandlers: make(map[chains.TransferMessageType]DepositHandlerFunc),
+		depositHandlers: make(map[transfer.TransferType]DepositHandlerFunc),
 	}
 }
 
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
-	var depositType chains.TransferMessageType
+	var depositType transfer.TransferType
 	if transferType == FungibleTransfer {
-		depositType = executor.ERC20
+		depositType = transfer.ERC20Transfer
 	} else {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
 	}
@@ -49,7 +49,7 @@ func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8,
 }
 
 // matchAddressWithHandlerFunc matches a transfer type with an associated handler function
-func (e *SubstrateDepositHandler) matchTransferTypeHandlerFunc(transferType chains.TransferMessageType) (DepositHandlerFunc, error) {
+func (e *SubstrateDepositHandler) matchTransferTypeHandlerFunc(transferType transfer.TransferType) (DepositHandlerFunc, error) {
 	hf, ok := e.depositHandlers[transferType]
 	if !ok {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
@@ -58,7 +58,7 @@ func (e *SubstrateDepositHandler) matchTransferTypeHandlerFunc(transferType chai
 }
 
 // RegisterDepositHandler registers an event handler by associating a handler function to a transfer type
-func (e *SubstrateDepositHandler) RegisterDepositHandler(transferType chains.TransferMessageType, handler DepositHandlerFunc) {
+func (e *SubstrateDepositHandler) RegisterDepositHandler(transferType transfer.TransferType, handler DepositHandlerFunc) {
 	if transferType == "" {
 		return
 	}
@@ -90,10 +90,10 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 		recipientAddress,
 	}
 
-	return chains.NewMessage(sourceID, uint8(destId), chains.TransferMessageData{
+	return chains.NewMessage(sourceID, uint8(destId), transfer.TransferMessageData{
 		DepositNonce: uint64(nonce),
 		ResourceId:   resourceID,
 		Payload:      payload,
-		Type:         executor.ERC20,
-	}, "Transfer"), nil
+		Type:         transfer.ERC20Message,
+	}, transfer.TransferMessageType), nil
 }

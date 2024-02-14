@@ -11,6 +11,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -53,7 +54,7 @@ func NewBridgeContract(
 }
 
 func (c *BridgeContract) ExecuteProposal(
-	proposal *chains.TransferProposal,
+	proposal *transfer.TransferProposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
@@ -69,7 +70,7 @@ func (c *BridgeContract) ExecuteProposal(
 }
 
 func (c *BridgeContract) ExecuteProposals(
-	proposals []*chains.TransferProposal,
+	proposals []*transfer.TransferProposal,
 	signature []byte,
 	opts transactor.TransactOptions,
 ) (*common.Hash, error) {
@@ -91,7 +92,7 @@ func (c *BridgeContract) ExecuteProposals(
 	)
 }
 
-func (c *BridgeContract) ProposalsHash(proposals []*chains.TransferProposal) ([]byte, error) {
+func (c *BridgeContract) ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error) {
 	chainID, err := c.client.ChainID(context.Background())
 	if err != nil {
 		return []byte{}, err
@@ -99,7 +100,7 @@ func (c *BridgeContract) ProposalsHash(proposals []*chains.TransferProposal) ([]
 	return chains.ProposalsHash(proposals, chainID.Int64(), c.ContractAddress().Hex(), bridgeVersion)
 }
 
-func (c *BridgeContract) IsProposalExecuted(p *chains.TransferProposal) (bool, error) {
+func (c *BridgeContract) IsProposalExecuted(p *transfer.TransferProposal) (bool, error) {
 
 	log.Debug().
 		Str("depositNonce", strconv.FormatUint(p.Data.DepositNonce, 10)).

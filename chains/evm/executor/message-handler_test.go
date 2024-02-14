@@ -15,12 +15,13 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectERC20PayloadLen = errors.New("malformed payload. Len  of payload should be 2")
-var errIncorrectERC721PayloadLen = errors.New("malformed payload. Len  of payload should be 3")
+var errIncorrectERC20MessagePayloadLen = errors.New("malformed payload. Len  of payload should be 2")
+var errIncorrectERC721MessagePayloadLen = errors.New("malformed payload. Len  of payload should be 3")
 var errIncorrectGenericPayloadLen = errors.New("malformed payload. Len  of payload should be 1")
 
 var errIncorrectAmount = errors.New("wrong payload amount format")
@@ -28,35 +29,35 @@ var errIncorrectRecipient = errors.New("wrong payload recipient format")
 var errIncorrectTokenID = errors.New("wrong payload tokenID format")
 var errIncorrectMetadata = errors.New("wrong payload metadata format")
 
-// ERC20
-type Erc20HandlerTestSuite struct {
+// ERC20Message
+type ERC20MessageHandlerTestSuite struct {
 	suite.Suite
 }
 
-func TestRunErc20HandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(Erc20HandlerTestSuite))
+func TestRunERC20MessageHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(ERC20MessageHandlerTestSuite))
 }
 
-func (s *Erc20HandlerTestSuite) SetupSuite()    {}
-func (s *Erc20HandlerTestSuite) TearDownSuite() {}
-func (s *Erc20HandlerTestSuite) SetupTest()     {}
-func (s *Erc20HandlerTestSuite) TearDownTest()  {}
+func (s *ERC20MessageHandlerTestSuite) SetupSuite()    {}
+func (s *ERC20MessageHandlerTestSuite) TearDownSuite() {}
+func (s *ERC20MessageHandlerTestSuite) SetupTest()     {}
+func (s *ERC20MessageHandlerTestSuite) TearDownTest()  {}
 
-func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
+func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessage() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2}, // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -66,19 +67,19 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessage() {
 	s.NotNil(prop)
 }
 
-func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
+func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -86,24 +87,24 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectDataLen() {
 
 	s.Nil(prop)
 	s.NotNil(err)
-	s.EqualError(err, errIncorrectERC20PayloadLen.Error())
+	s.EqualError(err, errIncorrectERC20MessagePayloadLen.Error())
 }
 
-func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
+func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectAmount() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				"incorrectAmount", // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -114,20 +115,20 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectAmount() {
 	s.EqualError(err, errIncorrectAmount.Error())
 }
 
-func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
+func (s *ERC20MessageHandlerTestSuite) TestERC20MessageHandleMessageIncorrectRecipient() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
-			Type: executor.ERC20,
+			Type: transfer.ERC20Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -138,26 +139,26 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleMessageIncorrectRecipient() {
 	s.EqualError(err, errIncorrectRecipient.Error())
 }
 
-// ERC721
-type Erc721HandlerTestSuite struct {
+// ERC721Message
+type ERC721MessageHandlerTestSuite struct {
 	suite.Suite
 }
 
-func TestRunErc721HandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(Erc721HandlerTestSuite))
+func TestRunERC721MessageHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(ERC721MessageHandlerTestSuite))
 }
 
-func (s *Erc721HandlerTestSuite) SetupSuite()    {}
-func (s *Erc721HandlerTestSuite) TearDownSuite() {}
-func (s *Erc721HandlerTestSuite) SetupTest()     {}
-func (s *Erc721HandlerTestSuite) TearDownTest()  {}
+func (s *ERC721MessageHandlerTestSuite) SetupSuite()    {}
+func (s *ERC721MessageHandlerTestSuite) TearDownSuite() {}
+func (s *ERC721MessageHandlerTestSuite) SetupTest()     {}
+func (s *ERC721MessageHandlerTestSuite) TearDownTest()  {}
 
-func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
+func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerEmptyMetadata() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -165,9 +166,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -177,19 +178,19 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerEmptyMetadata() {
 	s.NotNil(prop)
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
+func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{2}, // tokenID
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -197,15 +198,15 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectDataLen() {
 
 	s.Nil(prop)
 	s.NotNil(err)
-	s.EqualError(err, errIncorrectERC721PayloadLen.Error())
+	s.EqualError(err, errIncorrectERC721MessagePayloadLen.Error())
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
+func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectAmount() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -213,9 +214,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -226,12 +227,12 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectAmount() {
 	s.EqualError(err, errIncorrectTokenID.Error())
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
+func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectRecipient() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -239,9 +240,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 				"incorrectRecipient",
 				[]byte{}, // metadata
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -252,12 +253,12 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectRecipient() {
 	s.EqualError(err, errIncorrectRecipient.Error())
 }
 
-func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
+func (s *ERC721MessageHandlerTestSuite) TestERC721MessageMessageHandlerIncorrectMetadata() {
 
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
@@ -265,9 +266,9 @@ func (s *Erc721HandlerTestSuite) TestErc721MessageHandlerIncorrectMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				"incorrectMetadata", // metadata
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -295,15 +296,15 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				[]byte{}, // metadata
 			},
-			Type: executor.PermissionedGeneric,
+			Type: transfer.PermissionedGenericMessage,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -317,13 +318,13 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload:      []interface{}{},
-			Type:         executor.PermissionedGeneric,
+			Type:         transfer.PermissionedGenericMessage,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -338,15 +339,15 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
 				"incorrectMetadata", // metadata
 			},
-			Type: executor.PermissionedGeneric,
+			Type: transfer.PermissionedGenericMessage,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 	mh := executor.TransferMessageHandler{}
 	prop, err := mh.HandleMessage(message)
@@ -392,7 +393,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	message := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -402,9 +403,9 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 				depositor.Bytes(),
 				hash,
 			},
-			Type: executor.PermissionlessGeneric,
+			Type: transfer.PermissionlessGenericMessage,
 		},
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -414,13 +415,13 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	expected := chains.NewProposal(
 		message.Source,
 		message.Destination,
-		chains.TransferProposalData{
-			DepositNonce: message.Data.(chains.TransferProposalData).DepositNonce,
-			ResourceId:   message.Data.(chains.TransferProposalData).ResourceId,
-			Metadata:     message.Data.(chains.TransferProposalData).Metadata,
+		transfer.TransferProposalData{
+			DepositNonce: message.Data.(transfer.TransferProposalData).DepositNonce,
+			ResourceId:   message.Data.(transfer.TransferProposalData).ResourceId,
+			Metadata:     message.Data.(transfer.TransferProposalData).Metadata,
 			Data:         expectedData,
 		},
-		"Transfer",
+		transfer.TransferProposalType,
 	)
 	s.Nil(err)
 	s.Equal(expected, prop)

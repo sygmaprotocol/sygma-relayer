@@ -4,11 +4,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/suite"
@@ -48,7 +47,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -56,10 +55,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 				recipientAddressParsed,
 				metadata,
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -115,7 +114,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -123,10 +122,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 				recipientAddressParsed,
 				parsedMetadata,
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -168,7 +167,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
@@ -176,10 +175,10 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerWithPriority() {
 				recipientAddressParsed,
 				parsedMetadata,
 			},
-			Type: executor.ERC721,
+			Type: transfer.ERC721Message,
 		},
 
-		Type: "Transfer",
+		Type: transfer.TransferMessageType,
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
