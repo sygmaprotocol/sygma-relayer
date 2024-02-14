@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
@@ -45,7 +44,7 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destId ui
 
 	metadata["gasLimit"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
 
-	return chains.NewMessage(sourceID, destId, transfer.TransferMessageData{
+	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
 		DepositNonce: nonce,
 		ResourceId:   resourceID,
 		Metadata:     metadata,

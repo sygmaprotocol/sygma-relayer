@@ -11,18 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/sygmaprotocol/sygma-core/relayer/message"
-	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
-
-func NewProposal(source uint8, destination uint8, data interface{}, propType proposal.ProposalType) *proposal.Proposal {
-	return &proposal.Proposal{
-		Source:      source,
-		Destination: destination,
-		Data:        data,
-		Type:        propType,
-	}
-}
 
 func ProposalsHash(proposals []*transfer.TransferProposal, chainID int64, verifContract string, bridgeVersion string) ([]byte, error) {
 	formattedProps := make([]interface{}, len(proposals))
@@ -75,14 +64,4 @@ func ProposalsHash(proposals []*transfer.TransferProposal, chainID int64, verifC
 	}
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	return crypto.Keccak256(rawData), nil
-}
-
-func NewMessage(source, destination uint8, data interface{}, msgType message.MessageType) *message.Message {
-
-	return &message.Message{
-		Source:      source,
-		Destination: destination,
-		Data:        data,
-		Type:        msgType,
-	}
 }

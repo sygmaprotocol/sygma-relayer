@@ -7,7 +7,6 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -55,7 +54,7 @@ func fungibleTransferMessageHandler(m *transfer.TransferMessage) (*proposal.Prop
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
-	return chains.NewProposal(m.Source, m.Destination, transfer.TransferProposalData{
+	return proposal.NewProposal(m.Source, m.Destination, transfer.TransferProposalData{
 		DepositNonce: m.Data.DepositNonce,
 		ResourceId:   m.Data.ResourceId,
 		Metadata:     m.Data.Metadata,

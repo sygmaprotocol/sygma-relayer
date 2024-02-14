@@ -6,7 +6,6 @@ package listener
 import (
 	"errors"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
@@ -90,7 +89,7 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 		recipientAddress,
 	}
 
-	return chains.NewMessage(sourceID, uint8(destId), transfer.TransferMessageData{
+	return message.NewMessage(sourceID, uint8(destId), transfer.TransferMessageData{
 		DepositNonce: uint64(nonce),
 		ResourceId:   resourceID,
 		Payload:      payload,

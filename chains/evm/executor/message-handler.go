@@ -13,7 +13,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 )
 
@@ -77,7 +76,7 @@ func PermissionlessGenericMessageHandler(msg *transfer.TransferMessage) (*propos
 	data.Write(depositor)
 
 	data.Write(executionData)
-	return chains.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
@@ -103,7 +102,7 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
 	data = append(data, recipient...)                             // recipient ([]byte)
 
-	return chains.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
@@ -136,7 +135,7 @@ func ERC721MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, er
 	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
 	data.Write(common.LeftPadBytes(metadataLen, 32))
 	data.Write(metadata)
-	return chains.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
@@ -156,7 +155,7 @@ func GenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, e
 	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
 	data.Write(common.LeftPadBytes(metadataLen, 32)) // length of metadata (uint256)
 	data.Write(metadata)
-	return chains.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
