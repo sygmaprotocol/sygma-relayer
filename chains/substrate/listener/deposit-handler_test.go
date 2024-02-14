@@ -7,13 +7,15 @@ import (
 	"errors"
 	"unsafe"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
-	core_types "github.com/ChainSafe/chainbridge-core/types"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
 	"math/big"
 	"testing"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
+	substrate_chain "github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
@@ -56,15 +58,17 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	recipientAddressParsed := calldata[64:]
 
 	expected := &message.Message{
-		Source:       sourceID,
-		Destination:  uint8(depositLog.DestDomainID),
-		DepositNonce: uint64(depositLog.DepositNonce),
-		ResourceId:   core_types.ResourceID(depositLog.ResourceID),
-		Type:         message.FungibleTransfer,
-		Payload: []interface{}{
-			amountParsed,
-			recipientAddressParsed,
+		Source:      sourceID,
+		Destination: uint8(depositLog.DestDomainID),
+		Data: chains.TransferMessageData{
+			DepositNonce: uint64(depositLog.DepositNonce),
+			ResourceId:   depositLog.ResourceID,
+			Payload: []interface{}{
+				amountParsed,
+				recipientAddressParsed,
+			},
 		},
+		Type: substrate_chain.FungibleTransfer,
 	}
 
 	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
@@ -115,7 +119,7 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 
 	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
-	depositHandler.RegisterDepositHandler(message.FungibleTransfer, listener.FungibleTransferHandler)
+	depositHandler.RegisterDepositHandler(substrate_chain.FungibleTransfer, listener.FungibleTransferHandler)
 	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType)
 	s.Nil(err1)
 	s.NotNil(message1)

@@ -14,8 +14,7 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
-
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"

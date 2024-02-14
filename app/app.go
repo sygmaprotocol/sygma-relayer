@@ -20,7 +20,6 @@ import (
 	"github.com/ChainSafe/chainbridge-core/logger"
 	"github.com/ChainSafe/chainbridge-core/lvldb"
 	"github.com/ChainSafe/chainbridge-core/opentelemetry"
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/store"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
@@ -31,8 +30,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrate_listener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substrate_pallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
@@ -43,6 +40,9 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
+	core_substrate_listener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
@@ -233,6 +233,7 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
+
 				substrateClient := client.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substrate_pallet.NewPallet(substrateClient)
 
@@ -240,14 +241,15 @@ func Run() error {
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrate_listener.NewSubstrateDepositHandler()
-				depositHandler.RegisterDepositHandler(message.FungibleTransfer, substrate_listener.FungibleTransferHandler)
-				eventHandlers := make([]substrate_listener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler))
-				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id))
-				substrateListener := substrate_listener.NewSubstrateListener(conn, eventHandlers, config)
+				depositHandler.RegisterDepositHandler(substrate.FungibleTransfer, substrate_listener.FungibleTransferHandler)
+				eventHandlers := make([]core_substrate_listener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, substrate_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, make(chan []*coreMessage.Message, 1), conn))
+				eventHandlers = append(eventHandlers, substrate_listener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, make(chan []*coreMessage.Message, 1)))
+
+				substrateListener := core_substrate_listener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := coreMessage.NewMessageHandler()
-				mh.RegisterMessageHandler(substrateExecutor.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
+				mh.RegisterMessageHandler(substrate.FungibleTransfer, &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
@@ -281,11 +283,10 @@ func Run() error {
 		log.Info().Msg("Relayer not part of MPC. Waiting for refresh event...")
 	}
 
-	select {
-	case sig := <-sysErr:
-		log.Info().Msgf("terminating got ` [%v] signal", sig)
-		return nil
-	}
+	sig := <-sysErr
+	log.Info().Msgf("terminating got ` [%v] signal", sig)
+	return nil
+
 }
 
 func panicOnError(err error) {

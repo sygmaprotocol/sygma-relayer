@@ -40,7 +40,7 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
-	s.msgChan = make(chan []*message.Message, 2)
+	s.msgChan = make(chan []*message.Message, 1)
 	s.retryEventHandler = eventHandlers.NewRetryEventHandler(log.With(), s.mockEventListener, s.mockDepositHandler, common.Address{}, s.domainID, big.NewInt(5), s.msgChan)
 }
 

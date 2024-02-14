@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
@@ -23,7 +24,7 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 		Type:        m.Type,
 	}
 	switch transferMessage.Type {
-	case FungibleTransfer:
+	case substrate.FungibleTransfer:
 		return fungibleTransferMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")
