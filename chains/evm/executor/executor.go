@@ -190,13 +190,8 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		transferProposal := &transfer.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data: transfer.TransferProposalData{
-				DepositNonce: prop.Data.(transfer.TransferProposalData).DepositNonce,
-				ResourceId:   prop.Data.(transfer.TransferProposalData).ResourceId,
-				Metadata:     prop.Data.(transfer.TransferProposalData).Metadata,
-				Data:         prop.Data.(transfer.TransferProposalData).Data,
-			},
-			Type: prop.Type,
+			Data:        prop.Data.(transfer.TransferProposalData),
+			Type:        prop.Type,
 		}
 
 		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)

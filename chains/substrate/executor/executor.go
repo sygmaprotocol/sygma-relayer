@@ -82,13 +82,8 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		transferProposal := &transfer.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data: transfer.TransferProposalData{
-				DepositNonce: prop.Data.(transfer.TransferProposalData).DepositNonce,
-				ResourceId:   prop.Data.(transfer.TransferProposalData).ResourceId,
-				Metadata:     prop.Data.(transfer.TransferProposalData).Metadata,
-				Data:         prop.Data.(transfer.TransferProposalData).Data,
-			},
-			Type: prop.Type,
+			Data:        prop.Data.(transfer.TransferProposalData),
+			Type:        prop.Type,
 		}
 		transferProposals = append(transferProposals, transferProposal)
 

@@ -19,14 +19,8 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 	transferMessage := &transfer.TransferMessage{
 		Source:      m.Source,
 		Destination: m.Destination,
-		Data: transfer.TransferMessageData{
-			DepositNonce: m.Data.(transfer.TransferMessageData).DepositNonce,
-			ResourceId:   m.Data.(transfer.TransferMessageData).ResourceId,
-			Metadata:     m.Data.(transfer.TransferMessageData).Metadata,
-			Payload:      m.Data.(transfer.TransferMessageData).Payload,
-			Type:         m.Data.(transfer.TransferMessageData).Type,
-		},
-		Type: m.Type,
+		Data:        m.Data.(transfer.TransferMessageData),
+		Type:        m.Type,
 	}
 	switch transferMessage.Data.Type {
 	case transfer.ERC20Message:
