@@ -49,16 +49,16 @@ jobs:
         with:
           context: "https://github.com/0xProject/rpc-gateway.git"
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.PROJECT }}:${{ env.TAG }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.PROJECT }}
 
-      - name: slack notify
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,job,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
+    #   - name: slack notify
+    #     uses: 8398a7/action-slack@v3
+    #     with:
+    #       status: ${{ job.status }}
+    #       fields: repo,message,commit,author,action,job,eventName,ref,workflow
+    #     env:
+    #       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    #     if: always()
 
          
 #   deploy:
