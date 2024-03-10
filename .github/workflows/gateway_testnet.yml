@@ -15,9 +15,8 @@ on:
 env:
   ENVIRONMENT: 'TESTNET'
   REGISTRY: 'ghcr.io'
-  TAG: 'stable'
+  TAG: 'rpc-gateway'
   AWS_TESTNET: '${{ secrets.AWS_ARN }}'
-  PROJECT: 'rpc-gateway'
 
 jobs:
   push:
@@ -49,16 +48,16 @@ jobs:
         with:
           context: "https://github.com/0xProject/rpc-gateway.git"
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.PROJECT }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
 
-    #   - name: slack notify
-    #     uses: 8398a7/action-slack@v3
-    #     with:
-    #       status: ${{ job.status }}
-    #       fields: repo,message,commit,author,action,job,eventName,ref,workflow
-    #     env:
-    #       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-    #     if: always()
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
 
          
 #   deploy:
