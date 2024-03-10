@@ -1,0 +1,117 @@
+# The Licensed Work is (c) 2022 Sygma
+# SPDX-License-Identifier: LGPL-3.0-only
+
+name: Gateway Testnet
+
+on:
+  release:
+    types:
+      - published
+  push:
+    branches:
+     - rpc
+
+      
+env:
+  ENVIRONMENT: 'TESTNET'
+  REGISTRY: 'ghcr.io'
+  TAG: 'stable'
+  AWS_TESTNET: '${{ secrets.AWS_ARN }}'
+  PROJECT: 'rpc-gateway'
+
+jobs:
+  push:
+    name: push
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout the source code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: login to ghcr
+        id: ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: build / tag / push docker image into ghcr
+        id: build-and-push-tag
+        uses: docker/build-push-action@v3
+        with:
+          context: "https://github.com/0xProject/rpc-gateway.git"
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.PROJECT }}:${{ env.TAG }}
+
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
+
+         
+#   deploy:
+#     needs: push
+#     name: deploy
+#     runs-on: ubuntu-latest
+
+#     permissions:
+#       contents: read
+#       id-token: write
+
+#     steps:
+#       - name: checkout the source code
+#         uses: actions/checkout@v3
+
+#       - name: checkout ecs repo
+#         uses: actions/checkout@v3
+#         with:
+#           repository: sygmaprotocol/devops
+#           token: ${{ secrets.GHCR_TOKEN }}
+
+#       - name: render jinja2 templates to task definition json files
+#         uses: cuchi/jinja2-action@v1.2.0
+#         with:
+#           template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+#           output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+#           data_format: json
+#           variables: |
+#             relayerId=${{ matrix.relayer_id }}
+#             awsAccountId=${{ env.AWS_TESTNET }}
+#             awsRegion=${{ secrets.AWS_REGION }}
+#             awsEfs=${{ secrets.TESTNET_EFS_1 }}
+
+#       - name: configure aws credentials
+#         uses: aws-actions/configure-aws-credentials@v1
+#         with:
+#           role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+#           aws-region: ${{ secrets.AWS_REGION }}
+#           role-session-name: GithubActions
+
+#       - name: deploy task definition
+#         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#         with:
+#           task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
+#           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
+#           cluster: 'relayer-${{ env.ENVIRONMENT }}'
+#           wait-for-service-stability: true
+
+#       - name: slack notify
+#         uses: 8398a7/action-slack@v3
+#         with:
+#           status: ${{ job.status }}
+#           fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+#         env:
+#           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+#         if: always()
