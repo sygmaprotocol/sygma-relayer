@@ -1,7 +1,7 @@
 # The Licensed Work is (c) 2022 Sygma
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: Gateway Testnet
+name: RPC-Gateway Testnet
 
 on:
   release:
@@ -28,8 +28,8 @@ jobs:
       id-token: write
 
     steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
+      # - name: checkout the source code
+      #   uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -50,67 +50,75 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
 
-      - name: slack notify
-        uses: 8398a7/action-slack@v3
+      - name: tag version / push docker image into ghcr
+        id: build-and-push-ref
+        uses: docker/build-push-action@v3
         with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,job,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
+          context: "https://github.com/0xProject/rpc-gateway.git"
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
+
+
+      # - name: slack notify
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: ${{ job.status }}
+      #     fields: repo,message,commit,author,action,job,eventName,ref,workflow
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   if: always()
 
          
-#   deploy:
-#     needs: push
-#     name: deploy
-#     runs-on: ubuntu-latest
+  deploy:
+    needs: push
+    name: deploy
+    runs-on: ubuntu-latest
 
-#     permissions:
-#       contents: read
-#       id-token: write
+    permissions:
+      contents: read
+      id-token: write
 
-#     steps:
-#       - name: checkout the source code
-#         uses: actions/checkout@v3
+    steps:
+      # - name: checkout the source code
+      #   uses: actions/checkout@v3
 
-#       - name: checkout ecs repo
-#         uses: actions/checkout@v3
-#         with:
-#           repository: sygmaprotocol/devops
-#           token: ${{ secrets.GHCR_TOKEN }}
+      - name: checkout ecs repo
+        uses: actions/checkout@v3
+        with:
+          repository: sygmaprotocol/devops
+          token: ${{ secrets.GHCR_TOKEN }}
 
-#       - name: render jinja2 templates to task definition json files
-#         uses: cuchi/jinja2-action@v1.2.0
-#         with:
-#           template: 'relayers/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
-#           output_file: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
-#           data_format: json
-#           variables: |
-#             relayerId=${{ matrix.relayer_id }}
-#             awsAccountId=${{ env.AWS_TESTNET }}
-#             awsRegion=${{ secrets.AWS_REGION }}
-#             awsEfs=${{ secrets.TESTNET_EFS_1 }}
+      - name: render jinja2 templates to task definition json files
+        uses: cuchi/jinja2-action@v1.2.0
+        with:
+          template: 'proxy_gateway/ecs/task_definition-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'proxy_gateway/ecs/task_definition-${{ env.ENVIRONMENT }}.json'
+          data_format: json
+          variables: |
+            awsAccountId=${{ env.AWS_TESTNET }}
+            awsRegion=${{ secrets.AWS_REGION }}
+            awsEfs=${{ secrets.TESTNET_RPC_EFS }}
 
-#       - name: configure aws credentials
-#         uses: aws-actions/configure-aws-credentials@v1
-#         with:
-#           role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-#           aws-region: ${{ secrets.AWS_REGION }}
-#           role-session-name: GithubActions
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GithubActions
 
-#       - name: deploy task definition
-#         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-#         with:
-#           task-definition: 'relayers/ecs/task_definition-${{ matrix.relayer_id }}_${{ env.ENVIRONMENT }}.json'
-#           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
-#           cluster: 'relayer-${{ env.ENVIRONMENT }}'
-#           wait-for-service-stability: true
+      - name: deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: 'proxy_gateway/ecs/task_definition-${{ env.ENVIRONMENT }}.json'
+          service: 'rpc-gateway-service-${{ env.ENVIRONMENT }}'
+          cluster: 'relayer-${{ env.ENVIRONMENT }}'
+          wait-for-service-stability: true
 
-#       - name: slack notify
-#         uses: 8398a7/action-slack@v3
-#         with:
-#           status: ${{ job.status }}
-#           fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
-#         env:
-#           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
-#         if: always()
+      # - name: slack notify
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: ${{ job.status }}
+      #     fields: repo,message,commit,author,action,job,eventName,ref,workflow
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   if: always()
