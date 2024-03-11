@@ -88,3 +88,46 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	s.Nil(err)
 	s.Equal(expected, prop)
 }
+
+// Erc1155
+type Erc1155HandlerTestSuite struct {
+	suite.Suite
+}
+
+func TestRunErc1155HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(Erc1155HandlerTestSuite))
+}
+
+func (s *Erc1155HandlerTestSuite) SetupSuite()    {}
+func (s *Erc1155HandlerTestSuite) TearDownSuite() {}
+func (s *Erc1155HandlerTestSuite) SetupTest()     {}
+func (s *Erc1155HandlerTestSuite) TearDownTest()  {}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandler() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(1),
+				big.NewInt(2),
+				big.NewInt(3),
+			},
+			[]*big.Int{
+				big.NewInt(1),
+				big.NewInt(2),
+				big.NewInt(3),
+			},
+			[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107},
+			[]byte{},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(err)
+	s.NotNil(prop)
+}

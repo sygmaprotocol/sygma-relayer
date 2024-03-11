@@ -9,10 +9,12 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
+	"github.com/umbracle/ethgo/abi"
 )
 
 const (
 	PermissionlessGenericTransfer message.TransferType = "PermissionlessGenericTransfer"
+	ERC1155Transfer               message.TransferType = "Erc1155"
 )
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
@@ -78,4 +80,31 @@ func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 	}
 
 	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, message.Metadata{}), nil
+}
+
+type CallData struct {
+	Tokenids     []*big.Int
+	Amounts      []*big.Int
+	Recipient    []byte
+	Transferdata []byte
+}
+
+func Erc1155DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
+
+	typ := abi.MustNewType("tuple(uint256[] tokenIDs, uint256[] amounts, bytes transferData, bytes transferData)")
+	var decodedCallData CallData
+
+	err := typ.DecodeStruct(calldata, &decodedCallData)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := []interface{}{
+		decodedCallData.Tokenids,
+		decodedCallData.Amounts,
+		decodedCallData.Recipient[:20],
+		decodedCallData.Transferdata[20:],
+	}
+
+	return message.NewMessage(sourceID, destId, nonce, resourceID, ERC1155Transfer, payload, message.Metadata{}), nil
 }

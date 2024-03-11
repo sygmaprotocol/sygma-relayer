@@ -224,3 +224,53 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventAlternativeAmount() {
 	s.Equal(message, expected)
 	s.Equal(big.NewInt(200), new(big.Int).SetBytes(message.Payload[0].([]byte)))
 }
+
+type Erc1155HandlerTestSuite struct {
+	suite.Suite
+}
+
+func TestRunErc1155HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(Erc20HandlerTestSuite))
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155HandleEvent() {
+	callData := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	depositLog := &events.Deposit{
+		DestinationDomainID: 2,
+		ResourceID:          [32]byte{0},
+		DepositNonce:        1,
+		SenderAddress:       common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"),
+		Data:                callData,
+		HandlerResponse:     []byte{},
+	}
+	sourceID := uint8(1)
+
+	expected := &message.Message{
+		Source:       sourceID,
+		Destination:  depositLog.DestinationDomainID,
+		DepositNonce: depositLog.DepositNonce,
+		ResourceId:   depositLog.ResourceID,
+		Type:         listener.ERC1155Transfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(1),
+				big.NewInt(2),
+				big.NewInt(3),
+			},
+			[]*big.Int{
+				big.NewInt(1),
+				big.NewInt(2),
+				big.NewInt(3),
+			},
+			[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107},
+			[]byte{},
+		},
+	}
+
+	message, err := listener.Erc1155DepositHandler(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+
+	s.Nil(err)
+	s.NotNil(message)
+	s.Equal(message, expected)
+}

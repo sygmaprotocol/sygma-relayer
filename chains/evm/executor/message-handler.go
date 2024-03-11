@@ -5,6 +5,7 @@ package executor
 
 import (
 	"bytes"
+	"encoding/gob"
 	"errors"
 	"math/big"
 
@@ -51,4 +52,57 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	data.Write(executionData)
 
 	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
+}
+
+func Erc1155MessageHandler(msg *message.Message, handlerAddr, bridgeAddress common.Address) (*proposal.Proposal, error) {
+
+	if len(msg.Payload) != 4 {
+		return nil, errors.New("malformed payload. Len  of payload should be 4")
+	}
+	tokenIDs, ok := msg.Payload[0].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload tokenIDs format")
+	}
+	amounts, ok := msg.Payload[1].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload amounts format")
+	}
+	recipient, ok := msg.Payload[2].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload recipient format")
+	}
+	transferData, ok := msg.Payload[3].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload transferData format")
+	}
+
+	// Convert []*big.Int slices to []byte
+	tokenIDsBytes, err := encodeBigIntSlice(tokenIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	amountsBytes, err := encodeBigIntSlice(amounts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Concatenate the byte slices
+	data := bytes.Buffer{}
+	data.Write(tokenIDsBytes)
+	data.Write(amountsBytes)
+	data.Write(recipient)
+	data.Write(transferData)
+
+	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
+}
+
+func encodeBigIntSlice(ints []*big.Int) ([]byte, error) {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	err := encoder.Encode(ints)
+	if err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
