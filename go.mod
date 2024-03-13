@@ -181,5 +181,5 @@ require (
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/binance-chain/tss-lib => github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684
-
+	github.com/btcsuite/btcd@0.22.1 => github.com/btcsuite/btcd v0.22.0-beta.0.20220201204404-81fbd9b67e54
 )
