@@ -5,6 +5,7 @@ package executor_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"math/big"
 	"testing"
 
@@ -18,6 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/suite"
 )
+
+var errIncorrectPayloadLen = errors.New("malformed payload. Len  of payload should be 4")
+var errIncorrectTokenIDs = errors.New("wrong payload tokenIDs format")
+var errIncorrectAmounts = errors.New("wrong payload amounts format")
+var errIncorrectRecipient = errors.New("wrong payload recipient format")
+var errIncorrectRecipientLen = errors.New("malformed payload. Len  of recipient should be 20")
+var errIncorrectTransferData = errors.New("wrong payload transferData format")
 
 type PermissionlessGenericHandlerTestSuite struct {
 	suite.Suite
@@ -112,16 +120,12 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandler() {
 		Type:         message.FungibleTransfer,
 		Payload: []interface{}{
 			[]*big.Int{
-				big.NewInt(1),
 				big.NewInt(2),
-				big.NewInt(3),
 			},
 			[]*big.Int{
-				big.NewInt(1),
-				big.NewInt(2),
 				big.NewInt(3),
 			},
-			[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107},
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
 			[]byte{},
 		},
 	}
@@ -130,4 +134,149 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandler() {
 
 	s.Nil(err)
 	s.NotNil(prop)
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidPayloadLen() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(2),
+			},
+			[]*big.Int{
+				big.NewInt(3),
+			},
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectPayloadLen.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidTokenIDs() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			2,
+			[]*big.Int{
+				big.NewInt(3),
+			},
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+			[]byte{},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectTokenIDs.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidAmounts() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(2),
+			},
+			3,
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+			[]byte{},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectAmounts.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipient() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(2),
+			},
+			[]*big.Int{
+				big.NewInt(3),
+			},
+			"invalidRecipient",
+			[]byte{},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectRecipient.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipientLen() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(2),
+			},
+			[]*big.Int{
+				big.NewInt(3),
+			},
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251},
+			[]byte{},
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectRecipientLen.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidTransferData() {
+	message := &message.Message{
+		Source:       1,
+		Destination:  0,
+		DepositNonce: 1,
+		ResourceId:   [32]byte{0},
+		Type:         message.FungibleTransfer,
+		Payload: []interface{}{
+			[]*big.Int{
+				big.NewInt(2),
+			},
+			[]*big.Int{
+				big.NewInt(3),
+			},
+			[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+			"invalidTransferData",
+		},
+	}
+
+	prop, err := executor.Erc1155MessageHandler(message, common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"), common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b"))
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectTransferData.Error())
 }

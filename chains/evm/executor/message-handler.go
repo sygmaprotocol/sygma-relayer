@@ -5,7 +5,6 @@ package executor
 
 import (
 	"bytes"
-	"encoding/gob"
 	"errors"
 	"math/big"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 )
 
 func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, bridgeAddress common.Address) (*proposal.Proposal, error) {
@@ -59,50 +59,30 @@ func Erc1155MessageHandler(msg *message.Message, handlerAddr, bridgeAddress comm
 	if len(msg.Payload) != 4 {
 		return nil, errors.New("malformed payload. Len  of payload should be 4")
 	}
-	tokenIDs, ok := msg.Payload[0].([]*big.Int)
+	_, ok := msg.Payload[0].([]*big.Int)
 	if !ok {
 		return nil, errors.New("wrong payload tokenIDs format")
 	}
-	amounts, ok := msg.Payload[1].([]*big.Int)
+	_, ok = msg.Payload[1].([]*big.Int)
 	if !ok {
 		return nil, errors.New("wrong payload amounts format")
 	}
-	recipient, ok := msg.Payload[2].([]byte)
+	_, ok = msg.Payload[2].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload recipient format")
 	}
-	transferData, ok := msg.Payload[3].([]byte)
+	if len(msg.Payload[2].([]byte)) != 20 {
+		return nil, errors.New("malformed payload. Len  of recipient should be 20")
+	}
+	_, ok = msg.Payload[3].([]byte)
 	if !ok {
 		return nil, errors.New("wrong payload transferData format")
 	}
 
-	// Convert []*big.Int slices to []byte
-	tokenIDsBytes, err := encodeBigIntSlice(tokenIDs)
+	data, err := listener.Erc1155DepositData.Encode(msg.Payload)
 	if err != nil {
 		return nil, err
 	}
 
-	amountsBytes, err := encodeBigIntSlice(amounts)
-	if err != nil {
-		return nil, err
-	}
-
-	// Concatenate the byte slices
-	data := bytes.Buffer{}
-	data.Write(tokenIDsBytes)
-	data.Write(amountsBytes)
-	data.Write(recipient)
-	data.Write(transferData)
-
-	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
-}
-
-func encodeBigIntSlice(ints []*big.Int) ([]byte, error) {
-	var buffer bytes.Buffer
-	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(ints)
-	if err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data, handlerAddr, bridgeAddress, msg.Metadata), nil
 }

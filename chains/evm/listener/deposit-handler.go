@@ -17,6 +17,8 @@ const (
 	ERC1155Transfer               message.TransferType = "Erc1155"
 )
 
+var Erc1155DepositData = abi.MustNewType("tuple(uint256[] tokenIDs, uint256[] amounts, bytes recipient, bytes transferData)")
+
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
 func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 	if len(calldata) < 76 {
@@ -91,10 +93,9 @@ type CallData struct {
 
 func Erc1155DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 
-	typ := abi.MustNewType("tuple(uint256[] tokenIDs, uint256[] amounts, bytes transferData, bytes transferData)")
 	var decodedCallData CallData
 
-	err := typ.DecodeStruct(calldata, &decodedCallData)
+	err := Erc1155DepositData.DecodeStruct(calldata, &decodedCallData)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +103,8 @@ func Erc1155DepositHandler(sourceID, destId uint8, nonce uint64, resourceID type
 	payload := []interface{}{
 		decodedCallData.Tokenids,
 		decodedCallData.Amounts,
-		decodedCallData.Recipient[:20],
-		decodedCallData.Transferdata[20:],
+		decodedCallData.Recipient,
+		decodedCallData.Transferdata,
 	}
 
 	return message.NewMessage(sourceID, destId, nonce, resourceID, ERC1155Transfer, payload, message.Metadata{}), nil
