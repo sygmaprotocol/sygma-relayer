@@ -9,15 +9,13 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/chainbridge-core/types"
-	"github.com/umbracle/ethgo/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 const (
 	PermissionlessGenericTransfer message.TransferType = "PermissionlessGenericTransfer"
 	ERC1155Transfer               message.TransferType = "Erc1155"
 )
-
-var Erc1155DepositData = abi.MustNewType("tuple(uint256[] tokenIDs, uint256[] amounts, bytes recipient, bytes transferData)")
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
 func PermissionlessGenericDepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
@@ -84,27 +82,53 @@ func Erc20DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.
 	return message.NewMessage(sourceID, destId, nonce, resourceID, message.FungibleTransfer, payload, message.Metadata{}), nil
 }
 
-type CallData struct {
-	Tokenids     []*big.Int
-	Amounts      []*big.Int
-	Recipient    []byte
-	Transferdata []byte
+func GetErc1155Type() (abi.Arguments, error) {
+	tokenIDsType, err := abi.NewType("uint256[]", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	amountsType, err := abi.NewType("uint256[]", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	recipientType, err := abi.NewType("bytes", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	transferDataType, err := abi.NewType("bytes", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Define the arguments using the created types
+	return abi.Arguments{
+		abi.Argument{Name: "tokenIDs", Type: tokenIDsType, Indexed: false},
+		abi.Argument{Name: "amounts", Type: amountsType, Indexed: false},
+		abi.Argument{Name: "recipient", Type: recipientType, Indexed: false},
+		abi.Argument{Name: "transferData", Type: transferDataType, Indexed: false},
+	}, nil
 }
 
 func Erc1155DepositHandler(sourceID, destId uint8, nonce uint64, resourceID types.ResourceID, calldata, handlerResponse []byte) (*message.Message, error) {
 
-	var decodedCallData CallData
+	erc1155Type, err := GetErc1155Type()
+	if err != nil {
+		return nil, err
+	}
 
-	err := Erc1155DepositData.DecodeStruct(calldata, &decodedCallData)
+	decodedCallData, err := erc1155Type.UnpackValues(calldata)
 	if err != nil {
 		return nil, err
 	}
 
 	payload := []interface{}{
-		decodedCallData.Tokenids,
-		decodedCallData.Amounts,
-		decodedCallData.Recipient,
-		decodedCallData.Transferdata,
+		decodedCallData[0],
+		decodedCallData[1],
+		decodedCallData[2],
+		decodedCallData[3],
 	}
 
 	return message.NewMessage(sourceID, destId, nonce, resourceID, ERC1155Transfer, payload, message.Metadata{}), nil

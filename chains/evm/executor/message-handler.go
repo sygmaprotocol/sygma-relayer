@@ -79,7 +79,12 @@ func Erc1155MessageHandler(msg *message.Message, handlerAddr, bridgeAddress comm
 		return nil, errors.New("wrong payload transferData format")
 	}
 
-	data, err := listener.Erc1155DepositData.Encode(msg.Payload)
+	erc1155Type, err := listener.GetErc1155Type()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := erc1155Type.PackValues(msg.Payload)
 	if err != nil {
 		return nil, err
 	}
