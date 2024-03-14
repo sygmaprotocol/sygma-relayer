@@ -111,7 +111,7 @@ func (s *Erc1155HandlerTestSuite) TearDownSuite() {}
 func (s *Erc1155HandlerTestSuite) SetupTest()     {}
 func (s *Erc1155HandlerTestSuite) TearDownTest()  {}
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandler() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -136,7 +136,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandler() {
 	s.NotNil(prop)
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidPayloadLen() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidPayloadLen() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -160,7 +160,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidPayloadLen() {
 	s.EqualError(err, errIncorrectPayloadLen.Error())
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidTokenIDs() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidTokenIDs() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -183,7 +183,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidTokenIDs() {
 	s.EqualError(err, errIncorrectTokenIDs.Error())
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidAmounts() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidAmounts() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -206,7 +206,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidAmounts() {
 	s.EqualError(err, errIncorrectAmounts.Error())
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipient() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidRecipient() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -231,7 +231,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipient() {
 	s.EqualError(err, errIncorrectRecipient.Error())
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipientLen() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidRecipientLen() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
@@ -256,7 +256,7 @@ func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidRecipientLen()
 	s.EqualError(err, errIncorrectRecipientLen.Error())
 }
 
-func (s *Erc1155HandlerTestSuite) TestErc1155MessageHandlerInvalidTransferData() {
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidTransferData() {
 	message := &message.Message{
 		Source:       1,
 		Destination:  0,
