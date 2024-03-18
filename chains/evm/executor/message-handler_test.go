@@ -416,9 +416,9 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 		message.Source,
 		message.Destination,
 		transfer.TransferProposalData{
-			DepositNonce: message.Data.(transfer.TransferProposalData).DepositNonce,
-			ResourceId:   message.Data.(transfer.TransferProposalData).ResourceId,
-			Metadata:     message.Data.(transfer.TransferProposalData).Metadata,
+			DepositNonce: message.Data.(transfer.TransferMessageData).DepositNonce,
+			ResourceId:   message.Data.(transfer.TransferMessageData).ResourceId,
+			Metadata:     message.Data.(transfer.TransferMessageData).Metadata,
 			Data:         expectedData,
 		},
 		transfer.TransferProposalType,
