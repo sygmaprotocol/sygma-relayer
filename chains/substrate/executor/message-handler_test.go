@@ -10,13 +10,12 @@ import (
 	"unsafe"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	substrateChain "github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
-
-	substrate_chain "github.com/ChainSafe/sygma-relayer/chains/substrate"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -49,7 +48,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 			},
 		},
 
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 	data, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
 	expectedProp := &proposal.Proposal{
@@ -82,7 +81,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -106,7 +105,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -130,7 +129,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			},
 		},
 
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 
 	mh := executor.SubstrateMessageHandler{}
@@ -157,7 +156,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 			},
 		},
 
-		Type: substrate_chain.FungibleTransfer,
+		Type: substrateChain.FungibleTransfer,
 	}
 
 	invalidMessageData := &message.Message{
@@ -177,7 +176,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 
 	depositMessageHandler := message.NewMessageHandler()
 	// Register FungibleTransferMessageHandler function
-	depositMessageHandler.RegisterMessageHandler(substrate_chain.FungibleTransfer, &executor.SubstrateMessageHandler{})
+	depositMessageHandler.RegisterMessageHandler(substrateChain.FungibleTransfer, &executor.SubstrateMessageHandler{})
 	prop1, err1 := depositMessageHandler.HandleMessage(messageData)
 	s.Nil(err1)
 	s.NotNil(prop1)
