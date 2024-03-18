@@ -30,12 +30,16 @@
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
+          "type": "erc1155",
+          "address": "0x0C300D3B53FC9e77ce12eD2063fd25e2d5a532aD"
+        },
+        {
           "type": "permissionedGeneric",
-          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+          "address": "0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xE837D42dd3c685839a418886f418769BDD23546b"
+          "address": "0xfE00863b435af226c7b8036d377A8910e1906A67"
         }
       ],
       "gasLimit": 9000000,
@@ -59,12 +63,16 @@
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
+          "type": "erc1155",
+          "address": "0x0C300D3B53FC9e77ce12eD2063fd25e2d5a532aD"
+        },
+        {
           "type": "permissionedGeneric",
-          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+          "address": "0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xE837D42dd3c685839a418886f418769BDD23546b"
+          "address": "0xfE00863b435af226c7b8036d377A8910e1906A67"
         }
       ],
       "gasLimit": 9000000,
