@@ -26,7 +26,7 @@ import (
 )
 
 var TestTimeout = time.Minute * 4
-var BasicFee = big.NewInt(1000000000000000)
+var BasicFee = big.NewInt(100000000000000)
 var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
 var GasUsed = uint32(2000000000)
 var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
