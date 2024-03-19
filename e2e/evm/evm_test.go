@@ -67,22 +67,20 @@ func Test_EVM2EVM(t *testing.T) {
 		Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 		Erc721ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-		GenericHandlerAddr: common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
+		GenericHandlerAddr: common.HexToAddress("0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"),
 		GenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
 		AssetStoreAddr:     common.HexToAddress("0x979C2e7347c9831E18870aB886f0101EBC771CeB"),
 
-		PermissionlessGenericHandlerAddr: common.HexToAddress("0xE837D42dd3c685839a418886f418769BDD23546b"),
+		PermissionlessGenericHandlerAddr: common.HexToAddress("0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"),
 		PermissionlessGenericResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
-		Erc1155Addr:        common.HexToAddress("0x8F717A816d16b14317972B064Dbb2d8d90D110f7"),
-		Erc1155HandlerAddr: common.HexToAddress("0x0C300D3B53FC9e77ce12eD2063fd25e2d5a532aD"),
+		Erc1155Addr:        common.HexToAddress("0x5e6924e6A120bd833617D0873f0a1b747ee2D743"),
+		Erc1155HandlerAddr: common.HexToAddress("0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"),
 		Erc1155ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
 
-		BasicFeeHandlerAddr:      common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-		FeeHandlerWithOracleAddr: common.HexToAddress("0x30d704A60037DfE54e7e4D242Ea0cBC6125aE497"),
-		FeeRouterAddress:         common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
-		BasicFee:                 evm.BasicFee,
-		OracleFee:                evm.OracleFee,
+		BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
+		FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
+		BasicFee:            evm.BasicFee,
 	}
 
 	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
@@ -163,10 +161,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 	// Approving tokens
 	_, err = erc20Contract.ApproveTokens(s.config1.Erc20HandlerAddr, amountToApprove, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
-	_, err = erc20Contract.ApproveTokens(s.config1.FeeHandlerWithOracleAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
 	}

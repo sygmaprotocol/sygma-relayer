@@ -31,7 +31,7 @@
         },
         {
           "type": "erc1155",
-          "address": "0x0C300D3B53FC9e77ce12eD2063fd25e2d5a532aD"
+          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
         },
         {
           "type": "permissionedGeneric",
@@ -39,7 +39,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xfE00863b435af226c7b8036d377A8910e1906A67"
+          "address": "0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"
         }
       ],
       "gasLimit": 9000000,
@@ -64,7 +64,7 @@
         },
         {
           "type": "erc1155",
-          "address": "0x0C300D3B53FC9e77ce12eD2063fd25e2d5a532aD"
+          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
         },
         {
           "type": "permissionedGeneric",
@@ -72,7 +72,7 @@
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xfE00863b435af226c7b8036d377A8910e1906A67"
+          "address": "0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"
         }
       ],
       "gasLimit": 9000000,
