@@ -34,7 +34,7 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
 	var depositType transfer.TransferType
 	if transferType == FungibleTransfer {
-		depositType = transfer.ERC20Transfer
+		depositType = transfer.FungibleTransfer
 	} else {
 		return nil, errors.New("no corresponding deposit handler for this transfer type exists")
 	}
@@ -93,6 +93,6 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 		DepositNonce: uint64(nonce),
 		ResourceId:   resourceID,
 		Payload:      payload,
-		Type:         transfer.ERC20Message,
+		Type:         transfer.FungibleTransfer,
 	}, transfer.TransferMessageType), nil
 }

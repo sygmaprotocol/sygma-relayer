@@ -28,13 +28,13 @@ func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.
 	}
 
 	switch transferMessage.Data.Type {
-	case transfer.ERC20Message:
+	case transfer.FungibleTransfer:
 		return ERC20MessageHandler(transferMessage)
-	case transfer.ERC721Message:
+	case transfer.NonFungibleTransfer:
 		return ERC721MessageHandler(transferMessage)
-	case transfer.PermissionedGenericMessage:
+	case transfer.PermissionedGenericTransfer:
 		return GenericMessageHandler(transferMessage)
-	case transfer.PermissionlessGenericMessage:
+	case transfer.PermissionlessGenericTransfer:
 		return PermissionlessGenericMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")

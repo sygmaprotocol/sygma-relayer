@@ -159,7 +159,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 			}
 		case <-ticker.C:
 			{
-				if !e.areProposalsExecuted(batch.proposals, sessionID) {
+				if !e.areProposalsExecuted(batch.proposals) {
 					continue
 				}
 
@@ -243,7 +243,7 @@ func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureDat
 	return hash, err
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal, sessionID string) bool {
+func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal) bool {
 	for _, prop := range proposals {
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil || !isExecuted {

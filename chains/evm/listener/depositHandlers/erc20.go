@@ -38,6 +38,6 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint6
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
-		Type:         transfer.ERC20Message,
+		Type:         transfer.FungibleTransfer,
 	}, transfer.TransferMessageType), nil
 }

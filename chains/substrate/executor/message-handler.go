@@ -23,7 +23,7 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 		Type:        m.Type,
 	}
 	switch transferMessage.Data.Type {
-	case transfer.ERC20Message:
+	case transfer.FungibleTransfer:
 		return fungibleTransferMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")

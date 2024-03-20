@@ -83,7 +83,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 			Payload: []interface{}{
 				metadata,
 			},
-			Type: transfer.PermissionedGenericMessage,
+			Type: transfer.PermissionedGenericTransfer,
 		},
 
 		Type: transfer.TransferMessageType,
@@ -127,7 +127,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 			Payload: []interface{}{
 				metadata,
 			},
-			Type: transfer.PermissionedGenericMessage,
+			Type: transfer.PermissionedGenericTransfer,
 		},
 
 		Type: transfer.TransferMessageType,

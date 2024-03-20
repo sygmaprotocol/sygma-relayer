@@ -8,19 +8,10 @@ import (
 type TransferType string
 
 const (
-	ERC20Transfer                 TransferType = "erc20"
-	ERC721Transfer                TransferType = "erc721"
+	FungibleTransfer              TransferType = "fungible"
+	NonFungibleTransfer           TransferType = "nonFungible"
 	PermissionedGenericTransfer   TransferType = "permissionedGeneric"
 	PermissionlessGenericTransfer TransferType = "permissionlessGeneric"
-)
-
-type TransferMessageDataType string
-
-const (
-	ERC20Message                 TransferMessageDataType = "erc20"
-	ERC721Message                TransferMessageDataType = "erc721"
-	PermissionedGenericMessage   TransferMessageDataType = "permissionedGeneric"
-	PermissionlessGenericMessage TransferMessageDataType = "permissionlessGeneric"
 )
 
 type TransferMessageData struct {
@@ -28,12 +19,12 @@ type TransferMessageData struct {
 	ResourceId   [32]byte
 	Metadata     map[string]interface{}
 	Payload      []interface{}
-	Type         TransferMessageDataType
+	Type         TransferType
 }
 
 const (
-	TransferMessageType  message.MessageType   = "Transfer"
-	TransferProposalType proposal.ProposalType = "Transfer"
+	TransferMessageType  message.MessageType   = "TransferMessage"
+	TransferProposalType proposal.ProposalType = "TransferProposal"
 )
 
 type TransferMessage struct {

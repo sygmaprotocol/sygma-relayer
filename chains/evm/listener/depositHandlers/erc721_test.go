@@ -55,7 +55,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 				recipientAddressParsed,
 				metadata,
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,
@@ -122,7 +122,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 				recipientAddressParsed,
 				parsedMetadata,
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,

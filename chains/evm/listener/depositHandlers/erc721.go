@@ -52,6 +52,6 @@ func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint
 		ResourceId:   resourceID,
 		Metadata:     meta,
 		Payload:      payload,
-		Type:         transfer.ERC721Message,
+		Type:         transfer.NonFungibleTransfer,
 	}, transfer.TransferMessageType), nil
 }

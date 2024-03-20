@@ -30,6 +30,6 @@ func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
-		Type:         transfer.PermissionedGenericMessage,
+		Type:         transfer.PermissionedGenericTransfer,
 	}, transfer.TransferMessageType), nil
 }

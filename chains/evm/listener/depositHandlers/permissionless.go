@@ -49,6 +49,6 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destId ui
 		ResourceId:   resourceID,
 		Metadata:     metadata,
 		Payload:      payload,
-		Type:         transfer.PermissionlessGenericMessage,
+		Type:         transfer.PermissionlessGenericTransfer,
 	}, transfer.TransferMessageType), nil
 }

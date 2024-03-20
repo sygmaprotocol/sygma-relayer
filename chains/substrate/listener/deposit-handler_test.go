@@ -66,7 +66,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 				amountParsed,
 				recipientAddressParsed,
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -119,7 +119,7 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 
 	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
-	depositHandler.RegisterDepositHandler(transfer.ERC20Transfer, listener.FungibleTransferHandler)
+	depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, listener.FungibleTransferHandler)
 	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType)
 	s.Nil(err1)
 	s.NotNil(message1)

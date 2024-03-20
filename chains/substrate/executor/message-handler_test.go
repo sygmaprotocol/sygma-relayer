@@ -46,7 +46,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessage() {
 				[]byte{2}, // amount
 				recipient,
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -79,7 +79,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,
@@ -104,7 +104,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 				"incorrectAmount", // amount
 				[]byte{0x8e, 0xaf, 0x4, 0x15, 0x16, 0x87, 0x73, 0x63, 0x26, 0xc9, 0xfe, 0xa1, 0x7e, 0x25, 0xfc, 0x52, 0x87, 0x61, 0x36, 0x93, 0xc9, 0x12, 0x90, 0x9c, 0xb2, 0x26, 0xaa, 0x47, 0x94, 0xf2, 0x6a, 0x48}, // recipientAddress
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,
@@ -129,7 +129,7 @@ func (s *FungibleTransferHandlerTestSuite) TestFungibleTransferHandleMessageInco
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,
@@ -157,7 +157,7 @@ func (s *FungibleTransferHandlerTestSuite) TestSuccesfullyRegisterFungibleTransf
 				[]byte{2}, // amount
 				recipient,
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 
 		Type: transfer.TransferMessageType,

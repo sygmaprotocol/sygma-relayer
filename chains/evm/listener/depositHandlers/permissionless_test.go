@@ -70,7 +70,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 				executionData,
 			},
 			Metadata: metadata,
-			Type:     transfer.PermissionlessGenericMessage,
+			Type:     transfer.PermissionlessGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}

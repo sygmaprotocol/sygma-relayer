@@ -59,7 +59,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 				amountParsed,
 				recipientAddressParsed,
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}

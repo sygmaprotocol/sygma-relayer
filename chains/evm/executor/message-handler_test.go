@@ -55,7 +55,7 @@ func (s *ERC20HandlerTestSuite) TestERC20HandleMessage() {
 				[]byte{2}, // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -77,7 +77,7 @@ func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectDataLen() {
 			Payload: []interface{}{
 				[]byte{2}, // amount
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -102,7 +102,7 @@ func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectAmount() {
 				"incorrectAmount", // amount
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -126,7 +126,7 @@ func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectRecipient() {
 				[]byte{2},            // amount
 				"incorrectRecipient", // recipientAddress
 			},
-			Type: transfer.ERC20Message,
+			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -166,7 +166,7 @@ func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerEmptyMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -188,7 +188,7 @@ func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectDataLen() {
 			Payload: []interface{}{
 				[]byte{2}, // tokenID
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -214,7 +214,7 @@ func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectAmount() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				[]byte{}, // metadata
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -240,7 +240,7 @@ func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectRecipient() {
 				"incorrectRecipient",
 				[]byte{}, // metadata
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -266,7 +266,7 @@ func (s *ERC721HandlerTestSuite) TestERC721MessageHandlerIncorrectMetadata() {
 				[]byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}, // recipientAddress
 				"incorrectMetadata", // metadata
 			},
-			Type: transfer.ERC721Message,
+			Type: transfer.NonFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -302,7 +302,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 			Payload: []interface{}{
 				[]byte{}, // metadata
 			},
-			Type: transfer.PermissionedGenericMessage,
+			Type: transfer.PermissionedGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -322,7 +322,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload:      []interface{}{},
-			Type:         transfer.PermissionedGenericMessage,
+			Type:         transfer.PermissionedGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -345,7 +345,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectMetadata() {
 			Payload: []interface{}{
 				"incorrectMetadata", // metadata
 			},
-			Type: transfer.PermissionedGenericMessage,
+			Type: transfer.PermissionedGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
@@ -403,7 +403,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 				depositor.Bytes(),
 				hash,
 			},
-			Type: transfer.PermissionlessGenericMessage,
+			Type: transfer.PermissionlessGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
 	}
