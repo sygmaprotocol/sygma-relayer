@@ -333,7 +333,7 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	hash, _ := substrateTypes.GetHash(substrateTypes.NewI64(int64(rand.Int())))
 	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(address,bytes32,address)"))[:4])
 	contractAddress := assetStoreContract2.ContractAddress()
-	maxFee := big.NewInt(200000)
+	maxFee := big.NewInt(600000)
 	depositor := s.client1.From()
 	var metadata []byte
 	metadata = append(metadata, common.LeftPadBytes(hash[:], 32)...)

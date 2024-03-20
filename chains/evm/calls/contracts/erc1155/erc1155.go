@@ -1,7 +1,6 @@
 package erc1155
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -50,6 +49,5 @@ func (c *ERC1155Contract) BalanceOf(account common.Address, id *big.Int) (*big.I
 	}
 
 	amount := abi.ConvertType(res[0], new(big.Int)).(*big.Int)
-	fmt.Println(amount)
 	return amount, nil
 }
