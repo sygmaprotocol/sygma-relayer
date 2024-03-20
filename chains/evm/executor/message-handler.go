@@ -13,55 +13,34 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 )
-
-const (
-	ERC20                 message.MessageType = "erc20"
-	ERC721                message.MessageType = "erc721"
-	PermissionedGeneric   message.MessageType = "permissionedGeneric"
-	PermissionlessGeneric message.MessageType = "permissionlessGeneric"
-)
-
-type TransferMessageData struct {
-	DepositNonce uint64
-	ResourceId   [32]byte
-	Payload      []interface{}
-	Metadata     map[string]interface{}
-}
-
-type TransferMessage struct {
-	Source      uint8
-	Destination uint8
-	Data        TransferMessageData
-	Type        message.MessageType
-}
 
 type TransferMessageHandler struct{}
 
 func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
 
-	transferMessage := &TransferMessage{
+	transferMessage := &transfer.TransferMessage{
 		Source:      msg.Source,
 		Destination: msg.Destination,
-		Data:        msg.Data.(TransferMessageData),
+		Data:        msg.Data.(transfer.TransferMessageData),
 		Type:        msg.Type,
 	}
 
-	switch msg.Type {
-	case ERC20:
+	switch transferMessage.Data.Type {
+	case transfer.FungibleTransfer:
 		return ERC20MessageHandler(transferMessage)
-	case ERC721:
+	case transfer.NonFungibleTransfer:
 		return ERC721MessageHandler(transferMessage)
-	case PermissionedGeneric:
+	case transfer.PermissionedGenericTransfer:
 		return GenericMessageHandler(transferMessage)
-	case PermissionlessGeneric:
+	case transfer.PermissionlessGenericTransfer:
 		return PermissionlessGenericMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")
 }
 
-func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func PermissionlessGenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
 
 	executeFunctionSignature, ok := msg.Data.Payload[0].([]byte)
 	if !ok {
@@ -97,15 +76,15 @@ func PermissionlessGenericMessageHandler(msg *TransferMessage) (*proposal.Propos
 	data.Write(depositor)
 
 	data.Write(executionData)
-	return chains.NewProposal(msg.Source, msg.Destination, chains.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, transfer.TransferProposalType), nil
 }
 
-func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
 	if len(msg.Data.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
 	}
@@ -123,15 +102,15 @@ func ERC20MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
 	data = append(data, recipient...)                             // recipient ([]byte)
 
-	return chains.NewProposal(msg.Source, msg.Destination, chains.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data,
-	}, chains.TransferProposalType), nil
+	}, transfer.TransferProposalType), nil
 }
 
-func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func ERC721MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
 
 	if len(msg.Data.Payload) != 3 {
 		return nil, errors.New("malformed payload. Len  of payload should be 3")
@@ -156,15 +135,15 @@ func ERC721MessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
 	data.Write(common.LeftPadBytes(metadataLen, 32))
 	data.Write(metadata)
-	return chains.NewProposal(msg.Source, msg.Destination, chains.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, transfer.TransferProposalType), nil
 }
 
-func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
+func GenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
 	if len(msg.Data.Payload) != 1 {
 		return nil, errors.New("malformed payload. Len  of payload should be 1")
 	}
@@ -176,10 +155,10 @@ func GenericMessageHandler(msg *TransferMessage) (*proposal.Proposal, error) {
 	metadataLen := big.NewInt(int64(len(metadata))).Bytes()
 	data.Write(common.LeftPadBytes(metadataLen, 32)) // length of metadata (uint256)
 	data.Write(metadata)
-	return chains.NewProposal(msg.Source, msg.Destination, chains.TransferProposalData{
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, chains.TransferProposalType), nil
+	}, transfer.TransferProposalType), nil
 }

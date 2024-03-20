@@ -6,7 +6,7 @@ import (
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 )
 
 type Erc721DepositHandler struct{}
@@ -47,10 +47,11 @@ func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint
 		metadata,
 	}
 
-	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
 		DepositNonce: nonce,
 		ResourceId:   resourceID,
 		Metadata:     meta,
 		Payload:      payload,
-	}, ERC721Transfer), nil
+		Type:         transfer.NonFungibleTransfer,
+	}, transfer.TransferMessageType), nil
 }

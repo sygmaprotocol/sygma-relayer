@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -33,10 +33,11 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint6
 		amount,
 		recipientAddress,
 	}
-	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
 		DepositNonce: nonce,
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
-	}, ERC20Transfer), nil
+		Type:         transfer.FungibleTransfer,
+	}, transfer.TransferMessageType), nil
 }

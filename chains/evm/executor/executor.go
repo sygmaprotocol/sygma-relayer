@@ -17,8 +17,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/comm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/signing"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
@@ -28,7 +28,7 @@ import (
 const TRANSFER_GAS_COST = 200000
 
 type Batch struct {
-	proposals []*chains.TransferProposal
+	proposals []*transfer.TransferProposal
 	gasLimit  uint64
 }
 
@@ -38,9 +38,9 @@ var (
 )
 
 type BridgeContract interface {
-	IsProposalExecuted(p *chains.TransferProposal) (bool, error)
-	ExecuteProposals(proposals []*chains.TransferProposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
-	ProposalsHash(proposals []*chains.TransferProposal) ([]byte, error)
+	IsProposalExecuted(p *transfer.TransferProposal) (bool, error)
+	ExecuteProposals(proposals []*transfer.TransferProposal, signature []byte, opts transactor.TransactOptions) (*ethCommon.Hash, error)
+	ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error)
 }
 
 type Executor struct {
@@ -78,7 +78,6 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
-
 	batches, err := e.proposalBatches(proposals)
 	if err != nil {
 		return err
@@ -92,6 +91,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 		b := batch
 		p.Go(func() error {
+
 			propHash, err := e.bridge.ProposalsHash(b.proposals)
 			if err != nil {
 				return err
@@ -106,26 +106,29 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				e.host,
 				e.comm,
 				e.fetcher)
+
 			if err != nil {
 				return err
 			}
-
 			sigChn := make(chan interface{})
 			executionContext, cancelExecution := context.WithCancel(context.Background())
+
 			watchContext, cancelWatch := context.WithCancel(context.Background())
+
 			ep := pool.New().WithErrors()
 			ep.Go(func() error {
 				err := e.coordinator.Execute(executionContext, signing, sigChn)
 				if err != nil {
 					cancelWatch()
 				}
-
 				return err
 			})
 			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID) })
+
 			return ep.Wait()
 		})
 	}
+
 	return p.Wait()
 }
 
@@ -147,16 +150,16 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 
 				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeBatch(batch, signatureData)
+
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
 				}
-
 				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
-				if !e.areProposalsExecuted(batch.proposals, sessionID) {
+				if !e.areProposalsExecuted(batch.proposals) {
 					continue
 				}
 
@@ -178,16 +181,16 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, error) {
 	batches := make([]*Batch, 1)
 	currentBatch := &Batch{
-		proposals: make([]*chains.TransferProposal, 0),
+		proposals: make([]*transfer.TransferProposal, 0),
 		gasLimit:  0,
 	}
 	batches[0] = currentBatch
 
 	for _, prop := range proposals {
-		transferProposal := &chains.TransferProposal{
+		transferProposal := &transfer.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
-			Data:        prop.Data.(chains.TransferProposalData),
+			Data:        prop.Data.(transfer.TransferProposalData),
 			Type:        prop.Type,
 		}
 
@@ -210,7 +213,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		currentBatch.gasLimit += propGasLimit
 		if currentBatch.gasLimit >= e.transactionMaxGas {
 			currentBatch = &Batch{
-				proposals: make([]*chains.TransferProposal, 0),
+				proposals: make([]*transfer.TransferProposal, 0),
 				gasLimit:  0,
 			}
 			batches = append(batches, currentBatch)
@@ -232,6 +235,7 @@ func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureDat
 	hash, err := e.bridge.ExecuteProposals(batch.proposals, sig, transactor.TransactOptions{
 		GasLimit: batch.gasLimit,
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +243,7 @@ func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureDat
 	return hash, err
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*chains.TransferProposal, sessionID string) bool {
+func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal) bool {
 	for _, prop := range proposals {
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil || !isExecuted {

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	mock_events "github.com/ChainSafe/sygma-relayer/chains/substrate/listener/mock"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/rs/zerolog"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
@@ -132,7 +132,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -167,7 +167,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
@@ -195,7 +195,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 1}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -206,7 +206,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -241,7 +241,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 1}}, {Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 1}}, {Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() {
@@ -279,7 +279,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -315,7 +315,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 type RetryHandlerTestSuite struct {
@@ -524,7 +524,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 1}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -535,7 +535,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -558,7 +558,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 
 	s.Nil(err)
 	s.Equal(len(s.msgChan), 0)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 1}}, {Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 1}}, {Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *RetryHandlerTestSuite) Test_EventPanics() {
@@ -633,7 +633,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -663,5 +663,5 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 
 	s.Nil(err)
 	s.Equal(len(s.msgChan), 0)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }

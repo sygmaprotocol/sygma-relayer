@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -25,10 +25,11 @@ func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 	}
 
 	// generic handler has specific payload length and doesn't support arbitrary metadata
-	return chains.NewMessage(sourceID, destId, chains.TransferMessageData{
+	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
 		DepositNonce: nonce,
 		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
-	}, GenericTransfer), nil
+		Type:         transfer.PermissionedGenericTransfer,
+	}, transfer.TransferMessageType), nil
 }

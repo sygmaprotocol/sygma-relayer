@@ -12,13 +12,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-const (
-	PermissionlessGenericTransfer message.MessageType = "PermissionlessGenericTransfer"
-	ERC20Transfer                 message.MessageType = "ERC20Transfer"
-	ERC721Transfer                message.MessageType = "ERC721Transfer"
-	GenericTransfer               message.MessageType = "GenericTransfer"
-)
-
 type DepositHandlers map[common.Address]eventHandlers.DepositHandler
 type HandlerMatcher interface {
 	GetHandlerAddressForResourceID(resourceID [32]byte) (common.Address, error)

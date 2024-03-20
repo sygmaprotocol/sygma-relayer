@@ -14,11 +14,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers/mock"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -74,7 +73,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 		d.Data,
 		d.HandlerResponse,
 	).Return(&message.Message{
-		Data: executor.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: 2,
 		},
 	}, nil)
@@ -83,7 +82,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: executor.TransferMessageData{
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}})
 }
@@ -115,7 +114,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Return(&message.Message{Data: executor.TransferMessageData{
+	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, fmt.Errorf("error"))
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -125,7 +124,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{Data: executor.TransferMessageData{
+	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
 
@@ -133,7 +132,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: executor.TransferMessageData{
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}})
 }
@@ -175,7 +174,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{Data: executor.TransferMessageData{
+	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
 
@@ -183,7 +182,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: executor.TransferMessageData{
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}})
 }
@@ -214,7 +213,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Return(&message.Message{Data: executor.TransferMessageData{
+	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, nil)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -224,7 +223,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
-	).Return(&message.Message{Data: executor.TransferMessageData{
+	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
 
@@ -232,9 +231,9 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: executor.TransferMessageData{
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
-	}}, {Data: executor.TransferMessageData{
+	}}, {Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}})
 }
@@ -304,7 +303,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2.HandlerResponse,
 	).Return(
 		&message.Message{
-			Data: chains.TransferMessageData{
+			Data: transfer.TransferMessageData{
 				DepositNonce: 2,
 			},
 		},
@@ -315,7 +314,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
@@ -353,7 +352,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d2.Data,
 		d2.HandlerResponse,
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -361,7 +360,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
@@ -389,7 +388,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1.Data,
 		d1.HandlerResponse,
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 1}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
 	)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -400,7 +399,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2.Data,
 		d2.HandlerResponse,
 	).Return(
-		&message.Message{Data: chains.TransferMessageData{DepositNonce: 2}},
+		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
 	)
 
@@ -408,5 +407,5 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: chains.TransferMessageData{DepositNonce: 1}}, {Data: chains.TransferMessageData{DepositNonce: 2}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 1}}, {Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }

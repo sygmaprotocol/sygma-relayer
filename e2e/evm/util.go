@@ -10,9 +10,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
-	"github.com/ChainSafe/chainbridge-core/types"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ethereum/go-ethereum"
@@ -34,8 +33,8 @@ type Client interface {
 }
 
 type EVMClient interface {
-	calls.ContractCallerDispatcher
-	evmgaspricer.GasPriceClient
+	client.Client
+	gas.GasPriceClient
 	ChainID(ctx context.Context) (*big.Int, error)
 }
 
@@ -44,22 +43,22 @@ type BridgeConfig struct {
 
 	Erc20Addr        common.Address
 	Erc20HandlerAddr common.Address
-	Erc20ResourceID  types.ResourceID
+	Erc20ResourceID  [32]byte
 
 	Erc20LockReleaseAddr        common.Address
 	Erc20LockReleaseHandlerAddr common.Address
-	Erc20LockReleaseResourceID  types.ResourceID
+	Erc20LockReleaseResourceID  [32]byte
 
 	GenericHandlerAddr common.Address
 	AssetStoreAddr     common.Address
-	GenericResourceID  types.ResourceID
+	GenericResourceID  [32]byte
 
 	PermissionlessGenericHandlerAddr common.Address
-	PermissionlessGenericResourceID  types.ResourceID
+	PermissionlessGenericResourceID  [32]byte
 
 	Erc721Addr        common.Address
 	Erc721HandlerAddr common.Address
-	Erc721ResourceID  types.ResourceID
+	Erc721ResourceID  [32]byte
 
 	BasicFeeHandlerAddr      common.Address
 	FeeRouterAddress         common.Address
@@ -103,10 +102,16 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 func ConstructFeeData(feeOracleSignature string, feeDataHash string, amountToDeposit *big.Int) []byte {
 	decodedFeeOracleSignature, _ := hex.DecodeString(feeOracleSignature)
 	decodedFeeData, _ := hex.DecodeString(feeDataHash)
-	amountToDepositBytes := calls.SliceTo32Bytes(common.LeftPadBytes(amountToDeposit.Bytes(), 32))
+	amountToDepositBytes := SliceTo32Bytes(common.LeftPadBytes(amountToDeposit.Bytes(), 32))
 	feeData := append(decodedFeeData, decodedFeeOracleSignature...)
 	feeData = append(feeData, amountToDepositBytes[:]...)
 	return feeData
+}
+
+func SliceTo32Bytes(in []byte) [32]byte {
+	var res [32]byte
+	copy(res[:], in)
+	return res
 }
 
 func ConstructPermissionlessGenericDepositData(metadata []byte, executionFunctionSig []byte, executeContractAddress []byte, metadataDepositor []byte, maxFee *big.Int) []byte {

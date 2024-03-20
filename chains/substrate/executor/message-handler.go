@@ -7,8 +7,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
@@ -17,20 +16,20 @@ import (
 type SubstrateMessageHandler struct{}
 
 func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.Proposal, error) {
-	transferMessage := &chains.TransferMessage{
+	transferMessage := &transfer.TransferMessage{
 		Source:      m.Source,
 		Destination: m.Destination,
-		Data:        m.Data.(chains.TransferMessageData),
+		Data:        m.Data.(transfer.TransferMessageData),
 		Type:        m.Type,
 	}
-	switch transferMessage.Type {
-	case substrate.FungibleTransfer:
+	switch transferMessage.Data.Type {
+	case transfer.FungibleTransfer:
 		return fungibleTransferMessageHandler(transferMessage)
 	}
 	return nil, errors.New("wrong message type passed while handling message")
 }
 
-func fungibleTransferMessageHandler(m *chains.TransferMessage) (*proposal.Proposal, error) {
+func fungibleTransferMessageHandler(m *transfer.TransferMessage) (*proposal.Proposal, error) {
 
 	if len(m.Data.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
@@ -49,10 +48,10 @@ func fungibleTransferMessageHandler(m *chains.TransferMessage) (*proposal.Propos
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...)
 	data = append(data, recipient...)
-	return chains.NewProposal(m.Source, m.Destination, chains.TransferProposalData{
+	return proposal.NewProposal(m.Source, m.Destination, transfer.TransferProposalData{
 		DepositNonce: m.Data.DepositNonce,
 		ResourceId:   m.Data.ResourceId,
 		Metadata:     m.Data.Metadata,
 		Data:         data,
-	}, chains.TransferProposalType), nil
+	}, transfer.TransferProposalType), nil
 }

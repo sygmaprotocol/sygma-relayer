@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -77,15 +77,16 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
 				metadata,
 			},
+			Type: transfer.PermissionedGenericTransfer,
 		},
 
-		Type: depositHandlers.GenericTransfer,
+		Type: transfer.TransferMessageType,
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}
@@ -120,15 +121,16 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
-		Data: chains.TransferMessageData{
+		Data: transfer.TransferMessageData{
 			DepositNonce: depositLog.DepositNonce,
 			ResourceId:   depositLog.ResourceID,
 			Payload: []interface{}{
 				metadata,
 			},
+			Type: transfer.PermissionedGenericTransfer,
 		},
 
-		Type: depositHandlers.GenericTransfer,
+		Type: transfer.TransferMessageType,
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}
