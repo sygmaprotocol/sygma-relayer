@@ -204,17 +204,14 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit() {
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
 		transactor.TransactOptions{
-			Priority: uint8(2), // fast
-			Value:    s.config1.BasicFee,
+			Value: s.config1.BasicFee,
 		})
 	s.Nil(err)
 
 	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
 
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(140000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -233,9 +230,7 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	tokenId := big.NewInt(int64(rand.Int()))
 	metadata := "metadata.url"
 
-	txOptions := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
+	txOptions := transactor.TransactOptions{}
 
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
@@ -271,10 +266,8 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	)
 	s.Nil(err)
 
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
-	// check gas price of deposit tx - 50 gwei (slow)
-	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -306,10 +299,8 @@ func (s *IntegrationTestSuite) Test_GenericDeposit() {
 	})
 	s.Nil(err)
 
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
-	// check gas price of deposit tx - 140 gwei
-	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
@@ -367,8 +358,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 
 	depositTxHash, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20LockReleaseResourceID, 2, nil,
 		transactor.TransactOptions{
-			Priority: uint8(2), // fast
-			Value:    s.config1.BasicFee,
+			Value: s.config1.BasicFee,
 		})
 	s.Nil(err)
 
@@ -378,16 +368,12 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	s.Nil(err)
 	time.Sleep(time.Second * 15)
 
-	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
 
-	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	})
+	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
@@ -420,8 +406,7 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 		go func() {
 			_, err := bridgeContract1.Erc20Deposit(dstAddr.Bytes(), amountToDeposit, s.config1.Erc20ResourceID, 2, nil,
 				transactor.TransactOptions{
-					Priority: uint8(2), // fast
-					Value:    s.config1.BasicFee,
+					Value: s.config1.BasicFee,
 				})
 			wg.Add(1)
 			defer wg.Done()
@@ -446,9 +431,7 @@ func (s *IntegrationTestSuite) Test_Erc1155Deposit() {
 
 	metadata := "metadata.url"
 
-	txOptions := transactor.TransactOptions{
-		Priority: uint8(2), // fast
-	}
+	txOptions := transactor.TransactOptions{}
 
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 
@@ -479,10 +462,8 @@ func (s *IntegrationTestSuite) Test_Erc1155Deposit() {
 	)
 	s.Nil(err)
 
-	depositTx, _, err := s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
 	s.Nil(err)
-	// check gas price of deposit tx - 50 gwei (slow)
-	s.Equal(big.NewInt(50000000000), depositTx.GasPrice())
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)

@@ -68,23 +68,6 @@ services:
       - ./cfg:/cfg
     restart: always
 
-  fee-oracle:
-    container_name: fee-oracle
-    image: "ghcr.io/sygmaprotocol/sygma-fee-oracle:v1.1.1"
-    command: go run main.go server -c ./fee-oracle-config/config.yaml -d ./fee-oracle-config/domain.json
-    depends_on:
-      - evm1-1
-      - substrate-pallet
-    volumes:
-      - ./fee-oracle-config:/app/feeOracle/fee-oracle-config
-    ports:
-      - "8091:8091"
-    environment:
-      - APP_MODE=debug
-      - IDENTITY_KEY=71aec985a12cfcbabc7969845215ceac56038e87477c8337e373eab7b15796cf
-      - IDENTITY_KEY_TYPE=secp256k1
-
-
   otel-collector:
     container_name: otel-collector
     image: otel/opentelemetry-collector
