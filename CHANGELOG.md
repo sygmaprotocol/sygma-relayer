@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.4...v1.11.0) (2024-03-21)
+
+
+### Features
+
+* add erc1155 listener/handler ([#254](https://github.com/sygmaprotocol/sygma-relayer/issues/254)) ([68923e3](https://github.com/sygmaprotocol/sygma-relayer/commit/68923e3cfd825693b3cfc8f1bdd3ca1c639a140d))
+
 ## [1.10.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.3...v1.10.4) (2024-01-31)
 
 
