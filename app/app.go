@@ -199,6 +199,11 @@ func Run() error {
 							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
 							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
 						}
+					case "erc1155":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, listener.Erc1155DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, executor.Erc1155MessageHandler)
+						}
 					}
 				}
 				depositListener := coreEvents.NewListener(client)

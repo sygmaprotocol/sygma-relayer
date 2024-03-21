@@ -12,6 +12,7 @@ import (
 
 	"github.com/ChainSafe/chainbridge-core/chains/evm/executor/proposal"
 	"github.com/ChainSafe/chainbridge-core/relayer/message"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener"
 )
 
 func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, bridgeAddress common.Address) (*proposal.Proposal, error) {
@@ -51,4 +52,42 @@ func PermissionlessGenericMessageHandler(msg *message.Message, handlerAddr, brid
 	data.Write(executionData)
 
 	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data.Bytes(), handlerAddr, bridgeAddress, msg.Metadata), nil
+}
+
+func Erc1155MessageHandler(msg *message.Message, handlerAddr, bridgeAddress common.Address) (*proposal.Proposal, error) {
+
+	if len(msg.Payload) != 4 {
+		return nil, errors.New("malformed payload. Len  of payload should be 4")
+	}
+	_, ok := msg.Payload[0].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload tokenIDs format")
+	}
+	_, ok = msg.Payload[1].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload amounts format")
+	}
+	_, ok = msg.Payload[2].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload recipient format")
+	}
+	if len(msg.Payload[2].([]byte)) != 20 {
+		return nil, errors.New("malformed payload. Len  of recipient should be 20")
+	}
+	_, ok = msg.Payload[3].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload transferData format")
+	}
+
+	erc1155Type, err := listener.GetErc1155Type()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := erc1155Type.PackValues(msg.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return proposal.NewProposal(msg.Source, msg.Destination, msg.DepositNonce, msg.ResourceId, data, handlerAddr, bridgeAddress, msg.Metadata), nil
 }
