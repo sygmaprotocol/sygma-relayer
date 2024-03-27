@@ -9,7 +9,6 @@ on:
       release_tag:
         description: 'The Release tag Version'
         required: true
-        default: 'stable' 
         type: string
       TOKEN: 
         description: 'Authentication token'
