@@ -154,11 +154,11 @@ func ERC1155MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, e
 	}
 	_, ok := msg.Data.Payload[0].([]*big.Int)
 	if !ok {
-		return nil, errors.New("wrong payload tokenIDs format")
+		return nil, errors.New("wrong payload tokenID format")
 	}
 	_, ok = msg.Data.Payload[1].([]*big.Int)
 	if !ok {
-		return nil, errors.New("wrong payload amounts format")
+		return nil, errors.New("wrong payload amount format")
 	}
 	_, ok = msg.Data.Payload[2].([]byte)
 	if !ok {
