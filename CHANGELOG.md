@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.11.0...v1.11.1) (2024-03-28)
+
+
+### Miscellaneous
+
+* reduce turnaround time ([#260](https://github.com/sygmaprotocol/sygma-relayer/issues/260)) ([8d18d3c](https://github.com/sygmaprotocol/sygma-relayer/commit/8d18d3c1060410df62a9970725654a16dc64ad2a))
+* remove stable tag for image version ([#258](https://github.com/sygmaprotocol/sygma-relayer/issues/258)) ([371b55a](https://github.com/sygmaprotocol/sygma-relayer/commit/371b55a4ffb1483d3558565226b3741d56a680b0))
+
 ## [1.11.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.4...v1.11.0) (2024-03-21)
 
 
