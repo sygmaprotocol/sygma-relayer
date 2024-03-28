@@ -7,74 +7,36 @@ package mock_listener
 import (
 	reflect "reflect"
 
-	message "github.com/ChainSafe/chainbridge-core/relayer/message"
 	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEventHandler is a mock of EventHandler interface.
-type MockEventHandler struct {
+// MockConnection is a mock of Connection interface.
+type MockConnection struct {
 	ctrl     *gomock.Controller
-	recorder *MockEventHandlerMockRecorder
+	recorder *MockConnectionMockRecorder
 }
 
-// MockEventHandlerMockRecorder is the mock recorder for MockEventHandler.
-type MockEventHandlerMockRecorder struct {
-	mock *MockEventHandler
+// MockConnectionMockRecorder is the mock recorder for MockConnection.
+type MockConnectionMockRecorder struct {
+	mock *MockConnection
 }
 
-// NewMockEventHandler creates a new mock instance.
-func NewMockEventHandler(ctrl *gomock.Controller) *MockEventHandler {
-	mock := &MockEventHandler{ctrl: ctrl}
-	mock.recorder = &MockEventHandlerMockRecorder{mock}
+// NewMockConnection creates a new mock instance.
+func NewMockConnection(ctrl *gomock.Controller) *MockConnection {
+	mock := &MockConnection{ctrl: ctrl}
+	mock.recorder = &MockConnectionMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockEventHandler) EXPECT() *MockEventHandlerMockRecorder {
-	return m.recorder
-}
-
-// HandleEvents mocks base method.
-func (m *MockEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleEvents", evts, msgChan)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// HandleEvents indicates an expected call of HandleEvents.
-func (mr *MockEventHandlerMockRecorder) HandleEvents(evts, msgChan interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleEvents", reflect.TypeOf((*MockEventHandler)(nil).HandleEvents), evts, msgChan)
-}
-
-// MockChainConnection is a mock of ChainConnection interface.
-type MockChainConnection struct {
-	ctrl     *gomock.Controller
-	recorder *MockChainConnectionMockRecorder
-}
-
-// MockChainConnectionMockRecorder is the mock recorder for MockChainConnection.
-type MockChainConnectionMockRecorder struct {
-	mock *MockChainConnection
-}
-
-// NewMockChainConnection creates a new mock instance.
-func NewMockChainConnection(ctrl *gomock.Controller) *MockChainConnection {
-	mock := &MockChainConnection{ctrl: ctrl}
-	mock.recorder = &MockChainConnectionMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockChainConnection) EXPECT() *MockChainConnectionMockRecorder {
+func (m *MockConnection) EXPECT() *MockConnectionMockRecorder {
 	return m.recorder
 }
 
 // GetBlock mocks base method.
-func (m *MockChainConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock, error) {
+func (m *MockConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blockHash)
 	ret0, _ := ret[0].(*types.SignedBlock)
@@ -83,13 +45,13 @@ func (m *MockChainConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock
 }
 
 // GetBlock indicates an expected call of GetBlock.
-func (mr *MockChainConnectionMockRecorder) GetBlock(blockHash interface{}) *gomock.Call {
+func (mr *MockConnectionMockRecorder) GetBlock(blockHash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockChainConnection)(nil).GetBlock), blockHash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockConnection)(nil).GetBlock), blockHash)
 }
 
 // GetBlockEvents mocks base method.
-func (m *MockChainConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
+func (m *MockConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockEvents", hash)
 	ret0, _ := ret[0].([]*parser.Event)
@@ -98,13 +60,13 @@ func (m *MockChainConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, 
 }
 
 // GetBlockEvents indicates an expected call of GetBlockEvents.
-func (mr *MockChainConnectionMockRecorder) GetBlockEvents(hash interface{}) *gomock.Call {
+func (mr *MockConnectionMockRecorder) GetBlockEvents(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockEvents", reflect.TypeOf((*MockChainConnection)(nil).GetBlockEvents), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockEvents", reflect.TypeOf((*MockConnection)(nil).GetBlockEvents), hash)
 }
 
 // GetBlockHash mocks base method.
-func (m *MockChainConnection) GetBlockHash(blockNumber uint64) (types.Hash, error) {
+func (m *MockConnection) GetBlockHash(blockNumber uint64) (types.Hash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockHash", blockNumber)
 	ret0, _ := ret[0].(types.Hash)
@@ -113,13 +75,13 @@ func (m *MockChainConnection) GetBlockHash(blockNumber uint64) (types.Hash, erro
 }
 
 // GetBlockHash indicates an expected call of GetBlockHash.
-func (mr *MockChainConnectionMockRecorder) GetBlockHash(blockNumber interface{}) *gomock.Call {
+func (mr *MockConnectionMockRecorder) GetBlockHash(blockNumber interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHash", reflect.TypeOf((*MockChainConnection)(nil).GetBlockHash), blockNumber)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHash", reflect.TypeOf((*MockConnection)(nil).GetBlockHash), blockNumber)
 }
 
 // GetFinalizedHead mocks base method.
-func (m *MockChainConnection) GetFinalizedHead() (types.Hash, error) {
+func (m *MockConnection) GetFinalizedHead() (types.Hash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFinalizedHead")
 	ret0, _ := ret[0].(types.Hash)
@@ -128,28 +90,13 @@ func (m *MockChainConnection) GetFinalizedHead() (types.Hash, error) {
 }
 
 // GetFinalizedHead indicates an expected call of GetFinalizedHead.
-func (mr *MockChainConnectionMockRecorder) GetFinalizedHead() *gomock.Call {
+func (mr *MockConnectionMockRecorder) GetFinalizedHead() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalizedHead", reflect.TypeOf((*MockChainConnection)(nil).GetFinalizedHead))
-}
-
-// GetHeaderLatest mocks base method.
-func (m *MockChainConnection) GetHeaderLatest() (*types.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHeaderLatest")
-	ret0, _ := ret[0].(*types.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHeaderLatest indicates an expected call of GetHeaderLatest.
-func (mr *MockChainConnectionMockRecorder) GetHeaderLatest() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderLatest", reflect.TypeOf((*MockChainConnection)(nil).GetHeaderLatest))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalizedHead", reflect.TypeOf((*MockConnection)(nil).GetFinalizedHead))
 }
 
 // UpdateMetatdata mocks base method.
-func (m *MockChainConnection) UpdateMetatdata() error {
+func (m *MockConnection) UpdateMetatdata() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMetatdata")
 	ret0, _ := ret[0].(error)
@@ -157,7 +104,7 @@ func (m *MockChainConnection) UpdateMetatdata() error {
 }
 
 // UpdateMetatdata indicates an expected call of UpdateMetatdata.
-func (mr *MockChainConnectionMockRecorder) UpdateMetatdata() *gomock.Call {
+func (mr *MockConnectionMockRecorder) UpdateMetatdata() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetatdata", reflect.TypeOf((*MockChainConnection)(nil).UpdateMetatdata))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetatdata", reflect.TypeOf((*MockConnection)(nil).UpdateMetatdata))
 }

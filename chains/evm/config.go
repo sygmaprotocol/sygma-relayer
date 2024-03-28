@@ -12,8 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/ChainSafe/chainbridge-core/config/chain"
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
+	"github.com/ChainSafe/sygma-relayer/config/chain"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 )
 
 type HandlerConfig struct {

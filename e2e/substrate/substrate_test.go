@@ -7,25 +7,24 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
-	"github.com/ChainSafe/chainbridge-core/crypto/secp256k1"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
+	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/signAndSend"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 
 	"math/big"
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/erc20"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmclient"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmtransaction"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor/signAndSend"
-	"github.com/ChainSafe/chainbridge-core/e2e/dummy"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 	"github.com/ChainSafe/sygma-relayer/e2e/substrate"
 
 	"github.com/ethereum/go-ethereum"
@@ -53,11 +52,11 @@ func Test_EVMSubstrate(t *testing.T) {
 
 		Erc20Addr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
 		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20ResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+		Erc20ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
 		Erc20LockReleaseAddr:        common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
 		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20LockReleaseResourceID:  calls.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
+		Erc20LockReleaseResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
 		BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
 		FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
@@ -65,11 +64,11 @@ func Test_EVMSubstrate(t *testing.T) {
 	}
 
 	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	ethClient, err := evmclient.NewEVMClient(ETHEndpoint, pk)
+	ethClient, err := evmClient.NewEVMClient(ETHEndpoint, pk)
 	if err != nil {
 		panic(err)
 	}
-	gasPricer := dummy.NewStaticGasPriceDeterminant(ethClient, nil)
+	gasPricer := gas.NewStaticGasPriceDeterminant(ethClient, nil)
 
 	substrateConnection, err := connection.NewSubstrateConnection(SubstrateEndpoint)
 	if err != nil {
@@ -84,7 +83,7 @@ func Test_EVMSubstrate(t *testing.T) {
 	suite.Run(
 		t,
 		NewEVMSubstrateTestSuite(
-			evmtransaction.NewTransaction,
+			transaction.NewTransaction,
 			ethClient,
 			substrateClient,
 			substrateConnection,
@@ -96,11 +95,11 @@ func Test_EVMSubstrate(t *testing.T) {
 }
 
 func NewEVMSubstrateTestSuite(
-	fabric calls.TxFabric,
+	fabric transaction.TxFabric,
 	evmClient TestClient,
 	substrateClient *client.SubstrateClient,
 	substrateConnection *connection.Connection,
-	gasPricer calls.GasPricer,
+	gasPricer signAndSend.GasPricer,
 	evmConfig evm.BridgeConfig,
 	substrateAssetID []byte,
 ) *IntegrationTestSuite {
@@ -117,11 +116,11 @@ func NewEVMSubstrateTestSuite(
 
 type IntegrationTestSuite struct {
 	suite.Suite
-	fabric              calls.TxFabric
+	fabric              transaction.TxFabric
 	evmClient           TestClient
 	substrateClient     *client.SubstrateClient
 	substrateConnection *connection.Connection
-	gasPricer           calls.GasPricer
+	gasPricer           signAndSend.GasPricer
 	evmConfig           evm.BridgeConfig
 	substrateAssetID    []byte
 }
@@ -204,9 +203,10 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
 	pk := []substrateTypes.U8{0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x4, 0xa9, 0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7, 0xa5, 0x6d, 0xa2, 0x7d}
 
 	recipientMultilocation := substrate.ConstructRecipientData(pk)
-	_, err = bridgeContract1.Erc20Deposit(recipientMultilocation, amountToDeposit, s.evmConfig.Erc20LockReleaseResourceID, 3, nil, transactor.TransactOptions{
-		Value: s.evmConfig.BasicFee,
-	})
+
+	erc20DepositData := evm.ConstructErc20DepositData(recipientMultilocation, amountToDeposit)
+	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.evmConfig.BasicFee}, uint8(3), s.evmConfig.Erc20LockReleaseResourceID, erc20DepositData, []byte{})
+
 	s.Nil(err)
 
 	err = substrate.WaitForProposalExecuted(s.substrateConnection, destBalanceBefore.Balance, substrate.SubstratePK.PublicKey)

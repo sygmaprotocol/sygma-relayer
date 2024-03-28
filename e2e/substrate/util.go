@@ -14,11 +14,10 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/scale"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
-
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/evmgaspricer"
+	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,7 +26,6 @@ import (
 
 var TestTimeout = time.Minute * 4
 var BasicFee = big.NewInt(100000000000000)
-var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
 var GasUsed = uint32(2000000000)
 var SubstratePK = signature.KeyringPair{
 	URI:       "//Alice",
@@ -65,8 +63,8 @@ type Client interface {
 }
 
 type EVMClient interface {
-	calls.ContractCallerDispatcher
-	evmgaspricer.GasPriceClient
+	client.Client
+	gas.GasPriceClient
 	ChainID(ctx context.Context) (*big.Int, error)
 }
 

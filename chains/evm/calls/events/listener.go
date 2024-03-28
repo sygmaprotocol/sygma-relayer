@@ -14,8 +14,6 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/rs/zerolog/log"
 
-	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/events"
-
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 )
 
@@ -38,8 +36,42 @@ func NewListener(client ChainClient) *Listener {
 	}
 }
 
-func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
-	depositEvents := make([]events.Deposit, 0)
+func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*Deposit, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(DepositSig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+	deposits := make([]*Deposit, 0)
+
+	for _, dl := range logs {
+		d, err := l.unpackDeposit(l.abi, dl.Data)
+		if err != nil {
+			log.Error().Msgf("failed unpacking deposit event log: %v", err)
+			continue
+		}
+
+		d.SenderAddress = common.BytesToAddress(dl.Topics[1].Bytes())
+		log.Debug().Msgf("Found deposit log in block: %d, TxHash: %s, contractAddress: %s, sender: %s", dl.BlockNumber, dl.TxHash, dl.Address, d.SenderAddress)
+
+		deposits = append(deposits, d)
+	}
+
+	return deposits, nil
+}
+
+func (l *Listener) unpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
+	var dl Deposit
+
+	err := abi.UnpackIntoInterface(&dl, "Deposit", data)
+	if err != nil {
+		return &Deposit{}, err
+	}
+
+	return &dl, nil
+}
+
+func (l *Listener) FetchRetryDepositEvents(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
+	depositEvents := make([]Deposit, 0)
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
 	if err != nil {
@@ -64,7 +96,7 @@ func (l *Listener) FetchDepositEvent(event RetryEvent, bridgeAddress common.Addr
 			continue
 		}
 
-		var depositEvent events.Deposit
+		var depositEvent Deposit
 		err := l.abi.UnpackIntoInterface(&depositEvent, "Deposit", lg.Data)
 		if err == nil {
 			depositEvents = append(depositEvents, depositEvent)

@@ -7,9 +7,9 @@ package mock_listener
 import (
 	reflect "reflect"
 
-	message "github.com/ChainSafe/chainbridge-core/relayer/message"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
+	message "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
 // MockDepositHandler is a mock of DepositHandler interface.

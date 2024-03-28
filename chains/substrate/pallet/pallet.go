@@ -7,7 +7,9 @@ import (
 	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/client"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 
@@ -38,16 +40,16 @@ func NewPallet(
 }
 
 func (p *Pallet) ExecuteProposals(
-	proposals []*chains.Proposal,
+	proposals []*transfer.TransferProposal,
 	signature []byte,
 ) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	bridgeProposals := make([]BridgeProposal, 0)
 	for _, prop := range proposals {
 		bridgeProposals = append(bridgeProposals, BridgeProposal{
-			OriginDomainID: prop.OriginDomainID,
-			DepositNonce:   prop.DepositNonce,
-			ResourceID:     prop.ResourceID,
-			Data:           prop.Data,
+			OriginDomainID: prop.Source,
+			DepositNonce:   prop.Data.DepositNonce,
+			ResourceID:     prop.Data.ResourceId,
+			Data:           prop.Data.Data,
 		})
 	}
 
@@ -58,17 +60,18 @@ func (p *Pallet) ExecuteProposals(
 	)
 }
 
-func (p *Pallet) ProposalsHash(proposals []*chains.Proposal) ([]byte, error) {
+func (p *Pallet) ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error) {
 	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
-func (p *Pallet) IsProposalExecuted(prop *chains.Proposal) (bool, error) {
+func (p *Pallet) IsProposalExecuted(prop *transfer.TransferProposal) (bool, error) {
+
 	log.Debug().
-		Str("depositNonce", strconv.FormatUint(prop.DepositNonce, 10)).
-		Str("resourceID", hexutil.Encode(prop.ResourceID[:])).
+		Str("depositNonce", strconv.FormatUint(prop.Data.DepositNonce, 10)).
+		Str("resourceID", hexutil.Encode(prop.Data.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	err := p.Conn.Call(&res, "sygma_isProposalExecuted", prop.DepositNonce, prop.OriginDomainID)
+	err := p.Conn.Call(&res, "sygma_isProposalExecuted", prop.Data.DepositNonce, prop.Source)
 	if err != nil {
 		return false, err
 	}

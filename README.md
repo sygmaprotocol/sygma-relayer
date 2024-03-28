@@ -6,7 +6,7 @@
 
 &nbsp;
 
-Sygma bridge uses [chainbridge-core](https://github.com/ChainSafe/chainbridge-core) framework and replaces the relayer voting mechanism with the MPC signing process.
+Sygma bridge uses [sygma-core](https://github.com/sygmaprotocol/sygma-core) framework 
 
 &nbsp;
 
