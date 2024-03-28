@@ -69,10 +69,7 @@ jobs:
       contents: read
       id-token: write
 
-    steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
+    steps:     
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -128,10 +125,7 @@ jobs:
       contents: read
       id-token: write
 
-    steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
+    steps: 
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -188,9 +182,6 @@ jobs:
       id-token: write
 
     steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
