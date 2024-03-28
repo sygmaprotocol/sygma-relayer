@@ -200,6 +200,10 @@ func Run() error {
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc721DepositHandler{})
 						}
+					case "erc1155":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc1155DepositHandler{})
+						}
 					}
 				}
 				depositListener := events.NewListener(client)

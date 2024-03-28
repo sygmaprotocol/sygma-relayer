@@ -23,9 +23,12 @@ import (
 var errIncorrectERC20PayloadLen = errors.New("malformed payload. Len  of payload should be 2")
 var errIncorrectERC721PayloadLen = errors.New("malformed payload. Len  of payload should be 3")
 var errIncorrectGenericPayloadLen = errors.New("malformed payload. Len  of payload should be 1")
+var errIncorrectERC1155PayloadLen = errors.New("malformed payload. Len  of payload should be 4")
 
 var errIncorrectAmount = errors.New("wrong payload amount format")
 var errIncorrectRecipient = errors.New("wrong payload recipient format")
+var errIncorrectRecipientLen = errors.New("malformed payload. Len  of recipient should be 20")
+var errIncorrectTransferData = errors.New("wrong payload transferData format")
 var errIncorrectTokenID = errors.New("wrong payload tokenID format")
 var errIncorrectMetadata = errors.New("wrong payload metadata format")
 
@@ -425,4 +428,216 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 	)
 	s.Nil(err)
 	s.Equal(expected, prop)
+}
+
+// Erc1155
+type Erc1155HandlerTestSuite struct {
+	suite.Suite
+}
+
+func TestRunErc1155HandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(Erc1155HandlerTestSuite))
+}
+
+func (s *Erc1155HandlerTestSuite) SetupSuite()    {}
+func (s *Erc1155HandlerTestSuite) TearDownSuite() {}
+func (s *Erc1155HandlerTestSuite) SetupTest()     {}
+func (s *Erc1155HandlerTestSuite) TearDownTest()  {}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+				[]byte{},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(err)
+	s.NotNil(prop)
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidPayloadLen() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectERC1155PayloadLen.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidTokenIDs() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				2,
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+				[]byte{},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectTokenID.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidAmounts() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				3,
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+				[]byte{},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectAmount.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidRecipient() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				"invalidRecipient",
+				[]byte{},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectRecipient.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidRecipientLen() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251},
+				[]byte{},
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectRecipientLen.Error())
+}
+
+func (s *Erc1155HandlerTestSuite) Test_HandleErc1155Message_InvalidTransferData() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				[]*big.Int{
+					big.NewInt(2),
+				},
+				[]*big.Int{
+					big.NewInt(3),
+				},
+				[]byte{28, 58, 3, 208, 76, 2, 107, 31, 75, 66, 8, 210, 206, 5, 60, 86, 134, 230, 251, 141},
+				"invalidTransferData",
+			},
+			Type: transfer.SemiFungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(prop)
+	s.EqualError(err, errIncorrectTransferData.Error())
 }

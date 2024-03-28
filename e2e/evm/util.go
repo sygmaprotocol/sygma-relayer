@@ -5,7 +5,6 @@ package evm
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"math/big"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -21,10 +21,9 @@ import (
 )
 
 var TestTimeout = time.Minute * 4
-var BasicFee = big.NewInt(1000000000000000)
+var BasicFee = big.NewInt(100000000000000)
 var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
 var GasUsed = uint32(2000000000)
-var FeeOracleAddress = common.HexToAddress("0x70B7D7448982b15295150575541D1d3b862f7FE9")
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
@@ -60,11 +59,16 @@ type BridgeConfig struct {
 	Erc721HandlerAddr common.Address
 	Erc721ResourceID  [32]byte
 
-	BasicFeeHandlerAddr      common.Address
-	FeeRouterAddress         common.Address
-	FeeHandlerWithOracleAddr common.Address
-	BasicFee                 *big.Int
-	OracleFee                uint16
+	Erc1155Addr        common.Address
+	Erc1155HandlerAddr common.Address
+	Erc1155ResourceID  [32]byte
+
+	BasicFeeHandlerAddr common.Address
+	FeeRouterAddress    common.Address
+	BasicFee            *big.Int
+
+	MaxGasPrice   *big.Int
+	GasMultiplier *big.Float
 }
 
 func WaitForProposalExecuted(client Client, bridge common.Address) error {
@@ -97,15 +101,6 @@ func WaitForProposalExecuted(client Client, bridge common.Address) error {
 			return errors.New("test timed out waiting for proposal execution event")
 		}
 	}
-}
-
-func ConstructFeeData(feeOracleSignature string, feeDataHash string, amountToDeposit *big.Int) []byte {
-	decodedFeeOracleSignature, _ := hex.DecodeString(feeOracleSignature)
-	decodedFeeData, _ := hex.DecodeString(feeDataHash)
-	amountToDepositBytes := SliceTo32Bytes(common.LeftPadBytes(amountToDeposit.Bytes(), 32))
-	feeData := append(decodedFeeData, decodedFeeOracleSignature...)
-	feeData = append(feeData, amountToDepositBytes[:]...)
-	return feeData
 }
 
 func SliceTo32Bytes(in []byte) [32]byte {
@@ -152,4 +147,28 @@ func ConstructGenericDepositData(metadata []byte) []byte {
 	data = append(data, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 32)...) // Length of metadata
 	data = append(data, metadata...)                                                  // Metadata
 	return data
+}
+
+func ConstructErc1155DepositData(destRecipient []byte, tokenIds *big.Int, amounts *big.Int, metadata []byte) ([]byte, error) {
+	erc1155Type, err := depositHandlers.GetErc1155Type()
+	if err != nil {
+		return nil, err
+	}
+
+	payload := []interface{}{
+		[]*big.Int{
+			tokenIds,
+		},
+		[]*big.Int{
+			amounts,
+		},
+		destRecipient,
+		[]byte{},
+	}
+	data, err := erc1155Type.Pack(payload...)
+
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

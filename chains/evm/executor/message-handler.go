@@ -13,6 +13,8 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
+	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
+
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 )
 
@@ -30,6 +32,8 @@ func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.
 	switch transferMessage.Data.Type {
 	case transfer.FungibleTransfer:
 		return ERC20MessageHandler(transferMessage)
+	case transfer.SemiFungibleTransfer:
+		return ERC1155MessageHandler(transferMessage)
 	case transfer.NonFungibleTransfer:
 		return ERC721MessageHandler(transferMessage)
 	case transfer.PermissionedGenericTransfer:
@@ -140,6 +144,49 @@ func ERC721MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, er
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
+	}, transfer.TransferProposalType), nil
+}
+
+func ERC1155MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
+
+	if len(msg.Data.Payload) != 4 {
+		return nil, errors.New("malformed payload. Len  of payload should be 4")
+	}
+	_, ok := msg.Data.Payload[0].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload tokenIDs format")
+	}
+	_, ok = msg.Data.Payload[1].([]*big.Int)
+	if !ok {
+		return nil, errors.New("wrong payload amounts format")
+	}
+	_, ok = msg.Data.Payload[2].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload recipient format")
+	}
+	if len(msg.Data.Payload[2].([]byte)) != 20 {
+		return nil, errors.New("malformed payload. Len  of recipient should be 20")
+	}
+	_, ok = msg.Data.Payload[3].([]byte)
+	if !ok {
+		return nil, errors.New("wrong payload transferData format")
+	}
+
+	erc1155Type, err := depositHandlers.GetErc1155Type()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := erc1155Type.PackValues(msg.Data.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
+		DepositNonce: msg.Data.DepositNonce,
+		ResourceId:   msg.Data.ResourceId,
+		Metadata:     msg.Data.Metadata,
+		Data:         data,
 	}, transfer.TransferProposalType), nil
 }
 

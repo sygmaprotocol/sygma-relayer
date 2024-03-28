@@ -9,6 +9,7 @@ type TransferType string
 
 const (
 	FungibleTransfer              TransferType = "fungible"
+	SemiFungibleTransfer          TransferType = "semiFungible"
 	NonFungibleTransfer           TransferType = "nonFungible"
 	PermissionedGenericTransfer   TransferType = "permissionedGeneric"
 	PermissionlessGenericTransfer TransferType = "permissionlessGeneric"
