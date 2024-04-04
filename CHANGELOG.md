@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.11.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.4...v1.11.0) (2024-03-21)
+
+
+### Features
+
+* add erc1155 listener/handler ([#254](https://github.com/sygmaprotocol/sygma-relayer/issues/254)) ([68923e3](https://github.com/sygmaprotocol/sygma-relayer/commit/68923e3cfd825693b3cfc8f1bdd3ca1c639a140d))
+
+## [1.10.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.3...v1.10.4) (2024-01-31)
+
+
+### Miscellaneous
+
+* slack notify ([#249](https://github.com/sygmaprotocol/sygma-relayer/issues/249)) ([9d19568](https://github.com/sygmaprotocol/sygma-relayer/commit/9d19568447e8e652b2c8a5740d8128f03875135a))
+* workflow  renaming ([#251](https://github.com/sygmaprotocol/sygma-relayer/issues/251)) ([c7de390](https://github.com/sygmaprotocol/sygma-relayer/commit/c7de390f6a872d1ffdcf611540acf2d89b9b636d))
+
+## [1.10.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.2...v1.10.3) (2024-01-11)
+
+
+### Miscellaneous
+
+* bump dependencies ([#244](https://github.com/sygmaprotocol/sygma-relayer/issues/244)) ([621f81c](https://github.com/sygmaprotocol/sygma-relayer/commit/621f81c121fc2f6f4c6c9b871f3d4fa063f91d2d))
+
+## [1.10.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.1...v1.10.2) (2023-11-30)
+
+
+### Miscellaneous
+
+* add version on startup ([#240](https://github.com/sygmaprotocol/sygma-relayer/issues/240)) ([e86c9d9](https://github.com/sygmaprotocol/sygma-relayer/commit/e86c9d9b31cc24bce542f99bab1d774863dab608))
+* update codeowners ([#237](https://github.com/sygmaprotocol/sygma-relayer/issues/237)) ([a6be32a](https://github.com/sygmaprotocol/sygma-relayer/commit/a6be32a19dbfe2b856840fd1995fde2dcfb14f91))
+
 ## [1.10.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.0...v1.10.1) (2023-10-19)
 
 

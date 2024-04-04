@@ -1,7 +1,7 @@
 # The Licensed Work is (c) 2022 Sygma
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: sygma/deploy/stage
+name: Sygma Devnet
 
 on:
   push:
@@ -13,6 +13,7 @@ env:
   AWS_STAGE: '${{ secrets.AWS_ARN }}'
   REGISTRY: 'ghcr.io'
   TAG: 'latest'
+
 
 jobs:
   push:
@@ -46,6 +47,15 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ env.TAG }}
           
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+          
           ######################## region 1 ########################
   deploy_reg_1:
     needs: push
@@ -59,10 +69,7 @@ jobs:
       contents: read
       id-token: write
 
-    steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
+    steps:     
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -96,6 +103,15 @@ jobs:
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
 
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+
           ######################## region 2 ########################
   deploy_reg_2:
     needs: push
@@ -109,10 +125,7 @@ jobs:
       contents: read
       id-token: write
 
-    steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
+    steps: 
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -146,6 +159,15 @@ jobs:
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
 
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+
           ######################## region 3 ########################
   deploy_reg_3:
     needs: push
@@ -160,9 +182,6 @@ jobs:
       id-token: write
 
     steps:
-      - name: checkout the source code
-        uses: actions/checkout@v3
-        
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -195,3 +214,12 @@ jobs:
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
+
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()         

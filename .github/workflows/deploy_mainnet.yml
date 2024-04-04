@@ -1,7 +1,7 @@
 # The Licensed Work is (c) 2022 Sygma
 # SPDX-License-Identifier: BUSL-1.1
 
-name: sygma mainnet
+name: Sygma Mainnet
 
 on:
   workflow_dispatch:
@@ -9,7 +9,6 @@ on:
       release_tag:
         description: 'The Release tag Version'
         required: true
-        default: 'stable' 
         type: string
       TOKEN: 
         description: 'Authentication token'
@@ -48,9 +47,6 @@ jobs:
         run: |
           echo 'Authentication Succeeded!!!'
 
-      - name: checkout the source code
-        uses: actions/checkout@v3
-
       - name: checkout ecs repo
         uses: actions/checkout@v3
         with:
@@ -86,6 +82,15 @@ jobs:
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true
 
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()
+
           ######################## region 3 ########################
   deploy_region_3:
     name: deploy
@@ -110,9 +115,6 @@ jobs:
         if: steps.auth.outcome == 'success'
         run: |
           echo 'Authentication Succeeded!!!'
-
-      - name: checkout the source code
-        uses: actions/checkout@v3
 
       - name: checkout ecs repo
         uses: actions/checkout@v3
@@ -148,3 +150,12 @@ jobs:
           service: 'relayer-${{ matrix.relayer_id }}-service-${{ env.ENVIRONMENT }}'
           cluster: 'relayer-${{ env.ENVIRONMENT }}'
           wait-for-service-stability: true      
+
+      - name: slack notify
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: always()

@@ -12,6 +12,8 @@ import (
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts"
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/contracts/deposit"
+	syg_deposit "github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/deposit"
+
 	"github.com/ChainSafe/chainbridge-core/chains/evm/calls/transactor"
 	"github.com/ChainSafe/chainbridge-core/types"
 	"github.com/ChainSafe/sygma-relayer/chains"
@@ -120,6 +122,36 @@ func (c *BridgeContract) Erc721Deposit(
 		data = deposit.ConstructErc721DepositDataWithPriority(recipient.Bytes(), tokenId, []byte(metadata), opts.Priority)
 	}
 
+	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
+	return txHash, err
+}
+
+func (c *BridgeContract) Erc1155Deposit(
+	tokenIds *big.Int,
+	amounts *big.Int,
+	metadata string,
+	recipient common.Address,
+	resourceID types.ResourceID,
+	destDomainID uint8,
+	feeData []byte,
+	opts transactor.TransactOptions,
+) (*common.Hash, error) {
+	log.Debug().
+		Str("recipient", recipient.String()).
+		Str("resourceID", hexutil.Encode(resourceID[:])).
+		Uint8("destDomainID", destDomainID).
+		Hex("feeData", feeData).
+		Msgf("ERC1155 deposit")
+
+	var data []byte
+	data, err := syg_deposit.ConstructErc1155DepositData(recipient.Bytes(), tokenIds, amounts, []byte(metadata))
+	if err != nil {
+		return nil, err
+	}
 	txHash, err := c.deposit(resourceID, destDomainID, data, feeData, opts)
 	if err != nil {
 		log.Error().Err(err)

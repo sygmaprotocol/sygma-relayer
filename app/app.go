@@ -57,6 +57,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var Version string
+
 func Run() error {
 	var err error
 
@@ -197,6 +199,11 @@ func Run() error {
 							depositHandler.RegisterDepositHandler(handler.Address, coreListener.Erc721DepositHandler)
 							mh.RegisterMessageHandler(handler.Address, coreExecutor.ERC721MessageHandler)
 						}
+					case "erc1155":
+						{
+							depositHandler.RegisterDepositHandler(handler.Address, listener.Erc1155DepositHandler)
+							mh.RegisterMessageHandler(handler.Address, executor.Erc1155MessageHandler)
+						}
 					}
 				}
 				depositListener := coreEvents.NewListener(client)
@@ -276,7 +283,7 @@ func Run() error {
 		syscall.SIGQUIT)
 
 	relayerName := viper.GetString("name")
-	log.Info().Msgf("Started relayer: %s with PID: %s", relayerName, host.ID().Pretty())
+	log.Info().Msgf("Started relayer: %s with PID: %s. Version: v%s", relayerName, host.ID().Pretty(), Version)
 
 	_, err = keyshareStore.GetKeyshare()
 	if err != nil {
