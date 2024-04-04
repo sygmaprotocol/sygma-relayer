@@ -75,7 +75,6 @@ func NewExecutor(
 
 // Execute starts a signing process and executes proposals when signature is generated
 func (e *Executor) Execute(proposals []*proposal.Proposal) error {
-
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 	batches, err := e.proposalBatches(proposals)
@@ -91,7 +90,6 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 		b := batch
 		p.Go(func() error {
-
 			propHash, err := e.bridge.ProposalsHash(b.proposals)
 			if err != nil {
 				return err
@@ -106,29 +104,26 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				e.host,
 				e.comm,
 				e.fetcher)
-
 			if err != nil {
 				return err
 			}
+
 			sigChn := make(chan interface{})
 			executionContext, cancelExecution := context.WithCancel(context.Background())
-
 			watchContext, cancelWatch := context.WithCancel(context.Background())
-
 			ep := pool.New().WithErrors()
 			ep.Go(func() error {
 				err := e.coordinator.Execute(executionContext, signing, sigChn)
 				if err != nil {
 					cancelWatch()
 				}
+
 				return err
 			})
 			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID) })
-
 			return ep.Wait()
 		})
 	}
-
 	return p.Wait()
 }
 
@@ -150,11 +145,11 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 
 				signatureData := sigResult.(*common.SignatureData)
 				hash, err := e.executeBatch(batch, signatureData)
-
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
 				}
+
 				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
@@ -235,7 +230,6 @@ func (e *Executor) executeBatch(batch *Batch, signatureData *common.SignatureDat
 	hash, err := e.bridge.ExecuteProposals(batch.proposals, sig, transactor.TransactOptions{
 		GasLimit: batch.gasLimit,
 	})
-
 	if err != nil {
 		return nil, err
 	}

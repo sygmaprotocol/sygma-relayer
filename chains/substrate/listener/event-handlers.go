@@ -14,6 +14,15 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
+type Connection interface {
+	GetFinalizedHead() (types.Hash, error)
+	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
+	GetBlockHash(blockNumber uint64) (types.Hash, error)
+	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
+	UpdateMetatdata() error
+	FetchEvents(startBlock, endBlock *big.Int) ([]*parser.Event, error)
+}
+
 type SystemUpdateEventHandler struct {
 	conn Connection
 }
@@ -26,7 +35,7 @@ func NewSystemUpdateEventHandler(conn Connection) *SystemUpdateEventHandler {
 
 func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
 
-	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -69,7 +78,7 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := FetchEvents(startBlock, endBlock, eh.conn)
+	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -85,7 +94,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlo
 						log.Error().Msgf("panic occured while handling deposit %+v", evt)
 					}
 				}()
-				d, err := DecodeEventToDeposit(evt.Fields)
+				d, err := DecodeDepositEvent(evt.Fields)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
@@ -131,7 +140,7 @@ func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler 
 }
 
 func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-	evts, err := FetchEvents(startBlock, endBlock, rh.conn)
+	evts, err := rh.conn.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
 		return err
@@ -156,7 +165,7 @@ func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
-				er, err := DecodeEventToRetry(evt.Fields)
+				er, err := DecodeRetryEvent(evt.Fields)
 				if err != nil {
 					return err
 				}
@@ -178,7 +187,7 @@ func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int
 
 				for _, event := range bEvts {
 					if event.Name == events.DepositEvent {
-						d, err := DecodeEventToDeposit(event.Fields)
+						d, err := DecodeDepositEvent(event.Fields)
 						if err != nil {
 							return err
 						}

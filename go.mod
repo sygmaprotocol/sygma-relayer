@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.4
-	github.com/sygmaprotocol/sygma-core v0.0.0-20240214134652-eb3fbea40cd9
+	github.com/sygmaprotocol/sygma-core v0.0.0-20240404092135-d56ed6c6424c
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9

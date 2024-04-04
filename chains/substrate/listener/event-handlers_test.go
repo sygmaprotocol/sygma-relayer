@@ -45,8 +45,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 			Name: "ParachainSystem.ValidationFunctionApplied",
 		},
 	}
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 
@@ -55,8 +54,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_UpdateMetadataFails() {
 
 func (s *SystemUpdateHandlerTestSuite) Test_NoMetadataUpdate() {
 
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return([]*parser.Event{}, nil)
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 	s.Nil(err)
 }
@@ -68,8 +66,7 @@ func (s *SystemUpdateHandlerTestSuite) Test_SuccesfullMetadataUpdate() {
 			Name: "ParachainSystem.ValidationFunctionApplied",
 		},
 	}
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.systemUpdateHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 
@@ -160,8 +157,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 	msgs := <-s.msgChan
@@ -234,8 +230,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 	msgs := <-s.msgChan
@@ -308,8 +303,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		},
 	}
 
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.depositEventHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 	msgs := <-s.msgChan
@@ -342,8 +336,8 @@ func (s *RetryHandlerTestSuite) SetupTest() {
 }
 
 func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, fmt.Errorf("error"))
+
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return([]*parser.Event{}, fmt.Errorf("error"))
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 
@@ -369,8 +363,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 	s.Nil(err)
@@ -385,7 +378,6 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 		},
 	}}, nil)
 
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, fmt.Errorf("error"))
 
 	rtry := map[string]any{
@@ -399,7 +391,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
 
@@ -414,7 +406,6 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 			Number: types.BlockNumber(uint32(100)),
 		},
 	}}, nil)
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 
 	rtry := map[string]any{
@@ -428,7 +419,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
@@ -444,7 +435,6 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 			Number: types.BlockNumber(uint32(100)),
 		},
 	}}, nil)
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 
 	rtry := map[string]any{
@@ -458,7 +448,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return([]*parser.Event{}, nil)
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
@@ -474,7 +464,6 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 			Number: types.BlockNumber(uint32(100)),
 		},
 	}}, nil)
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	d1 := map[string]any{
 		"dest_domain_id":            types.NewU8(2),
@@ -550,7 +539,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts, nil)
 
 	err := s.retryHandler.HandleEvents(big.NewInt(0), big.NewInt(1))
@@ -568,7 +557,6 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 			Number: types.BlockNumber(uint32(100)),
 		},
 	}}, nil)
-	s.mockConn.EXPECT().GetBlockHash(gomock.Any()).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	s.mockConn.EXPECT().GetBlockHash(uint64(95)).Return(types.Hash{}, nil)
 	d1 := map[string]any{
@@ -654,7 +642,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 			},
 		},
 	}
-	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(evts, nil)
+	s.mockConn.EXPECT().FetchEvents(gomock.Any(), gomock.Any()).Return(evts, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts1, nil)
 	s.mockConn.EXPECT().GetBlockEvents(gomock.Any()).Return(blockEvts2, nil)
 

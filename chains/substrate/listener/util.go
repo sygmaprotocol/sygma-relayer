@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func DecodeEventToDeposit(evtFields registry.DecodedFields) (events.Deposit, error) {
+func DecodeDepositEvent(evtFields registry.DecodedFields) (events.Deposit, error) {
 	var d events.Deposit
 
 	for _, evtField := range evtFields {
@@ -46,7 +46,7 @@ func DecodeEventToDeposit(evtFields registry.DecodedFields) (events.Deposit, err
 	return d, nil
 }
 
-func DecodeEventToRetry(evtFields registry.DecodedFields) (events.Retry, error) {
+func DecodeRetryEvent(evtFields registry.DecodedFields) (events.Retry, error) {
 	var er events.Retry
 
 	for _, evtField := range evtFields {
