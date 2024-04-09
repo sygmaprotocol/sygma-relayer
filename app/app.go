@@ -219,7 +219,7 @@ func Run() error {
 
 				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[0] = chain
+				chains[*config.GeneralChainConfig.Id] = chain
 			}
 		case "substrate":
 			{
@@ -257,7 +257,7 @@ func Run() error {
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[1] = substrateChain
+				chains[*config.GeneralChainConfig.Id] = substrateChain
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))

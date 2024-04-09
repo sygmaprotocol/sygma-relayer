@@ -122,7 +122,6 @@ func Run() error {
 	defer cancel()
 	msgChan := make(chan []*message.Message)
 	chains := make(map[uint8]relayer.RelayedChain)
-	i := uint8(1)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -193,8 +192,7 @@ func Run() error {
 
 				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[i] = chain
-				i++
+				chains[*config.GeneralChainConfig.Id] = chain
 			}
 		case "substrate":
 			{
@@ -232,8 +230,7 @@ func Run() error {
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
-				chains[i] = substrateChain
-				i++
+				chains[*config.GeneralChainConfig.Id] = substrateChain
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
