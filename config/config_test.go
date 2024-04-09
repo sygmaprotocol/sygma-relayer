@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
-
 	"github.com/ChainSafe/sygma-relayer/config"
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/stretchr/testify/suite"
@@ -86,10 +84,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 
 	s.Equal(config.Config{
 		RelayerConfig: relayer.RelayerConfig{
-			RelayerConfig: coreRelayer.RelayerConfig{
-				LogLevel: 1,
-				LogFile:  "out.log",
-			},
+			LogLevel:   1,
+			LogFile:    "out.log",
 			Env:        "TEST",
 			Id:         "123",
 			HealthPort: 9001,
@@ -193,10 +189,8 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 
 	s.Equal(config.Config{
 		RelayerConfig: relayer.RelayerConfig{
-			RelayerConfig: coreRelayer.RelayerConfig{
-				LogLevel: 1,
-				LogFile:  "out.log",
-			},
+			LogLevel:   1,
+			LogFile:    "out.log",
 			HealthPort: 9001,
 			MpcConfig: relayer.MpcRelayerConfig{
 				TopologyConfiguration: relayer.TopologyConfiguration{
@@ -266,11 +260,9 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					"name": "chain1",
 				}},
 				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						OpenTelemetryCollectorURL: "",
-						LogLevel:                  "",
-						LogFile:                   "",
-					},
+					OpenTelemetryCollectorURL: "",
+					LogLevel:                  "",
+					LogFile:                   "",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						Port: "2020",
 						TopologyConfiguration: relayer.TopologyConfiguration{
@@ -295,9 +287,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			name: "invalid relayer type",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel: "invalid",
-					},
+					LogLevel: "invalid",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
@@ -319,9 +309,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			name: "invalid bully config",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel: "info",
-					},
+					LogLevel: "info",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
 							EncryptionKey: "enc-key",
@@ -350,9 +338,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			name: "missing encryption key",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel: "info",
-					},
+					LogLevel: "info",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{},
 						Port:                  "2020",
@@ -391,12 +377,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
 			outConfig: config.Config{
 				RelayerConfig: relayer.RelayerConfig{
-					RelayerConfig: coreRelayer.RelayerConfig{
-						LogLevel:                  1,
-						LogFile:                   "out.log",
-						OpenTelemetryCollectorURL: "",
-					},
-					HealthPort: 9001,
+					LogLevel:                  1,
+					LogFile:                   "out.log",
+					OpenTelemetryCollectorURL: "",
+					HealthPort:                9001,
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port: 9000,
 						TopologyConfiguration: relayer.TopologyConfiguration{
@@ -424,10 +408,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			name: "valid config",
 			inConfig: config.RawConfig{
 				RelayerConfig: relayer.RawRelayerConfig{
-					RawRelayerConfig: coreRelayer.RawRelayerConfig{
-						LogLevel: "debug",
-						LogFile:  "custom.log",
-					},
+					LogLevel:   "debug",
+					LogFile:    "custom.log",
 					HealthPort: "9002",
 					MpcConfig: relayer.RawMpcRelayerConfig{
 						TopologyConfiguration: relayer.TopologyConfiguration{
@@ -457,12 +439,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			errorMsg:   "unable to parse bully ping wait time: time: unknown unit \"z\" in duration \"2z\"",
 			outConfig: config.Config{
 				RelayerConfig: relayer.RelayerConfig{
-					RelayerConfig: coreRelayer.RelayerConfig{
-						LogLevel:                  0,
-						LogFile:                   "custom.log",
-						OpenTelemetryCollectorURL: "",
-					},
-					HealthPort: 9002,
+					LogLevel:                  0,
+					LogFile:                   "custom.log",
+					OpenTelemetryCollectorURL: "",
+					HealthPort:                9002,
 					MpcConfig: relayer.MpcRelayerConfig{
 						Port:         2020,
 						KeysharePath: "./share.key",

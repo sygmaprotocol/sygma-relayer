@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/ChainSafe/sygma-relayer/config/chain"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,7 +59,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 		},
 		StartBlock:         big.NewInt(0),
 		ChainID:            big.NewInt(5),
-		SubstrateNetwork:   uint8(0),
+		SubstrateNetwork:   uint16(0),
 		BlockInterval:      big.NewInt(5),
 		BlockRetryInterval: time.Duration(5) * time.Second,
 	})
@@ -89,7 +89,7 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 			Id:       id,
 		},
 		ChainID:            big.NewInt(5),
-		SubstrateNetwork:   uint8(0),
+		SubstrateNetwork:   uint16(0),
 		StartBlock:         big.NewInt(1000),
 		BlockInterval:      big.NewInt(2),
 		BlockRetryInterval: time.Duration(10) * time.Second,

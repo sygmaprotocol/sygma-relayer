@@ -6,26 +6,40 @@ package listener
 import (
 	"math/big"
 
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
-	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type SystemUpdateEventHandler struct {
-	conn ChainConnection
+type Connection interface {
+	GetFinalizedHead() (types.Hash, error)
+	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
+	GetBlockHash(blockNumber uint64) (types.Hash, error)
+	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
+	UpdateMetatdata() error
+	FetchEvents(startBlock, endBlock *big.Int) ([]*parser.Event, error)
 }
 
-func NewSystemUpdateEventHandler(conn ChainConnection) *SystemUpdateEventHandler {
+type SystemUpdateEventHandler struct {
+	conn Connection
+}
+
+func NewSystemUpdateEventHandler(conn Connection) *SystemUpdateEventHandler {
 	return &SystemUpdateEventHandler{
 		conn: conn,
 	}
 }
 
-func (eh *SystemUpdateEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+
+	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
 	for _, e := range evts {
 		if e.Name == events.ParachainUpdatedEvent {
 			log.Info().Msgf("Updating substrate metadata")
@@ -49,17 +63,27 @@ type FungibleTransferEventHandler struct {
 	domainID       uint8
 	depositHandler DepositHandler
 	log            zerolog.Logger
+	msgChan        chan []*message.Message
+	conn           Connection
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
+		msgChan:        msgChan,
+		conn:           conn,
 	}
 }
 
-func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
+
 	domainDeposits := make(map[uint8][]*message.Message)
 
 	for _, evt := range evts {
@@ -70,9 +94,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 						log.Error().Msgf("panic occured while handling deposit %+v", evt)
 					}
 				}()
-
-				var d events.Deposit
-				err := mapstructure.Decode(evt.Fields, &d)
+				d, err := DecodeDepositEvent(evt.Fields)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
@@ -93,29 +115,37 @@ func (eh *FungibleTransferEventHandler) HandleEvents(evts []*parser.Event, msgCh
 
 	for _, deposits := range domainDeposits {
 		go func(d []*message.Message) {
-			msgChan <- d
+			eh.msgChan <- d
 		}(deposits)
 	}
 	return nil
 }
 
 type RetryEventHandler struct {
-	conn           ChainConnection
+	conn           Connection
 	domainID       uint8
 	depositHandler DepositHandler
 	log            zerolog.Logger
+	msgChan        chan []*message.Message
 }
 
-func NewRetryEventHandler(logC zerolog.Context, conn ChainConnection, depositHandler DepositHandler, domainID uint8) *RetryEventHandler {
+func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message) *RetryEventHandler {
 	return &RetryEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		conn:           conn,
 		log:            logC.Logger(),
+		msgChan:        msgChan,
 	}
 }
 
-func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*message.Message) error {
+func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	evts, err := rh.conn.FetchEvents(startBlock, endBlock)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
+
 	hash, err := rh.conn.GetFinalizedHead()
 	if err != nil {
 		return err
@@ -135,8 +165,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
 					}
 				}()
-				var er events.Retry
-				err = mapstructure.Decode(evt.Fields, &er)
+				er, err := DecodeRetryEvent(evt.Fields)
 				if err != nil {
 					return err
 				}
@@ -158,8 +187,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 
 				for _, event := range bEvts {
 					if event.Name == events.DepositEvent {
-						var d events.Deposit
-						err = mapstructure.Decode(event.Fields, &d)
+						d, err := DecodeDepositEvent(event.Fields)
 						if err != nil {
 							return err
 						}
@@ -183,7 +211,7 @@ func (rh *RetryEventHandler) HandleEvents(evts []*parser.Event, msgChan chan []*
 	}
 
 	for _, deposits := range domainDeposits {
-		msgChan <- deposits
+		rh.msgChan <- deposits
 	}
 	return nil
 }

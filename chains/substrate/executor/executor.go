@@ -10,10 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/connection"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/centrifuge/go-substrate-rpc-client/v4/rpc/author"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -21,8 +22,6 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
-
-	"github.com/ChainSafe/chainbridge-core/relayer/message"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -34,14 +33,10 @@ var (
 	signingTimeout       = 30 * time.Minute
 )
 
-type MessageHandler interface {
-	HandleMessage(m *message.Message) (*chains.Proposal, error)
-}
-
 type BridgePallet interface {
-	IsProposalExecuted(p *chains.Proposal) (bool, error)
-	ExecuteProposals(proposals []*chains.Proposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
-	ProposalsHash(proposals []*chains.Proposal) ([]byte, error)
+	IsProposalExecuted(p *transfer.TransferProposal) (bool, error)
+	ExecuteProposals(proposals []*transfer.TransferProposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
+	ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error)
 	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
 }
 
@@ -51,7 +46,6 @@ type Executor struct {
 	comm        comm.Communication
 	fetcher     signing.SaveDataFetcher
 	bridge      BridgePallet
-	mh          MessageHandler
 	conn        *connection.Connection
 	exitLock    *sync.RWMutex
 }
@@ -60,7 +54,6 @@ func NewExecutor(
 	host host.Host,
 	comm comm.Communication,
 	coordinator *tss.Coordinator,
-	mh MessageHandler,
 	bridgePallet BridgePallet,
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
@@ -70,7 +63,6 @@ func NewExecutor(
 		host:        host,
 		comm:        comm,
 		coordinator: coordinator,
-		mh:          mh,
 		bridge:      bridgePallet,
 		fetcher:     fetcher,
 		conn:        conn,
@@ -79,18 +71,23 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(msgs []*message.Message) error {
+func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	proposals := make([]*chains.Proposal, 0)
-	for _, m := range msgs {
-		prop, err := e.mh.HandleMessage(m)
-		if err != nil {
-			return err
-		}
+	transferProposals := make([]*transfer.TransferProposal, 0)
 
-		isExecuted, err := e.bridge.IsProposalExecuted(prop)
+	for _, prop := range proposals {
+
+		transferProposal := &transfer.TransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data:        prop.Data.(transfer.TransferProposalData),
+			Type:        prop.Type,
+		}
+		transferProposals = append(transferProposals, transferProposal)
+
+		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)
 		if err != nil {
 			return err
 		}
@@ -104,7 +101,7 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		return nil
 	}
 
-	propHash, err := e.bridge.ProposalsHash(proposals)
+	propHash, err := e.bridge.ProposalsHash(transferProposals)
 	if err != nil {
 		return err
 	}
@@ -136,12 +133,12 @@ func (e *Executor) Execute(msgs []*message.Message) error {
 		return err
 	})
 	pool.Go(func() error {
-		return e.watchExecution(watchContext, cancelExecution, proposals, sigChn, sessionID)
+		return e.watchExecution(watchContext, cancelExecution, transferProposals, sigChn, sessionID)
 	})
 	return pool.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*chains.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, proposals []*transfer.TransferProposal, sigChn chan interface{}, sessionID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -168,7 +165,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 			}
 		case <-ticker.C:
 			{
-				if !e.areProposalsExecuted(proposals, sessionID) {
+				if !e.areProposalsExecuted(proposals) {
 					continue
 				}
 
@@ -187,7 +184,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
+func (e *Executor) executeProposal(proposals []*transfer.TransferProposal, signatureData *common.SignatureData) (types.Hash, *author.ExtrinsicStatusSubscription, error) {
 	sig := []byte{}
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.R, 32)...)
 	sig = append(sig[:], ethCommon.LeftPadBytes(signatureData.S, 32)...)
@@ -202,7 +199,7 @@ func (e *Executor) executeProposal(proposals []*chains.Proposal, signatureData *
 	return hash, sub, err
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*chains.Proposal, sessionID string) bool {
+func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal) bool {
 	for _, prop := range proposals {
 		isExecuted, err := e.bridge.IsProposalExecuted(prop)
 		if err != nil || !isExecuted {
