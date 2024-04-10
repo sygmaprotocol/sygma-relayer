@@ -1,6 +1,8 @@
 package depositHandlers
 
 import (
+	"fmt"
+
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -38,7 +40,7 @@ func GetErc1155Type() (abi.Arguments, error) {
 	}, nil
 }
 
-func (dh *Erc1155DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *Erc1155DepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
 
 	erc1155Type, err := GetErc1155Type()
 	if err != nil {
@@ -57,11 +59,16 @@ func (dh *Erc1155DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 		decodedCallData[3],
 	}
 
-	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
-		DepositNonce: nonce,
-		ResourceId:   resourceID,
-		Metadata:     nil,
-		Payload:      payload,
-		Type:         transfer.SemiFungibleTransfer,
-	}, transfer.TransferMessageType), nil
+	return message.NewMessage(
+		sourceID,
+		destID,
+		transfer.TransferMessageData{
+			DepositNonce: nonce,
+			ResourceId:   resourceID,
+			Metadata:     nil,
+			Payload:      payload,
+			Type:         transfer.SemiFungibleTransfer,
+		},
+		fmt.Sprintf("%d-%d-%d", sourceID, destID, nonce),
+		transfer.TransferMessageType), nil
 }
