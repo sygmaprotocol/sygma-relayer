@@ -177,7 +177,11 @@ func (eh *KeygenEventHandler) HandleEvents(
 
 	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
 	keygen := keygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
-	return eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1))
+	err = eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1))
+	if err != nil {
+		log.Err(err).Msgf("Failed executing keygen")
+	}
+	return nil
 }
 
 func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
@@ -262,7 +266,11 @@ func (eh *RefreshEventHandler) HandleEvents(
 	resharing := resharing.NewResharing(
 		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer,
 	)
-	return eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1))
+	err = eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1))
+	if err != nil {
+		log.Err(err).Msgf("Failed executing key refresh")
+	}
+	return nil
 }
 
 func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
