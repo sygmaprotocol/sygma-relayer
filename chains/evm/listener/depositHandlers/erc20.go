@@ -2,7 +2,6 @@ package depositHandlers
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
@@ -13,7 +12,14 @@ type Erc20DepositHandler struct{}
 
 // Erc20DepositHandler converts data pulled from event logs into message
 // handlerResponse can be an empty slice
-func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *Erc20DepositHandler) HandleDeposit(
+	sourceID,
+	destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata,
+	handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -44,6 +50,6 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint6
 			Payload:      payload,
 			Type:         transfer.FungibleTransfer,
 		},
-		fmt.Sprintf("%d-%d-%d", sourceID, destID, nonce),
+		messageID,
 		transfer.TransferMessageType), nil
 }

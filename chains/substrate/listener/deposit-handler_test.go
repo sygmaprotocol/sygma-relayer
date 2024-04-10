@@ -69,9 +69,16 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 			Type: transfer.FungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
-	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
+	message, err := listener.FungibleTransferHandler(
+		sourceID,
+		depositLog.DestDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.CallData,
+		"messageID")
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -92,7 +99,13 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 
 	sourceID := uint8(1)
 
-	message, err := listener.FungibleTransferHandler(sourceID, depositLog.DestDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.CallData)
+	message, err := listener.FungibleTransferHandler(
+		sourceID,
+		depositLog.DestDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.CallData,
+		"messageID")
 	s.Nil(message)
 	s.EqualError(err, errIncorrectDataLen.Error())
 }
@@ -120,12 +133,12 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
 	depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, listener.FungibleTransferHandler)
-	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType)
+	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType, "messageID")
 	s.Nil(err1)
 	s.NotNil(message1)
 
 	// Use unregistered transfer type
-	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, 1)
+	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, 1, "messageID")
 	s.Nil(message2)
 	s.NotNil(err2)
 	s.EqualError(err2, errNoCorrespondingDepositHandler.Error())

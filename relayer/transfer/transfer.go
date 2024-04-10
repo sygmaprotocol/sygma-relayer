@@ -33,6 +33,7 @@ type TransferMessage struct {
 	Destination uint8
 	Data        TransferMessageData
 	Type        message.MessageType
+	ID          string
 }
 
 type TransferProposalData struct {
@@ -47,4 +48,5 @@ type TransferProposal struct {
 	Destination uint8
 	Data        TransferProposalData
 	Type        proposal.ProposalType
+	MessageID   string
 }

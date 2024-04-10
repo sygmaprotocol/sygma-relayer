@@ -424,6 +424,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 			Metadata:     message.Data.(transfer.TransferMessageData).Metadata,
 			Data:         expectedData,
 		},
+		"messageID",
 		transfer.TransferProposalType,
 	)
 	s.Nil(err)

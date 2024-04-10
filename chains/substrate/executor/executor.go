@@ -76,14 +76,13 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	defer e.exitLock.RUnlock()
 
 	transferProposals := make([]*transfer.TransferProposal, 0)
-
 	for _, prop := range proposals {
-
 		transferProposal := &transfer.TransferProposal{
 			Source:      prop.Source,
 			Destination: prop.Destination,
 			Data:        prop.Data.(transfer.TransferProposalData),
 			Type:        prop.Type,
+			MessageID:   prop.MessageID,
 		}
 		transferProposals = append(transferProposals, transferProposal)
 

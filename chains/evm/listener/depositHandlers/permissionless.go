@@ -2,7 +2,6 @@ package depositHandlers
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
@@ -12,7 +11,12 @@ import (
 type PermissionlessGenericDepositHandler struct{}
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
-func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *PermissionlessGenericDepositHandler) HandleDeposit(
+	sourceID, destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata, handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 76 {
 		err := errors.New("invalid calldata length: less than 76 bytes")
 		return nil, err
@@ -55,6 +59,6 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destID ui
 			Payload:      payload,
 			Type:         transfer.PermissionlessGenericTransfer,
 		},
-		fmt.Sprintf("%d-%d-%d", sourceID, destID, nonce),
+		messageID,
 		transfer.TransferMessageType), nil
 }

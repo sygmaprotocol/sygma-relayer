@@ -21,12 +21,12 @@ import (
 type TransferMessageHandler struct{}
 
 func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
-
 	transferMessage := &transfer.TransferMessage{
 		Source:      msg.Source,
 		Destination: msg.Destination,
 		Data:        msg.Data.(transfer.TransferMessageData),
 		Type:        msg.Type,
+		ID:          msg.ID,
 	}
 
 	switch transferMessage.Data.Type {
@@ -45,7 +45,6 @@ func (h *TransferMessageHandler) HandleMessage(msg *message.Message) (*proposal.
 }
 
 func PermissionlessGenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
-
 	executeFunctionSignature, ok := msg.Data.Payload[0].([]byte)
 	if !ok {
 		return nil, errors.New("wrong function signature format")
@@ -85,7 +84,7 @@ func PermissionlessGenericMessageHandler(msg *transfer.TransferMessage) (*propos
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, transfer.TransferProposalType), nil
+	}, msg.ID, transfer.TransferProposalType), nil
 }
 
 func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
@@ -111,11 +110,10 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data,
-	}, transfer.TransferProposalType), nil
+	}, msg.ID, transfer.TransferProposalType), nil
 }
 
 func ERC721MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
-
 	if len(msg.Data.Payload) != 3 {
 		return nil, errors.New("malformed payload. Len  of payload should be 3")
 	}
@@ -144,11 +142,10 @@ func ERC721MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, er
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, transfer.TransferProposalType), nil
+	}, msg.ID, transfer.TransferProposalType), nil
 }
 
 func ERC1155MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
-
 	if len(msg.Data.Payload) != 4 {
 		return nil, errors.New("malformed payload. Len  of payload should be 4")
 	}
@@ -187,7 +184,7 @@ func ERC1155MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, e
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data,
-	}, transfer.TransferProposalType), nil
+	}, msg.ID, transfer.TransferProposalType), nil
 }
 
 func GenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
@@ -207,5 +204,5 @@ func GenericMessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, e
 		ResourceId:   msg.Data.ResourceId,
 		Metadata:     msg.Data.Metadata,
 		Data:         data.Bytes(),
-	}, transfer.TransferProposalType), nil
+	}, msg.ID, transfer.TransferProposalType), nil
 }

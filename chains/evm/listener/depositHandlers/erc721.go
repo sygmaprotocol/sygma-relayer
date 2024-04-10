@@ -2,7 +2,6 @@ package depositHandlers
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -13,7 +12,13 @@ import (
 type Erc721DepositHandler struct{}
 
 // Erc721DepositHandler converts data pulled from ERC721 deposit event logs into message
-func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *Erc721DepositHandler) HandleDeposit(
+	sourceID,
+	destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata, handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 64 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -58,6 +63,6 @@ func (dh *Erc721DepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint
 			Payload:      payload,
 			Type:         transfer.NonFungibleTransfer,
 		},
-		fmt.Sprintf("%d-%d-%d", sourceID, destID, nonce),
+		messageID,
 		transfer.TransferMessageType), nil
 }

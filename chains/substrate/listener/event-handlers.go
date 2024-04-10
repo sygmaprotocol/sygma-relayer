@@ -4,6 +4,7 @@
 package listener
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
@@ -34,7 +35,6 @@ func NewSystemUpdateEventHandler(conn Connection) *SystemUpdateEventHandler {
 }
 
 func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
-
 	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
@@ -56,7 +56,7 @@ func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error)
+	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8, messageID string) (*message.Message, error)
 }
 
 type FungibleTransferEventHandler struct {
@@ -100,14 +100,14 @@ func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlo
 					return
 				}
 
-				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
+				messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestDomainID, startBlock, endBlock)
+				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
 				}
 
-				eh.log.Info().Msgf("Resolved deposit message %+v", d)
-
+				eh.log.Info().Str("messageID", messageID).Msgf("Resolved deposit message %+v", d)
 				domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			}(*evt)
 		}
@@ -191,12 +191,14 @@ func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int
 						if err != nil {
 							return err
 						}
-						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType)
+
+						messageID := fmt.Sprintf("%d-%d-%d-%d", rh.domainID, d.DestDomainID, startBlock, endBlock)
+						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID)
 						if err != nil {
 							return err
 						}
 
-						rh.log.Info().Msgf("Resolved retry message %+v", d)
+						rh.log.Info().Str("messageID", messageID).Msgf("Resolved retry message %+v", d)
 
 						domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 					}

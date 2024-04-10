@@ -23,11 +23,6 @@ func TestRunGenericHandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(GenericHandlerTestSuite))
 }
 
-func (s *GenericHandlerTestSuite) SetupSuite()    {}
-func (s *GenericHandlerTestSuite) TearDownSuite() {}
-func (s *GenericHandlerTestSuite) SetupTest()     {}
-func (s *GenericHandlerTestSuite) TearDownTest()  {}
-
 func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 	metadata := []byte("0xdeadbeef")
 
@@ -54,7 +49,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventIncorrectDataLen() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-	)
+		"messageID")
 
 	s.Nil(message)
 	s.EqualError(err, "invalid calldata length: less than 32 bytes")
@@ -87,6 +82,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 		},
 
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}
@@ -97,7 +93,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEventEmptyMetadata() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-	)
+		"messageID")
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -131,6 +127,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 		},
 
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	genericDepositHandler := depositHandlers.GenericDepositHandler{}
@@ -141,7 +138,7 @@ func (s *GenericHandlerTestSuite) TestGenericHandleEvent() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-	)
+		"messageID")
 
 	s.Nil(err)
 	s.NotNil(message)
