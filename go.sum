@@ -731,6 +731,8 @@ github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbe
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/sygmaprotocol/sygma-core v0.0.0-20240410132338-3378ddf94d94 h1:X54V8UoBM3BzQWX52ZaqPxIHDMHf+aKy3tTTrCzPh2k=
 github.com/sygmaprotocol/sygma-core v0.0.0-20240410132338-3378ddf94d94/go.mod h1:b4RZCyYr20Mp4WAAj4TkC6gU2KZ0ZWcpSGmKc6n8NKc=
+github.com/sygmaprotocol/sygma-core v0.0.0-20240411120252-bf0131a81565 h1:oEd8KmRDSyGvQGg/A0cd4JbWNiVP8GGjK672JWQ0QAk=
+github.com/sygmaprotocol/sygma-core v0.0.0-20240411120252-bf0131a81565/go.mod h1:b4RZCyYr20Mp4WAAj4TkC6gU2KZ0ZWcpSGmKc6n8NKc=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a h1:1ur3QoCqvE5fl+nylMaIr9PVV1w343YRDtsy+Rwu7XI=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
