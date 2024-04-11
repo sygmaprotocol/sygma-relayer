@@ -105,12 +105,12 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		return err
 	}
 
-	sessionID := e.sessionID(propHash)
+	sessionID := transferProposals[0].MessageID
 	msg := big.NewInt(0)
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		e.sessionID(propHash),
+		sessionID,
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -168,7 +168,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
+				log.Info().Str("messageID", sessionID).Msgf("Successfully executed proposals")
 				return nil
 			}
 		case <-timeout.C:
@@ -207,8 +207,4 @@ func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal) 
 	}
 
 	return true
-}
-
-func (e *Executor) sessionID(hash []byte) string {
-	return fmt.Sprintf("signing-%s", ethCommon.Bytes2Hex(hash))
 }
