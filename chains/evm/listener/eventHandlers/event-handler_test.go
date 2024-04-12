@@ -60,6 +60,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 		HandlerResponse:     []byte{},
 		Data:                []byte{},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
@@ -72,6 +73,7 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues()
 		d.ResourceID,
 		d.Data,
 		d.HandlerResponse,
+		msgID,
 	).Return(&message.Message{
 		Data: transfer.TransferMessageData{
 			DepositNonce: 2,
@@ -102,6 +104,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		HandlerResponse:     []byte{},
 		Data:                []byte{},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
@@ -114,6 +117,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
+		msgID,
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, fmt.Errorf("error"))
@@ -124,6 +128,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -132,9 +137,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues(
 	msgs := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
+	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
 
 func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue() {
@@ -157,6 +160,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
 	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
 	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -164,7 +168,8 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse interface{}) {
+		msgID,
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -174,6 +179,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -206,6 +212,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
 	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -213,6 +220,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
+		msgID,
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, nil)
@@ -223,6 +231,7 @@ func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -286,6 +295,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -293,6 +303,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
+		msgID,
 	).Return(&message.Message{}, fmt.Errorf("error"))
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
@@ -301,6 +312,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(
 		&message.Message{
 			Data: transfer.TransferMessageData{
@@ -334,6 +346,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -341,7 +354,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse interface{}) {
+		msgID,
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -351,6 +365,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -380,6 +395,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -387,6 +403,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1.ResourceID,
 		d1.Data,
 		d1.HandlerResponse,
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -398,6 +415,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2.ResourceID,
 		d2.Data,
 		d2.HandlerResponse,
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,

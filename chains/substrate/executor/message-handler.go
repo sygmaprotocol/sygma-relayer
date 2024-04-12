@@ -21,6 +21,7 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 		Destination: m.Destination,
 		Data:        m.Data.(transfer.TransferMessageData),
 		Type:        m.Type,
+		ID:          m.ID,
 	}
 	switch transferMessage.Data.Type {
 	case transfer.FungibleTransfer:
@@ -30,7 +31,6 @@ func (mh *SubstrateMessageHandler) HandleMessage(m *message.Message) (*proposal.
 }
 
 func fungibleTransferMessageHandler(m *transfer.TransferMessage) (*proposal.Proposal, error) {
-
 	if len(m.Data.Payload) != 2 {
 		return nil, errors.New("malformed payload. Len  of payload should be 2")
 	}
@@ -53,5 +53,5 @@ func fungibleTransferMessageHandler(m *transfer.TransferMessage) (*proposal.Prop
 		ResourceId:   m.Data.ResourceId,
 		Metadata:     m.Data.Metadata,
 		Data:         data,
-	}, transfer.TransferProposalType), nil
+	}, m.ID, transfer.TransferProposalType), nil
 }

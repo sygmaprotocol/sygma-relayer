@@ -112,6 +112,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		"deposit_data":              []byte{},
 		"handler_response":          [1]byte{0},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -119,8 +120,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d1["resource_id"],
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
+		msgID,
 	).Return(&message.Message{}, fmt.Errorf("error"))
-
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d2["dest_domain_id"],
@@ -128,6 +129,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2["resource_id"],
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -183,6 +185,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -190,6 +193,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1["resource_id"],
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -201,6 +205,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2["resource_id"],
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -256,6 +261,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -263,7 +269,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d1["resource_id"],
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType interface{}) {
+		msgID,
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -273,6 +280,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d2["resource_id"],
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -505,6 +513,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 			},
 		},
 	}
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -512,6 +521,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d1["resource_id"],
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -523,6 +533,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d2["resource_id"],
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -603,6 +614,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		},
 	}
 
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -610,7 +622,8 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d1["resource_id"],
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType interface{}) {
+		msgID,
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -620,6 +633,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d2["resource_id"],
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
+		msgID,
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,

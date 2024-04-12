@@ -22,11 +22,6 @@ func TestRunErc721HandlerTestSuite(t *testing.T) {
 	suite.Run(t, new(Erc721HandlerTestSuite))
 }
 
-func (s *Erc721HandlerTestSuite) SetupSuite()    {}
-func (s *Erc721HandlerTestSuite) TearDownSuite() {}
-func (s *Erc721HandlerTestSuite) SetupTest()     {}
-func (s *Erc721HandlerTestSuite) TearDownTest()  {}
-
 func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 
@@ -59,10 +54,18 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 		},
 
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
-	m, err := erc721DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := erc721DepositHandler.HandleDeposit(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+		"messageID")
 
 	s.Nil(err)
 	s.NotNil(m)
@@ -88,7 +91,14 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerIncorrectDataLen() {
 	sourceID := uint8(1)
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
-	m, err := erc721DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := erc721DepositHandler.HandleDeposit(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+		"messageID")
 	s.Nil(m)
 	s.EqualError(err, "invalid calldata length: less than 84 bytes")
 }
@@ -126,10 +136,18 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 		},
 
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
-	m, err := erc721DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	m, err := erc721DepositHandler.HandleDeposit(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+		"messageID")
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)

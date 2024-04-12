@@ -13,7 +13,7 @@ import (
 )
 
 type DepositHandlers map[transfer.TransferType]DepositHandlerFunc
-type DepositHandlerFunc func(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte) (*message.Message, error)
+type DepositHandlerFunc func(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, messageID string) (*message.Message, error)
 
 type SubstrateDepositHandler struct {
 	depositHandlers DepositHandlers
@@ -31,7 +31,14 @@ func NewSubstrateDepositHandler() *SubstrateDepositHandler {
 	}
 }
 
-func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, depositNonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
+func (e *SubstrateDepositHandler) HandleDeposit(
+	sourceID uint8,
+	destID types.U8,
+	depositNonce types.U64,
+	resourceID types.Bytes32,
+	calldata []byte,
+	transferType types.U8,
+	messageID string) (*message.Message, error) {
 	var depositType transfer.TransferType
 	if transferType == FungibleTransfer {
 		depositType = transfer.FungibleTransfer
@@ -44,7 +51,7 @@ func (e *SubstrateDepositHandler) HandleDeposit(sourceID uint8, destID types.U8,
 		return nil, err
 	}
 
-	return depositHandler(sourceID, destID, depositNonce, resourceID, calldata)
+	return depositHandler(sourceID, destID, depositNonce, resourceID, calldata, messageID)
 }
 
 // matchAddressWithHandlerFunc matches a transfer type with an associated handler function
@@ -68,7 +75,13 @@ func (e *SubstrateDepositHandler) RegisterDepositHandler(transferType transfer.T
 
 // FungibleTransferHandler converts data pulled from event logs into message
 // handlerResponse can be an empty slice
-func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte) (*message.Message, error) {
+func FungibleTransferHandler(
+	sourceID uint8,
+	destID types.U8,
+	nonce types.U64,
+	resourceID types.Bytes32,
+	calldata []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -89,10 +102,15 @@ func FungibleTransferHandler(sourceID uint8, destId types.U8, nonce types.U64, r
 		recipientAddress,
 	}
 
-	return message.NewMessage(sourceID, uint8(destId), transfer.TransferMessageData{
-		DepositNonce: uint64(nonce),
-		ResourceId:   resourceID,
-		Payload:      payload,
-		Type:         transfer.FungibleTransfer,
-	}, transfer.TransferMessageType), nil
+	return message.NewMessage(
+		sourceID,
+		uint8(destID),
+		transfer.TransferMessageData{
+			DepositNonce: uint64(nonce),
+			ResourceId:   resourceID,
+			Payload:      payload,
+			Type:         transfer.FungibleTransfer,
+		},
+		messageID,
+		transfer.TransferMessageType), nil
 }

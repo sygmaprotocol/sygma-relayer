@@ -94,16 +94,17 @@ func (eh *RetryEventHandler) HandleEvents(
 			}
 
 			for _, d := range deposits {
+				messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
 				msg, err := eh.depositHandler.HandleDeposit(
 					eh.domainID, d.DestinationDomainID, d.DepositNonce,
-					d.ResourceID, d.Data, d.HandlerResponse,
+					d.ResourceID, d.Data, d.HandlerResponse, messageID,
 				)
 				if err != nil {
-					eh.log.Error().Err(err).Msgf("Failed handling deposit %+v", d)
+					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Failed handling deposit %+v", d)
 					continue
 				}
 
-				eh.log.Info().Msgf(
+				eh.log.Info().Str("messageID", msg.ID).Msgf(
 					"Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String(),
 				)
 				retriesByDomain[msg.Destination] = append(retriesByDomain[msg.Destination], msg)
@@ -278,7 +279,7 @@ func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error)
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string) (*message.Message, error)
 }
 
 type DepositEventHandler struct {
@@ -314,13 +315,14 @@ func (eh *DepositEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.I
 				}
 			}()
 
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse)
+			messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse, messageID)
 			if err != nil {
 				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
 				return
 			}
 
-			log.Debug().Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
+			log.Debug().Str("messageID", m.ID).Msgf("Resolved message %+v in block range: %s-%s", m, startBlock.String(), endBlock.String())
 			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 		}(d)
 	}

@@ -31,7 +31,14 @@ func NewETHDepositHandler(handlerMatcher HandlerMatcher) *ETHDepositHandler {
 	}
 }
 
-func (e *ETHDepositHandler) HandleDeposit(sourceID, destID uint8, depositNonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (e *ETHDepositHandler) HandleDeposit(
+	sourceID,
+	destID uint8,
+	depositNonce uint64,
+	resourceID [32]byte,
+	calldata,
+	handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	handlerAddr, err := e.handlerMatcher.GetHandlerAddressForResourceID(resourceID)
 	if err != nil {
 		return nil, err
@@ -42,7 +49,7 @@ func (e *ETHDepositHandler) HandleDeposit(sourceID, destID uint8, depositNonce u
 		return nil, err
 	}
 
-	return depositHandler.HandleDeposit(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse)
+	return depositHandler.HandleDeposit(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse, messageID)
 }
 
 // matchAddressWithHandlerFunc matches a handler address with an associated handler function

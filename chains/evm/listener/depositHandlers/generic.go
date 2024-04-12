@@ -11,7 +11,13 @@ import (
 type GenericDepositHandler struct{}
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
-func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *GenericDepositHandler) HandleDeposit(
+	sourceID,
+	destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata, handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 32 {
 		err := errors.New("invalid calldata length: less than 32 bytes")
 		return nil, err
@@ -25,11 +31,16 @@ func (dh *GenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uin
 	}
 
 	// generic handler has specific payload length and doesn't support arbitrary metadata
-	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
-		DepositNonce: nonce,
-		ResourceId:   resourceID,
-		Metadata:     nil,
-		Payload:      payload,
-		Type:         transfer.PermissionedGenericTransfer,
-	}, transfer.TransferMessageType), nil
+	return message.NewMessage(
+		sourceID,
+		destID,
+		transfer.TransferMessageData{
+			DepositNonce: nonce,
+			ResourceId:   resourceID,
+			Metadata:     nil,
+			Payload:      payload,
+			Type:         transfer.PermissionedGenericTransfer,
+		},
+		messageID,
+		transfer.TransferMessageType), nil
 }

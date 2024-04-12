@@ -409,6 +409,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 			Type: transfer.PermissionlessGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	mh := executor.TransferMessageHandler{}
@@ -424,6 +425,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleMessage() {
 			Metadata:     message.Data.(transfer.TransferMessageData).Metadata,
 			Data:         expectedData,
 		},
+		"messageID",
 		transfer.TransferProposalType,
 	)
 	s.Nil(err)

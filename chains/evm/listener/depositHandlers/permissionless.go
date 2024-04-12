@@ -11,7 +11,12 @@ import (
 type PermissionlessGenericDepositHandler struct{}
 
 // GenericDepositHandler converts data pulled from generic deposit event logs into message
-func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *PermissionlessGenericDepositHandler) HandleDeposit(
+	sourceID, destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata, handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 76 {
 		err := errors.New("invalid calldata length: less than 76 bytes")
 		return nil, err
@@ -44,11 +49,16 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(sourceID, destId ui
 
 	metadata["gasLimit"] = uint64(big.NewInt(0).SetBytes(maxFee).Int64())
 
-	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
-		DepositNonce: nonce,
-		ResourceId:   resourceID,
-		Metadata:     metadata,
-		Payload:      payload,
-		Type:         transfer.PermissionlessGenericTransfer,
-	}, transfer.TransferMessageType), nil
+	return message.NewMessage(
+		sourceID,
+		destID,
+		transfer.TransferMessageData{
+			DepositNonce: nonce,
+			ResourceId:   resourceID,
+			Metadata:     metadata,
+			Payload:      payload,
+			Type:         transfer.PermissionlessGenericTransfer,
+		},
+		messageID,
+		transfer.TransferMessageType), nil
 }

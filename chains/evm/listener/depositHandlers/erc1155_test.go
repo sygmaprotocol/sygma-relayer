@@ -52,9 +52,17 @@ func (s *Erc1155HandlerTestSuite) Test_Erc1155HandleEvent() {
 			Type: transfer.SemiFungibleTransfer,
 		},
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 	erc1155DepositHandler := depositHandlers.Erc1155DepositHandler{}
-	message, err := erc1155DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	message, err := erc1155DepositHandler.HandleDeposit(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+		"messageID")
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -75,7 +83,14 @@ func (s *Erc1155HandlerTestSuite) Test_Erc1155HandleEvent_ErrInvalidCallData() {
 	sourceID := uint8(1)
 
 	erc1155DepositHandler := depositHandlers.Erc1155DepositHandler{}
-	message, err := erc1155DepositHandler.HandleDeposit(sourceID, depositLog.DestinationDomainID, depositLog.DepositNonce, depositLog.ResourceID, depositLog.Data, depositLog.HandlerResponse)
+	message, err := erc1155DepositHandler.HandleDeposit(
+		sourceID,
+		depositLog.DestinationDomainID,
+		depositLog.DepositNonce,
+		depositLog.ResourceID,
+		depositLog.Data,
+		depositLog.HandlerResponse,
+		"messageID")
 
 	s.Nil(message)
 	s.NotNil(err)

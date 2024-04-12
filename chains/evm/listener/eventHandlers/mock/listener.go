@@ -138,16 +138,16 @@ func (m *MockDepositHandler) EXPECT() *MockDepositHandlerMockRecorder {
 }
 
 // HandleDeposit mocks base method.
-func (m *MockDepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (m *MockDepositHandler) HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string) (*message.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, handlerResponse)
+	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, handlerResponse, messageID)
 	ret0, _ := ret[0].(*message.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleDeposit indicates an expected call of HandleDeposit.
-func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, handlerResponse interface{}) *gomock.Call {
+func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, handlerResponse, messageID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, handlerResponse)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, handlerResponse, messageID)
 }

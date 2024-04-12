@@ -73,6 +73,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 			Type:     transfer.PermissionlessGenericTransfer,
 		},
 		Type: transfer.TransferMessageType,
+		ID:   "messageID",
 	}
 
 	permissionlessGenericHandler := depositHandlers.PermissionlessGenericDepositHandler{}
@@ -84,6 +85,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
+		"messageID",
 	)
 
 	s.Nil(err)
@@ -115,7 +117,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleEvent_IncorrectDataLe
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-	)
+		"messageID")
 
 	s.NotNil(err)
 }

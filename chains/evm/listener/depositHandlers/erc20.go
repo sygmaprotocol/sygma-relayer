@@ -12,7 +12,14 @@ type Erc20DepositHandler struct{}
 
 // Erc20DepositHandler converts data pulled from event logs into message
 // handlerResponse can be an empty slice
-func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte) (*message.Message, error) {
+func (dh *Erc20DepositHandler) HandleDeposit(
+	sourceID,
+	destID uint8,
+	nonce uint64,
+	resourceID [32]byte,
+	calldata,
+	handlerResponse []byte,
+	messageID string) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -33,11 +40,16 @@ func (dh *Erc20DepositHandler) HandleDeposit(sourceID, destId uint8, nonce uint6
 		amount,
 		recipientAddress,
 	}
-	return message.NewMessage(sourceID, destId, transfer.TransferMessageData{
-		DepositNonce: nonce,
-		ResourceId:   resourceID,
-		Metadata:     nil,
-		Payload:      payload,
-		Type:         transfer.FungibleTransfer,
-	}, transfer.TransferMessageType), nil
+	return message.NewMessage(
+		sourceID,
+		destID,
+		transfer.TransferMessageData{
+			DepositNonce: nonce,
+			ResourceId:   resourceID,
+			Metadata:     nil,
+			Payload:      payload,
+			Type:         transfer.FungibleTransfer,
+		},
+		messageID,
+		transfer.TransferMessageType), nil
 }

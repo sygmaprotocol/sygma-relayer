@@ -83,7 +83,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	}
 
 	p := pool.New().WithErrors()
-	for _, batch := range batches {
+	for i, batch := range batches {
 		if len(batch.proposals) == 0 {
 			continue
 		}
@@ -95,12 +95,14 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				return err
 			}
 
-			sessionID := e.sessionID(propHash)
+			sessionID := fmt.Sprintf("%s-%d", batch.proposals[0].MessageID, i)
+			log.Info().Str("messageID", batch.proposals[0].MessageID).Msgf("Starting session with ID: %s", sessionID)
+
 			msg := big.NewInt(0)
 			msg.SetBytes(propHash)
 			signing, err := signing.NewSigning(
 				msg,
-				e.sessionID(propHash),
+				sessionID,
 				e.host,
 				e.comm,
 				e.fetcher)
@@ -150,7 +152,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
-				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Str("messageID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
@@ -158,7 +160,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
+				log.Info().Str("messageID", sessionID).Msgf("Successfully executed proposals")
 				return nil
 			}
 		case <-timeout.C:
@@ -194,7 +196,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 			return nil, err
 		}
 		if isExecuted {
-			log.Info().Msgf("Proposal %p already executed", transferProposal)
+			log.Info().Str("messageID", transferProposal.MessageID).Msgf("Proposal %p already executed", transferProposal)
 			continue
 		}
 
@@ -246,8 +248,4 @@ func (e *Executor) areProposalsExecuted(proposals []*transfer.TransferProposal) 
 	}
 
 	return true
-}
-
-func (e *Executor) sessionID(hash []byte) string {
-	return fmt.Sprintf("signing-%s", ethCommon.Bytes2Hex(hash))
 }
