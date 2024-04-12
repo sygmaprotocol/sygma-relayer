@@ -189,6 +189,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 			Destination: prop.Destination,
 			Data:        prop.Data.(transfer.TransferProposalData),
 			Type:        prop.Type,
+			MessageID:   prop.MessageID,
 		}
 
 		isExecuted, err := e.bridge.IsProposalExecuted(transferProposal)

@@ -192,7 +192,7 @@ func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int
 							return err
 						}
 
-						messageID := fmt.Sprintf("%d-%d-%d-%d", rh.domainID, d.DestDomainID, startBlock, endBlock)
+						messageID := fmt.Sprintf("retry-%d-%d-%d-%d", rh.domainID, d.DestDomainID, startBlock, endBlock)
 						m, err := rh.depositHandler.HandleDeposit(rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID)
 						if err != nil {
 							return err

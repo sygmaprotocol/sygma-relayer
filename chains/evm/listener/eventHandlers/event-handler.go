@@ -94,7 +94,7 @@ func (eh *RetryEventHandler) HandleEvents(
 			}
 
 			for _, d := range deposits {
-				messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
+				messageID := fmt.Sprintf("retry-%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
 				msg, err := eh.depositHandler.HandleDeposit(
 					eh.domainID, d.DestinationDomainID, d.DepositNonce,
 					d.ResourceID, d.Data, d.HandlerResponse, messageID,
