@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.0.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.11.0...v2.0.0) (2024-04-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* sygma core refactor ([#256](https://github.com/sygmaprotocol/sygma-relayer/issues/256))
+
+### Features
+
+* add message id to logs ([#267](https://github.com/sygmaprotocol/sygma-relayer/issues/267)) ([347657b](https://github.com/sygmaprotocol/sygma-relayer/commit/347657b6220cd0efcfe3aae8cbfab981d973e5c2))
+* sygma core refactor ([#256](https://github.com/sygmaprotocol/sygma-relayer/issues/256)) ([de153be](https://github.com/sygmaprotocol/sygma-relayer/commit/de153be95d580d979082d3600cb7ee89a9e320a2))
+
+
+### Bug Fixes
+
+* avoid blocking when refresh and keygen fail ([#266](https://github.com/sygmaprotocol/sygma-relayer/issues/266)) ([3bce952](https://github.com/sygmaprotocol/sygma-relayer/commit/3bce9528965986e627cedd0524f94c01d62a70af))
+* duplicate and missing message ids ([#268](https://github.com/sygmaprotocol/sygma-relayer/issues/268)) ([bdf6519](https://github.com/sygmaprotocol/sygma-relayer/commit/bdf65198f57a9256cddfd8903c7f612fcaa65c67))
+
+
+### Miscellaneous
+
+* Add CLI description to docs ([#239](https://github.com/sygmaprotocol/sygma-relayer/issues/239)) ([9fb9d17](https://github.com/sygmaprotocol/sygma-relayer/commit/9fb9d1701a238e2b852ab6f16281ea138578913e))
+* reduce turnaround time ([#260](https://github.com/sygmaprotocol/sygma-relayer/issues/260)) ([8d18d3c](https://github.com/sygmaprotocol/sygma-relayer/commit/8d18d3c1060410df62a9970725654a16dc64ad2a))
+* remove stable tag for image version ([#258](https://github.com/sygmaprotocol/sygma-relayer/issues/258)) ([371b55a](https://github.com/sygmaprotocol/sygma-relayer/commit/371b55a4ffb1483d3558565226b3741d56a680b0))
+
 ## [1.11.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.10.4...v1.11.0) (2024-03-21)
 
 
