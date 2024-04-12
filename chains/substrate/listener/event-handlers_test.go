@@ -112,7 +112,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		"deposit_data":              []byte{},
 		"handler_response":          [1]byte{0},
 	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 1)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -185,7 +185,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 1)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -261,7 +261,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		"handler_response":          [1]byte{0},
 		"deposit_data":              []byte{},
 	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 1)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],

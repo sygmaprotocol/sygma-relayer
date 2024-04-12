@@ -295,7 +295,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -346,7 +346,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
@@ -395,7 +395,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
+	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 5)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1.DestinationDomainID,
