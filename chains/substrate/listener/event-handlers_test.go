@@ -513,7 +513,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 			},
 		},
 	}
-	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
+	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
@@ -614,7 +614,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		},
 	}
 
-	msgID := fmt.Sprintf("%d-%d-%d-%d", 1, 2, 0, 1)
+	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 1)
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
 		d1["dest_domain_id"],
