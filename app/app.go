@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -153,7 +154,7 @@ func Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	chains := make(map[uint8]relayer.RelayedChain)
+	domains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
@@ -217,9 +218,24 @@ func Run() error {
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
-				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
+				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
+				if err != nil {
+					panic(err)
+				}
+				if startBlock == nil {
+					head, err := client.LatestBlock()
+					if err != nil {
+						panic(err)
+					}
+					startBlock = head
+				}
+				startBlock, err = chains.CalculateStartingBlock(startBlock, config.BlockInterval)
+				if err != nil {
+					panic(err)
+				}
+				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, startBlock)
 
-				chains[*config.GeneralChainConfig.Id] = chain
+				domains[*config.GeneralChainConfig.Id] = chain
 			}
 		case "substrate":
 			{
@@ -255,9 +271,25 @@ func Run() error {
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &substrateExecutor.SubstrateMessageHandler{})
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
-				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 
-				chains[*config.GeneralChainConfig.Id] = substrateChain
+				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
+				if err != nil {
+					panic(err)
+				}
+				if startBlock == nil {
+					head, err := substrateClient.LatestBlock()
+					if err != nil {
+						panic(err)
+					}
+					startBlock = head
+				}
+				startBlock, err = chains.CalculateStartingBlock(startBlock, config.BlockInterval)
+				if err != nil {
+					panic(err)
+				}
+				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, startBlock)
+
+				domains[*config.GeneralChainConfig.Id] = substrateChain
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
@@ -266,8 +298,7 @@ func Run() error {
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
-	r := relayer.NewRelayer(chains)
-
+	r := relayer.NewRelayer(domains)
 	go r.Start(ctx, msgChan)
 
 	sysErr := make(chan os.Signal, 1)
