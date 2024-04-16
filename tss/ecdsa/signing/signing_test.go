@@ -16,7 +16,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/signing"
-	tsstest "github.com/ChainSafe/sygma-relayer/tss/ecdsa/test"
+	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"

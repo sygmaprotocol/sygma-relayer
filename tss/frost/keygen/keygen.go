@@ -3,17 +3,21 @@ package keygen
 import (
 	"context"
 	"errors"
+	"fmt"
+	"runtime/debug"
+	"sort"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
-	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/go-kit/kit/log"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/taurusgroup/multi-party-sig/pkg/party"
+	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 )
 
@@ -29,6 +33,7 @@ type Keygen struct {
 	storer         SaveDataStorer
 	threshold      int
 	subscriptionID comm.SubscriptionID
+	handler        *protocol.MultiHandler
 }
 
 func NewKeygen(
@@ -64,21 +69,35 @@ func (k *Keygen) Run(
 	params []byte,
 ) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
-	k.storer.LockKeyshare()
+	// k.storer.LockKeyshare()
+	defer k.Stop()
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
-	endChn := make(chan keygen.LocalPartySaveData)
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
+	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx) })
 
-	startFunc := frost.KeygenTaproot(party.ID(k.Host.ID()), PartyIDSFromPeers(k.Host.Peerstore().Peers()), k.threshold)
-	startFunc([]byte(k.SessionID()))
+	var err error
+	k.handler, err = protocol.NewMultiHandler(
+		frost.KeygenTaproot(
+			party.ID(k.Host.ID().Pretty()),
+			PartyIDSFromPeers(append(k.Host.Peerstore().Peers(), k.Host.ID())),
+			k.threshold),
+		[]byte(k.SessionID()))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
 	k.Communication.UnSubscribe(k.subscriptionID)
-	k.storer.UnlockKeyshare()
+	// k.storer.UnlockKeyshare()
+	k.handler.Stop()
 	k.Cancel()
 }
 
@@ -103,21 +122,78 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 }
 
 // processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.LocalPartySaveData) error {
-	defer k.Cancel()
+func (k *Keygen) processEndMessage(ctx context.Context) error {
+	<-ctx.Done()
+	keyshare, err := k.handler.Result()
+	if err != nil {
+		return err
+	}
+
+	k.Log.Info().Msgf("Received result %+v", keyshare)
+	return nil
+}
+
+func (k *Keygen) Retryable() bool {
+	return false
+}
+
+// ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
+func (k *Keygen) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf(string(debug.Stack()))
+		}
+	}()
+
 	for {
 		select {
-		case key := <-endChn:
+		case wMsg := <-msgChan:
 			{
-				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
+				k.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
-				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
-				err := k.storer.StoreKeyshare(keyshare)
+				msg := &protocol.Message{}
+				err := msg.UnmarshalBinary(wMsg.Payload)
 				if err != nil {
 					return err
 				}
 
-				return nil
+				if !k.handler.CanAccept(msg) {
+					continue
+				}
+				k.handler.Accept(msg)
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+// ProcessOutboundMessages sends messages received from tss out channel to target peers.
+// On context cancel stops listening to channel and exits.
+func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
+	for {
+		select {
+		case msg, ok := <-k.handler.Listen():
+			{
+				if !ok {
+					k.Cancel()
+				}
+
+				msgBytes, err := msg.MarshalBinary()
+				if err != nil {
+					return err
+				}
+
+				peers, err := k.BroadcastPeers(msg)
+				if err != nil {
+					return err
+				}
+
+				k.Log.Debug().Msgf("sending message to %s", peers)
+				err = k.Communication.Broadcast(peers, msgBytes, messageType, k.SessionID())
+				if err != nil {
+					return err
+				}
 			}
 		case <-ctx.Done():
 			{
@@ -127,14 +203,25 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 	}
 }
 
-func (k *Keygen) Retryable() bool {
-	return false
+func (k *Keygen) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
+	if msg.Broadcast {
+		return k.Peers, nil
+	} else {
+		p, err := peer.Decode(string(msg.To))
+		if err != nil {
+			return nil, err
+		}
+		return []peer.ID{p}, nil
+	}
 }
 
 func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
-	idSlice := make([]party.ID, len(peers))
-	for i, peer := range peers {
+	sort.Sort(peers)
+	peerSet := mapset.NewSet[peer.ID](peers...)
+	idSlice := make([]party.ID, len(peerSet.ToSlice()))
+	for i, peer := range peerSet.ToSlice() {
 		idSlice[i] = party.ID(peer.Pretty())
+		fmt.Println(peer.Pretty())
 	}
 	return idSlice
 }

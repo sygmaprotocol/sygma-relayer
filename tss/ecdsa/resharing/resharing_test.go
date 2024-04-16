@@ -13,7 +13,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
-	tsstest "github.com/ChainSafe/sygma-relayer/tss/ecdsa/test"
+	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"

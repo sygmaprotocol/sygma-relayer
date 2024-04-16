@@ -63,7 +63,7 @@ func (s *CoordinatorTestSuite) SetupTest() {
 }
 
 func NewHost(i int) (host.Host, error) {
-	privBytes, err := os.ReadFile(fmt.Sprintf("../test/pks/%d.pk", i))
+	privBytes, err := os.ReadFile(fmt.Sprintf("../../test/pks/%d.pk", i))
 	if err != nil {
 		return nil, err
 	}
