@@ -6,7 +6,7 @@ package elector
 import (
 	"context"
 
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 

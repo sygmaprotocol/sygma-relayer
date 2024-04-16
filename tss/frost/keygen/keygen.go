@@ -1,12 +1,8 @@
-// The Licensed Work is (c) 2022 Sygma
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package keygen
 
 import (
 	"context"
 	"errors"
-	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
@@ -14,10 +10,11 @@ import (
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/go-kit/kit/log"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/rs/zerolog/log"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/taurusgroup/multi-party-sig/pkg/party"
+	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 )
 
 type SaveDataStorer interface {
@@ -67,42 +64,15 @@ func (k *Keygen) Run(
 	params []byte,
 ) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
-
 	k.storer.LockKeyshare()
-	parties := common.PartiesFromPeers(k.Host.Peerstore().Peers())
-	k.PopulatePartyStore(parties)
-
-	pCtx := tss.NewPeerContext(parties)
-	tssParams, err := tss.NewParameters(tss.S256(), pCtx, k.PartyStore[k.Host.ID().Pretty()], len(parties), k.threshold)
-	if err != nil {
-		return err
-	}
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	endChn := make(chan keygen.LocalPartySaveData)
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
 
-	party, err := keygen.NewLocalParty(tssParams, outChn, endChn, new(big.Int).SetBytes([]byte(k.SessionID())))
-	if err != nil {
-		return err
-	}
-	k.Party = party
-
-	k.Log.Info().Msgf("Started keygen process")
-
-	defer k.Stop()
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
-	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
-	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx, endChn) })
-
-	tssError := k.Party.Start()
-	if tssError != nil {
-		return tssError
-	}
-
-	return p.Wait()
+	startFunc := frost.KeygenTaproot(party.ID(k.Host.ID()), PartyIDSFromPeers(k.Host.Peerstore().Peers()), k.threshold)
+	startFunc([]byte(k.SessionID()))
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
@@ -159,4 +129,12 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 
 func (k *Keygen) Retryable() bool {
 	return false
+}
+
+func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
+	idSlice := make([]party.ID, len(peers))
+	for i, peer := range peers {
+		idSlice[i] = party.ID(peer.Pretty())
+	}
+	return idSlice
 }

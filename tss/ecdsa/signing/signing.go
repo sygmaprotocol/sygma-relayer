@@ -23,7 +23,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	errors "github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
 )
 
 type SaveDataFetcher interface {

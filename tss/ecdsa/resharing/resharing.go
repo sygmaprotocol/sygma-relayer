@@ -11,7 +11,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/ecdsa/resharing"
 	"github.com/binance-chain/tss-lib/tss"

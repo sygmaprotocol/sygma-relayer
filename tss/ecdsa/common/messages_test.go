@@ -6,7 +6,7 @@ package common_test
 import (
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
 	"github.com/stretchr/testify/suite"
 )
 
