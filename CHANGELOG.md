@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.0...v2.0.1) (2024-04-15)
+
+
+### Bug Fixes
+
+* revert starting block changes ([#269](https://github.com/sygmaprotocol/sygma-relayer/issues/269)) ([3babab3](https://github.com/sygmaprotocol/sygma-relayer/commit/3babab31e248af7ad007a14ae2efd3fdb3ca8e76))
+
 ## [2.0.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v1.11.0...v2.0.0) (2024-04-12)
 
 
