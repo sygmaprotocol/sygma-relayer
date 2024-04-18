@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/util"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/suite"
@@ -119,9 +120,9 @@ func TestRunSortPeersForSessionTestSuite(t *testing.T) {
 }
 
 func (s *SortPeersForSessionTestSuite) Test_NoPeers() {
-	sortedPeers := common.SortPeersForSession([]peer.ID{}, "sessioniD")
+	sortedPeers := util.SortPeersForSession([]peer.ID{}, "sessioniD")
 
-	s.Equal(sortedPeers, common.SortablePeerSlice{})
+	s.Equal(sortedPeers, util.SortablePeerSlice{})
 }
 
 func (s *SortPeersForSessionTestSuite) Test_ValidPeers() {
@@ -130,12 +131,12 @@ func (s *SortPeersForSessionTestSuite) Test_ValidPeers() {
 	peer3, _ := peer.Decode("QmYayosTHxL2xa4jyrQ2PmbhGbrkSxsGM1kzXLTT8SsLVy")
 	peers := []peer.ID{peer3, peer2, peer1}
 
-	sortedPeers := common.SortPeersForSession(peers, "sessionID")
+	sortedPeers := util.SortPeersForSession(peers, "sessionID")
 
-	s.Equal(sortedPeers, common.SortablePeerSlice{
-		common.PeerMsg{SessionID: "sessionID", ID: peer1},
-		common.PeerMsg{SessionID: "sessionID", ID: peer2},
-		common.PeerMsg{SessionID: "sessionID", ID: peer3},
+	s.Equal(sortedPeers, util.SortablePeerSlice{
+		util.PeerMsg{SessionID: "sessionID", ID: peer1},
+		util.PeerMsg{SessionID: "sessionID", ID: peer2},
+		util.PeerMsg{SessionID: "sessionID", ID: peer3},
 	})
 }
 

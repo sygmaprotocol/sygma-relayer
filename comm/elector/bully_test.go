@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
+	"github.com/ChainSafe/sygma-relayer/tss/util"
 
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 	"github.com/ChainSafe/sygma-relayer/topology"
-	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -85,7 +85,7 @@ func (s *BullyTestSuite) SetupIndividualTest(c BullyTestCase) ([]elector.Coordin
 		allowedPeers = append(allowedPeers, newHost.ID())
 	}
 
-	sortedPeers := common.SortPeersForSession(allowedPeers, s.testSessionID)
+	sortedPeers := util.SortPeersForSession(allowedPeers, s.testSessionID)
 	initialCoordinator := sortedPeers[0].ID
 	var finalCoordinator peer.ID
 	if !c.isLeaderActive {

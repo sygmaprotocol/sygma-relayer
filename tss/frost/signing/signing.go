@@ -6,37 +6,34 @@ package signing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
-	"reflect"
-	"time"
 
 	tssCommon "github.com/binance-chain/tss-lib/common"
-	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
+	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 	"golang.org/x/exp/slices"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
-	errors "github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/frost/common"
 	"github.com/ChainSafe/sygma-relayer/tss/util"
 )
 
 type SaveDataFetcher interface {
-	GetKeyshare() (keyshare.ECDSAKeyshare, error)
+	GetKeyshare() (keyshare.FrostKeyshare, error)
 	LockKeyshare()
 	UnlockKeyshare()
 }
 
 type Signing struct {
-	common.BaseTss
+	common.BaseFrostTss
 	coordinator    bool
-	key            keyshare.ECDSAKeyshare
+	key            keyshare.FrostKeyshare
 	msg            *big.Int
 	resultChn      chan interface{}
 	subscriptionID comm.SubscriptionID
@@ -56,10 +53,8 @@ func NewSigning(
 		return nil, err
 	}
 
-	partyStore := make(map[string]*tss.PartyID)
 	return &Signing{
-		BaseTss: common.BaseTss{
-			PartyStore:    partyStore,
+		BaseFrostTss: common.BaseFrostTss{
 			Host:          host,
 			Communication: comm,
 			Peers:         key.Peers,
@@ -88,35 +83,27 @@ func (s *Signing) Run(
 	if err != nil {
 		return err
 	}
-
-	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
-		return &errors.SubsetError{Peer: s.Host.ID()}
-	}
-
 	s.Peers = peerSubset
-	parties := common.PartiesFromPeers(s.Peers)
-	s.PopulatePartyStore(parties)
-	pCtx := tss.NewPeerContext(parties)
-	tssParams, err := tss.NewParameters(tss.S256(), pCtx, s.PartyStore[s.Host.ID().Pretty()], len(parties), s.key.Threshold)
+
+	/*
+		if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
+			return &errors.SubsetError{Peer: s.Host.ID()}
+		}
+	*/
+
+	s.Handler, err = protocol.NewMultiHandler(
+		frost.SignTaproot(
+			s.key.Key,
+			common.PartyIDSFromPeers(append(s.Host.Peerstore().Peers(), s.Host.ID())),
+			s.msg.Bytes(),
+		),
+		[]byte(s.SessionID()))
 	if err != nil {
 		return err
 	}
 
 	sigChn := make(chan tssCommon.SignatureData)
 	outChn := make(chan tss.Message)
-	kdd := big.NewInt(0)
-	s.Party, err = signing.NewLocalParty(
-		s.msg,
-		tssParams,
-		s.key.Key,
-		kdd,
-		outChn,
-		sigChn,
-		new(big.Int).SetBytes([]byte(s.SID)))
-	if err != nil {
-		return err
-	}
-
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
 
@@ -125,14 +112,8 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx, sigChn) })
-	p.Go(func(ctx context.Context) error { return s.monitorSigning(ctx) })
 
 	s.Log.Info().Msgf("Started signing process")
-
-	tssError := s.Party.Start()
-	if tssError != nil {
-		return tssError
-	}
 
 	return p.Wait()
 }
@@ -234,32 +215,4 @@ func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool 
 
 func (s *Signing) Retryable() bool {
 	return true
-}
-
-// monitorSigning checks if the process is stuck and waiting for peers and sends an error
-// if it is
-func (s *Signing) monitorSigning(ctx context.Context) error {
-	defer s.Cancel()
-	waitingFor := make([]*tss.PartyID, 0)
-	ticker := time.NewTicker(time.Minute * 3)
-
-	for {
-		select {
-		case <-ticker.C:
-			{
-				if len(waitingFor) != 0 && reflect.DeepEqual(s.Party.WaitingFor(), waitingFor) {
-					err := &comm.CommunicationError{
-						Err: fmt.Errorf("waiting for peers %s", waitingFor),
-					}
-					return err
-				}
-
-				waitingFor = s.Party.WaitingFor()
-			}
-		case <-ctx.Done():
-			{
-				return nil
-			}
-		}
-	}
 }

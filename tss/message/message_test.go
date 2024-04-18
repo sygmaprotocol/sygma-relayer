@@ -1,12 +1,12 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: LGPL-3.0-only
 
-package common_test
+package message_test
 
 import (
 	"testing"
 
-	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/message"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,14 +19,14 @@ func TestRunTssMessageTestSuite(t *testing.T) {
 }
 
 func (s *TssMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
-	originalMsg := &common.TssMessage{
+	originalMsg := &message.TssMessage{
 		MsgBytes:    []byte{1},
 		IsBroadcast: true,
 	}
-	msgBytes, err := common.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBroadcast)
+	msgBytes, err := message.MarshalTssMessage(originalMsg.MsgBytes, originalMsg.IsBroadcast)
 	s.Nil(err)
 
-	unmarshaledMsg, err := common.UnmarshalTssMessage(msgBytes)
+	unmarshaledMsg, err := message.UnmarshalTssMessage(msgBytes)
 	s.Nil(err)
 
 	s.Equal(originalMsg, unmarshaledMsg)
@@ -41,13 +41,13 @@ func TestRunStartMessageTestSuite(t *testing.T) {
 }
 
 func (s *StartMessageTestSuite) Test_UnmarshaledMessageShouldBeEqual() {
-	originalMsg := &common.StartMessage{
+	originalMsg := &message.StartMessage{
 		Params: []byte("test"),
 	}
-	msgBytes, err := common.MarshalStartMessage(originalMsg.Params)
+	msgBytes, err := message.MarshalStartMessage(originalMsg.Params)
 	s.Nil(err)
 
-	unmarshaledMsg, err := common.UnmarshalStartMessage(msgBytes)
+	unmarshaledMsg, err := message.UnmarshalStartMessage(msgBytes)
 	s.Nil(err)
 
 	s.Equal(originalMsg, unmarshaledMsg)

@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
+	"github.com/ChainSafe/sygma-relayer/tss/message"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -58,7 +59,7 @@ func (b *BaseTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm
 			{
 				b.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
 
-				msg, err := UnmarshalTssMessage(wMsg.Payload)
+				msg, err := message.UnmarshalTssMessage(wMsg.Payload)
 				if err != nil {
 					return err
 				}
@@ -91,7 +92,7 @@ func (b *BaseTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.M
 					return err
 				}
 
-				msgBytes, err := MarshalTssMessage(wireBytes, routing.IsBroadcast)
+				msgBytes, err := message.MarshalTssMessage(wireBytes, routing.IsBroadcast)
 				if err != nil {
 					return err
 				}

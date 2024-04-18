@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
-	"sort"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
-	"github.com/ChainSafe/sygma-relayer/tss/frost/base"
+	"github.com/ChainSafe/sygma-relayer/tss/frost/common"
 	"github.com/binance-chain/tss-lib/tss"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
@@ -30,7 +28,7 @@ type SaveDataStorer interface {
 }
 
 type Keygen struct {
-	base.BaseFrostTss
+	common.BaseFrostTss
 	storer         SaveDataStorer
 	threshold      int
 	subscriptionID comm.SubscriptionID
@@ -44,7 +42,7 @@ func NewKeygen(
 	storer SaveDataStorer,
 ) *Keygen {
 	return &Keygen{
-		BaseFrostTss: base.BaseFrostTss{
+		BaseFrostTss: common.BaseFrostTss{
 			Host:          host,
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
@@ -79,7 +77,7 @@ func (k *Keygen) Run(
 	k.Handler, err = protocol.NewMultiHandler(
 		frost.KeygenTaproot(
 			party.ID(k.Host.ID().Pretty()),
-			PartyIDSFromPeers(append(k.Host.Peerstore().Peers(), k.Host.ID())),
+			common.PartyIDSFromPeers(append(k.Host.Peerstore().Peers(), k.Host.ID())),
 			k.threshold),
 		[]byte(k.SessionID()))
 	if err != nil {
@@ -230,14 +228,4 @@ func (k *Keygen) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
 		}
 		return []peer.ID{p}, nil
 	}
-}
-
-func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
-	sort.Sort(peers)
-	peerSet := mapset.NewSet[peer.ID](peers...)
-	idSlice := make([]party.ID, len(peerSet.ToSlice()))
-	for i, peer := range peerSet.ToSlice() {
-		idSlice[i] = party.ID(peer.Pretty())
-	}
-	return idSlice
 }
