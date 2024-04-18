@@ -28,15 +28,15 @@ type startParams struct {
 }
 
 type SaveDataStorer interface {
-	GetKeyshare() (keyshare.Keyshare, error)
-	StoreKeyshare(keyshare keyshare.Keyshare) error
+	GetKeyshare() (keyshare.ECDSAKeyshare, error)
+	StoreKeyshare(keyshare keyshare.ECDSAKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
 }
 
 type Resharing struct {
 	common.BaseTss
-	key            keyshare.Keyshare
+	key            keyshare.ECDSAKeyshare
 	subscriptionID comm.SubscriptionID
 	storer         SaveDataStorer
 	newThreshold   int
@@ -50,11 +50,11 @@ func NewResharing(
 	storer SaveDataStorer,
 ) *Resharing {
 	storer.LockKeyshare()
-	var key keyshare.Keyshare
+	var key keyshare.ECDSAKeyshare
 	key, err := storer.GetKeyshare()
 	if err != nil {
 		// empty key for parties that don't have one
-		key = keyshare.Keyshare{}
+		key = keyshare.ECDSAKeyshare{}
 	}
 
 	partyStore := make(map[string]*tss.PartyID)
@@ -205,7 +205,7 @@ func (r *Resharing) processEndMessage(ctx context.Context, endChn chan keygen.Lo
 			{
 				r.Log.Info().Msg("Successfully reshared key")
 
-				keyshare := keyshare.NewKeyshare(key, r.newThreshold, r.Peers)
+				keyshare := keyshare.NewECDSAKeyshare(key, r.newThreshold, r.Peers)
 				err := r.storer.StoreKeyshare(keyshare)
 				return err
 			}

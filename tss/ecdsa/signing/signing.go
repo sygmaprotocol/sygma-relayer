@@ -27,7 +27,7 @@ import (
 )
 
 type SaveDataFetcher interface {
-	GetKeyshare() (keyshare.Keyshare, error)
+	GetKeyshare() (keyshare.ECDSAKeyshare, error)
 	LockKeyshare()
 	UnlockKeyshare()
 }
@@ -35,7 +35,7 @@ type SaveDataFetcher interface {
 type Signing struct {
 	common.BaseTss
 	coordinator    bool
-	key            keyshare.Keyshare
+	key            keyshare.ECDSAKeyshare
 	msg            *big.Int
 	resultChn      chan interface{}
 	subscriptionID comm.SubscriptionID

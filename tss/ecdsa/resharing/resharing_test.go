@@ -52,7 +52,7 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		storer := keyshare.NewKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
+		storer := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
 		share, _ := storer.GetKeyshare()
 		s.MockStorer.EXPECT().LockKeyshare()
 		s.MockStorer.EXPECT().UnlockKeyshare()
@@ -97,7 +97,7 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Le
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		storer := keyshare.NewKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
+		storer := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
 		share, _ := storer.GetKeyshare()
 
 		// set old threshold to invalid value
@@ -146,7 +146,7 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Bi
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		storer := keyshare.NewKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
+		storer := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
 		share, _ := storer.GetKeyshare()
 
 		// set old threshold to invalid value

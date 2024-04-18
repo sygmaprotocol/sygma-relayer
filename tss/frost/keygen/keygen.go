@@ -23,10 +23,10 @@ import (
 )
 
 type SaveDataStorer interface {
-	StoreKeyshare(keyshare keyshare.Keyshare) error
+	StoreKeyshare(keyshare keyshare.FrostKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
-	GetKeyshare() (keyshare.Keyshare, error)
+	GetKeyshare() (keyshare.FrostKeyshare, error)
 }
 
 type Keygen struct {
@@ -137,6 +137,11 @@ func (k *Keygen) processEndMessage(ctx context.Context) error {
 					return err
 				}
 				taprootConfig := result.(*frost.TaprootConfig)
+
+				err = k.storer.StoreKeyshare(keyshare.NewFrostKeyshare(taprootConfig, k.threshold, k.Peers))
+				if err != nil {
+					return err
+				}
 
 				k.Log.Info().Msgf("Generated public key %s", hex.EncodeToString(taprootConfig.PublicKey))
 				k.Cancel()

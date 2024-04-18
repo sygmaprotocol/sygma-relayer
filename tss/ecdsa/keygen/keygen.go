@@ -21,10 +21,10 @@ import (
 )
 
 type SaveDataStorer interface {
-	StoreKeyshare(keyshare keyshare.Keyshare) error
+	StoreKeyshare(keyshare keyshare.ECDSAKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
-	GetKeyshare() (keyshare.Keyshare, error)
+	GetKeyshare() (keyshare.ECDSAKeyshare, error)
 }
 
 type Keygen struct {
@@ -141,7 +141,7 @@ func (k *Keygen) processEndMessage(ctx context.Context, endChn chan keygen.Local
 			{
 				k.Log.Info().Msgf("Generated key share for address: %s", crypto.PubkeyToAddress(*key.ECDSAPub.ToBtcecPubKey().ToECDSA()))
 
-				keyshare := keyshare.NewKeyshare(key, k.threshold, k.Peers)
+				keyshare := keyshare.NewECDSAKeyshare(key, k.threshold, k.Peers)
 				err := k.storer.StoreKeyshare(keyshare)
 				if err != nil {
 					return err

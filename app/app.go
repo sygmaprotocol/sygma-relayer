@@ -116,7 +116,7 @@ func Run() error {
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
-	keyshareStore := keyshare.NewKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 
 	// this is temporary solution related to specifics of aws deployment
 	// effectively it waits until old instance is killed
