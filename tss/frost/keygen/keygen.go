@@ -34,6 +34,7 @@ type Keygen struct {
 	threshold      int
 	subscriptionID comm.SubscriptionID
 	handler        *protocol.MultiHandler
+	done           chan bool
 }
 
 func NewKeygen(
@@ -56,6 +57,7 @@ func NewKeygen(
 		},
 		storer:    storer,
 		threshold: threshold,
+		done:      make(chan bool),
 	}
 }
 
@@ -75,10 +77,6 @@ func (k *Keygen) Run(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
-	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
-	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
-	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx) })
 
 	var err error
 	k.handler, err = protocol.NewMultiHandler(
@@ -90,14 +88,19 @@ func (k *Keygen) Run(
 	if err != nil {
 		return err
 	}
-	return nil
+
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
+	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
+	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx) })
+	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
 	k.Communication.UnSubscribe(k.subscriptionID)
 	// k.storer.UnlockKeyshare()
-	k.handler.Stop()
+	// k.handler.Stop()
 	k.Cancel()
 }
 
@@ -121,20 +124,30 @@ func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
 	return []byte{}
 }
 
-// processEndMessage waits for the final message with generated key share and stores it locally.
-func (k *Keygen) processEndMessage(ctx context.Context) error {
-	<-ctx.Done()
-	keyshare, err := k.handler.Result()
-	if err != nil {
-		return err
-	}
-
-	k.Log.Info().Msgf("Received result %+v", keyshare)
-	return nil
-}
-
 func (k *Keygen) Retryable() bool {
 	return false
+}
+
+// processEndMessage waits for the final message with generated key share and stores it locally.
+func (k *Keygen) processEndMessage(ctx context.Context) error {
+
+	for {
+		select {
+		case <-k.done:
+			{
+				keyshare, err := k.handler.Result()
+				if err != nil {
+					return err
+				}
+
+				k.Log.Info().Msgf("Received result %+v", keyshare)
+				k.Cancel()
+				return nil
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
 }
 
 // ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
@@ -176,7 +189,8 @@ func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Me
 		case msg, ok := <-k.handler.Listen():
 			{
 				if !ok {
-					k.Cancel()
+					k.done <- true
+					return nil
 				}
 
 				msgBytes, err := msg.MarshalBinary()
@@ -221,7 +235,6 @@ func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
 	idSlice := make([]party.ID, len(peerSet.ToSlice()))
 	for i, peer := range peerSet.ToSlice() {
 		idSlice[i] = party.ID(peer.Pretty())
-		fmt.Println(peer.Pretty())
 	}
 	return idSlice
 }
