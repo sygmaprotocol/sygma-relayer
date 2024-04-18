@@ -2,6 +2,7 @@ package keygen
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"runtime/debug"
@@ -135,12 +136,13 @@ func (k *Keygen) processEndMessage(ctx context.Context) error {
 		select {
 		case <-k.done:
 			{
-				keyshare, err := k.handler.Result()
+				result, err := k.handler.Result()
 				if err != nil {
 					return err
 				}
+				taprootConfig := result.(*frost.TaprootConfig)
 
-				k.Log.Info().Msgf("Received result %+v", keyshare)
+				k.Log.Info().Msgf("Generated public key %s", hex.EncodeToString(taprootConfig.PublicKey))
 				k.Cancel()
 				return nil
 			}
