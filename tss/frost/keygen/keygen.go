@@ -10,7 +10,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
-	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/frost/base"
 	"github.com/binance-chain/tss-lib/tss"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -30,12 +30,10 @@ type SaveDataStorer interface {
 }
 
 type Keygen struct {
-	common.BaseTss
+	base.BaseFrostTss
 	storer         SaveDataStorer
 	threshold      int
 	subscriptionID comm.SubscriptionID
-	handler        *protocol.MultiHandler
-	done           chan bool
 }
 
 func NewKeygen(
@@ -45,20 +43,18 @@ func NewKeygen(
 	comm comm.Communication,
 	storer SaveDataStorer,
 ) *Keygen {
-	partyStore := make(map[string]*tss.PartyID)
 	return &Keygen{
-		BaseTss: common.BaseTss{
-			PartyStore:    partyStore,
+		BaseFrostTss: base.BaseFrostTss{
 			Host:          host,
 			Communication: comm,
 			Peers:         host.Peerstore().Peers(),
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "keygen").Logger(),
 			Cancel:        func() {},
+			Done:          make(chan bool),
 		},
 		storer:    storer,
 		threshold: threshold,
-		done:      make(chan bool),
 	}
 }
 
@@ -80,7 +76,7 @@ func (k *Keygen) Run(
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
 
 	var err error
-	k.handler, err = protocol.NewMultiHandler(
+	k.Handler, err = protocol.NewMultiHandler(
 		frost.KeygenTaproot(
 			party.ID(k.Host.ID().Pretty()),
 			PartyIDSFromPeers(append(k.Host.Peerstore().Peers(), k.Host.ID())),
@@ -134,9 +130,9 @@ func (k *Keygen) processEndMessage(ctx context.Context) error {
 
 	for {
 		select {
-		case <-k.done:
+		case <-k.Done:
 			{
-				result, err := k.handler.Result()
+				result, err := k.Handler.Result()
 				if err != nil {
 					return err
 				}
@@ -172,10 +168,10 @@ func (k *Keygen) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.
 					return err
 				}
 
-				if !k.handler.CanAccept(msg) {
+				if !k.Handler.CanAccept(msg) {
 					continue
 				}
-				k.handler.Accept(msg)
+				k.Handler.Accept(msg)
 			}
 		case <-ctx.Done():
 			return nil
@@ -188,10 +184,10 @@ func (k *Keygen) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.
 func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
 	for {
 		select {
-		case msg, ok := <-k.handler.Listen():
+		case msg, ok := <-k.Handler.Listen():
 			{
 				if !ok {
-					k.done <- true
+					k.Done <- true
 					return nil
 				}
 

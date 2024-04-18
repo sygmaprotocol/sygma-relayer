@@ -1,7 +1,4 @@
-// The Licensed Work is (c) 2022 Sygma
-// SPDX-License-Identifier: LGPL-3.0-only
-
-package common
+package base
 
 import (
 	"context"
@@ -23,6 +20,9 @@ type BaseFrostTss struct {
 	SID           string
 	Communication comm.Communication
 	Log           zerolog.Logger
+	Peers         []peer.ID
+	Handler       *protocol.MultiHandler
+	Done          chan bool
 
 	Cancel context.CancelFunc
 }
@@ -47,10 +47,10 @@ func (k *BaseFrostTss) ProcessInboundMessages(ctx context.Context, msgChan chan 
 					return err
 				}
 
-				if !k.handler.CanAccept(msg) {
+				if !k.Handler.CanAccept(msg) {
 					continue
 				}
-				k.handler.Accept(msg)
+				k.Handler.Accept(msg)
 			}
 		case <-ctx.Done():
 			return nil
@@ -60,13 +60,13 @@ func (k *BaseFrostTss) ProcessInboundMessages(ctx context.Context, msgChan chan 
 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
-func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
+func (k *BaseFrostTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
 	for {
 		select {
-		case msg, ok := <-k.handler.Listen():
+		case msg, ok := <-k.Handler.Listen():
 			{
 				if !ok {
-					k.done <- true
+					k.Done <- true
 					return nil
 				}
 
@@ -94,7 +94,7 @@ func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Me
 	}
 }
 
-func (k *Keygen) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
+func (k *BaseFrostTss) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
 	if msg.Broadcast {
 		return k.Peers, nil
 	} else {
@@ -106,6 +106,6 @@ func (k *Keygen) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
 	}
 }
 
-func (b *BaseTss) SessionID() string {
+func (b *BaseFrostTss) SessionID() string {
 	return b.SID
 }
