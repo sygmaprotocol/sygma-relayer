@@ -5,12 +5,126 @@
 package mock_listener
 
 import (
+	big "math/big"
 	reflect "reflect"
 
-	message "github.com/ChainSafe/chainbridge-core/relayer/message"
+	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	gomock "github.com/golang/mock/gomock"
+	message "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
+
+// MockConnection is a mock of Connection interface.
+type MockConnection struct {
+	ctrl     *gomock.Controller
+	recorder *MockConnectionMockRecorder
+}
+
+// MockConnectionMockRecorder is the mock recorder for MockConnection.
+type MockConnectionMockRecorder struct {
+	mock *MockConnection
+}
+
+// NewMockConnection creates a new mock instance.
+func NewMockConnection(ctrl *gomock.Controller) *MockConnection {
+	mock := &MockConnection{ctrl: ctrl}
+	mock.recorder = &MockConnectionMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockConnection) EXPECT() *MockConnectionMockRecorder {
+	return m.recorder
+}
+
+// FetchEvents mocks base method.
+func (m *MockConnection) FetchEvents(startBlock, endBlock *big.Int) ([]*parser.Event, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchEvents", startBlock, endBlock)
+	ret0, _ := ret[0].([]*parser.Event)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchEvents indicates an expected call of FetchEvents.
+func (mr *MockConnectionMockRecorder) FetchEvents(startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchEvents", reflect.TypeOf((*MockConnection)(nil).FetchEvents), startBlock, endBlock)
+}
+
+// GetBlock mocks base method.
+func (m *MockConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlock", blockHash)
+	ret0, _ := ret[0].(*types.SignedBlock)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlock indicates an expected call of GetBlock.
+func (mr *MockConnectionMockRecorder) GetBlock(blockHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockConnection)(nil).GetBlock), blockHash)
+}
+
+// GetBlockEvents mocks base method.
+func (m *MockConnection) GetBlockEvents(hash types.Hash) ([]*parser.Event, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockEvents", hash)
+	ret0, _ := ret[0].([]*parser.Event)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockEvents indicates an expected call of GetBlockEvents.
+func (mr *MockConnectionMockRecorder) GetBlockEvents(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockEvents", reflect.TypeOf((*MockConnection)(nil).GetBlockEvents), hash)
+}
+
+// GetBlockHash mocks base method.
+func (m *MockConnection) GetBlockHash(blockNumber uint64) (types.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockHash", blockNumber)
+	ret0, _ := ret[0].(types.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockHash indicates an expected call of GetBlockHash.
+func (mr *MockConnectionMockRecorder) GetBlockHash(blockNumber interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHash", reflect.TypeOf((*MockConnection)(nil).GetBlockHash), blockNumber)
+}
+
+// GetFinalizedHead mocks base method.
+func (m *MockConnection) GetFinalizedHead() (types.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFinalizedHead")
+	ret0, _ := ret[0].(types.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFinalizedHead indicates an expected call of GetFinalizedHead.
+func (mr *MockConnectionMockRecorder) GetFinalizedHead() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalizedHead", reflect.TypeOf((*MockConnection)(nil).GetFinalizedHead))
+}
+
+// UpdateMetatdata mocks base method.
+func (m *MockConnection) UpdateMetatdata() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMetatdata")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMetatdata indicates an expected call of UpdateMetatdata.
+func (mr *MockConnectionMockRecorder) UpdateMetatdata() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetatdata", reflect.TypeOf((*MockConnection)(nil).UpdateMetatdata))
+}
 
 // MockDepositHandler is a mock of DepositHandler interface.
 type MockDepositHandler struct {
@@ -36,16 +150,16 @@ func (m *MockDepositHandler) EXPECT() *MockDepositHandlerMockRecorder {
 }
 
 // HandleDeposit mocks base method.
-func (m *MockDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8) (*message.Message, error) {
+func (m *MockDepositHandler) HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8, messageID string) (*message.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, transferType)
+	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, destID, nonce, resourceID, calldata, transferType, messageID)
 	ret0, _ := ret[0].(*message.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleDeposit indicates an expected call of HandleDeposit.
-func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, transferType interface{}) *gomock.Call {
+func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, destID, nonce, resourceID, calldata, transferType, messageID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, transferType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, destID, nonce, resourceID, calldata, transferType, messageID)
 }

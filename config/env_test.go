@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	coreRelayer "github.com/ChainSafe/chainbridge-core/config/relayer"
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
 )
 
@@ -55,14 +54,12 @@ func (s *LoadFromEnvTestSuite) Test_ValidRelayerConfig() {
 
 	s.Nil(err)
 	s.Equal(relayer.RawRelayerConfig{
-		RawRelayerConfig: coreRelayer.RawRelayerConfig{
-			OpenTelemetryCollectorURL: "test.opentelemetry.url",
-			LogLevel:                  "info",
-			LogFile:                   "test.log",
-		},
-		Id:         "123",
-		Env:        "TEST",
-		HealthPort: "4000",
+		OpenTelemetryCollectorURL: "test.opentelemetry.url",
+		LogLevel:                  "info",
+		LogFile:                   "test.log",
+		Id:                        "123",
+		Env:                       "TEST",
+		HealthPort:                "4000",
 		MpcConfig: relayer.RawMpcRelayerConfig{
 			KeysharePath: "/cfg/keyshares/0.keyshare",
 			Key:          "test-pk",

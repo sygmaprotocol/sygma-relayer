@@ -7,8 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/ChainSafe/chainbridge-core/flags"
-
+	"github.com/ChainSafe/sygma-relayer/config"
 	"github.com/ChainSafe/sygma-relayer/example/app"
 )
 
@@ -30,7 +29,7 @@ var (
 )
 
 func init() {
-	flags.BindFlags(runCMD)
+	config.BindFlags(runCMD)
 }
 
 func Execute() {

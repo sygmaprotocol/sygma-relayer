@@ -33,3 +33,20 @@ type Refresh struct {
 type RetryEvent struct {
 	TxHash string
 }
+
+type Deposit struct {
+	// ID of chain deposit will be bridged to
+	DestinationDomainID uint8
+	// ResourceID used to find address of handler to be used for deposit
+	ResourceID [32]byte
+	// Nonce of deposit
+	DepositNonce uint64
+	// Address of sender (msg.sender: user)
+	SenderAddress common.Address
+	// Additional data to be passed to specified handler
+	Data []byte
+	// ERC20Handler: responds with empty data
+	// ERC721Handler: responds with deposited token metadata acquired by calling a tokenURI method in the token contract
+	// GenericHandler: responds with the raw bytes returned from the call to the target contract
+	HandlerResponse []byte
+}

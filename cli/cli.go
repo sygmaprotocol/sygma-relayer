@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/ChainSafe/chainbridge-core/flags"
 	"github.com/ChainSafe/sygma-relayer/cli/peer"
 	"github.com/ChainSafe/sygma-relayer/cli/topology"
 	"github.com/ChainSafe/sygma-relayer/cli/utils"
+	"github.com/ChainSafe/sygma-relayer/config"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	flags.BindFlags(rootCMD)
+	config.BindFlags(rootCMD)
 	rootCMD.PersistentFlags().String("name", "", "relayer name")
 	_ = viper.BindPFlag("name", rootCMD.PersistentFlags().Lookup("name"))
 
