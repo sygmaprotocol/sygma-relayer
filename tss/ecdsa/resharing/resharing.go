@@ -12,6 +12,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/util"
 	"github.com/binance-chain/tss-lib/ecdsa/keygen"
 	"github.com/binance-chain/tss-lib/ecdsa/resharing"
 	"github.com/binance-chain/tss-lib/tss"
@@ -223,8 +224,9 @@ func (r *Resharing) sortParties(parties tss.SortedPartyIDs, oldParties tss.Sorte
 	newParties := make(tss.SortedPartyIDs, len(parties))
 	copy(newParties, oldParties)
 	index := len(oldParties)
+	oldPeers, _ := common.PeersFromParties(oldParties)
 	for _, party := range parties {
-		if !common.IsParticipant(party, oldParties) {
+		if !util.IsParticipant(peer.ID(party.Id), oldPeers) {
 			newParties[index] = party
 			newParties[index].Index = index
 			index++
