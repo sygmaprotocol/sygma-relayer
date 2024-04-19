@@ -16,16 +16,6 @@ func CreatePartyID(peerID string) *tss.PartyID {
 	return tss.NewPartyID(peerID, peerID, key)
 }
 
-func IsParticipant(party *tss.PartyID, parties tss.SortedPartyIDs) bool {
-	for _, existingParty := range parties {
-		if party.Id == existingParty.Id {
-			return true
-		}
-	}
-
-	return false
-}
-
 func PeersFromParties(parties []*tss.PartyID) ([]peer.ID, error) {
 	peers := make([]peer.ID, len(parties))
 	for i, party := range parties {

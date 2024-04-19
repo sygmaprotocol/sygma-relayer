@@ -89,7 +89,7 @@ func (s *Signing) Run(
 		return err
 	}
 
-	if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
+	if !util.IsParticipant(s.Host.ID(), peerSubset) {
 		return &errors.SubsetError{Peer: s.Host.ID()}
 	}
 

@@ -4,7 +4,6 @@
 package common_test
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
@@ -13,35 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/stretchr/testify/suite"
 )
-
-type IsParticipantTestSuite struct {
-	suite.Suite
-}
-
-func TestRunIsParticipantTestSuite(t *testing.T) {
-	suite.Run(t, new(IsParticipantTestSuite))
-}
-
-func (s *IsParticipantTestSuite) Test_ValidParticipant() {
-	party1 := tss.NewPartyID("id1", "id1", big.NewInt(1))
-	party2 := tss.NewPartyID("id2", "id2", big.NewInt(2))
-	parties := tss.SortedPartyIDs{party1, party2}
-
-	isParticipant := common.IsParticipant(party1, parties)
-
-	s.Equal(true, isParticipant)
-}
-
-func (s *IsParticipantTestSuite) Test_InvalidParticipant() {
-	party1 := tss.NewPartyID("id1", "id1", big.NewInt(1))
-	party2 := tss.NewPartyID("id2", "id2", big.NewInt(2))
-	invalidParty := tss.NewPartyID("invalid", "id3", big.NewInt(3))
-	parties := tss.SortedPartyIDs{party1, party2}
-
-	isParticipant := common.IsParticipant(invalidParty, parties)
-
-	s.Equal(false, isParticipant)
-}
 
 type PeersFromPartiesTestSuite struct {
 	suite.Suite

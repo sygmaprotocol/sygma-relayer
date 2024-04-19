@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"math/big"
 
-	tssCommon "github.com/binance-chain/tss-lib/common"
+	errors "github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -85,11 +85,9 @@ func (s *Signing) Run(
 	}
 	s.Peers = peerSubset
 
-	/*
-		if !common.IsParticipant(common.CreatePartyID(s.Host.ID().Pretty()), common.PartiesFromPeers(peerSubset)) {
-			return &errors.SubsetError{Peer: s.Host.ID()}
-		}
-	*/
+	if IsParticipant(s.Host.ID(), peerSubset) {
+		return &errors.SubsetError{Peer: s.Host.ID()}
+	}
 
 	s.Handler, err = protocol.NewMultiHandler(
 		frost.SignTaproot(
@@ -102,7 +100,6 @@ func (s *Signing) Run(
 		return err
 	}
 
-	sigChn := make(chan tssCommon.SignatureData)
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
@@ -111,7 +108,7 @@ func (s *Signing) Run(
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
-	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx, sigChn) })
+	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx) })
 
 	s.Log.Info().Msgf("Started signing process")
 	return p.Wait()
@@ -169,17 +166,22 @@ func (s *Signing) unmarshallStartParams(paramBytes []byte) ([]peer.ID, error) {
 }
 
 // processEndMessage routes signature to result channel.
-func (s *Signing) processEndMessage(ctx context.Context, endChn chan tssCommon.SignatureData) error {
+func (s *Signing) processEndMessage(ctx context.Context) error {
 	defer s.Cancel()
 	for {
 		select {
-		//nolint
-		case sig := <-endChn:
+		case <-s.Done:
 			{
 				s.Log.Info().Msg("Successfully generated signature")
 
+				result, err := s.Handler.Result()
+				if err != nil {
+					return err
+				}
+				signature := result.(frost.Signature)
+
 				if s.coordinator {
-					s.resultChn <- &sig
+					s.resultChn <- signature
 				} else {
 					s.resultChn <- nil
 				}

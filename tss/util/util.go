@@ -18,3 +18,13 @@ func SortPeersForSession(peers []peer.ID, sessionID string) SortablePeerSlice {
 	sort.Sort(sortedPeers)
 	return sortedPeers
 }
+
+func IsParticipant(peer peer.ID, peers peer.IDSlice) bool {
+	for _, p := range peers {
+		if p.Pretty() == peer.Pretty() {
+			return true
+		}
+	}
+
+	return false
+}
