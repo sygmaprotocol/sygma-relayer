@@ -46,11 +46,10 @@ func (k *BaseFrostTss) ProcessInboundMessages(ctx context.Context, msgChan chan 
 				if err != nil {
 					return err
 				}
-
 				if !k.Handler.CanAccept(msg) {
 					continue
 				}
-				k.Handler.Accept(msg)
+				go k.Handler.Accept(msg)
 			}
 		case <-ctx.Done():
 			return nil
@@ -80,7 +79,8 @@ func (k *BaseFrostTss) ProcessOutboundMessages(ctx context.Context, outChn chan 
 					return err
 				}
 
-				k.Log.Debug().Msgf("sending message to %s", peers)
+				k.Log.Debug().Msgf("sending message %s to %s", msg, peers)
+
 				err = k.Communication.Broadcast(peers, msgBytes, messageType, k.SessionID())
 				if err != nil {
 					return err

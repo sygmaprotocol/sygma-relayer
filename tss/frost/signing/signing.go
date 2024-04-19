@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
+	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 	"golang.org/x/exp/slices"
 
@@ -61,6 +62,7 @@ func NewSigning(
 			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
 			Cancel:        func() {},
+			Done:          make(chan bool),
 		},
 		key: key,
 		msg: msg,
@@ -84,15 +86,17 @@ func (s *Signing) Run(
 		return err
 	}
 	s.Peers = peerSubset
-
-	if IsParticipant(s.Host.ID(), peerSubset) {
+	if !util.IsParticipant(s.Host.ID(), peerSubset) {
 		return &errors.SubsetError{Peer: s.Host.ID()}
 	}
 
+	msgChn := make(chan *comm.WrappedMessage)
+	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
+	defer s.Stop()
 	s.Handler, err = protocol.NewMultiHandler(
 		frost.SignTaproot(
 			s.key.Key,
-			common.PartyIDSFromPeers(append(s.Host.Peerstore().Peers(), s.Host.ID())),
+			common.PartyIDSFromPeers(peerSubset),
 			s.msg.Bytes(),
 		),
 		[]byte(s.SessionID()))
@@ -101,10 +105,6 @@ func (s *Signing) Run(
 	}
 
 	outChn := make(chan tss.Message)
-	msgChn := make(chan *comm.WrappedMessage)
-	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
-
-	defer s.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
@@ -178,7 +178,7 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				signature := result.(frost.Signature)
+				signature, _ := result.(*taproot.Signature)
 
 				if s.coordinator {
 					s.resultChn <- signature
@@ -186,6 +186,7 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 					s.resultChn <- nil
 				}
 
+				s.Cancel()
 				return nil
 			}
 		case <-ctx.Done():

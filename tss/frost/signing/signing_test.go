@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
@@ -73,7 +72,6 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		s.Fail("signature is nil")
 	}
 
-	time.Sleep(time.Millisecond * 100)
 	cancel()
 	err := pool.Wait()
 	s.Nil(err)
