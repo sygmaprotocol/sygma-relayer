@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"runtime/debug"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
@@ -148,84 +146,5 @@ func (k *Keygen) processEndMessage(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		}
-	}
-}
-
-// ProcessInboundMessages processes messages from tss parties and updates local party accordingly.
-func (k *Keygen) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf(string(debug.Stack()))
-		}
-	}()
-
-	for {
-		select {
-		case wMsg := <-msgChan:
-			{
-				k.Log.Debug().Msgf("processed inbound message from %s", wMsg.From)
-
-				msg := &protocol.Message{}
-				err := msg.UnmarshalBinary(wMsg.Payload)
-				if err != nil {
-					return err
-				}
-
-				if !k.Handler.CanAccept(msg) {
-					continue
-				}
-				k.Handler.Accept(msg)
-			}
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-// ProcessOutboundMessages sends messages received from tss out channel to target peers.
-// On context cancel stops listening to channel and exits.
-func (k *Keygen) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
-	for {
-		select {
-		case msg, ok := <-k.Handler.Listen():
-			{
-				if !ok {
-					k.Done <- true
-					return nil
-				}
-
-				msgBytes, err := msg.MarshalBinary()
-				if err != nil {
-					return err
-				}
-
-				peers, err := k.BroadcastPeers(msg)
-				if err != nil {
-					return err
-				}
-
-				k.Log.Debug().Msgf("sending message to %s", peers)
-				err = k.Communication.Broadcast(peers, msgBytes, messageType, k.SessionID())
-				if err != nil {
-					return err
-				}
-			}
-		case <-ctx.Done():
-			{
-				return nil
-			}
-		}
-	}
-}
-
-func (k *Keygen) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) {
-	if msg.Broadcast {
-		return k.Peers, nil
-	} else {
-		p, err := peer.Decode(string(msg.To))
-		if err != nil {
-			return nil, err
-		}
-		return []peer.ID{p}, nil
 	}
 }

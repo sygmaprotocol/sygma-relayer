@@ -114,7 +114,6 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx, sigChn) })
 
 	s.Log.Info().Msgf("Started signing process")
-
 	return p.Wait()
 }
 
