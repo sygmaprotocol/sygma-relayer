@@ -38,16 +38,16 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen", s.Threshold, host, &communication, s.MockStorer)
+		keygen := keygen.NewKeygen("keygen", s.Threshold, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	s.MockStorer.EXPECT().LockKeyshare().Times(3)
-	s.MockStorer.EXPECT().UnlockKeyshare().Times(3)
-	s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
+	s.MockECDSAStorer.EXPECT().LockKeyshare().Times(3)
+	s.MockECDSAStorer.EXPECT().UnlockKeyshare().Times(3)
+	s.MockECDSAStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
@@ -67,7 +67,7 @@ func (s *KeygenTestSuite) Test_KeygenTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen2", s.Threshold, host, &communication, s.MockStorer)
+		keygen := keygen.NewKeygen("keygen2", s.Threshold, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
 		coordinator.TssTimeout = time.Millisecond
@@ -76,9 +76,9 @@ func (s *KeygenTestSuite) Test_KeygenTimeout() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
-	s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
-	s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
+	s.MockECDSAStorer.EXPECT().LockKeyshare().AnyTimes()
+	s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
+	s.MockECDSAStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(0)
 	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })

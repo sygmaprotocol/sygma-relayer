@@ -18,7 +18,7 @@ import (
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 )
 
-type SaveDataStorer interface {
+type FrostKeyshareStorer interface {
 	StoreKeyshare(keyshare keyshare.FrostKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
@@ -27,7 +27,7 @@ type SaveDataStorer interface {
 
 type Keygen struct {
 	common.BaseFrostTss
-	storer         SaveDataStorer
+	storer         FrostKeyshareStorer
 	threshold      int
 	subscriptionID comm.SubscriptionID
 }
@@ -37,7 +37,7 @@ func NewKeygen(
 	threshold int,
 	host host.Host,
 	comm comm.Communication,
-	storer SaveDataStorer,
+	storer FrostKeyshareStorer,
 ) *Keygen {
 	return &Keygen{
 		BaseFrostTss: common.BaseFrostTss{
@@ -71,6 +71,8 @@ func (k *Keygen) Run(
 	msgChn := make(chan *comm.WrappedMessage)
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
 
+	k.storer.LockKeyshare()
+
 	var err error
 	k.Handler, err = protocol.NewMultiHandler(
 		frost.KeygenTaproot(
@@ -92,8 +94,7 @@ func (k *Keygen) Run(
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (k *Keygen) Stop() {
 	k.Communication.UnSubscribe(k.subscriptionID)
-	// k.storer.UnlockKeyshare()
-	// k.handler.Stop()
+	k.storer.UnlockKeyshare()
 	k.Cancel()
 }
 

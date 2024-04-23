@@ -125,7 +125,7 @@ type KeygenEventHandler struct {
 	coordinator   *tss.Coordinator
 	host          host.Host
 	communication comm.Communication
-	storer        keygen.SaveDataStorer
+	storer        keygen.ECDSAKeyshareStorer
 	bridgeAddress common.Address
 	threshold     int
 }
@@ -136,7 +136,7 @@ func NewKeygenEventHandler(
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
-	storer keygen.SaveDataStorer,
+	storer keygen.ECDSAKeyshareStorer,
 	bridgeAddress common.Address,
 	threshold int,
 ) *KeygenEventHandler {

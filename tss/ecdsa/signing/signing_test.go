@@ -129,14 +129,14 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		keygen := keygen.NewKeygen("keygen3", s.Threshold, host, &communication, s.MockStorer)
+		keygen := keygen.NewKeygen("keygen3", s.Threshold, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, keygen)
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
+	s.MockECDSAStorer.EXPECT().LockKeyshare().AnyTimes()
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })

@@ -24,7 +24,8 @@ import (
 type CoordinatorTestSuite struct {
 	suite.Suite
 	GomockController  *gomock.Controller
-	MockStorer        *mock_tss.MockSaveDataStorer
+	MockECDSAStorer   *mock_tss.MockECDSAKeyshareStorer
+	MockFrostStorer   *mock_tss.MockFrostKeyshareStorer
 	MockCommunication *mock_comm.MockCommunication
 	MockTssProcess    *mock_tss.MockTssProcess
 
@@ -36,7 +37,8 @@ type CoordinatorTestSuite struct {
 
 func (s *CoordinatorTestSuite) SetupTest() {
 	s.GomockController = gomock.NewController(s.T())
-	s.MockStorer = mock_tss.NewMockSaveDataStorer(s.GomockController)
+	s.MockECDSAStorer = mock_tss.NewMockECDSAKeyshareStorer(s.GomockController)
+	s.MockFrostStorer = mock_tss.NewMockFrostKeyshareStorer(s.GomockController)
 	s.MockCommunication = mock_comm.NewMockCommunication(s.GomockController)
 	s.MockTssProcess = mock_tss.NewMockTssProcess(s.GomockController)
 	s.PartyNumber = 3

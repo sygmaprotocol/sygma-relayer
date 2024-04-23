@@ -54,11 +54,11 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../../test/keyshares/%d.keyshare", i))
 		share, _ := storer.GetKeyshare()
-		s.MockStorer.EXPECT().LockKeyshare()
-		s.MockStorer.EXPECT().UnlockKeyshare()
-		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
-		s.MockStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.MockStorer)
+		s.MockECDSAStorer.EXPECT().LockKeyshare()
+		s.MockECDSAStorer.EXPECT().UnlockKeyshare()
+		s.MockECDSAStorer.EXPECT().GetKeyshare().Return(share, nil)
+		s.MockECDSAStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
@@ -103,10 +103,10 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Le
 		// set old threshold to invalid value
 		share.Threshold = -1
 
-		s.MockStorer.EXPECT().LockKeyshare().AnyTimes()
-		s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
-		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
-		resharing := resharing.NewResharing("resharing3", 1, host, &communication, s.MockStorer)
+		s.MockECDSAStorer.EXPECT().LockKeyshare().AnyTimes()
+		s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
+		s.MockECDSAStorer.EXPECT().GetKeyshare().Return(share, nil)
+		resharing := resharing.NewResharing("resharing3", 1, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
@@ -152,10 +152,10 @@ func (s *ResharingTestSuite) Test_InvalidResharingProcess_InvalidOldThreshold_Bi
 		// set old threshold to invalid value
 		share.Threshold = 314
 
-		s.MockStorer.EXPECT().LockKeyshare()
-		s.MockStorer.EXPECT().UnlockKeyshare().AnyTimes()
-		s.MockStorer.EXPECT().GetKeyshare().Return(share, nil)
-		resharing := resharing.NewResharing("resharing4", 1, host, &communication, s.MockStorer)
+		s.MockECDSAStorer.EXPECT().LockKeyshare()
+		s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
+		s.MockECDSAStorer.EXPECT().GetKeyshare().Return(share, nil)
+		resharing := resharing.NewResharing("resharing4", 1, host, &communication, s.MockECDSAStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)

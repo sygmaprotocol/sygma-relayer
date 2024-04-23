@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 )
 
-type SaveDataStorer interface {
+type ECDSAKeyshareStorer interface {
 	StoreKeyshare(keyshare keyshare.ECDSAKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
@@ -29,7 +29,7 @@ type SaveDataStorer interface {
 
 type Keygen struct {
 	common.BaseTss
-	storer         SaveDataStorer
+	storer         ECDSAKeyshareStorer
 	threshold      int
 	subscriptionID comm.SubscriptionID
 }
@@ -39,7 +39,7 @@ func NewKeygen(
 	threshold int,
 	host host.Host,
 	comm comm.Communication,
-	storer SaveDataStorer,
+	storer ECDSAKeyshareStorer,
 ) *Keygen {
 	partyStore := make(map[string]*tss.PartyID)
 	return &Keygen{
