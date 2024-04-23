@@ -13,32 +13,30 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type KeyshareStoreTestSuite struct {
+type ECDSAKeyshareStoreTestSuite struct {
 	suite.Suite
 	keyshareStore *keyshare.ECDSAKeyshareStore
 	path          string
 }
 
-func TestRunKeyshareStoreTestSuite(t *testing.T) {
-	suite.Run(t, new(KeyshareStoreTestSuite))
+func TestRunECDSAKeyshareStoreTestSuite(t *testing.T) {
+	suite.Run(t, new(ECDSAKeyshareStoreTestSuite))
 }
 
-func (s *KeyshareStoreTestSuite) SetupSuite()    {}
-func (s *KeyshareStoreTestSuite) TearDownSuite() {}
-func (s *KeyshareStoreTestSuite) SetupTest() {
+func (s *ECDSAKeyshareStoreTestSuite) SetupTest() {
 	s.path = "share.json"
 	s.keyshareStore = keyshare.NewECDSAKeyshareStore(s.path)
 }
-func (s *KeyshareStoreTestSuite) TearDownTest() {
+func (s *ECDSAKeyshareStoreTestSuite) TearDownTest() {
 	os.Remove(s.path)
 }
 
-func (s *KeyshareStoreTestSuite) Test_RetrieveInvalidFile() {
+func (s *ECDSAKeyshareStoreTestSuite) Test_RetrieveInvalidFile() {
 	_, err := s.keyshareStore.GetKeyshare()
 	s.NotNil(err)
 }
 
-func (s *KeyshareStoreTestSuite) Test_StoreAndRetrieveShare() {
+func (s *ECDSAKeyshareStoreTestSuite) Test_StoreAndRetrieveShare() {
 	threshold := 3
 	peer1, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	peer2, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
