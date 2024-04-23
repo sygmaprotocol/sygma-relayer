@@ -225,8 +225,10 @@ func (r *Resharing) sortParties(parties tss.SortedPartyIDs, oldParties tss.Sorte
 	copy(newParties, oldParties)
 	index := len(oldParties)
 	oldPeers, _ := common.PeersFromParties(oldParties)
+
 	for _, party := range parties {
-		if !util.IsParticipant(peer.ID(party.Id), oldPeers) {
+		peerID, _ := peer.Decode(party.Id)
+		if !util.IsParticipant(peerID, oldPeers) {
 			newParties[index] = party
 			newParties[index].Index = index
 			index++

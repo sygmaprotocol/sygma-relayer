@@ -41,7 +41,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		fetcher := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
+		fetcher := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../../test/keyshares/%d.keyshare", i))
 
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
@@ -91,7 +91,7 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
-		fetcher := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../test/keyshares/%d.keyshare", i))
+		fetcher := keyshare.NewECDSAKeyshareStore(fmt.Sprintf("../../test/keyshares/%d.keyshare", i))
 
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
