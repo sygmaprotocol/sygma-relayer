@@ -37,6 +37,7 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
 		}
 		communicationMap[host.ID()] = &communication
+		s.MockFrostStorer.EXPECT().LockKeyshare()
 		keygen := keygen.NewKeygen("keygen", s.Threshold, host, &communication, s.MockFrostStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
@@ -44,7 +45,6 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 	s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Times(3)
-	s.MockFrostStorer.EXPECT().LockKeyshare().Times(3)
 	s.MockFrostStorer.EXPECT().UnlockKeyshare().Times(3)
 
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
