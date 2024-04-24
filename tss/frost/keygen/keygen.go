@@ -39,6 +39,7 @@ func NewKeygen(
 	comm comm.Communication,
 	storer FrostKeyshareStorer,
 ) *Keygen {
+	storer.LockKeyshare()
 	return &Keygen{
 		BaseFrostTss: common.BaseFrostTss{
 			Host:          host,
@@ -64,14 +65,11 @@ func (k *Keygen) Run(
 	params []byte,
 ) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
-	// k.storer.LockKeyshare()
 	defer k.Stop()
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	k.subscriptionID = k.Communication.Subscribe(k.SessionID(), comm.TssKeyGenMsg, msgChn)
-
-	k.storer.LockKeyshare()
 
 	var err error
 	k.Handler, err = protocol.NewMultiHandler(
@@ -111,7 +109,7 @@ func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool
 
 // ValidCoordinators returns all peers in peerstore
 func (k *Keygen) ValidCoordinators() []peer.ID {
-	return k.Host.Peerstore().Peers()
+	return k.Peers
 }
 
 func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
