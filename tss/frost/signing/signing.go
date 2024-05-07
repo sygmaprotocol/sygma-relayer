@@ -178,8 +178,7 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				signature, _ := result.(*taproot.Signature)
-
+				signature, _ := result.(taproot.Signature)
 				if s.coordinator {
 					s.resultChn <- signature
 				} else {
