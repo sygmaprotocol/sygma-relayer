@@ -18,7 +18,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
@@ -45,9 +44,9 @@ type Executor struct {
 	comm          comm.Communication
 	fetcher       signing.SaveDataFetcher
 	exitLock      *sync.RWMutex
-	publicKey     *secp256k1.PublicKey
 	conn          *connection.Connection
 	senderAddress btcutil.Address
+	tweak         string
 	chainCfg      chaincfg.Params
 	mempool       MempoolAPI
 }
@@ -59,10 +58,10 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
 	mempool MempoolAPI,
+	address btcutil.Address,
+	tweak string,
 	exitLock *sync.RWMutex,
 ) *Executor {
-	taprootAddress, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
-	// taprootAddress, _ := btcutil.DecodeAddress("tb1pmam5aqdlr3m4dc6uswzwx6dl6yyjamkrrdj7eq422vh2ny9spvjq5d8jfa", &chaincfg.TestNet3Params)
 	return &Executor{
 		host:          host,
 		comm:          comm,
@@ -70,7 +69,8 @@ func NewExecutor(
 		exitLock:      exitLock,
 		fetcher:       fetcher,
 		conn:          conn,
-		senderAddress: taprootAddress,
+		senderAddress: address,
+		tweak:         tweak,
 		mempool:       mempool,
 		chainCfg:      chaincfg.TestNet3Params,
 	}
@@ -84,16 +84,6 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 	sessionID := props[0].MessageID
 	proposals := make([]*proposal.Proposal, 0)
 	for _, prop := range props {
-		/* TODO
-		propStatus, err := e.propStore.GetPropStatus(prop.Source, prop.Destination, prop.Data.())
-		if err != nil {
-			return err
-		}
-		if propStatus == store.MissingProp {
-			continue
-		}
-		*/
-
 		proposals = append(proposals, prop)
 	}
 	if len(proposals) == 0 {
@@ -119,6 +109,7 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 		msg.SetBytes(txHash[:])
 		signing, err := signing.NewSigning(
 			msg,
+			e.tweak,
 			sessionID,
 			e.host,
 			e.comm,
@@ -232,12 +223,17 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []byte, e
 		totalAmount += propData.Amount
 	}
 
+	fee, err := e.fee(1, int64(len(proposals))+1)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// return extra funds
 	returnScript, err := txscript.PayToAddrScript(e.senderAddress)
 	if err != nil {
 		return nil, nil, err
 	}
-	txOut := wire.NewTxOut(int64(utxo.Value)-3000-totalAmount, returnScript)
+	txOut := wire.NewTxOut(int64(utxo.Value)-fee-totalAmount, returnScript)
 	tx.AddTxOut(txOut)
 
 	return tx, nil, err
@@ -248,8 +244,7 @@ func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println(recommendedFee.FastestFee)
-	return 3000, nil
+	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * recommendedFee.FastestFee, nil
 }
 
 func (e *Executor) sendTx(tx *wire.MsgTx, signature taproot.Signature) (*chainhash.Hash, error) {
@@ -257,13 +252,6 @@ func (e *Executor) sendTx(tx *wire.MsgTx, signature taproot.Signature) (*chainha
 	return e.conn.SendRawTransaction(tx, true)
 }
 
-// TODO
 func (e *Executor) areProposalsExecuted(proposals []*proposal.Proposal, sessionID string) bool {
 	return true
-}
-
-func BytesToModNScalar(data []byte) *secp256k1.ModNScalar {
-	scalar := new(secp256k1.ModNScalar)
-	scalar.SetByteSlice(data)
-	return scalar
 }

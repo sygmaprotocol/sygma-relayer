@@ -101,7 +101,9 @@
       "type": "btc",
       "startBlock": 5,
       "endpoint": "https://bitcoin-testnet-archive.allthatnode.com",
-      "blockConfirmations": 2
+      "blockConfirmations": 2,
+      "address": "tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv",
+      "tweak": "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212"
     }
   ]
 }

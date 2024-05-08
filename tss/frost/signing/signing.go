@@ -44,6 +44,7 @@ type Signing struct {
 
 func NewSigning(
 	msg *big.Int,
+	tweak string,
 	sessionID string,
 	host host.Host,
 	comm comm.Communication,
@@ -56,13 +57,17 @@ func NewSigning(
 		return nil, err
 	}
 
-	tweak, _ := hex.DecodeString("c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212")
-	h := &curve.Secp256k1Scalar{}
-	err = h.UnmarshalBinary(tweak)
+	tweakBytes, err := hex.DecodeString(tweak)
 	if err != nil {
 		return nil, err
 	}
-	key.Key, err = key.Key.Derive(h, []byte{})
+
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweakBytes)
+	if err != nil {
+		return nil, err
+	}
+	key.Key, err = key.Key.Derive(h, nil)
 	if err != nil {
 		return nil, err
 	}

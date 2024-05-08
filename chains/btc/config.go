@@ -20,6 +20,8 @@ type RawBtcConfig struct {
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
 	BtcNetwork               int64  `mapstructure:"BtcNetwork"`
 	Tip                      uint64 `mapstructure:"tip"`
+	Address                  string `mapstructure:"address"`
+	Tweak                    string `mapstructure:"tweak"`
 }
 
 type BtcConfig struct {
@@ -27,6 +29,9 @@ type BtcConfig struct {
 	ChainID            *big.Int
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
+	Address            string `mapstructure:"address"`
+	Tweak              string `mapstructure:"tweak"`
+
 	BlockRetryInterval time.Duration
 }
 
@@ -56,6 +61,8 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		BlockRetryInterval: time.Duration(5000) * time.Second,
 		StartBlock:         big.NewInt(80000),
 		BlockInterval:      big.NewInt(1000000),
+		Address:            c.Address,
+		Tweak:              c.Tweak,
 	}
 
 	return config, nil

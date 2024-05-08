@@ -17,7 +17,8 @@ import (
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
-	"github.com/pkg/errors"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
@@ -253,8 +254,9 @@ func Run() error {
 					panic(err)
 				}
 
+				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.TestNet3Params)
 				mempool := mempool.NewMempoolAPI("https://mempool.space/testnet")
-				executor := btcExecutor.NewExecutor(host, communication, coordinator, frostKeyshareStore, conn, mempool, exitLock)
+				executor := btcExecutor.NewExecutor(host, communication, coordinator, frostKeyshareStore, conn, mempool, taprootAddress, config.Tweak, exitLock)
 				err = executor.Execute([]*proposal.Proposal{
 					{
 						Data: btcExecutor.BtcProposalData{
@@ -263,16 +265,6 @@ func Run() error {
 						},
 					},
 				})
-
-				type stackTracer interface {
-					StackTrace() errors.StackTrace
-				}
-				e, ok := err.(stackTracer)
-				if ok {
-					for _, f := range e.StackTrace() {
-						fmt.Printf("%+s:%d\n", f, f)
-					}
-				}
 				fmt.Println(err)
 
 			}
