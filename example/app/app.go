@@ -12,9 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/pkg/errors"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
@@ -36,7 +39,10 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
+	btcConnection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
+	btcExecutor "github.com/ChainSafe/sygma-relayer/chains/btc/executor"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
@@ -99,6 +105,7 @@ func Run() error {
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+	frostKeyshareStore := keyshare.NewFrostKeyshareStore(configuration.RelayerConfig.MpcConfig.FrostKeysharePath)
 
 	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
@@ -231,6 +238,43 @@ func Run() error {
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 				chains[*config.GeneralChainConfig.Id] = substrateChain
+			}
+		case "btc":
+			{
+				log.Info().Msgf("Registering btc domain")
+
+				config, err := btc.NewBtcConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := btcConnection.NewBtcConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+
+				mempool := mempool.NewMempoolAPI("https://mempool.space/testnet")
+				executor := btcExecutor.NewExecutor(host, communication, coordinator, frostKeyshareStore, conn, mempool, exitLock)
+				err = executor.Execute([]*proposal.Proposal{
+					{
+						Data: btcExecutor.BtcProposalData{
+							Recipient: "tb1pv5ewwve8kgujrlj45894cflnnhvk58sk20e9555agl8m3juesmcsn8fm3q",
+							Amount:    1000,
+						},
+					},
+				})
+
+				type stackTracer interface {
+					StackTrace() errors.StackTrace
+				}
+				e, ok := err.(stackTracer)
+				if ok {
+					for _, f := range e.StackTrace() {
+						fmt.Printf("%+s:%d\n", f, f)
+					}
+				}
+				fmt.Println(err)
+
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
