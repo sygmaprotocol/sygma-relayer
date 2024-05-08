@@ -253,58 +253,6 @@ func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
 }
 
 func (e *Executor) sendTx(tx *wire.MsgTx, signature taproot.Signature) (*chainhash.Hash, error) {
-	/*
-		script, _ := hex.DecodeString("5120df774e81bf1c7756e35c8384e369bfd1092eeec31b65ec82aa532ea990b00b24")
-		prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(script, 17930)
-		sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
-		secretKeyBytes, _ := hex.DecodeString("278888f25ad8d6202024792ed1b47ae20625ada417efdc515e9f0980f2f38bc4")
-		privKey, _ := btcec.PrivKeyFromBytes(secretKeyBytes)
-
-		fmt.Println("PRIV KEY")
-		beforeBytes := privKey.Key.Bytes()
-		fmt.Println(hex.EncodeToString(beforeBytes[:]))
-
-		afterBytes := txscript.TweakTaprootPrivKey(*privKey, []byte{}).Key.Bytes()
-
-		fmt.Println(len(afterBytes))
-		fmt.Println(hex.EncodeToString(afterBytes[:]))
-
-		txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, 0, prevOutputFetcher)
-		if err != nil {
-			return nil, err
-		}
-
-		sig, err := txscript.TaprootWitnessSignature(tx, sigHash, 0, 13930, script, txscript.SigHashDefault, privKey)
-		if err != nil {
-			return nil, err
-		}
-
-		fmt.Println("Witness")
-		tx.TxIn[0].Witness = sig
-		fmt.Println(tx.TxIn[0].Witness)
-
-		privKeySecp := secp256k1.PrivKeyFromBytes(afterBytes[:])
-		manualSig, err := schnorr.Sign(privKeySecp, txHash[:])
-		if err != nil {
-			return nil, err
-		}
-		tx.TxIn[0].Witness = wire.TxWitness{manualSig.Serialize()}
-		fmt.Println(tx.TxIn[0].Witness)
-
-		secKey := taproot.SecretKey(afterBytes[:])
-		signature, err = Sign(secKey, txHash[:])
-		if err != nil {
-			return nil, err
-		}
-		pubKey, _ := secKey.Public()
-		isverified := pubKey.Verify(signature, txHash[:])
-		fmt.Println("IS VERIFIED")
-		fmt.Println(isverified)
-
-		tx.TxIn[0].Witness = wire.TxWitness{signature[:]}
-		fmt.Println(tx.TxIn[0].Witness)
-	*/
-
 	tx.TxIn[0].Witness = wire.TxWitness{signature}
 	return e.conn.SendRawTransaction(tx, true)
 }
