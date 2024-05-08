@@ -5,6 +5,7 @@ package signing
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/taurusgroup/multi-party-sig/pkg/math/curve"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
 	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
@@ -50,6 +52,17 @@ func NewSigning(
 	fetcher.LockKeyshare()
 	defer fetcher.UnlockKeyshare()
 	key, err := fetcher.GetKeyshare()
+	if err != nil {
+		return nil, err
+	}
+
+	tweak, _ := hex.DecodeString("c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212")
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweak)
+	if err != nil {
+		return nil, err
+	}
+	key.Key, err = key.Key.Derive(h, []byte{})
 	if err != nil {
 		return nil, err
 	}

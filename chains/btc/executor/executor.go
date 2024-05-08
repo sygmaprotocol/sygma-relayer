@@ -59,10 +59,10 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
 	mempool MempoolAPI,
-	publicKey *secp256k1.PublicKey,
 	exitLock *sync.RWMutex,
 ) *Executor {
-	addr, _ := btcutil.DecodeAddress("mrgYN96jj1bPiFdyAtP9pEezzjfQc5YdaQ", &chaincfg.TestNet3Params)
+	taprootAddress, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
+	// taprootAddress, _ := btcutil.DecodeAddress("tb1pmam5aqdlr3m4dc6uswzwx6dl6yyjamkrrdj7eq422vh2ny9spvjq5d8jfa", &chaincfg.TestNet3Params)
 	return &Executor{
 		host:          host,
 		comm:          comm,
@@ -70,8 +70,8 @@ func NewExecutor(
 		exitLock:      exitLock,
 		fetcher:       fetcher,
 		conn:          conn,
-		publicKey:     publicKey,
-		senderAddress: addr,
+		senderAddress: taprootAddress,
+		mempool:       mempool,
 		chainCfg:      chaincfg.TestNet3Params,
 	}
 }
@@ -104,13 +104,11 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 	if err != nil {
 		return err
 	}
-	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
-	prevFetcher := txscript.NewMultiPrevOutFetcher(prevOuts)
-	sigHash := txscript.NewTxSigHashes(tx, prevFetcher)
 
-	script, _ := hex.DecodeString("76a92063f4b4ab0bb1d6a364bde810aead8dd571cea18586e2a84d6a640e6ff80cb42188ac")
-	leaf := txscript.NewBaseTapLeaf(script)
-	txHash, err := txscript.CalcTapscriptSignaturehash(sigHash, txscript.SigHashDefault, tx, 0, prevFetcher, leaf)
+	script, _ := hex.DecodeString("51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5")
+	prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(script, 13918)
+	sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
+	txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, 0, prevOutputFetcher)
 	if err != nil {
 		return err
 	}
@@ -163,7 +161,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				signatureData := sigResult.(*taproot.Signature)
+				signatureData := sigResult.(taproot.Signature)
 				hash, err := e.sendTx(tx, signatureData)
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
@@ -201,7 +199,13 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []byte, e
 	if len(utxos) == 0 {
 		return nil, nil, fmt.Errorf("no utxos found")
 	}
-	utxo := utxos[0]
+	var utxo mempool.Utxo
+	for _, u := range utxos {
+		if u.Value > 3000 {
+			utxo = u
+			break
+		}
+	}
 
 	tx := wire.NewMsgTx(wire.TxVersion)
 	previousTxHash, err := chainhash.NewHashFromStr(utxo.TxID)
@@ -228,19 +232,13 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []byte, e
 		totalAmount += propData.Amount
 	}
 
-	/* TODO
 	// return extra funds
 	returnScript, err := txscript.PayToAddrScript(e.senderAddress)
 	if err != nil {
 		return nil, nil, err
 	}
-	fee, err := e.fee(1, int64(len(proposals)))
-	if err != nil {
-		return nil, nil, err
-	}
-	txOut := wire.NewTxOut(int64(utxo.Value)-fee-totalAmount, returnScript)
+	txOut := wire.NewTxOut(int64(utxo.Value)-3000-totalAmount, returnScript)
 	tx.AddTxOut(txOut)
-	*/
 
 	return tx, nil, err
 }
@@ -250,26 +248,64 @@ func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE) + 10) * recommendedFee.FastestFee, nil
+	fmt.Println(recommendedFee.FastestFee)
+	return 3000, nil
 }
 
-func (e *Executor) sendTx(tx *wire.MsgTx, signature *taproot.Signature) (*chainhash.Hash, error) {
-	// control block
+func (e *Executor) sendTx(tx *wire.MsgTx, signature taproot.Signature) (*chainhash.Hash, error) {
 	/*
-		script, _ := hex.DecodeString("76a92063f4b4ab0bb1d6a364bde810aead8dd571cea18586e2a84d6a640e6ff80cb42188ac")
-		leaf := txscript.NewBaseTapLeaf(script)
-		indexedTree := txscript.AssembleTaprootScriptTree(leaf, leaf)
-		settleMerkleProof := indexedTree.LeafMerkleProofs[0]
-		pubKeyBytes, _ := hex.DecodeString("63f4b4ab0bb1d6a364bde810aead8dd571cea18586e2a84d6a640e6ff80cb421")
-		internalKey, err := secp256k1.ParsePubKey(pubKeyBytes)
+		script, _ := hex.DecodeString("5120df774e81bf1c7756e35c8384e369bfd1092eeec31b65ec82aa532ea990b00b24")
+		prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(script, 17930)
+		sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
+		secretKeyBytes, _ := hex.DecodeString("278888f25ad8d6202024792ed1b47ae20625ada417efdc515e9f0980f2f38bc4")
+		privKey, _ := btcec.PrivKeyFromBytes(secretKeyBytes)
+
+		fmt.Println("PRIV KEY")
+		beforeBytes := privKey.Key.Bytes()
+		fmt.Println(hex.EncodeToString(beforeBytes[:]))
+
+		afterBytes := txscript.TweakTaprootPrivKey(*privKey, []byte{}).Key.Bytes()
+
+		fmt.Println(len(afterBytes))
+		fmt.Println(hex.EncodeToString(afterBytes[:]))
+
+		txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, 0, prevOutputFetcher)
 		if err != nil {
 			return nil, err
 		}
-		cb := settleMerkleProof.ToControlBlock(internalKey)
-		cbBytes, _ := cb.ToBytes()
+
+		sig, err := txscript.TaprootWitnessSignature(tx, sigHash, 0, 13930, script, txscript.SigHashDefault, privKey)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("Witness")
+		tx.TxIn[0].Witness = sig
+		fmt.Println(tx.TxIn[0].Witness)
+
+		privKeySecp := secp256k1.PrivKeyFromBytes(afterBytes[:])
+		manualSig, err := schnorr.Sign(privKeySecp, txHash[:])
+		if err != nil {
+			return nil, err
+		}
+		tx.TxIn[0].Witness = wire.TxWitness{manualSig.Serialize()}
+		fmt.Println(tx.TxIn[0].Witness)
+
+		secKey := taproot.SecretKey(afterBytes[:])
+		signature, err = Sign(secKey, txHash[:])
+		if err != nil {
+			return nil, err
+		}
+		pubKey, _ := secKey.Public()
+		isverified := pubKey.Verify(signature, txHash[:])
+		fmt.Println("IS VERIFIED")
+		fmt.Println(isverified)
+
+		tx.TxIn[0].Witness = wire.TxWitness{signature[:]}
+		fmt.Println(tx.TxIn[0].Witness)
 	*/
 
-	tx.TxIn[0].Witness = wire.TxWitness{*signature}
+	tx.TxIn[0].Witness = wire.TxWitness{signature}
 	return e.conn.SendRawTransaction(tx, true)
 }
 
