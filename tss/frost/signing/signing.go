@@ -27,6 +27,11 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/util"
 )
 
+type Signature struct {
+	Id        int
+	Signature taproot.Signature
+}
+
 type SaveDataFetcher interface {
 	GetKeyshare() (keyshare.FrostKeyshare, error)
 	LockKeyshare()
@@ -35,6 +40,7 @@ type SaveDataFetcher interface {
 
 type Signing struct {
 	common.BaseFrostTss
+	id             int
 	coordinator    bool
 	key            keyshare.FrostKeyshare
 	msg            *big.Int
@@ -43,6 +49,7 @@ type Signing struct {
 }
 
 func NewSigning(
+	id int,
 	msg *big.Int,
 	tweak string,
 	sessionID string,
@@ -83,6 +90,7 @@ func NewSigning(
 			Done:          make(chan bool),
 		},
 		key: key,
+		id:  id,
 		msg: msg,
 	}, nil
 }
@@ -197,12 +205,11 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 					return err
 				}
 				signature, _ := result.(taproot.Signature)
-				if s.coordinator {
-					s.resultChn <- signature
-				} else {
-					s.resultChn <- nil
-				}
 
+				s.resultChn <- Signature{
+					Signature: signature,
+					Id:        s.id,
+				}
 				s.Cancel()
 				return nil
 			}

@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"sync"
@@ -47,6 +46,7 @@ type Executor struct {
 	conn          *connection.Connection
 	senderAddress btcutil.Address
 	tweak         string
+	script        []byte
 	chainCfg      chaincfg.Params
 	mempool       MempoolAPI
 }
@@ -60,6 +60,7 @@ func NewExecutor(
 	mempool MempoolAPI,
 	address btcutil.Address,
 	tweak string,
+	script []byte,
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
@@ -71,6 +72,7 @@ func NewExecutor(
 		conn:          conn,
 		senderAddress: address,
 		tweak:         tweak,
+		script:        script,
 		mempool:       mempool,
 		chainCfg:      chaincfg.TestNet3Params,
 	}
@@ -81,58 +83,48 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	sessionID := props[0].MessageID
-	proposals := make([]*proposal.Proposal, 0)
-	for _, prop := range props {
-		proposals = append(proposals, prop)
-	}
-	if len(proposals) == 0 {
+	if len(props) == 0 {
 		return nil
 	}
+	sessionID := props[0].MessageID
 
-	tx, _, err := e.rawTx(proposals)
+	tx, utxos, err := e.rawTx(props)
 	if err != nil {
 		return err
 	}
 
-	script, _ := hex.DecodeString("51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5")
-	prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(script, 13918)
-	sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
-	txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, 0, prevOutputFetcher)
-	if err != nil {
-		return err
-	}
-
+	sigChn := make(chan interface{})
 	p := pool.New().WithErrors()
-	p.Go(func() error {
-		msg := new(big.Int)
-		msg.SetBytes(txHash[:])
-		signing, err := signing.NewSigning(
-			msg,
-			e.tweak,
-			sessionID,
-			e.host,
-			e.comm,
-			e.fetcher)
+	executionContext, cancelExecution := context.WithCancel(context.Background())
+	watchContext, cancelWatch := context.WithCancel(context.Background())
+	defer cancelWatch()
+	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
+	// we need to sign each input individually
+	for i := range tx.TxIn {
+		prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(e.script, int64(utxos[i].Value))
+		sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
+		txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, i, prevOutputFetcher)
 		if err != nil {
 			return err
 		}
 
-		sigChn := make(chan interface{})
-		executionContext, cancelExecution := context.WithCancel(context.Background())
-		watchContext, cancelWatch := context.WithCancel(context.Background())
-		ep := pool.New().WithErrors()
-		ep.Go(func() error {
-			err := e.coordinator.Execute(executionContext, signing, sigChn)
+		p.Go(func() error {
+			msg := new(big.Int)
+			msg.SetBytes(txHash[:])
+			signing, err := signing.NewSigning(
+				i,
+				msg,
+				e.tweak,
+				fmt.Sprintf("%s-%d", sessionID, i),
+				e.host,
+				e.comm,
+				e.fetcher)
 			if err != nil {
-				cancelWatch()
+				return err
 			}
-
-			return err
+			return e.coordinator.Execute(executionContext, signing, sigChn)
 		})
-		ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, proposals, sigChn, sessionID) })
-		return ep.Wait()
-	})
+	}
 	return p.Wait()
 }
 
@@ -142,6 +134,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	defer ticker.Stop()
 	defer timeout.Stop()
 	defer cancelExecution()
+	signatures := make([]taproot.Signature, len(tx.TxIn))
 
 	for {
 		select {
@@ -151,9 +144,13 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				if sigResult == nil {
 					continue
 				}
+				signatureData := sigResult.(signing.Signature)
+				signatures[signatureData.Id] = signatureData.Signature
+				if len(signatures) != len(tx.TxIn) {
+					continue
+				}
 
-				signatureData := sigResult.(taproot.Signature)
-				hash, err := e.sendTx(tx, signatureData)
+				hash, err := e.sendTx(tx, signatures)
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					return err
@@ -182,61 +179,75 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []byte, error) {
-	utxos, err := e.mempool.Utxos(e.senderAddress.String())
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(utxos) == 0 {
-		return nil, nil, fmt.Errorf("no utxos found")
-	}
-	var utxo mempool.Utxo
-	for _, u := range utxos {
-		if u.Value > 3000 {
-			utxo = u
-			break
-		}
-	}
-
+func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool.Utxo, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
-	previousTxHash, err := chainhash.NewHashFromStr(utxo.TxID)
+	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
 		return nil, nil, err
 	}
-	outPoint := wire.NewOutPoint(previousTxHash, utxo.Vout)
-	txIn := wire.NewTxIn(outPoint, nil, nil)
-	tx.AddTxIn(txIn)
-
-	totalAmount := int64(0)
-	for _, prop := range proposals {
-		propData := prop.Data.(BtcProposalData)
-		addr, err := btcutil.DecodeAddress(propData.Recipient, &e.chainCfg)
-		if err != nil {
-			return nil, nil, err
-		}
-		destinationAddrByte, err := txscript.PayToAddrScript(addr)
-		if err != nil {
-			return nil, nil, err
-		}
-		txOut := wire.NewTxOut(propData.Amount, destinationAddrByte)
-		tx.AddTxOut(txOut)
-		totalAmount += propData.Amount
-	}
-
-	fee, err := e.fee(1, int64(len(proposals))+1)
+	inputAmount, utxos, err := e.inputs(tx, outputAmount)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	if inputAmount < outputAmount {
+		return nil, nil, fmt.Errorf("utxo input amount %d less than output amount %d", inputAmount, outputAmount)
+	}
+	fee, err := e.fee(int64(len(utxos)), int64(len(proposals))+1)
+	if err != nil {
+		return nil, nil, err
+	}
 	// return extra funds
 	returnScript, err := txscript.PayToAddrScript(e.senderAddress)
 	if err != nil {
 		return nil, nil, err
 	}
-	txOut := wire.NewTxOut(int64(utxo.Value)-fee-totalAmount, returnScript)
+	txOut := wire.NewTxOut(int64(inputAmount)-fee-outputAmount, returnScript)
 	tx.AddTxOut(txOut)
+	return tx, utxos, err
+}
 
-	return tx, nil, err
+func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int64, error) {
+	outputAmount := int64(0)
+	for _, prop := range proposals {
+		propData := prop.Data.(BtcProposalData)
+		addr, err := btcutil.DecodeAddress(propData.Recipient, &e.chainCfg)
+		if err != nil {
+			return 0, err
+		}
+		destinationAddrByte, err := txscript.PayToAddrScript(addr)
+		if err != nil {
+			return 0, err
+		}
+		txOut := wire.NewTxOut(propData.Amount, destinationAddrByte)
+		tx.AddTxOut(txOut)
+		outputAmount += propData.Amount
+	}
+	return outputAmount, nil
+}
+
+func (e *Executor) inputs(tx *wire.MsgTx, outputAmount int64) (int64, []mempool.Utxo, error) {
+	usedUtxos := make([]mempool.Utxo, 0)
+	inputAmount := int64(0)
+	utxos, err := e.mempool.Utxos(e.senderAddress.String())
+	if err != nil {
+		return 0, nil, err
+	}
+	for _, utxo := range utxos {
+		previousTxHash, err := chainhash.NewHashFromStr(utxo.TxID)
+		if err != nil {
+			return 0, nil, err
+		}
+		outPoint := wire.NewOutPoint(previousTxHash, utxo.Vout)
+		txIn := wire.NewTxIn(outPoint, nil, nil)
+		tx.AddTxIn(txIn)
+
+		usedUtxos = append(usedUtxos, utxo)
+		inputAmount += int64(utxo.Value)
+		if inputAmount > outputAmount {
+			break
+		}
+	}
+	return inputAmount, usedUtxos, nil
 }
 
 func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
@@ -247,8 +258,10 @@ func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
 	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * recommendedFee.FastestFee, nil
 }
 
-func (e *Executor) sendTx(tx *wire.MsgTx, signature taproot.Signature) (*chainhash.Hash, error) {
-	tx.TxIn[0].Witness = wire.TxWitness{signature}
+func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chainhash.Hash, error) {
+	for i, sig := range signatures {
+		tx.TxIn[i].Witness = wire.TxWitness{sig}
+	}
 	return e.conn.SendRawTransaction(tx, true)
 }
 

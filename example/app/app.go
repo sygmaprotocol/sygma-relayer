@@ -256,7 +256,17 @@ func Run() error {
 
 				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.TestNet3Params)
 				mempool := mempool.NewMempoolAPI("https://mempool.space/testnet")
-				executor := btcExecutor.NewExecutor(host, communication, coordinator, frostKeyshareStore, conn, mempool, taprootAddress, config.Tweak, exitLock)
+				executor := btcExecutor.NewExecutor(
+					host,
+					communication,
+					coordinator,
+					frostKeyshareStore,
+					conn,
+					mempool,
+					taprootAddress,
+					config.Tweak,
+					config.Script,
+					exitLock)
 				err = executor.Execute([]*proposal.Proposal{
 					{
 						Data: btcExecutor.BtcProposalData{

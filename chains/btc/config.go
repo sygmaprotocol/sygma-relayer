@@ -4,6 +4,7 @@
 package btc
 
 import (
+	"encoding/hex"
 	"math/big"
 	"time"
 
@@ -22,6 +23,7 @@ type RawBtcConfig struct {
 	Tip                      uint64 `mapstructure:"tip"`
 	Address                  string `mapstructure:"address"`
 	Tweak                    string `mapstructure:"tweak"`
+	Script                   string `mapstructure:"script"`
 }
 
 type BtcConfig struct {
@@ -29,8 +31,9 @@ type BtcConfig struct {
 	ChainID            *big.Int
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
-	Address            string `mapstructure:"address"`
-	Tweak              string `mapstructure:"tweak"`
+	Address            string
+	Tweak              string
+	Script             []byte
 
 	BlockRetryInterval time.Duration
 }
@@ -55,6 +58,10 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	}
 
 	c.GeneralChainConfig.ParseFlags()
+	scriptBytes, err := hex.DecodeString(c.Script)
+	if err != nil {
+		return nil, err
+	}
 	config := &BtcConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		ChainID:            big.NewInt(3),
@@ -63,6 +70,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		BlockInterval:      big.NewInt(1000000),
 		Address:            c.Address,
 		Tweak:              c.Tweak,
+		Script:             scriptBytes,
 	}
 
 	return config, nil
