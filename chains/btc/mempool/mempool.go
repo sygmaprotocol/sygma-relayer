@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 )
 
 type Utxo struct {
@@ -65,6 +66,9 @@ func (a *MempoolAPI) Utxos(address string) ([]Utxo, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(utxos, func(i int, j int) bool {
+		return utxos[i].TxID < utxos[j].TxID
+	})
 
 	return utxos, nil
 }

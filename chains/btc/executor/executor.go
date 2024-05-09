@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"sync"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
+	"go.uber.org/zap/buffer"
 )
 
 var (
@@ -100,10 +102,18 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 	defer cancelWatch()
 	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
 	// we need to sign each input individually
+
+	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
+	for _, utxo := range utxos {
+		txOut := wire.NewTxOut(int64(utxo.Value), e.script)
+		hash, _ := chainhash.NewHashFromStr(utxo.TxID)
+		prevOuts[*wire.NewOutPoint(hash, utxo.Vout)] = txOut
+	}
+	prevOutputFetcher := txscript.NewMultiPrevOutFetcher(prevOuts)
+	sigHashes := txscript.NewTxSigHashes(tx, prevOutputFetcher)
+
 	for i := range tx.TxIn {
-		prevOutputFetcher := txscript.NewCannedPrevOutputFetcher(e.script, int64(utxos[i].Value))
-		sigHash := txscript.NewTxSigHashes(tx, prevOutputFetcher)
-		txHash, err := txscript.CalcTaprootSignatureHash(sigHash, txscript.SigHashDefault, tx, i, prevOutputFetcher)
+		txHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
 		if err != nil {
 			return err
 		}
@@ -140,15 +150,15 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 		select {
 		case sigResult := <-sigChn:
 			{
-				cancelExecution()
 				if sigResult == nil {
 					continue
 				}
 				signatureData := sigResult.(signing.Signature)
 				signatures[signatureData.Id] = signatureData.Signature
-				if len(signatures) != len(tx.TxIn) {
+				if !e.signaturesFilled(signatures) {
 					continue
 				}
+				cancelExecution()
 
 				hash, err := e.sendTx(tx, signatures)
 				if err != nil {
@@ -196,13 +206,17 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 	if err != nil {
 		return nil, nil, err
 	}
-	// return extra funds
-	returnScript, err := txscript.PayToAddrScript(e.senderAddress)
-	if err != nil {
-		return nil, nil, err
+
+	returnAmount := int64(inputAmount) - fee - outputAmount
+	if returnAmount > 0 {
+		// return extra funds
+		returnScript, err := txscript.PayToAddrScript(e.senderAddress)
+		if err != nil {
+			return nil, nil, err
+		}
+		txOut := wire.NewTxOut(returnAmount, returnScript)
+		tx.AddTxOut(txOut)
 	}
-	txOut := wire.NewTxOut(int64(inputAmount)-fee-outputAmount, returnScript)
-	tx.AddTxOut(txOut)
 	return tx, utxos, err
 }
 
@@ -251,20 +265,40 @@ func (e *Executor) inputs(tx *wire.MsgTx, outputAmount int64) (int64, []mempool.
 }
 
 func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
-	recommendedFee, err := e.mempool.RecommendedFee()
-	if err != nil {
-		return 0, err
-	}
-	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * recommendedFee.FastestFee, nil
+	/*
+		recommendedFee, err := e.mempool.RecommendedFee()
+		if err != nil {
+			return 0, err
+		}
+	*/
+	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * 35, nil
 }
 
 func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chainhash.Hash, error) {
 	for i, sig := range signatures {
 		tx.TxIn[i].Witness = wire.TxWitness{sig}
 	}
+
+	var buf buffer.Buffer
+	err := tx.Serialize(&buf)
+	if err != nil {
+		return nil, err
+	}
+	bytes := buf.Bytes()
+	log.Debug().Msgf("Assembled raw transaction %s", hex.EncodeToString(bytes))
 	return e.conn.SendRawTransaction(tx, true)
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*proposal.Proposal, sessionID string) bool {
+func (e *Executor) signaturesFilled(signatures []taproot.Signature) bool {
+	for _, signature := range signatures {
+		if len([]byte(signature)) == 0 {
+			return false
+		}
+	}
+
 	return true
+}
+
+func (e *Executor) areProposalsExecuted(proposals []*proposal.Proposal, sessionID string) bool {
+	return false
 }
