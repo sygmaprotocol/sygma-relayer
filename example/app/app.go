@@ -12,6 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	btc_connection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
+	btc_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
@@ -231,6 +234,29 @@ func Run() error {
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
 				chains[*config.GeneralChainConfig.Id] = substrateChain
+			}
+		case "btc":
+			{
+				config, err := btc.NewBtcConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := btc_connection.NewBtcConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
+
+				eventHandlers := make([]btc_listener.EventHandler, 0)
+				depositHandler := btc_listener.NewBtcDepositHandler()
+
+				l := log.With().Str("chain", fmt.Sprintf("%v", chainConfig["name"])).Uint8("domainID", *config.GeneralChainConfig.Id)
+				eventHandlers = append(eventHandlers, btc_listener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, *conn.Client, config.Bridge))
+
+				btcListener := btc_listener.NewBtcListener(*conn.Client, eventHandlers, config, *config.GeneralChainConfig.Id)
+				btcChain := btc.NewBtcChain(conn.Client, btcListener, blockstore, config)
+
+				chains[*config.GeneralChainConfig.Id] = btcChain
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
