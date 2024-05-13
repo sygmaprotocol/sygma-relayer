@@ -101,23 +101,24 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 	watchContext, cancelWatch := context.WithCancel(context.Background())
 	defer cancelWatch()
 	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
-	// we need to sign each input individually
-
 	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
 	for _, utxo := range utxos {
 		txOut := wire.NewTxOut(int64(utxo.Value), e.script)
-		hash, _ := chainhash.NewHashFromStr(utxo.TxID)
+		hash, err := chainhash.NewHashFromStr(utxo.TxID)
+		if err != nil {
+			return err
+		}
 		prevOuts[*wire.NewOutPoint(hash, utxo.Vout)] = txOut
 	}
 	prevOutputFetcher := txscript.NewMultiPrevOutFetcher(prevOuts)
 	sigHashes := txscript.NewTxSigHashes(tx, prevOutputFetcher)
 
+	// we need to sign each input individually
 	for i := range tx.TxIn {
 		txHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
 		if err != nil {
 			return err
 		}
-
 		p.Go(func() error {
 			msg := new(big.Int)
 			msg.SetBytes(txHash[:])
@@ -223,7 +224,7 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int64, error) {
 	outputAmount := int64(0)
 	for _, prop := range proposals {
-		propData := prop.Data.(BtcProposalData)
+		propData := prop.Data.(BtcTransferProposalData)
 		addr, err := btcutil.DecodeAddress(propData.Recipient, &e.chainCfg)
 		if err != nil {
 			return 0, err
@@ -265,13 +266,11 @@ func (e *Executor) inputs(tx *wire.MsgTx, outputAmount int64) (int64, []mempool.
 }
 
 func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
-	/*
-		recommendedFee, err := e.mempool.RecommendedFee()
-		if err != nil {
-			return 0, err
-		}
-	*/
-	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * 35, nil
+	recommendedFee, err := e.mempool.RecommendedFee()
+	if err != nil {
+		return 0, err
+	}
+	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * recommendedFee.EconomyFee, nil
 }
 
 func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chainhash.Hash, error) {
