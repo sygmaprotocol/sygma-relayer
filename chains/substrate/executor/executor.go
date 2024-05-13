@@ -25,7 +25,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/signing"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/signing"
 )
 
 var (

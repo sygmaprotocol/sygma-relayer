@@ -1,3 +1,6 @@
+// The Licensed Work is (c) 2022 Sygma
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package centrifuge
 
 const CentrifugeAssetStoreABI = `[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"asset","type":"bytes32"}],"name":"AssetStored","type":"event"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"_assetsStored","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"asset","type":"bytes32"}],"name":"store","outputs":[],"stateMutability":"nonpayable","type":"function"}]`

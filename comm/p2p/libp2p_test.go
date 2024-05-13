@@ -13,7 +13,7 @@ import (
 	mock_host "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/host"
 	mock_network "github.com/ChainSafe/sygma-relayer/comm/p2p/mock/stream"
 	"github.com/ChainSafe/sygma-relayer/topology"
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/message"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -176,7 +176,7 @@ func (s *Libp2pCommunicationTestSuite) TestLibp2pCommunication_SendReceiveMessag
 	s.Nil(err)
 	pingMsg := <-msgChn
 
-	msgBytes, _ := common.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
+	msgBytes, _ := message.MarshalTssMessage([]byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), true)
 	err = communications[0].Broadcast([]peer.ID{testHosts[1].ID()}, msgBytes, comm.TssKeySignMsg, "2")
 	s.Nil(err)
 	largeMsg := <-msgChn

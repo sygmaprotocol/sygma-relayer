@@ -11,7 +11,8 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/common"
+	"github.com/ChainSafe/sygma-relayer/tss/message"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -218,7 +219,7 @@ func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultCh
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
 func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
-	log.Debug().Msgf("broadcasted initiate message for session: %s", sessionID)
+	log.Debug().Str("SessionID", sessionID).Msgf("broadcasted initiate message")
 	_ = c.communication.Broadcast(
 		c.host.Peerstore().Peers(), []byte{}, comm.TssInitiateMsg, sessionID,
 	)
@@ -255,7 +256,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 				}
 
 				startParams := tssProcess.StartParams(readyMap)
-				startMsgBytes, err := common.MarshalStartMessage(startParams)
+				startMsgBytes, err := message.MarshalStartMessage(startParams)
 				if err != nil {
 					return err
 				}
@@ -321,7 +322,7 @@ func (c *Coordinator) waitForStart(
 					continue
 				}
 
-				msg, err := common.UnmarshalStartMessage(startMsg.Payload)
+				msg, err := message.UnmarshalStartMessage(startMsg.Payload)
 				if err != nil {
 					return err
 				}

@@ -21,8 +21,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/keygen"
-	"github.com/ChainSafe/sygma-relayer/tss/resharing"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -125,7 +125,7 @@ type KeygenEventHandler struct {
 	coordinator   *tss.Coordinator
 	host          host.Host
 	communication comm.Communication
-	storer        keygen.SaveDataStorer
+	storer        keygen.ECDSAKeyshareStorer
 	bridgeAddress common.Address
 	threshold     int
 }
@@ -136,7 +136,7 @@ func NewKeygenEventHandler(
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
-	storer keygen.SaveDataStorer,
+	storer keygen.ECDSAKeyshareStorer,
 	bridgeAddress common.Address,
 	threshold int,
 ) *KeygenEventHandler {
