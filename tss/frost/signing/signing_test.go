@@ -129,7 +129,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 
 	resultChn := make(chan interface{})
 
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	pool := pool.New().WithContext(ctx)
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
@@ -140,4 +140,5 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 
 	err = pool.Wait()
 	s.NotNil(err)
+	cancel()
 }
