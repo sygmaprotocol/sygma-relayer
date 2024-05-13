@@ -269,7 +269,7 @@ func Run() error {
 					exitLock)
 				err = executor.Execute([]*proposal.Proposal{
 					{
-						Data: btcExecutor.BtcProposalData{
+						Data: btcExecutor.BtcTransferProposalData{
 							Recipient: "tb1pv5ewwve8kgujrlj45894cflnnhvk58sk20e9555agl8m3juesmcsn8fm3q",
 							Amount:    1000,
 						},

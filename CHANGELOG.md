@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.1...v2.0.2) (2024-04-18)
+
+
+### Bug Fixes
+
+* use existing message channel for substrate network event handlers ([#272](https://github.com/sygmaprotocol/sygma-relayer/issues/272)) ([a592ef7](https://github.com/sygmaprotocol/sygma-relayer/commit/a592ef7fe06ffbad3efd6008430cd9d0da874264))
+
 ## [2.0.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.0...v2.0.1) (2024-04-15)
 
 
