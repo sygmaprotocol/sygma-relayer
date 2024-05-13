@@ -30,6 +30,7 @@ func (tc *TestCommunication) Broadcast(
 	msgType comm.MessageType,
 	sessionID string,
 ) error {
+	time.Sleep(time.Millisecond * 500)
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
@@ -69,7 +70,6 @@ func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 
 func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string) {
 	// simulate real world conditions
-	time.Sleep(time.Millisecond * 500)
 	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }
 
