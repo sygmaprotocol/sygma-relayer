@@ -24,6 +24,7 @@ type RawBtcConfig struct {
 	Address                  string `mapstructure:"address"`
 	Tweak                    string `mapstructure:"tweak"`
 	Script                   string `mapstructure:"script"`
+	MempoolUrl               string `mapstructure:"mempoolUrl"`
 }
 
 type BtcConfig struct {
@@ -34,6 +35,7 @@ type BtcConfig struct {
 	Address            string
 	Tweak              string
 	Script             []byte
+	MempoolUrl         string
 
 	BlockRetryInterval time.Duration
 }
@@ -71,6 +73,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		Address:            c.Address,
 		Tweak:              c.Tweak,
 		Script:             scriptBytes,
+		MempoolUrl:         c.MempoolUrl,
 	}
 
 	return config, nil

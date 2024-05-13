@@ -3,21 +3,23 @@ package mempool
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 )
 
 type Utxo struct {
-	TxID          string `json:"txid"`
-	Vout          uint32 `json:"vout"`
-	Value         uint64 `json:"value"`
-	Confirmations int64  `json:"confirmations"`
+	TxID  string `json:"txid"`
+	Vout  uint32 `json:"vout"`
+	Value uint64 `json:"value"`
 }
 
 type Fee struct {
 	FastestFee  int64
 	HalfHourFee int64
+	MinimumFee  int64
+	EconomyFee  int64
+	HourFee     int64
 }
 
 type MempoolAPI struct {
@@ -38,7 +40,7 @@ func (a *MempoolAPI) RecommendedFee() (*Fee, error) {
 
 	var fee *Fee
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func (a *MempoolAPI) Utxos(address string) ([]Utxo, error) {
 
 	var utxos []Utxo
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
