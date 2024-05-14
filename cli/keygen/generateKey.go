@@ -11,10 +11,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 )
 
-const (
-	KEY_LENGTH = 256
-)
-
 var (
 	generateKeyCMD = &cobra.Command{
 		Use:   "gen-key",
