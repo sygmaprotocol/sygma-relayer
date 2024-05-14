@@ -4,14 +4,12 @@
 package listener
 
 import (
-	"fmt"
 	"math/big"
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -19,26 +17,24 @@ import (
 
 // maybe move to events package
 type Deposit struct {
-	// ID of chain deposit will be bridged to
-	DestinationDomainID uint8
 	// ResourceID used to find address of handler to be used for deposit
 	ResourceID [32]byte
 	// Address of sender (msg.sender: user)
 	SenderAddress string
 	// Additional data to be passed to specified handler
-	Amount   *big.Int
-	Reciever common.Address
+	Amount *big.Int
+	Data   string
 }
 
 type DepositHandler interface {
 	HandleDeposit(
 		sourceID uint8,
-		destID uint8,
 		depositNonce uint64,
 		resourceID [32]byte,
 		amount *big.Int,
-		reciever common.Address,
-		messageID string) (*message.Message, error)
+		data string,
+		blockNumber *big.Int,
+	) (*message.Message, error)
 }
 
 type Connection interface {
@@ -48,22 +44,21 @@ type Connection interface {
 
 type FungibleTransferEventHandler struct {
 	depositHandler DepositHandler
-	resourceID     [32]byte
 	domainID       uint8
 	log            zerolog.Logger
-	conn           rpcclient.Client
+	conn           *rpcclient.Client
 	msgChan        chan []*message.Message
-	bridges        map[string]uint8
+	bridge         string
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn rpcclient.Client, bridges map[string]uint8) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn *rpcclient.Client, bridge string) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
 		conn:           conn,
 		msgChan:        msgChan,
-		bridges:        bridges,
+		bridge:         bridge,
 	}
 }
 
@@ -82,7 +77,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 				}
 			}()
 
-			d, isDeposit, err := DecodeDepositEvent(evt, eh.conn, eh.bridges)
+			d, isDeposit, err := DecodeDepositEvent(evt, eh.conn, eh.bridge)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
 				return
@@ -91,20 +86,18 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 				return
 			}
 
-			// check if empty deposit, if it is, continue, else handleDeposit
-			messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, blockNumber)
 			nonce, err := eh.getNonce(blockNumber, evtNumber)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
 				return
 			}
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, nonce, d.ResourceID, d.Amount, d.Reciever, messageID)
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
 				return
 			}
 
-			eh.log.Info().Str("messageID", messageID).Msgf("Resolved deposit message %+v", d)
+			log.Debug().Str("messageID", m.ID).Msgf("Resolved message %+v in block: %s", m, blockNumber.String())
 			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 		}(evt)
 	}

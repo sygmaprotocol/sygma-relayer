@@ -20,7 +20,7 @@ type EventHandler interface {
 }
 
 type BtcListener struct {
-	conn rpcclient.Client
+	conn *rpcclient.Client
 
 	eventHandlers      []EventHandler
 	blockRetryInterval time.Duration
@@ -31,7 +31,7 @@ type BtcListener struct {
 
 // NewBtcListener creates an BtcListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewBtcListener(connection rpcclient.Client, eventHandlers []EventHandler, config *btc.BtcConfig, domainID uint8) *BtcListener {
+func NewBtcListener(connection *rpcclient.Client, eventHandlers []EventHandler, config *btc.BtcConfig, domainID uint8) *BtcListener {
 	return &BtcListener{
 		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),
 		conn:               connection,
@@ -70,7 +70,7 @@ loop:
 				startBlock = head
 			}
 
-			// Sleep if the difference is less than needed block confirmations; (latest - current) < BlockDelay
+			// Sleep if startBlock is higher then head
 			if startBlock.Cmp(head) == 1 {
 				time.Sleep(l.blockRetryInterval)
 				continue

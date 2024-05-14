@@ -4,18 +4,17 @@
 package listener
 
 import (
+	"fmt"
 	"math/big"
+	"strconv"
+	"strings"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-type DepositHandlerFunc func(sourceID uint8, calldata []byte) (*message.Message, error)
-
-type BtcDepositHandler struct {
-	depositHandler DepositHandlerFunc
-}
+type BtcDepositHandler struct{}
 
 // NewBtcDepositHandler creates an instance of BtcDepositHandler that contains
 // handler functions for processing deposit events
@@ -24,20 +23,28 @@ func NewBtcDepositHandler() *BtcDepositHandler {
 }
 
 func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
-	destID uint8,
 	depositNonce uint64,
 	resourceID [32]byte,
 	amount *big.Int,
-	reciever common.Address,
-	messageID string) (*message.Message, error) {
+	data string,
+	blockNumber *big.Int,
+) (*message.Message, error) {
 
-	evmAdd := reciever.Bytes()
+	// data is composed of recieverEVMAddress_destinationDomainID
+	dat := strings.Split(data, "_")
+	evmAdd := common.HexToAddress(dat[0]).Bytes()
+	destDomainID, err := strconv.ParseUint(dat[1], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+
 	payload := []interface{}{
 		amount.Bytes(),
 		evmAdd,
 	}
 
-	return message.NewMessage(sourceID, destID, transfer.TransferMessageData{
+	messageID := fmt.Sprintf("%d-%d-%d", sourceID, destDomainID, blockNumber)
+	return message.NewMessage(sourceID, uint8(destDomainID), transfer.TransferMessageData{
 		DepositNonce: depositNonce,
 		ResourceId:   RESOURCE_ID,
 		Metadata:     nil,

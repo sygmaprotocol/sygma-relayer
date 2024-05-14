@@ -13,29 +13,35 @@ import (
 
 var RESOURCE_ID = evm.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31))
 
-func DecodeDepositEvent(evt btcjson.TxRawResult, conn rpcclient.Client, bridges map[string]uint8) (Deposit, bool, error) {
+const (
+	PubKeyHash       = "pubkeyhash"
+	ScriptHash       = "scripthash"
+	WitnessV0KeyHash = "witness_v0_keyhash"
+	OP_RETURN        = "nulldata"
+)
+
+func DecodeDepositEvent(evt btcjson.TxRawResult, conn *rpcclient.Client, bridge string) (Deposit, bool, error) {
 	amount := big.NewInt(0)
 	isBridgeDeposit := false
 	sender := ""
-	reciever := ""
-	destinationDomainID := uint8(0)
+	data := ""
 
 	for _, vout := range evt.Vout {
+		// read the OP_RETURN data
+		if vout.ScriptPubKey.Type == OP_RETURN {
+			opReturnData, err := hex.DecodeString(vout.ScriptPubKey.Hex)
+			if err != nil {
+				return Deposit{}, true, err
+			}
+			// Extract OP_RETURN data (excluding OP_RETURN prefix)
+			data = string(opReturnData[2:])
+		}
 
-		if dstDomainID, ok := bridges[vout.ScriptPubKey.Address]; ok {
+		if bridge == vout.ScriptPubKey.Address {
 			isBridgeDeposit = true
-			destinationDomainID = dstDomainID
-			// need to check this part if i calculate the amount correctly
-			if vout.ScriptPubKey.Type == "pubkeyhash" || vout.ScriptPubKey.Type == "scripthash" || vout.ScriptPubKey.Type == "witness_v0_keyhash" {
-				amount.Add(amount, big.NewInt(int64(vout.Value)))
-			} else if vout.ScriptPubKey.Type == "nulldata" {
-				opReturnData, err := hex.DecodeString(vout.ScriptPubKey.Hex)
-				if err != nil {
-					return Deposit{}, true, err
-				}
 
-				// Extract OP_RETURN data (excluding OP_RETURN prefix)
-				reciever = string(opReturnData[2:])
+			if vout.ScriptPubKey.Type == PubKeyHash || vout.ScriptPubKey.Type == ScriptHash || vout.ScriptPubKey.Type == WitnessV0KeyHash {
+				amount.Add(amount, big.NewInt(int64(vout.Value*1e8)))
 			}
 		}
 	}
@@ -58,11 +64,10 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, conn rpcclient.Client, bridges 
 		}
 
 		return Deposit{
-			DestinationDomainID: destinationDomainID,
-			ResourceID:          [32]byte(RESOURCE_ID),
-			SenderAddress:       sender,
-			Amount:              amount,
-			Reciever:            common.HexToAddress(reciever),
+			ResourceID:    [32]byte(RESOURCE_ID),
+			SenderAddress: sender,
+			Amount:        amount,
+			Data:          data,
 		}, true, nil
 	}
 	return Deposit{}, false, nil

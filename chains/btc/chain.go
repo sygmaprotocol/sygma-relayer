@@ -48,9 +48,7 @@ func (c *BtcChain) Write(msgs []*proposal.Proposal) error {
 }
 
 // remove this after
-func (c *BtcChain) ReceiveMessage(m *message.Message) (*proposal.Proposal, error) {
-	return proposal.NewProposal(uint8(1), uint8(1), []interface{}{}, "333", "proposal.ProposalType"), nil
-}
+func (c *BtcChain) ReceiveMessage(m *message.Message)/* *proposal.Proposal, error */ {}
 
 func (c *BtcChain) PollEvents(ctx context.Context) {
 	c.logger.Info().Msg("Polling Blocks...")
@@ -61,7 +59,6 @@ func (c *BtcChain) PollEvents(ctx context.Context) {
 		c.config.GeneralChainConfig.LatestBlock,
 		c.config.GeneralChainConfig.FreshStart,
 	)
-	startBlock = big.NewInt(2744029)
 	if err != nil {
 		return
 	}

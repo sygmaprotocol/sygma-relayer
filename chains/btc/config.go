@@ -14,19 +14,15 @@ import (
 
 type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	Bridge                   map[string]uint8 `mapstructure:"bridge"`
-	ChainID                  int64            `mapstructure:"chainID"`
-	StartBlock               int64            `mapstructure:"startBlock"`
-	BlockInterval            int64            `mapstructure:"blockInterval" default:"5"`
-	BlockRetryInterval       uint64           `mapstructure:"blockRetryInterval" default:"5"`
-	BtcNetwork               int64            `mapstructure:"BtcNetwork"`
-	Tip                      uint64           `mapstructure:"tip"`
+	Bridge                   string `mapstructure:"bridge"`
+	StartBlock               int64  `mapstructure:"startBlock"`
+	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
+	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
 }
 
 type BtcConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
-	Bridge             map[string]uint8
-	ChainID            *big.Int
+	Bridge             string
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
@@ -55,7 +51,6 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	config := &BtcConfig{
 		Bridge:             c.Bridge,
 		GeneralChainConfig: c.GeneralChainConfig,
-		ChainID:            big.NewInt(int64(*c.GeneralChainConfig.Id)),
 		BlockRetryInterval: time.Duration(c.BlockInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockInterval:      big.NewInt(c.BlockInterval),
