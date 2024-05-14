@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/centrifuge/go-substrate-rpc-client/v4 v4.1.0
 	github.com/creasty/defaults v1.6.0
 	github.com/ethereum/go-ethereum v1.13.4
@@ -26,6 +27,10 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/bits-and-blooms/bitset v1.7.0 // indirect
+	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect
+	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
+	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
+	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
@@ -49,7 +54,7 @@ require (
 	github.com/agl/ed25519 v0.0.0-20200305024217-f36fc4b53d43 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.22.0-beta.0.20220201204404-81fbd9b67e54 // indirect
+	github.com/btcsuite/btcd v0.24.0
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20211129182920-9c4bbabe7acd // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
