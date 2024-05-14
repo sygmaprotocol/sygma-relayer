@@ -15,7 +15,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
-// maybe move to events package
 type Deposit struct {
 	// ResourceID used to find address of handler to be used for deposit
 	ResourceID [32]byte
