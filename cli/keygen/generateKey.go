@@ -28,6 +28,7 @@ func generateKey(cmd *cobra.Command, args []string) error {
 
 	privHex := hex.EncodeToString(kp.Encode())
 
-	fmt.Printf("Private key: %s\n", privHex)
+	fmt.Printf("Public key: %s\n", kp.PublicKey())
+	fmt.Printf("Private key: 0x%s\n", privHex)
 	return nil
 }
