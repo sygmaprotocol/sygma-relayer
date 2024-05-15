@@ -243,6 +243,7 @@ func Run() error {
 		case "btc":
 			{
 				log.Info().Msgf("Registering btc domain")
+				time.Sleep(time.Second * 5)
 
 				config, err := btc.NewBtcConfig(chainConfig)
 				if err != nil {
@@ -254,8 +255,8 @@ func Run() error {
 					panic(err)
 				}
 
-				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.TestNet3Params)
-				mempool := mempool.NewMempoolAPI("https://mempool.space/testnet")
+				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.RegressionNetParams)
+				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
 				executor := btcExecutor.NewExecutor(
 					host,
 					communication,
@@ -266,11 +267,12 @@ func Run() error {
 					taprootAddress,
 					config.Tweak,
 					config.Script,
+					chaincfg.RegressionNetParams,
 					exitLock)
 				err = executor.Execute([]*proposal.Proposal{
 					{
 						Data: btcExecutor.BtcTransferProposalData{
-							Recipient: "tb1pv5ewwve8kgujrlj45894cflnnhvk58sk20e9555agl8m3juesmcsn8fm3q",
+							Recipient: "bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek",
 							Amount:    1000,
 						},
 					},

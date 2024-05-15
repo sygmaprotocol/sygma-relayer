@@ -63,6 +63,7 @@ func NewExecutor(
 	address btcutil.Address,
 	tweak string,
 	script []byte,
+	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
@@ -76,7 +77,7 @@ func NewExecutor(
 		tweak:         tweak,
 		script:        script,
 		mempool:       mempool,
-		chainCfg:      chaincfg.TestNet3Params,
+		chainCfg:      chainCfg,
 	}
 }
 

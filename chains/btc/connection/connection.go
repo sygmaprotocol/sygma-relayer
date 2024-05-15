@@ -4,6 +4,8 @@
 package connection
 
 import (
+	"fmt"
+
 	"github.com/btcsuite/btcd/rpcclient"
 )
 
@@ -15,16 +17,22 @@ func NewBtcConnection(url string) (*Connection, error) {
 	// Connect to a Bitcoin node using RPC
 	connConfig := &rpcclient.ConnConfig{
 		HTTPPostMode: true,
-		Host:         "nd-878-662-521.p2pify.com",
-		User:         "flamboyant-agnesi",
-		Pass:         "sadden-demise-okay-caucus-alarm-comply",
-		DisableTLS:   false,
+		Host:         url,
+		User:         "user",
+		Pass:         "password",
+		DisableTLS:   true,
 	}
 
 	client, err := rpcclient.New(connConfig, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	info, err := client.GetBlockChainInfo()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(info)
 
 	return &Connection{
 		Client: client,

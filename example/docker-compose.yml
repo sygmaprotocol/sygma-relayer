@@ -1,8 +1,33 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
-version: '3'
 
 services:
+  mempool-stub:
+    image: ghcr.io/sygmaprotocol/beacon-api-stub
+    volumes:
+      - "./cfg/stubs:/stubs"
+    ports:
+      - 8882:8882
+    environment:
+      - STUB_DATA=/stubs/mempool.yml
+
+  bitcoin:
+#   image: ruimarinho/bitcoin-core:latest
+    image: ghcr.io/sygmaprotocol/bitcoin
+    container_name: bitcoin
+    ports:
+      - "18443:18443"
+      - "18332:18332"
+    environment:
+      BITCOIN_RPC_USER: user
+      BITCOIN_RPC_PASSWORD: password
+      BITCOIN_RPC_PORT: 18443
+      BITCOIN_NETWORK: regtest
+      BITCOIN_EXTRA_ARGS: "-rpcallowip=0.0.0.0/0 -rpcbind=0.0.0.0"
+    volumes:
+      - ./cfg/entrypoint/entrypoint.sh:/cfg/entrypoint/entrypoint.sh
+    entrypoint: /cfg/entrypoint/entrypoint.sh
+
   evm1-1:
     image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.5.3
     container_name: evm1-1
@@ -12,7 +37,6 @@ services:
     ports:
       - "8545:8545"
 
-  # SECOND CHAIN
   evm2-1:
     image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.5.3
     command: ganache-cli --chainId 1338 -d --db data/ --blockTime 2 > /dev/null
