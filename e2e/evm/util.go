@@ -11,6 +11,7 @@ import (
 
 	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
+	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
@@ -21,9 +22,18 @@ import (
 )
 
 var TestTimeout = time.Minute * 4
-var BasicFee = big.NewInt(100000000000000)
-var OracleFee = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
-var GasUsed = uint32(2000000000)
+
+var (
+	BasicFee        = big.NewInt(100000000000000)
+	AdminAccount, _ = secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
+)
+
+const (
+	ETHEndpoint1 = "ws://localhost:8545"
+	ETHEndpoint2 = "ws://localhost:8547"
+	OracleFee    = uint16(500) // 5% -  multiplied by 100 to not lose precision on contract side
+	GasUsed      = uint32(2000000000)
+)
 
 type Client interface {
 	LatestBlock() (*big.Int, error)
@@ -69,6 +79,37 @@ type BridgeConfig struct {
 
 	MaxGasPrice   *big.Int
 	GasMultiplier *big.Float
+}
+
+var DEFAULT_CONFIG = BridgeConfig{
+	BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
+
+	Erc20Addr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
+	Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+	Erc20ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
+
+	Erc20LockReleaseAddr:        common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
+	Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+	Erc20LockReleaseResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
+
+	Erc721Addr:        common.HexToAddress("0xABEF96bFC837D1Bc3dA7CCAE29Ca7Fde633aFc56"),
+	Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
+	Erc721ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
+
+	GenericHandlerAddr: common.HexToAddress("0xb61bd8740F60e0Bfc1b5C3fA2Bb9810e4AEf8938"),
+	GenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
+	AssetStoreAddr:     common.HexToAddress("0xaF831F8eCFC012e269BeD49531ebC794bDEc2fC0"),
+
+	PermissionlessGenericHandlerAddr: common.HexToAddress("0x61d101704F9cC889d8a5496aE5f4ade01e687E47"),
+	PermissionlessGenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
+
+	Erc1155Addr:        common.HexToAddress("0x94e9070f0354b69e7fb583134a820949a390d341"),
+	Erc1155HandlerAddr: common.HexToAddress("0xa3523820dc62aab22920D871fa7D8600372aC2EE"),
+	Erc1155ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
+
+	BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
+	FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
+	BasicFee:            BasicFee,
 }
 
 func WaitForProposalExecuted(client Client, bridge common.Address) error {

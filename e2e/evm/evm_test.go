@@ -31,7 +31,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/signAndSend"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
-	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
@@ -47,51 +46,16 @@ type TestClient interface {
 	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 }
 
-const ETHEndpoint1 = "ws://localhost:8545"
-const ETHEndpoint2 = "ws://localhost:8547"
-
 // Alice key is used by the relayer, Charlie key is used as admin and depositer
 func Test_EVM2EVM(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	config := evm.BridgeConfig{
-		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
-
-		Erc20Addr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
-		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
-
-		Erc20LockReleaseAddr:        common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20LockReleaseResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
-
-		Erc721Addr:        common.HexToAddress("0xd3Eb00fCE476aEFdC76A02F3531b7A0C6D5238B3"),
-		Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
-		Erc721ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
-
-		GenericHandlerAddr: common.HexToAddress("0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"),
-		GenericResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-		AssetStoreAddr:     common.HexToAddress("0x979C2e7347c9831E18870aB886f0101EBC771CeB"),
-
-		PermissionlessGenericHandlerAddr: common.HexToAddress("0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"),
-		PermissionlessGenericResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
-
-		Erc1155Addr:        common.HexToAddress("0x5e6924e6A120bd833617D0873f0a1b747ee2D743"),
-		Erc1155HandlerAddr: common.HexToAddress("0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"),
-		Erc1155ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
-
-		BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-		FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
-		BasicFee:            evm.BasicFee,
-	}
-
-	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	ethClient1, err := client.NewEVMClient(ETHEndpoint1, pk)
+	ethClient1, err := client.NewEVMClient(evm.ETHEndpoint1, evm.AdminAccount)
 	if err != nil {
 		panic(err)
 	}
 	gasPricer1 := gas.NewStaticGasPriceDeterminant(ethClient1, nil)
 
-	ethClient2, err := client.NewEVMClient(ETHEndpoint2, pk)
+	ethClient2, err := client.NewEVMClient(evm.ETHEndpoint2, evm.AdminAccount)
 	if err != nil {
 		panic(err)
 	}
@@ -106,8 +70,8 @@ func Test_EVM2EVM(t *testing.T) {
 			ethClient2,
 			gasPricer1,
 			gasPricer2,
-			config,
-			config,
+			evm.DEFAULT_CONFIG,
+			evm.DEFAULT_CONFIG,
 		),
 	)
 }

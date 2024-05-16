@@ -40,7 +40,6 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/signature"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
-	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	btcConnection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	btcExecutor "github.com/ChainSafe/sygma-relayer/chains/btc/executor"
@@ -257,6 +256,7 @@ func Run() error {
 
 				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.RegressionNetParams)
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
+				mh := btcExecutor.BtcMessageHandler{}
 				executor := btcExecutor.NewExecutor(
 					host,
 					communication,
@@ -269,15 +269,9 @@ func Run() error {
 					config.Script,
 					chaincfg.RegressionNetParams,
 					exitLock)
-				err = executor.Execute([]*proposal.Proposal{
-					{
-						Data: btcExecutor.BtcTransferProposalData{
-							Recipient: "bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek",
-							Amount:    1000,
-						},
-					},
-				})
-				fmt.Println(err)
+
+				btcChain := btc.NewBtcChain(nil, mh, nil, executor, nil, config)
+				chains[*config.GeneralChainConfig.Id] = btcChain
 
 			}
 		default:
