@@ -5,10 +5,12 @@ package btc
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
 )
@@ -19,7 +21,7 @@ type RawBtcConfig struct {
 	StartBlock               int64  `mapstructure:"startBlock"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
-	BtcNetwork               int64  `mapstructure:"BtcNetwork"`
+	Network                  string `mapstructure:"network" default:"mainnet"`
 	Tip                      uint64 `mapstructure:"tip"`
 	Address                  string `mapstructure:"address"`
 	Tweak                    string `mapstructure:"tweak"`
@@ -36,6 +38,7 @@ type BtcConfig struct {
 	Tweak              string
 	Script             []byte
 	MempoolUrl         string
+	Network            chaincfg.Params
 
 	BlockRetryInterval time.Duration
 }
@@ -64,6 +67,11 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	networkParams, err := networkParams(c.Network)
+	if err != nil {
+		return nil, err
+	}
 	config := &BtcConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		ChainID:            big.NewInt(3),
@@ -74,7 +82,21 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		Tweak:              c.Tweak,
 		Script:             scriptBytes,
 		MempoolUrl:         c.MempoolUrl,
+		Network:            networkParams,
 	}
 
 	return config, nil
+}
+
+func networkParams(network string) (chaincfg.Params, error) {
+	switch network {
+	case "mainnet":
+		return chaincfg.MainNetParams, nil
+	case "testnet":
+		return chaincfg.TestNet3Params, nil
+	case "regtest":
+		return chaincfg.RegressionNetParams, nil
+	default:
+		return chaincfg.Params{}, fmt.Errorf("unknown network %s", network)
+	}
 }

@@ -18,7 +18,6 @@ import (
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
@@ -254,7 +253,7 @@ func Run() error {
 					panic(err)
 				}
 
-				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &chaincfg.RegressionNetParams)
+				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &config.Network)
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
 				mh := btcExecutor.BtcMessageHandler{}
 				executor := btcExecutor.NewExecutor(
@@ -267,7 +266,7 @@ func Run() error {
 					taprootAddress,
 					config.Tweak,
 					config.Script,
-					chaincfg.RegressionNetParams,
+					config.Network,
 					exitLock)
 
 				btcChain := btc.NewBtcChain(nil, mh, nil, executor, nil, config)
