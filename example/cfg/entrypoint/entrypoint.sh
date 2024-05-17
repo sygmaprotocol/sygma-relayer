@@ -9,6 +9,7 @@ sleep 5
 bitcoin-cli -regtest -rpcuser=user -rpcpassword=password loadwallet "test" true
 
 bitcoin-cli -regtest -rpcuser=user -rpcpassword=password importdescriptors '[{ "desc": "addr(bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek)#qyrrxhja", "timestamp":"now", "label": "ray"}]'
+bitcoin-cli -regtest -rpcuser=user -rpcpassword=password importdescriptors '[{ "desc": "addr(bcrt1pja8aknn7te4empmghnyqnrtjqn0lyg5zy3p5jsdp4le930wnpnxsrtd3ht)#n807x7zd", "timestamp":"now", "label": "ray"}]'
 
 # Mine some blocks to fund the wallet (101 blocks to ensure the funds are spendable)
 bitcoin-cli -regtest -rpcuser=user -rpcpassword=password generatetoaddress 101 "bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek"

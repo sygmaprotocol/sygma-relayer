@@ -5,8 +5,9 @@ package btc_test
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/core/types"
 	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
@@ -17,8 +18,10 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 
+	"github.com/ChainSafe/sygma-relayer/e2e/btc"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 
@@ -94,10 +97,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = erc20LRContract.MintTokens(s.evmConfig.Erc20LockReleaseHandlerAddr, amountToMint, transactor.TransactOptions{})
-	if err != nil {
-		panic(err)
-	}
 	_, err = erc20LRContract.ApproveTokens(s.evmConfig.Erc20LockReleaseHandlerAddr, amountToApprove, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
@@ -105,16 +104,26 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
-	erc20Contract1 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
-	bridgeContract1 := bridge.NewBridgeContract(s.evmClient, s.evmConfig.BridgeAddr, transactor1)
-
-	senderBalBefore, err := erc20Contract1.GetBalance(s.evmClient.From())
+	conn, err := connection.NewBtcConnection(btc.BtcEndpoint)
 	s.Nil(err)
 
-	erc20DepositData := evm.ConstructErc20DepositData([]byte("bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek"), amountToDeposit)
+	addr, err := btcutil.DecodeAddress("bcrt1pja8aknn7te4empmghnyqnrtjqn0lyg5zy3p5jsdp4le930wnpnxsrtd3ht", &chaincfg.RegressionNetParams)
+	s.Nil(err)
+	balanceBefore, err := conn.ListUnspentMinMaxAddresses(0, 1000, []btcutil.Address{addr})
+	s.Nil(err)
+	s.Equal(len(balanceBefore), 0)
+
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
+	bridgeContract1 := bridge.NewBridgeContract(s.evmClient, s.evmConfig.BridgeAddr, transactor1)
+	erc20DepositData := evm.ConstructErc20DepositData([]byte("bcrt1pja8aknn7te4empmghnyqnrtjqn0lyg5zy3p5jsdp4le930wnpnxsrtd3ht"), amountToDeposit)
 	_, err = bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.evmConfig.BasicFee}, uint8(4), s.evmConfig.Erc20LockReleaseResourceID, erc20DepositData, []byte{})
 	s.Nil(err)
 
-	fmt.Println(senderBalBefore)
+	err = btc.WaitForProposalExecuted(conn, addr)
+	s.Nil(err)
+
+	balanceAfter, err := conn.ListUnspentMinMaxAddresses(0, 1000, []btcutil.Address{addr})
+	s.Nil(err)
+	s.Equal(balanceAfter[0].Amount*100000000, float64(amountToDeposit.Int64()))
+
 }
