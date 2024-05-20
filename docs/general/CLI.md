@@ -60,7 +60,7 @@ Calculate a libp2p peer ID from the provided base64 encoded libp2p private key.
 `./sygma-relayer keygen gen-key`
 
 #### Description:
-Generate a 256-bit ECDSA keypair and print it out.
+Generate a 256-bit ECDSA keypair and print it out. This keypair can be used as a relayer's execution keypair.
 
 ## Other util commands
 
