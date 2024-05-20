@@ -14,8 +14,9 @@ import (
 )
 
 type BtcTransferProposalData struct {
-	Amount    int64
-	Recipient string
+	Amount       int64
+	Recipient    string
+	DepositNonce uint64
 }
 
 type BtcMessageHandler struct{}
@@ -50,7 +51,8 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 	}
 	bigAmount := new(big.Int).SetBytes(amount)
 	return proposal.NewProposal(msg.Source, msg.Destination, BtcTransferProposalData{
-		Amount:    bigAmount.Int64(),
-		Recipient: string(recipient),
+		Amount:       bigAmount.Int64(),
+		Recipient:    string(recipient),
+		DepositNonce: msg.Data.DepositNonce,
 	}, msg.ID, transfer.TransferProposalType), nil
 }

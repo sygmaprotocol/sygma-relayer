@@ -17,6 +17,7 @@ import (
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	propStore "github.com/ChainSafe/sygma-relayer/store"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
@@ -105,6 +106,7 @@ func Run() error {
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
 	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
 	frostKeyshareStore := keyshare.NewFrostKeyshareStore(configuration.RelayerConfig.MpcConfig.FrostKeysharePath)
+	propStore := propStore.NewPropStore(db)
 
 	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
@@ -257,6 +259,7 @@ func Run() error {
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
 				mh := btcExecutor.BtcMessageHandler{}
 				executor := btcExecutor.NewExecutor(
+					propStore,
 					host,
 					communication,
 					coordinator,

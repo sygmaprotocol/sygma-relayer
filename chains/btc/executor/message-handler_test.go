@@ -43,8 +43,9 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage() {
 		Source:      1,
 		Destination: 0,
 		Data: executor.BtcTransferProposalData{
-			Amount:    2,
-			Recipient: "tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83",
+			Amount:       2,
+			Recipient:    "tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83",
+			DepositNonce: 1,
 		},
 		Type: transfer.TransferProposalType,
 	})

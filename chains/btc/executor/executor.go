@@ -11,6 +11,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	"github.com/ChainSafe/sygma-relayer/comm"
+	"github.com/ChainSafe/sygma-relayer/store"
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/frost/signing"
 	"github.com/btcsuite/btcd/btcutil"
@@ -27,8 +28,7 @@ import (
 )
 
 var (
-	executionCheckPeriod = time.Minute
-	signingTimeout       = 30 * time.Minute
+	signingTimeout = 30 * time.Minute
 
 	INPUT_SIZE  = 180
 	OUTPUT_SIZE = 34
@@ -39,21 +39,32 @@ type MempoolAPI interface {
 	Utxos(address string) ([]mempool.Utxo, error)
 }
 
+type PropStorer interface {
+	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
+	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
 type Executor struct {
-	coordinator   *tss.Coordinator
-	host          host.Host
-	comm          comm.Communication
-	fetcher       signing.SaveDataFetcher
-	exitLock      *sync.RWMutex
+	coordinator *tss.Coordinator
+	host        host.Host
+	comm        comm.Communication
+
 	conn          *connection.Connection
 	senderAddress btcutil.Address
 	tweak         string
 	script        []byte
 	chainCfg      chaincfg.Params
 	mempool       MempoolAPI
+	fetcher       signing.SaveDataFetcher
+
+	propStorer PropStorer
+	propMutex  sync.Mutex
+
+	exitLock *sync.RWMutex
 }
 
 func NewExecutor(
+	propStorer PropStorer,
 	host host.Host,
 	comm comm.Communication,
 	coordinator *tss.Coordinator,
@@ -67,6 +78,7 @@ func NewExecutor(
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
+		propStorer:    propStorer,
 		host:          host,
 		comm:          comm,
 		coordinator:   coordinator,
@@ -82,14 +94,19 @@ func NewExecutor(
 }
 
 // Execute starts a signing process and executes proposals when signature is generated
-func (e *Executor) Execute(props []*proposal.Proposal) error {
+func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	if len(props) == 0 {
+	if len(proposals) == 0 {
 		return nil
 	}
-	sessionID := props[0].MessageID
+	sessionID := proposals[0].MessageID
+
+	props, err := e.proposalsForExecution(proposals)
+	if err != nil {
+		return err
+	}
 
 	tx, utxos, err := e.rawTx(props)
 	if err != nil {
@@ -141,9 +158,7 @@ func (e *Executor) Execute(props []*proposal.Proposal) error {
 }
 
 func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*proposal.Proposal, sigChn chan interface{}, sessionID string) error {
-	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
-	defer ticker.Stop()
 	defer timeout.Stop()
 	defer cancelExecution()
 	signatures := make([]taproot.Signature, len(tx.TxIn))
@@ -165,19 +180,11 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				hash, err := e.sendTx(tx, signatures)
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
+					e.storeProposalsStatus(proposals, store.FailedProp)
 					return err
 				}
 
 				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
-			}
-		case <-ticker.C:
-			{
-				if !e.areProposalsExecuted(proposals, sessionID) {
-					continue
-				}
-
-				log.Info().Str("SessionID", sessionID).Msgf("Successfully executed proposals")
-				return nil
 			}
 		case <-timeout.C:
 			{
@@ -299,6 +306,52 @@ func (e *Executor) signaturesFilled(signatures []taproot.Signature) bool {
 	return true
 }
 
-func (e *Executor) areProposalsExecuted(proposals []*proposal.Proposal, sessionID string) bool {
-	return false
+func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*proposal.Proposal, error) {
+	e.propMutex.Lock()
+	props := make([]*proposal.Proposal, 0)
+	for _, prop := range proposals {
+		executed, err := e.isExecuted(prop)
+		if err != nil {
+			return props, err
+		}
+
+		if executed {
+			log.Info().Msgf("Proposal %p already executed", prop)
+			continue
+		}
+
+		err = e.propStorer.StorePropStatus(prop.Source, prop.Destination, prop.Data.(BtcTransferProposalData).DepositNonce, store.PendingProp)
+		if err != nil {
+			return props, err
+		}
+		props = append(props, prop)
+	}
+	e.propMutex.Unlock()
+	return props, nil
+}
+
+func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
+	status, err := e.propStorer.PropStatus(prop.Source, prop.Destination, prop.Data.(BtcTransferProposalData).DepositNonce)
+	if err != nil {
+		return true, err
+	}
+
+	if status == store.MissingProp || status == store.FailedProp {
+		return true, nil
+	}
+
+	return false, err
+}
+
+func (e *Executor) storeProposalsStatus(props []*proposal.Proposal, status store.PropStatus) {
+	for _, prop := range props {
+		err := e.propStorer.StorePropStatus(
+			prop.Source,
+			prop.Destination,
+			prop.Data.(BtcTransferProposalData).DepositNonce,
+			status)
+		if err != nil {
+			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)
+		}
+	}
 }
