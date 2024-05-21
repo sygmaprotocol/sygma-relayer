@@ -37,7 +37,7 @@ func (s *NewEVMConfigTestSuite) Test_FailedGeneralConfigValidation() {
 
 func (s *NewEVMConfigTestSuite) Test_FailedEVMConfigValidation() {
 	_, err := evm.NewEVMConfig(map[string]interface{}{
-		"id":       1,
+		"sygmaId":  1,
 		"endpoint": "ws://domain.com",
 		"name":     "evm1",
 		"from":     "address",
@@ -48,7 +48,7 @@ func (s *NewEVMConfigTestSuite) Test_FailedEVMConfigValidation() {
 
 func (s *NewEVMConfigTestSuite) Test_InvalidBlockConfirmation() {
 	_, err := evm.NewEVMConfig(map[string]interface{}{
-		"id":                 1,
+		"sygmaId":            1,
 		"endpoint":           "ws://domain.com",
 		"name":               "evm1",
 		"from":               "address",
@@ -62,7 +62,7 @@ func (s *NewEVMConfigTestSuite) Test_InvalidBlockConfirmation() {
 
 func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
-		"id":       1,
+		"sygmaId":  1,
 		"endpoint": "ws://domain.com",
 		"name":     "evm1",
 		"from":     "address",
@@ -94,7 +94,7 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 
 func (s *NewEVMConfigTestSuite) Test_ValidConfigWithCustomTxParams() {
 	rawConfig := map[string]interface{}{
-		"id":       1,
+		"sygmaId":  1,
 		"endpoint": "ws://domain.com",
 		"name":     "evm1",
 		"from":     "address",
