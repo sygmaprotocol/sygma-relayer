@@ -17,7 +17,7 @@ import (
 
 type RawSubstrateConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	ChainID                  int64  `mapstructure:"chainID"`
+	ChainID                  int64  `mapstructure:"chainId"`
 	StartBlock               int64  `mapstructure:"startBlock"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`

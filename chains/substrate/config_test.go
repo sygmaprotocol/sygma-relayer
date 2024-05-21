@@ -39,8 +39,8 @@ func (s *NewSubstrateConfigTestSuite) Test_FailedGeneralConfigValidation() {
 }
 func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
-		"id":               1,
-		"chainID":          5,
+		"sygmaId":          1,
+		"chainId":          5,
 		"substrateNetwork": 0,
 		"endpoint":         "ws://domain.com",
 		"name":             "substrate1",
@@ -67,10 +67,10 @@ func (s *NewSubstrateConfigTestSuite) Test_ValidConfig() {
 
 func (s *NewSubstrateConfigTestSuite) Test_ValidConfigWithCustomParams() {
 	rawConfig := map[string]interface{}{
-		"id":                 1,
+		"sygmaId":            1,
 		"endpoint":           "ws://domain.com",
 		"name":               "substrate1",
-		"chainID":            5,
+		"chainId":            5,
 		"substrateNetwork":   0,
 		"startBlock":         1000,
 		"blockRetryInterval": 10,
