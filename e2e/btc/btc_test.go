@@ -103,7 +103,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 }
 
-func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Substrate() {
+func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Btc() {
 	conn, err := connection.NewBtcConnection(btc.BtcEndpoint)
 	s.Nil(err)
 
