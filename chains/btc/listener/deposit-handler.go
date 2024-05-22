@@ -31,9 +31,9 @@ func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
 ) (*message.Message, error) {
 
 	// data is composed of recieverEVMAddress_destinationDomainID
-	dat := strings.Split(data, "_")
-	evmAdd := common.HexToAddress(dat[0]).Bytes()
-	destDomainID, err := strconv.ParseUint(dat[1], 10, 8)
+	parsedData := strings.Split(data, "_")
+	evmAdd := common.HexToAddress(parsedData[0]).Bytes()
+	destDomainID, err := strconv.ParseUint(parsedData[1], 10, 8)
 	if err != nil {
 		return nil, err
 	}

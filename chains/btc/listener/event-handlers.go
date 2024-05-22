@@ -8,8 +8,6 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -34,23 +32,19 @@ type DepositHandler interface {
 		data string,
 		blockNumber *big.Int,
 	) (*message.Message, error)
-}
-
-type Connection interface {
-	FetchEvents(startBlock, endBlock *big.Int) ([]btcjson.TxRawResult, error)
-	GetRawTransactionVerbose(*chainhash.Hash) (*btcjson.TxRawResult, error)
+	//FetchEvents(startBlock *big.Int) ([]btcjson.TxRawResult, error)
 }
 
 type FungibleTransferEventHandler struct {
 	depositHandler DepositHandler
 	domainID       uint8
 	log            zerolog.Logger
-	conn           *rpcclient.Client
+	conn           Connection
 	msgChan        chan []*message.Message
 	bridge         string
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn *rpcclient.Client, bridge string) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, bridge string) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
@@ -81,15 +75,16 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 				log.Error().Err(err).Msgf("%v", err)
 				return
 			}
+
 			if !isDeposit {
 				return
 			}
-
-			nonce, err := eh.getNonce(blockNumber, evtNumber)
+			nonce, err := eh.GetNonce(blockNumber, evtNumber)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
 				return
 			}
+
 			m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber)
 			if err != nil {
 				log.Error().Err(err).Msgf("%v", err)
@@ -123,7 +118,7 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 	return block.Tx, nil
 }
 
-func (eh *FungibleTransferEventHandler) getNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
+func (eh *FungibleTransferEventHandler) GetNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
 
 	// Convert blockNumber to string
 	blockNumberStr := blockNumber.String()

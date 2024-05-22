@@ -7,7 +7,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -20,7 +19,7 @@ const (
 	OP_RETURN        = "nulldata"
 )
 
-func DecodeDepositEvent(evt btcjson.TxRawResult, conn *rpcclient.Client, bridge string) (Deposit, bool, error) {
+func DecodeDepositEvent(evt btcjson.TxRawResult, conn Connection, bridge string) (Deposit, bool, error) {
 	amount := big.NewInt(0)
 	isBridgeDeposit := false
 	sender := ""

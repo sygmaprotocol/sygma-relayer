@@ -4,6 +4,7 @@
 package btc
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
@@ -18,6 +19,20 @@ type RawBtcConfig struct {
 	StartBlock               int64  `mapstructure:"startBlock"`
 	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
 	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
+	BlockConfirmations       int64  `mapstructure:"blockConfirmations" default:"10"`
+}
+
+func (c *RawBtcConfig) Validate() error {
+	if err := c.GeneralChainConfig.Validate(); err != nil {
+		return err
+	}
+	if c.Bridge == "" {
+		return fmt.Errorf("required field chain.Bridge empty for chain %v", *c.Id)
+	}
+	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
+		return fmt.Errorf("blockConfirmations has to be >=1")
+	}
+	return nil
 }
 
 type BtcConfig struct {
@@ -26,6 +41,7 @@ type BtcConfig struct {
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
+	BlockConfirmations *big.Int
 }
 
 // NewBtcConfig decodes and validates an instance of an BtcConfig from
@@ -54,6 +70,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		BlockRetryInterval: time.Duration(c.BlockInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockInterval:      big.NewInt(c.BlockInterval),
+		BlockConfirmations: big.NewInt(c.BlockConfirmations),
 	}
 
 	return config, nil
