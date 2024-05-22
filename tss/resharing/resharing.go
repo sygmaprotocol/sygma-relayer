@@ -148,8 +148,19 @@ func (r *Resharing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (b
 }
 
 // ValidCoordinators returns only peers that have a valid keyshare from the previous resharing
+// inside host peerstore
 func (r *Resharing) ValidCoordinators() []peer.ID {
-	return r.key.Peers
+	peers := r.BaseTss.Host.Peerstore().Peers()
+	validPeers := make(peer.IDSlice, 0)
+	for _, peer := range peers {
+		for _, subsetPeer := range r.key.Peers {
+			if subsetPeer.Pretty() == peer.Pretty() {
+				validPeers = append(validPeers, peer)
+				break
+			}
+		}
+	}
+	return validPeers
 }
 
 // StartParams returns threshold and peer subset from the old key to share with new parties.
