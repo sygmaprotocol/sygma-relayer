@@ -27,7 +27,6 @@ func TestRunErc20HandlerTestSuite(t *testing.T) {
 }
 
 func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
-
 	deposit := &listener.Deposit{
 		SenderAddress: "senderAddress",
 		ResourceID:    [32]byte{0},
