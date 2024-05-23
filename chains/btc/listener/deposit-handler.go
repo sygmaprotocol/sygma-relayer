@@ -29,7 +29,6 @@ func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
 	data string,
 	blockNumber *big.Int,
 ) (*message.Message, error) {
-
 	// data is composed of recieverEVMAddress_destinationDomainID
 	parsedData := strings.Split(data, "_")
 	evmAdd := common.HexToAddress(parsedData[0]).Bytes()

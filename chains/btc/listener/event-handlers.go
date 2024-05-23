@@ -92,7 +92,6 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			return nil
 		}(evt)
-
 		if err != nil {
 			log.Error().Err(err).Msgf("%v", err)
 		}
@@ -121,7 +120,6 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 }
 
 func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
-
 	// Convert blockNumber to string
 	blockNumberStr := blockNumber.String()
 
