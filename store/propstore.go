@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ChainSafe/chainbridge-core/store"
+	"github.com/sygmaprotocol/sygma-core/store"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

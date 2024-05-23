@@ -3,7 +3,6 @@ module github.com/ChainSafe/sygma-relayer
 go 1.19
 
 require (
-	github.com/ChainSafe/chainbridge-core v1.4.2
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
