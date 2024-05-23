@@ -31,15 +31,16 @@ func TestRunTestSuite(t *testing.T) {
 }
 
 func (s *ListenerTestSuite) SetupTest() {
-
+	s.domainID = 1
 	btcConfig := btc.BtcConfig{
 		GeneralChainConfig: chain.GeneralChainConfig{
 			Id: &s.domainID,
 		},
+		BlockRetryInterval: time.Millisecond * 75,
+		BlockConfirmations: big.NewInt(5),
 	}
 
 	ctrl := gomock.NewController(s.T())
-	s.domainID = 1
 	s.mockBlockStorer = mock_listener.NewMockBlockStorer(ctrl)
 
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
@@ -49,15 +50,11 @@ func (s *ListenerTestSuite) SetupTest() {
 		s.mockConn,
 		[]listener.EventHandler{s.mockEventHandler, s.mockEventHandler},
 		&btcConfig,
-		s.domainID,
-		time.Millisecond*75,
-		big.NewInt(5),
 		s.mockBlockStorer,
 	)
 }
 
 func (s *ListenerTestSuite) Test_ListenToEvents_RetriesIfFinalizedHeadUnavailable() {
-
 	s.mockConn.EXPECT().GetBestBlockHash().Return(nil, fmt.Errorf("error"))
 
 	ctx, cancel := context.WithCancel(context.Background())

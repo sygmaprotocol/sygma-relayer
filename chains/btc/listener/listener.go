@@ -41,16 +41,16 @@ type BtcListener struct {
 
 // NewBtcListener creates an BtcListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *btc.BtcConfig, domainID uint8, blockRetryInterval time.Duration, blockConfirmations *big.Int, blockstore BlockStorer,
+func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *btc.BtcConfig, blockstore BlockStorer,
 ) *BtcListener {
 	return &BtcListener{
 		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),
 		conn:               connection,
 		eventHandlers:      eventHandlers,
-		blockRetryInterval: blockRetryInterval,
-		blockConfirmations: blockConfirmations,
+		blockRetryInterval: config.BlockRetryInterval,
+		blockConfirmations: config.BlockConfirmations,
 		blockstore:         blockstore,
-		domainID:           domainID,
+		domainID:           *config.GeneralChainConfig.Id,
 	}
 }
 
