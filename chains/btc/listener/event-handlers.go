@@ -70,7 +70,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 				}
 			}()
 
-			d, isDeposit, err := DecodeDepositEvent(evt, eh.conn, eh.resource)
+			d, isDeposit, err := DecodeDepositEvent(evt, eh.resource)
 			if err != nil {
 				return err
 			}

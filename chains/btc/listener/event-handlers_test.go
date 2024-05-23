@@ -20,8 +20,8 @@ import (
 
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 )
 
 type DepositHandlerTestSuite struct {
@@ -167,16 +167,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		Tx:     evts,
 	}
 
-	sampleResult2 := &btcjson.TxRawResult{
-		Vout: []btcjson.Vout{{
-			ScriptPubKey: btcjson.ScriptPubKeyResult{
-				Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
-			},
-		}},
-	}
 	s.mockConn.EXPECT().GetBlockHash(int64(100)).Return(hash, nil)
 	s.mockConn.EXPECT().GetBlockVerboseTx(hash).Return(sampleResult, nil)
-	s.mockConn.EXPECT().GetRawTransactionVerbose(hash).Return(sampleResult2, nil)
 
 	err := s.fungibleTransferEventHandler.HandleEvents(blockNumber)
 	msgs := <-s.msgChan
