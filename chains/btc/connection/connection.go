@@ -4,23 +4,22 @@
 package connection
 
 import (
-	"fmt"
-
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/rs/zerolog/log"
 )
 
 type Connection struct {
 	*rpcclient.Client
 }
 
-func NewBtcConnection(url string) (*Connection, error) {
+func NewBtcConnection(url string, username string, password string, tls bool) (*Connection, error) {
 	// Connect to a Bitcoin node using RPC
 	connConfig := &rpcclient.ConnConfig{
 		HTTPPostMode: true,
 		Host:         url,
-		User:         "user",
-		Pass:         "password",
-		DisableTLS:   true,
+		User:         username,
+		Pass:         password,
+		DisableTLS:   tls,
 	}
 
 	client, err := rpcclient.New(connConfig, nil)
@@ -32,7 +31,7 @@ func NewBtcConnection(url string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(info)
+	log.Debug().Msgf("Connected to bitcoin node %s", info.Chain)
 
 	return &Connection{
 		Client: client,

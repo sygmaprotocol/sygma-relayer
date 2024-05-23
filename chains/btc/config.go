@@ -17,30 +17,57 @@ import (
 
 type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	ChainID                  int64  `mapstructure:"chainID"`
-	StartBlock               int64  `mapstructure:"startBlock"`
-	BlockInterval            int64  `mapstructure:"blockInterval" default:"5"`
-	BlockRetryInterval       uint64 `mapstructure:"blockRetryInterval" default:"5"`
-	Network                  string `mapstructure:"network" default:"mainnet"`
-	Tip                      uint64 `mapstructure:"tip"`
-	Address                  string `mapstructure:"address"`
-	Tweak                    string `mapstructure:"tweak"`
-	Script                   string `mapstructure:"script"`
-	MempoolUrl               string `mapstructure:"mempoolUrl"`
+	Resources                []Resource `mapstrcture:"resources"`
+	StartBlock               int64      `mapstructure:"startBlock"`
+	Username                 string     `mapstructure:"username"`
+	Password                 string     `mapstructure:"password"`
+	BlockInterval            int64      `mapstructure:"blockInterval" default:"5"`
+	BlockRetryInterval       uint64     `mapstructure:"blockRetryInterval" default:"5"`
+	BlockConfirmations       int64      `mapstructure:"blockConfirmations" default:"10"`
+	Network                  string     `mapstructure:"network" default:"mainnet"`
+	Tip                      uint64     `mapstructure:"tip"`
+	Tweak                    string     `mapstructure:"tweak"`
+	Script                   string     `mapstructure:"script"`
+	MempoolUrl               string     `mapstructure:"mempoolUrl"`
+}
+
+func (c *RawBtcConfig) Validate() error {
+	if err := c.GeneralChainConfig.Validate(); err != nil {
+		return err
+	}
+
+	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
+		return fmt.Errorf("blockConfirmations has to be >=1")
+	}
+
+	if c.Username == "" {
+		return fmt.Errorf("required field chain.Username empty for chain %v", *c.Id)
+	}
+
+	if c.Password == "" {
+		return fmt.Errorf("required field chain.Password empty for chain %v", *c.Id)
+	}
+	return nil
+}
+
+type Resource struct {
+	Address    string
+	ResourceID [32]byte
 }
 
 type BtcConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
-	ChainID            *big.Int
+	Resources          []Resource
+	Username           string
+	Password           string
 	StartBlock         *big.Int
 	BlockInterval      *big.Int
-	Address            string
+	BlockRetryInterval time.Duration
+	BlockConfirmations *big.Int
 	Tweak              string
 	Script             []byte
 	MempoolUrl         string
 	Network            chaincfg.Params
-
-	BlockRetryInterval time.Duration
 }
 
 // NewBtcConfig decodes and validates an instance of an BtcConfig from
@@ -74,17 +101,18 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	}
 	config := &BtcConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
-		ChainID:            big.NewInt(3),
+		StartBlock:         big.NewInt(c.StartBlock),
+		BlockConfirmations: big.NewInt(c.BlockConfirmations),
+		BlockInterval:      big.NewInt(c.BlockInterval),
 		BlockRetryInterval: time.Duration(5000) * time.Second,
-		StartBlock:         big.NewInt(80000),
-		BlockInterval:      big.NewInt(1000000),
-		Address:            c.Address,
+		Username:           c.Username,
+		Password:           c.Password,
+		Network:            networkParams,
 		Tweak:              c.Tweak,
 		Script:             scriptBytes,
 		MempoolUrl:         c.MempoolUrl,
-		Network:            networkParams,
+		Resources:          c.Resources,
 	}
-
 	return config, nil
 }
 

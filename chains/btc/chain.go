@@ -7,40 +7,39 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/sygmaprotocol/sygma-core/relayer/message"
-	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
-	"github.com/sygmaprotocol/sygma-core/store"
-
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/executor"
+	"github.com/btcsuite/btcd/rpcclient"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sygmaprotocol/sygma-core/relayer/message"
+	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
+	"github.com/sygmaprotocol/sygma-core/store"
 )
 
 type BatchProposalExecutor interface {
 	Execute(msgs []*message.Message) error
 }
 type EventListener interface {
-	ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore store.BlockStore, msgChan chan []*message.Message)
+	ListenToEvents(ctx context.Context, startBlock *big.Int)
 }
 type BtcChain struct {
 	connection *rpcclient.Client
-	listener   EventListener
-	executor   *executor.Executor
-	mh         executor.BtcMessageHandler
+
+	listener EventListener
+	executor *executor.Executor
+	mh       *executor.BtcMessageHandler
+
 	blockstore *store.BlockStore
-	config     *BtcConfig
+	config     *btc.BtcConfig
+	startBlock *big.Int
 	logger     zerolog.Logger
 }
 
 func NewBtcChain(
-	connection *rpcclient.Client,
-	mh executor.BtcMessageHandler,
-	listener EventListener,
-	executor *executor.Executor,
-	blockstore *store.BlockStore,
-	config *BtcConfig,
+	connection *rpcclient.Client, listener EventListener, executor *executor.Executor,
+	mh *executor.BtcMessageHandler, blockstore *store.BlockStore, config *btc.BtcConfig,
 ) *BtcChain {
 	return &BtcChain{
 		connection: connection,
@@ -66,7 +65,12 @@ func (c *BtcChain) ReceiveMessage(m *message.Message) (*proposal.Proposal, error
 	return c.mh.HandleMessage(m)
 }
 
-func (c *BtcChain) PollEvents(ctx context.Context) {}
+// PollEvents is the goroutine that polls blocks and searches Deposit events in them.
+// Events are then sent to eventsChan.
+func (c *BtcChain) PollEvents(ctx context.Context) {
+	c.logger.Info().Str("startBlock", c.startBlock.String()).Msg("Polling Blocks...")
+	go c.listener.ListenToEvents(ctx, c.startBlock)
+}
 
 func (c *BtcChain) DomainID() uint8 {
 	return *c.config.GeneralChainConfig.Id
