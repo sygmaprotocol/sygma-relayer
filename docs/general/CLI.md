@@ -2,7 +2,7 @@
 
 ### Introduction
 
-This guide details specific Command Line Interface (CLI) commands for the Sygma relayer, focusing on functionalities provided in the `topology`, `peer`, and `utils` modules.
+This guide details specific Command Line Interface (CLI) commands for the Sygma relayer, focusing on functionalities provided in the `topology`, `peer`, `keygen` and `utils` modules.
 
 ## Topology commands
 
@@ -51,6 +51,16 @@ Calculate a libp2p peer ID from the provided base64 encoded libp2p private key.
 
 #### Flags:
 - `--private-key`: Base64 encoded libp2p private key.
+
+## Keygen commands
+
+### Generate ECDSA keypair
+
+#### Usage: 
+`./sygma-relayer keygen gen-key`
+
+#### Description:
+Generate a 256-bit ECDSA keypair and print it out. This keypair can be used as a relayer's execution keypair.
 
 ## Other util commands
 
