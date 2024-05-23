@@ -92,7 +92,6 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
 			return nil
 		}(evt)
-
 		if err != nil {
 			log.Error().Err(err).Msgf("%v", err)
 		}
