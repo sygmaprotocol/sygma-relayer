@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.2...v2.0.3) (2024-05-20)
+
+
+### Miscellaneous
+
+* Add keygen CLI ([#278](https://github.com/sygmaprotocol/sygma-relayer/issues/278)) ([9d9a113](https://github.com/sygmaprotocol/sygma-relayer/commit/9d9a113df03a417e715f7e59ff73665b7456ba31))
+* remove relayers from devnet pipeline ([#280](https://github.com/sygmaprotocol/sygma-relayer/issues/280)) ([14fdb0d](https://github.com/sygmaprotocol/sygma-relayer/commit/14fdb0dc6d0fd7e19e93b1f08e75c7a335b5cafa))
+
 ## [2.0.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.1...v2.0.2) (2024-04-18)
 
 

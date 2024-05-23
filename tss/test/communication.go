@@ -30,6 +30,7 @@ func (tc *TestCommunication) Broadcast(
 	msgType comm.MessageType,
 	sessionID string,
 ) error {
+	time.Sleep(time.Millisecond * 500)
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
