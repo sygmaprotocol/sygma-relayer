@@ -13,6 +13,8 @@ import (
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener/mock"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rs/zerolog"
@@ -41,7 +43,8 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	s.resource = btc.Resource{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: ""}
+	address, _ := btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
+	s.resource = btc.Resource{Address: address, ResourceID: [32]byte{}}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)

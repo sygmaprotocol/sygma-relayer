@@ -44,9 +44,6 @@ type TestClient interface {
 
 func Test_EVMBtc(t *testing.T) {
 	evmConfig := evm.DEFAULT_CONFIG
-	evmConfig.Erc20LockReleaseAddr = common.HexToAddress("0x8f5b7716a0A5f94Ea10590F9070442f285a31116")
-	evmConfig.Erc20LockReleaseResourceID = evm.SliceTo32Bytes(common.LeftPadBytes([]byte{9}, 31))
-
 	ethClient, err := evmClient.NewEVMClient(evm.ETHEndpoint1, evm.AdminAccount)
 	if err != nil {
 		panic(err)

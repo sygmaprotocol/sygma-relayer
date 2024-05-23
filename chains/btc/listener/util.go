@@ -32,10 +32,9 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, resource btc.Resource) (Deposit
 			data = string(opReturnData[2:])
 		}
 
-		if resource.Address == vout.ScriptPubKey.Address {
+		if resource.Address.String() == vout.ScriptPubKey.Address {
 			isBridgeDeposit = true
-			resourceBytes, _ := hex.DecodeString(resource.ResourceID)
-			resourceID = SliceTo32Bytes(resourceBytes)
+			resourceID = resource.ResourceID
 			if vout.ScriptPubKey.Type == PubKeyHash || vout.ScriptPubKey.Type == ScriptHash || vout.ScriptPubKey.Type == WitnessV0KeyHash {
 				amount.Add(amount, big.NewInt(int64(vout.Value*1e8)))
 			}
