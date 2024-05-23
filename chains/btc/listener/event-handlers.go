@@ -78,7 +78,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			if !isDeposit {
 				return nil
 			}
-			nonce, err := eh.GetNonce(blockNumber, evtNumber)
+			nonce, err := eh.CalculateNonce(blockNumber, evtNumber)
 			if err != nil {
 				return err
 			}
@@ -120,7 +120,7 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 	return block.Tx, nil
 }
 
-func (eh *FungibleTransferEventHandler) GetNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
+func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
 
 	// Convert blockNumber to string
 	blockNumberStr := blockNumber.String()
