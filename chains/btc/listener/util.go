@@ -34,7 +34,8 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, resource btc.Resource) (Deposit
 
 		if resource.Address == vout.ScriptPubKey.Address {
 			isBridgeDeposit = true
-			resourceID = resource.ResourceID
+			resourceBytes, _ := hex.DecodeString(resource.ResourceID)
+			resourceID = SliceTo32Bytes(resourceBytes)
 			if vout.ScriptPubKey.Type == PubKeyHash || vout.ScriptPubKey.Type == ScriptHash || vout.ScriptPubKey.Type == WitnessV0KeyHash {
 				amount.Add(amount, big.NewInt(int64(vout.Value*1e8)))
 			}
@@ -51,4 +52,10 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, resource btc.Resource) (Deposit
 		Amount:        amount,
 		Data:          data,
 	}, true, nil
+}
+
+func SliceTo32Bytes(in []byte) [32]byte {
+	var res [32]byte
+	copy(res[:], in)
+	return res
 }

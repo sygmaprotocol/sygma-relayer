@@ -24,7 +24,7 @@ func TestRunDecodeDepositEventsSuite(t *testing.T) {
 
 func (s *DecodeEventsSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-	s.resource = btc.Resource{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
+	s.resource = btc.Resource{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: ""}
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
 }
 
@@ -87,7 +87,7 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent() {
 	s.Equal(isDeposit, true)
 	s.Nil(err)
 	s.Equal(deposit, listener.Deposit{
-		ResourceID: s.resource.ResourceID,
+		ResourceID: [32]byte{},
 		Amount:     big.NewInt(int64(d1.Vout[1].Value * 1e8)),
 		Data:       "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
 	})
