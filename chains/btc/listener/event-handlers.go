@@ -120,7 +120,6 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 }
 
 func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
-
 	// Convert blockNumber to string
 	blockNumberStr := blockNumber.String()
 
