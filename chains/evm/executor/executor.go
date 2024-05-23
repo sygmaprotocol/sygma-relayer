@@ -20,7 +20,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/signing"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/signing"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
