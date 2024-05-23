@@ -6,7 +6,6 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 )
 
 const (
@@ -16,7 +15,7 @@ const (
 	OP_RETURN        = "nulldata"
 )
 
-func DecodeDepositEvent(evt btcjson.TxRawResult, conn Connection, resource btc.ResourceConfig) (Deposit, bool, error) {
+func DecodeDepositEvent(evt btcjson.TxRawResult, conn Connection, resource btc.Resource) (Deposit, bool, error) {
 	amount := big.NewInt(0)
 	isBridgeDeposit := false
 	sender := ""
@@ -44,22 +43,6 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, conn Connection, resource btc.R
 
 	if !isBridgeDeposit {
 		return Deposit{}, false, nil
-	}
-
-	for _, vin := range evt.Vin {
-
-		// Retrieve the previous transaction output
-		hsh, err := chainhash.NewHashFromStr(vin.Txid)
-		if err != nil {
-			return Deposit{}, true, err
-		}
-		prevTx, err := conn.GetRawTransactionVerbose(hsh)
-		if err != nil {
-			return Deposit{}, true, err
-		}
-
-		// Retrieve the sender's address from the scriptPubKey of the previous output
-		sender = prevTx.Vout[vin.Vout].ScriptPubKey.Address
 	}
 
 	return Deposit{

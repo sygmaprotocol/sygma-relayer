@@ -41,10 +41,10 @@ type FungibleTransferEventHandler struct {
 	log            zerolog.Logger
 	conn           Connection
 	msgChan        chan []*message.Message
-	resource       btc.ResourceConfig
+	resource       btc.Resource
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource btc.ResourceConfig) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource btc.Resource) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,

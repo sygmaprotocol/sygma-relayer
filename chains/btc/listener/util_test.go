@@ -17,7 +17,7 @@ import (
 type DecodeEventsSuite struct {
 	suite.Suite
 	mockConn *mock_listener.MockConnection
-	resource btc.ResourceConfig
+	resource btc.Resource
 }
 
 func TestRunDecodeDepositEventsSuite(t *testing.T) {
@@ -26,7 +26,7 @@ func TestRunDecodeDepositEventsSuite(t *testing.T) {
 
 func (s *DecodeEventsSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-	s.resource = btc.ResourceConfig{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
+	s.resource = btc.Resource{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
 }
 

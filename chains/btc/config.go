@@ -15,13 +15,13 @@ import (
 
 type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	Resources                []ResourceConfig `mapstrcture:"resources"`
-	StartBlock               int64            `mapstructure:"startBlock"`
-	Username                 string           `mapstructure:"username"`
-	Password                 string           `mapstructure:"password"`
-	BlockInterval            int64            `mapstructure:"blockInterval" default:"5"`
-	BlockRetryInterval       uint64           `mapstructure:"blockRetryInterval" default:"5"`
-	BlockConfirmations       int64            `mapstructure:"blockConfirmations" default:"10"`
+	Resources                []Resource `mapstrcture:"resources"`
+	StartBlock               int64      `mapstructure:"startBlock"`
+	Username                 string     `mapstructure:"username"`
+	Password                 string     `mapstructure:"password"`
+	BlockInterval            int64      `mapstructure:"blockInterval" default:"5"`
+	BlockRetryInterval       uint64     `mapstructure:"blockRetryInterval" default:"5"`
+	BlockConfirmations       int64      `mapstructure:"blockConfirmations" default:"10"`
 }
 
 func (c *RawBtcConfig) Validate() error {
@@ -32,22 +32,29 @@ func (c *RawBtcConfig) Validate() error {
 	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
 		return fmt.Errorf("blockConfirmations has to be >=1")
 	}
+
+	if c.Username == "" {
+		return fmt.Errorf("required field chain.Username empty for chain %v", *c.Id)
+	}
+
+	if c.Password == "" {
+		return fmt.Errorf("required field chain.Password empty for chain %v", *c.Id)
+	}
 	return nil
 }
 
-type ResourceConfig struct {
+type Resource struct {
 	Address    string
 	ResourceID [32]byte
 }
 
 type BtcConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
-	Bridge             string
-	Resources          []ResourceConfig
-	StartBlock         *big.Int
-	BlockInterval      *big.Int
+	Resources          []Resource
 	Username           string
 	Password           string
+	StartBlock         *big.Int
+	BlockInterval      *big.Int
 	BlockRetryInterval time.Duration
 	BlockConfirmations *big.Int
 }
@@ -75,6 +82,8 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	config := &BtcConfig{
 		Resources:          c.Resources,
 		GeneralChainConfig: c.GeneralChainConfig,
+		Username:           c.Username,
+		Password:           c.Password,
 		BlockRetryInterval: time.Duration(c.BlockInterval) * time.Second,
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockInterval:      big.NewInt(c.BlockInterval),

@@ -57,11 +57,41 @@ func (s *NewBtcConfigTestSuite) Test_InvalidBlockConfirmation() {
 	s.Equal(err.Error(), "blockConfirmations has to be >=1")
 }
 
+func (s *NewBtcConfigTestSuite) Test_InvalidUsername() {
+	_, err := btc.NewBtcConfig(map[string]interface{}{
+		"id":       1,
+		"endpoint": "ws://domain.com",
+		"name":     "btc1",
+		"password": "pass123",
+
+		"blockConfirmations": 1,
+	})
+
+	s.NotNil(err)
+	s.Equal(err.Error(), "required field chain.Username empty for chain 1")
+}
+
+func (s *NewBtcConfigTestSuite) Test_InvalidPassword() {
+	_, err := btc.NewBtcConfig(map[string]interface{}{
+		"id":       1,
+		"endpoint": "ws://domain.com",
+		"name":     "btc1",
+		"username": "pass123",
+
+		"blockConfirmations": 1,
+	})
+
+	s.NotNil(err)
+	s.Equal(err.Error(), "required field chain.Password empty for chain 1")
+}
+
 func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
 		"id":       1,
 		"endpoint": "ws://domain.com",
 		"name":     "btc1",
+		"username": "username",
+		"password": "pass123",
 	}
 
 	actualConfig, err := btc.NewBtcConfig(rawConfig)
@@ -75,6 +105,8 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 			Endpoint: "ws://domain.com",
 			Id:       id,
 		},
+		Username:           "username",
+		Password:           "pass123",
 		StartBlock:         big.NewInt(0),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(5),
