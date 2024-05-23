@@ -33,6 +33,8 @@ genmocks:
 	mockgen -source=./chains/evm/listener/eventHandlers/event-handler.go -destination=./chains/evm/listener/eventHandlers/mock/listener.go
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
 	mockgen -source=./chains/substrate/listener/event-handlers.go -destination=./chains/substrate/listener/mock/handlers.go
+	mockgen -source=./chains/btc/listener/event-handlers.go -destination=./chains/btc/listener/mock/handlers.go
+	mockgen -source=./chains/btc/listener/listener.go -destination=./chains/btc/listener/mock/listener.go
 	mockgen -source=./topology/topology.go -destination=./topology/mock/topology.go
 
 
