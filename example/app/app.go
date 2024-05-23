@@ -43,6 +43,7 @@ import (
 
 	btcConnection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	btcExecutor "github.com/ChainSafe/sygma-relayer/chains/btc/executor"
+	btcListener "github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
@@ -259,7 +260,21 @@ func Run() error {
 					panic(err)
 				}
 
-				taprootAddress, _ := btcutil.DecodeAddress("", &config.Network)
+				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
+				depositHandler := &btcListener.BtcDepositHandler{}
+				eventHandlers := make([]btcListener.EventHandler, 0)
+				resourceAddresses := make(map[[32]byte]btcutil.Address)
+				for _, resource := range config.Resources {
+					address, err := btcutil.DecodeAddress(resource.Address, &config.Network)
+					if err != nil {
+						panic(err)
+					}
+					resourceAddresses[resource.ResourceID] = address
+
+					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource))
+				}
+				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
+
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
 				mh := &btcExecutor.BtcMessageHandler{}
 				executor := btcExecutor.NewExecutor(
@@ -270,13 +285,13 @@ func Run() error {
 					frostKeyshareStore,
 					conn,
 					mempool,
-					taprootAddress,
+					resourceAddresses,
 					config.Tweak,
 					config.Script,
 					config.Network,
 					exitLock)
 
-				btcChain := btc.NewBtcChain(nil, executor, mh, *config.GeneralChainConfig.Id)
+				btcChain := btc.NewBtcChain(listener, executor, mh, *config.GeneralChainConfig.Id)
 				chains[*config.GeneralChainConfig.Id] = btcChain
 
 			}

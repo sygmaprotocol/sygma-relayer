@@ -17,6 +17,7 @@ type BtcTransferProposalData struct {
 	Amount       int64
 	Recipient    string
 	DepositNonce uint64
+	ResourceId   [32]byte
 }
 
 type BtcMessageHandler struct{}
@@ -54,5 +55,6 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 		Amount:       bigAmount.Int64(),
 		Recipient:    string(recipient),
 		DepositNonce: msg.Data.DepositNonce,
+		ResourceId:   msg.Data.ResourceId,
 	}, msg.ID, transfer.TransferProposalType), nil
 }

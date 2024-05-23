@@ -49,13 +49,13 @@ type Executor struct {
 	host        host.Host
 	comm        comm.Communication
 
-	conn          *connection.Connection
-	senderAddress btcutil.Address
-	tweak         string
-	script        []byte
-	chainCfg      chaincfg.Params
-	mempool       MempoolAPI
-	fetcher       signing.SaveDataFetcher
+	conn              *connection.Connection
+	resourceAddresses map[[32]byte]btcutil.Address
+	tweak             string
+	script            []byte
+	chainCfg          chaincfg.Params
+	mempool           MempoolAPI
+	fetcher           signing.SaveDataFetcher
 
 	propStorer PropStorer
 	propMutex  sync.Mutex
@@ -71,25 +71,25 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
 	mempool MempoolAPI,
-	address btcutil.Address,
+	resourceAddresses map[[32]byte]btcutil.Address,
 	tweak string,
 	script []byte,
 	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
-		propStorer:    propStorer,
-		host:          host,
-		comm:          comm,
-		coordinator:   coordinator,
-		exitLock:      exitLock,
-		fetcher:       fetcher,
-		conn:          conn,
-		senderAddress: address,
-		tweak:         tweak,
-		script:        script,
-		mempool:       mempool,
-		chainCfg:      chainCfg,
+		propStorer:        propStorer,
+		host:              host,
+		comm:              comm,
+		coordinator:       coordinator,
+		exitLock:          exitLock,
+		fetcher:           fetcher,
+		conn:              conn,
+		resourceAddresses: resourceAddresses,
+		tweak:             tweak,
+		script:            script,
+		mempool:           mempool,
+		chainCfg:          chainCfg,
 	}
 }
 
@@ -199,12 +199,13 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 }
 
 func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool.Utxo, error) {
+	resourceAddress := e.resourceAddresses[proposals[0].Data.(BtcTransferProposalData).ResourceId]
 	tx := wire.NewMsgTx(wire.TxVersion)
 	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
 		return nil, nil, err
 	}
-	inputAmount, utxos, err := e.inputs(tx, outputAmount)
+	inputAmount, utxos, err := e.inputs(tx, resourceAddress, outputAmount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -219,7 +220,7 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 	returnAmount := int64(inputAmount) - fee - outputAmount
 	if returnAmount > 0 {
 		// return extra funds
-		returnScript, err := txscript.PayToAddrScript(e.senderAddress)
+		returnScript, err := txscript.PayToAddrScript(resourceAddress)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -248,10 +249,10 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int6
 	return outputAmount, nil
 }
 
-func (e *Executor) inputs(tx *wire.MsgTx, outputAmount int64) (int64, []mempool.Utxo, error) {
+func (e *Executor) inputs(tx *wire.MsgTx, address btcutil.Address, outputAmount int64) (int64, []mempool.Utxo, error) {
 	usedUtxos := make([]mempool.Utxo, 0)
 	inputAmount := int64(0)
-	utxos, err := e.mempool.Utxos(e.senderAddress.String())
+	utxos, err := e.mempool.Utxos(address.String())
 	if err != nil {
 		return 0, nil, err
 	}
