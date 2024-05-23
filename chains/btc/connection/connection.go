@@ -12,7 +12,6 @@ type Connection struct {
 }
 
 func NewBtcConnection(url string, username string, password string) (*Connection, error) {
-
 	// Connect to a Bitcoin node using RPC
 	connConfig := &rpcclient.ConnConfig{
 		HTTPPostMode: true,
