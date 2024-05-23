@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/signal"
@@ -269,7 +270,13 @@ func Run() error {
 					if err != nil {
 						panic(err)
 					}
-					resourceAddresses[resource.ResourceID] = address
+					resourceBytes, err := hex.DecodeString(resource.ResourceID[2:])
+					if err != nil {
+						panic(err)
+					}
+					var resource32Bytes [32]byte
+					copy(resource32Bytes[:], resourceBytes)
+					resourceAddresses[resource32Bytes] = address
 
 					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource))
 				}

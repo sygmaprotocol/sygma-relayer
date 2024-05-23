@@ -52,7 +52,7 @@ func (c *RawBtcConfig) Validate() error {
 
 type Resource struct {
 	Address    string
-	ResourceID [32]byte
+	ResourceID string
 }
 
 type BtcConfig struct {
