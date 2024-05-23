@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener/mock"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
@@ -28,6 +29,7 @@ type DepositHandlerTestSuite struct {
 	fungibleTransferEventHandler *listener.FungibleTransferEventHandler
 	mockDepositHandler           *mock_listener.MockDepositHandler
 	domainID                     uint8
+	resource                     btc.ResourceConfig
 	msgChan                      chan []*message.Message
 	mockConn                     *mock_listener.MockConnection
 }
@@ -39,10 +41,11 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
+	s.resource = btc.ResourceConfig{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
-	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm")
+	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource)
 }
 
 func (s *DepositHandlerTestSuite) Test_FetchDepositFails_GetBlockHashError() {

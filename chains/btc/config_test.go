@@ -40,7 +40,6 @@ func (s *NewBtcConfigTestSuite) Test_FailedBtcConfigValidation() {
 		"id":       1,
 		"endpoint": "",
 		"name":     "btc1",
-		"from":     "address",
 	})
 
 	s.NotNil(err)
@@ -51,8 +50,6 @@ func (s *NewBtcConfigTestSuite) Test_InvalidBlockConfirmation() {
 		"id":                 1,
 		"endpoint":           "ws://domain.com",
 		"name":               "btc1",
-		"from":               "address",
-		"bridge":             "bridgeAddress",
 		"blockConfirmations": -1,
 	})
 
@@ -65,7 +62,6 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 		"id":       1,
 		"endpoint": "ws://domain.com",
 		"name":     "btc1",
-		"bridge":   "bridgeAddress",
 	}
 
 	actualConfig, err := btc.NewBtcConfig(rawConfig)
@@ -79,7 +75,6 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 			Endpoint: "ws://domain.com",
 			Id:       id,
 		},
-		Bridge:             "bridgeAddress",
 		StartBlock:         big.NewInt(0),
 		BlockConfirmations: big.NewInt(10),
 		BlockInterval:      big.NewInt(5),

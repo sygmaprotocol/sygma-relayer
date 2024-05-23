@@ -52,6 +52,7 @@ func (s *ListenerTestSuite) SetupTest() {
 		s.domainID,
 		time.Millisecond*75,
 		big.NewInt(5),
+		s.mockBlockStorer,
 	)
 }
 
@@ -60,7 +61,7 @@ func (s *ListenerTestSuite) Test_ListenToEvents_RetriesIfFinalizedHeadUnavailabl
 	s.mockConn.EXPECT().GetBestBlockHash().Return(nil, fmt.Errorf("error"))
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go s.listener.ListenToEvents(ctx, big.NewInt(100), s.domainID, s.mockBlockStorer)
+	go s.listener.ListenToEvents(ctx, big.NewInt(100))
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
@@ -73,7 +74,7 @@ func (s *ListenerTestSuite) Test_ListenToEvents_GetVerboseTxError() {
 	s.mockConn.EXPECT().GetBlockVerboseTx(hash).Return(nil, fmt.Errorf("error"))
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go s.listener.ListenToEvents(ctx, big.NewInt(100), s.domainID, s.mockBlockStorer)
+	go s.listener.ListenToEvents(ctx, big.NewInt(100))
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
@@ -85,7 +86,7 @@ func (s *ListenerTestSuite) Test_ListenToEvents_SleepsIfBlockTooNew() {
 	s.mockConn.EXPECT().GetBlockVerboseTx(hash).Return(&btcjson.GetBlockVerboseTxResult{Height: int64(102)}, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go s.listener.ListenToEvents(ctx, big.NewInt(100), s.domainID, s.mockBlockStorer)
+	go s.listener.ListenToEvents(ctx, big.NewInt(100))
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
@@ -113,7 +114,7 @@ func (s *ListenerTestSuite) Test_ListenToEvents_RetriesInCaseOfHandlerFailure() 
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go s.listener.ListenToEvents(ctx, big.NewInt(105), s.domainID, s.mockBlockStorer)
+	go s.listener.ListenToEvents(ctx, big.NewInt(105))
 
 	time.Sleep(time.Millisecond * 50)
 	cancel()
@@ -140,7 +141,7 @@ func (s *ListenerTestSuite) Test_ListenToEvents_UsesHeadAsStartBlockIfNilPassed(
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go s.listener.ListenToEvents(ctx, nil, s.domainID, s.mockBlockStorer)
+	go s.listener.ListenToEvents(ctx, nil)
 
 	time.Sleep(time.Millisecond * 100)
 	cancel()

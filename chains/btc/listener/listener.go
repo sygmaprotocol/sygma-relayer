@@ -33,6 +33,7 @@ type BtcListener struct {
 	eventHandlers      []EventHandler
 	blockRetryInterval time.Duration
 	blockConfirmations *big.Int
+	blockstore         BlockStorer
 
 	log      zerolog.Logger
 	domainID uint8
@@ -40,7 +41,7 @@ type BtcListener struct {
 
 // NewBtcListener creates an BtcListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *btc.BtcConfig, domainID uint8, blockRetryInterval time.Duration, blockConfirmations *big.Int,
+func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *btc.BtcConfig, domainID uint8, blockRetryInterval time.Duration, blockConfirmations *big.Int, blockstore BlockStorer,
 ) *BtcListener {
 	return &BtcListener{
 		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),
@@ -48,13 +49,14 @@ func NewBtcListener(connection Connection, eventHandlers []EventHandler, config 
 		eventHandlers:      eventHandlers,
 		blockRetryInterval: blockRetryInterval,
 		blockConfirmations: blockConfirmations,
+		blockstore:         blockstore,
 		domainID:           domainID,
 	}
 }
 
 // ListenToEvents goes block by block of a network and executes event handlers that are
 // configured for the listener.
-func (l *BtcListener) ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore BlockStorer) {
+func (l *BtcListener) ListenToEvents(ctx context.Context, startBlock *big.Int) {
 loop:
 	for {
 		select {
@@ -96,7 +98,7 @@ loop:
 			}
 
 			//Write to block store. Not a critical operation, no need to retry
-			err = blockstore.StoreBlock(startBlock, l.domainID)
+			err = l.blockstore.StoreBlock(startBlock, l.domainID)
 			if err != nil {
 				l.log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 			}

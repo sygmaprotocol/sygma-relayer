@@ -46,7 +46,7 @@ func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
 	messageID := fmt.Sprintf("%d-%d-%d", sourceID, destDomainID, blockNumber)
 	return message.NewMessage(sourceID, uint8(destDomainID), transfer.TransferMessageData{
 		DepositNonce: depositNonce,
-		ResourceId:   RESOURCE_ID,
+		ResourceId:   resourceID,
 		Metadata:     nil,
 		Payload:      payload,
 		Type:         transfer.FungibleTransfer,

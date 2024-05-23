@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener/mock"
 	"github.com/btcsuite/btcd/btcjson"
@@ -16,6 +17,7 @@ import (
 type DecodeEventsSuite struct {
 	suite.Suite
 	mockConn *mock_listener.MockConnection
+	resource btc.ResourceConfig
 }
 
 func TestRunDecodeDepositEventsSuite(t *testing.T) {
@@ -24,12 +26,11 @@ func TestRunDecodeDepositEventsSuite(t *testing.T) {
 
 func (s *DecodeEventsSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-
+	s.resource = btc.ResourceConfig{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
 }
 
 func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorDecodingOPRETURNData() {
-	bridgeAddr := "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm"
 	d1 := btcjson.TxRawResult{
 		Vin: []btcjson.Vin{
 
@@ -53,14 +54,14 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorDecodingOPRETURNData() 
 			},
 		},
 	}
-	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, bridgeAddr)
+
+	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, s.resource)
 	s.Equal(isDeposit, true)
 	s.NotNil(err)
 	s.Equal(deposit, listener.Deposit{})
 }
 
 func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorInvalidPrevTxHash() {
-	bridgeAddr := "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm"
 
 	d1 := btcjson.TxRawResult{
 		Vin: []btcjson.Vin{
@@ -85,14 +86,13 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorInvalidPrevTxHash() {
 			},
 		},
 	}
-	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, bridgeAddr)
+	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, s.resource)
 	s.Equal(isDeposit, true)
 	s.NotNil(err)
 	s.Equal(deposit, listener.Deposit{})
 }
 
 func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorFetchingPrevTx() {
-	bridgeAddr := "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm"
 	hash, _ := chainhash.NewHashFromStr("00000000000000000008bba5a6ff31fdb9bb1d4147905b5b3c47a07a07235bfc")
 
 	s.mockConn.EXPECT().GetRawTransactionVerbose(hash).Return(nil, fmt.Errorf("error"))
@@ -120,14 +120,13 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent_ErrorFetchingPrevTx() {
 			},
 		},
 	}
-	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, bridgeAddr)
+	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, s.resource)
 	s.Equal(isDeposit, true)
 	s.NotNil(err)
 	s.Equal(deposit, listener.Deposit{})
 }
 
 func (s *DecodeEventsSuite) Test_DecodeDepositEvent() {
-	bridgeAddr := "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm"
 	hash, _ := chainhash.NewHashFromStr("00000000000000000008bba5a6ff31fdb9bb1d4147905b5b3c47a07a07235bfc")
 
 	result := &btcjson.TxRawResult{
@@ -162,11 +161,11 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent() {
 			},
 		},
 	}
-	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, bridgeAddr)
+	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, s.resource)
 	s.Equal(isDeposit, true)
 	s.Nil(err)
 	s.Equal(deposit, listener.Deposit{
-		ResourceID:    [32]byte(listener.RESOURCE_ID),
+		ResourceID:    s.resource.ResourceID,
 		SenderAddress: d1.Vout[1].ScriptPubKey.Address,
 		Amount:        big.NewInt(int64(d1.Vout[1].Value * 1e8)),
 		Data:          "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
@@ -174,8 +173,6 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent() {
 }
 
 func (s *DecodeEventsSuite) Test_DecodeDepositEvent_NotBridgeDepositTx() {
-	bridgeAddr := "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm"
-
 	d1 := btcjson.TxRawResult{
 		Vin: []btcjson.Vin{
 
@@ -199,7 +196,7 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent_NotBridgeDepositTx() {
 			},
 		},
 	}
-	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, bridgeAddr)
+	deposit, isDeposit, err := listener.DecodeDepositEvent(d1, s.mockConn, s.resource)
 	s.Equal(isDeposit, false)
 	s.Nil(err)
 	s.Equal(deposit, listener.Deposit{})

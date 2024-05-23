@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strconv"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -32,7 +33,6 @@ type DepositHandler interface {
 		data string,
 		blockNumber *big.Int,
 	) (*message.Message, error)
-	//FetchEvents(startBlock *big.Int) ([]btcjson.TxRawResult, error)
 }
 
 type FungibleTransferEventHandler struct {
@@ -41,17 +41,17 @@ type FungibleTransferEventHandler struct {
 	log            zerolog.Logger
 	conn           Connection
 	msgChan        chan []*message.Message
-	bridge         string
+	resource       btc.ResourceConfig
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, bridge string) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource btc.ResourceConfig) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
 		log:            logC.Logger(),
 		conn:           conn,
 		msgChan:        msgChan,
-		bridge:         bridge,
+		resource:       resource,
 	}
 }
 
@@ -63,37 +63,39 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 		return err
 	}
 	for evtNumber, evt := range evts {
-		func(evt btcjson.TxRawResult) {
+		err := func(evt btcjson.TxRawResult) error {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Error().Msgf("panic occured while handling deposit %+v", evt)
 				}
 			}()
 
-			d, isDeposit, err := DecodeDepositEvent(evt, eh.conn, eh.bridge)
+			d, isDeposit, err := DecodeDepositEvent(evt, eh.conn, eh.resource)
 			if err != nil {
-				log.Error().Err(err).Msgf("%v", err)
-				return
+				return err
 			}
 
 			if !isDeposit {
-				return
+				return nil
 			}
 			nonce, err := eh.GetNonce(blockNumber, evtNumber)
 			if err != nil {
-				log.Error().Err(err).Msgf("%v", err)
-				return
+				return err
 			}
 
 			m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber)
 			if err != nil {
-				log.Error().Err(err).Msgf("%v", err)
-				return
+				return err
 			}
 
 			log.Debug().Str("messageID", m.ID).Msgf("Resolved message %+v in block: %s", m, blockNumber.String())
 			domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+			return nil
 		}(evt)
+
+		if err != nil {
+			log.Error().Err(err).Msgf("%v", err)
+		}
 	}
 
 	for _, deposits := range domainDeposits {

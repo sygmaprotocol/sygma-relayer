@@ -9,7 +9,6 @@ import (
 
 	"github.com/btcsuite/btcd/rpcclient"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -21,13 +20,14 @@ type BatchProposalExecutor interface {
 	Execute(msgs []*message.Message) error
 }
 type EventListener interface {
-	ListenToEvents(ctx context.Context, startBlock *big.Int, domainID uint8, blockstore store.BlockStore)
+	ListenToEvents(ctx context.Context, startBlock *big.Int)
 }
 type BtcChain struct {
 	connection *rpcclient.Client
 	listener   EventListener
 	blockstore *store.BlockStore
 	config     *BtcConfig
+	startBlock *big.Int
 	logger     zerolog.Logger
 }
 
@@ -47,46 +47,11 @@ func (c *BtcChain) Write(msgs []*proposal.Proposal) error {
 	return nil
 }
 
-// remove this after
-func (c *BtcChain) ReceiveMessage(m *message.Message)/* *proposal.Proposal, error */ {}
-
+// PollEvents is the goroutine that polls blocks and searches Deposit events in them.
+// Events are then sent to eventsChan.
 func (c *BtcChain) PollEvents(ctx context.Context) {
-	c.logger.Info().Msg("Polling Blocks...")
-
-	startBlock, err := c.blockstore.GetStartBlock(
-		*c.config.GeneralChainConfig.Id,
-		c.config.StartBlock,
-		c.config.GeneralChainConfig.LatestBlock,
-		c.config.GeneralChainConfig.FreshStart,
-	)
-	if err != nil {
-		return
-	}
-
-	// start from latest
-	if startBlock == nil {
-		// Get the hash of the most recent block
-		bestBlockHash, err := c.connection.GetBestBlockHash()
-		if err != nil {
-			return
-		}
-
-		// Fetch the most recent block
-		head, err := c.connection.GetBlockVerboseTx(bestBlockHash)
-		if err != nil {
-			return
-		}
-		startBlock = new(big.Int).SetInt64(head.Height)
-	}
-
-	startBlock, err = chains.CalculateStartingBlock(startBlock, c.config.BlockInterval)
-	if err != nil {
-		return
-	}
-
-	c.logger.Info().Msgf("Starting block: %s", startBlock.String())
-
-	go c.listener.ListenToEvents(ctx, startBlock, c.DomainID(), *c.blockstore)
+	c.logger.Info().Str("startBlock", c.startBlock.String()).Msg("Polling Blocks...")
+	go c.listener.ListenToEvents(ctx, c.startBlock)
 }
 
 func (c *BtcChain) DomainID() uint8 {
