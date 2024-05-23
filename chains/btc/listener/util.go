@@ -47,7 +47,6 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, conn Connection, resource btc.R
 	}
 
 	for _, vin := range evt.Vin {
-
 		// Retrieve the previous transaction output
 		hsh, err := chainhash.NewHashFromStr(vin.Txid)
 		if err != nil {
