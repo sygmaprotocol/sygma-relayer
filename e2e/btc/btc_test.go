@@ -104,7 +104,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Btc() {
-	conn, err := connection.NewBtcConnection(btc.BtcEndpoint)
+	conn, err := connection.NewBtcConnection(btc.BtcEndpoint, "user", "password", false)
 	s.Nil(err)
 
 	addr, err := btcutil.DecodeAddress("bcrt1pja8aknn7te4empmghnyqnrtjqn0lyg5zy3p5jsdp4le930wnpnxsrtd3ht", &chaincfg.RegressionNetParams)

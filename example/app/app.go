@@ -250,14 +250,18 @@ func Run() error {
 					panic(err)
 				}
 
-				conn, err := btcConnection.NewBtcConnection(config.GeneralChainConfig.Endpoint)
+				conn, err := btcConnection.NewBtcConnection(
+					config.GeneralChainConfig.Endpoint,
+					config.Username,
+					config.Password,
+					false)
 				if err != nil {
 					panic(err)
 				}
 
-				taprootAddress, _ := btcutil.DecodeAddress(config.Address, &config.Network)
+				taprootAddress, _ := btcutil.DecodeAddress("", &config.Network)
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
-				mh := btcExecutor.BtcMessageHandler{}
+				mh := &btcExecutor.BtcMessageHandler{}
 				executor := btcExecutor.NewExecutor(
 					propStore,
 					host,
@@ -272,7 +276,7 @@ func Run() error {
 					config.Network,
 					exitLock)
 
-				btcChain := btc.NewBtcChain(nil, mh, nil, executor, nil, config)
+				btcChain := btc.NewBtcChain(nil, executor, mh, *config.GeneralChainConfig.Id)
 				chains[*config.GeneralChainConfig.Id] = btcChain
 
 			}

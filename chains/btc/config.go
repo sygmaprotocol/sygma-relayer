@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/chainbridge-core/config/chain"
+	"github.com/ChainSafe/sygma-relayer/config/chain"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
