@@ -31,7 +31,7 @@ func NewBtcConnection(url string, username string, password string, tls bool) (*
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("Connected to bitcoin node %s", info.Chain)
+	log.Debug().Msgf("Connected to bitcoin node %s ", info.Chain)
 
 	return &Connection{
 		Client: client,
