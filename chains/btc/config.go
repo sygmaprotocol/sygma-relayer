@@ -147,6 +147,8 @@ func networkParams(network string) (chaincfg.Params, error) {
 		return chaincfg.TestNet3Params, nil
 	case "regtest":
 		return chaincfg.RegressionNetParams, nil
+	case "signet":
+		return chaincfg.SigNetParams, nil
 	default:
 		return chaincfg.Params{}, fmt.Errorf("unknown network %s", network)
 	}
