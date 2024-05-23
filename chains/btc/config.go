@@ -10,25 +10,35 @@ import (
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/config/chain"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
 )
 
+type RawResource struct {
+	Address    string
+	ResourceID string
+}
+
+type Resource struct {
+	Address    btcutil.Address
+	ResourceID [32]byte
+}
+
 type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	Resources                []Resource `mapstrcture:"resources"`
-	StartBlock               int64      `mapstructure:"startBlock"`
-	Username                 string     `mapstructure:"username"`
-	Password                 string     `mapstructure:"password"`
-	BlockInterval            int64      `mapstructure:"blockInterval" default:"5"`
-	BlockRetryInterval       uint64     `mapstructure:"blockRetryInterval" default:"5"`
-	BlockConfirmations       int64      `mapstructure:"blockConfirmations" default:"10"`
-	Network                  string     `mapstructure:"network" default:"mainnet"`
-	Tip                      uint64     `mapstructure:"tip"`
-	Tweak                    string     `mapstructure:"tweak"`
-	Script                   string     `mapstructure:"script"`
-	MempoolUrl               string     `mapstructure:"mempoolUrl"`
+	Resources                []RawResource `mapstrcture:"resources"`
+	StartBlock               int64         `mapstructure:"startBlock"`
+	Username                 string        `mapstructure:"username"`
+	Password                 string        `mapstructure:"password"`
+	BlockInterval            int64         `mapstructure:"blockInterval" default:"5"`
+	BlockRetryInterval       uint64        `mapstructure:"blockRetryInterval" default:"5"`
+	BlockConfirmations       int64         `mapstructure:"blockConfirmations" default:"10"`
+	Network                  string        `mapstructure:"network" default:"mainnet"`
+	Tweak                    string        `mapstructure:"tweak"`
+	Script                   string        `mapstructure:"script"`
+	MempoolUrl               string        `mapstructure:"mempoolUrl"`
 }
 
 func (c *RawBtcConfig) Validate() error {
@@ -48,11 +58,6 @@ func (c *RawBtcConfig) Validate() error {
 		return fmt.Errorf("required field chain.Password empty for chain %v", *c.Id)
 	}
 	return nil
-}
-
-type Resource struct {
-	Address    string
-	ResourceID string
 }
 
 type BtcConfig struct {
@@ -89,13 +94,31 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		return nil, err
 	}
 
-	c.GeneralChainConfig.ParseFlags()
-	scriptBytes, err := hex.DecodeString(c.Script)
+	networkParams, err := networkParams(c.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	networkParams, err := networkParams(c.Network)
+	resources := make([]Resource, len(c.Resources))
+	for i, r := range c.Resources {
+		address, err := btcutil.DecodeAddress(r.Address, &networkParams)
+		if err != nil {
+			return nil, err
+		}
+		resourceBytes, err := hex.DecodeString(r.ResourceID[2:])
+		if err != nil {
+			panic(err)
+		}
+		var resource32Bytes [32]byte
+		copy(resource32Bytes[:], resourceBytes)
+		resources[i] = Resource{
+			Address:    address,
+			ResourceID: resource32Bytes,
+		}
+	}
+
+	c.GeneralChainConfig.ParseFlags()
+	scriptBytes, err := hex.DecodeString(c.Script)
 	if err != nil {
 		return nil, err
 	}
@@ -104,14 +127,14 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		StartBlock:         big.NewInt(c.StartBlock),
 		BlockConfirmations: big.NewInt(c.BlockConfirmations),
 		BlockInterval:      big.NewInt(c.BlockInterval),
-		BlockRetryInterval: time.Duration(5000) * time.Second,
+		BlockRetryInterval: time.Duration(c.BlockRetryInterval) * time.Second,
 		Username:           c.Username,
 		Password:           c.Password,
 		Network:            networkParams,
 		Tweak:              c.Tweak,
 		Script:             scriptBytes,
 		MempoolUrl:         c.MempoolUrl,
-		Resources:          c.Resources,
+		Resources:          resources,
 	}
 	return config, nil
 }
