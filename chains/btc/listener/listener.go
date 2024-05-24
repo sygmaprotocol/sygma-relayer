@@ -78,6 +78,9 @@ loop:
 				time.Sleep(l.blockRetryInterval)
 				continue
 			}
+
+			log.Info().Msgf("Fetching btc events for block %d", block.Height)
+
 			head := big.NewInt(block.Height)
 			if startBlock == nil {
 				startBlock = head
