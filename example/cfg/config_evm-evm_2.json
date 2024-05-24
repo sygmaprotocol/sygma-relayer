@@ -32,7 +32,7 @@
         },
         {
           "type": "erc1155",
-          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
+          "address": "0xa3523820dc62aab22920D871fa7D8600372aC2EE"
         },
         {
           "type": "permissionedGeneric",
@@ -65,7 +65,7 @@
         },
         {
           "type": "erc1155",
-          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
+          "address": "0xa3523820dc62aab22920D871fa7D8600372aC2EE"
         },
         {
           "type": "permissionedGeneric",
