@@ -8,6 +8,8 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener/mock"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +26,8 @@ func TestRunDecodeDepositEventsSuite(t *testing.T) {
 
 func (s *DecodeEventsSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
-	s.resource = btc.Resource{Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", ResourceID: [32]byte{}}
+	address, _ := btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
+	s.resource = btc.Resource{Address: address, ResourceID: [32]byte{}}
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
 }
 
@@ -87,7 +90,7 @@ func (s *DecodeEventsSuite) Test_DecodeDepositEvent() {
 	s.Equal(isDeposit, true)
 	s.Nil(err)
 	s.Equal(deposit, listener.Deposit{
-		ResourceID: s.resource.ResourceID,
+		ResourceID: [32]byte{},
 		Amount:     big.NewInt(int64(d1.Vout[1].Value * 1e8)),
 		Data:       "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
 	})

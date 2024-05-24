@@ -5,6 +5,7 @@ package signing
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/taurusgroup/multi-party-sig/pkg/math/curve"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
 	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
@@ -25,6 +27,11 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/util"
 )
 
+type Signature struct {
+	Id        int
+	Signature taproot.Signature
+}
+
 type SaveDataFetcher interface {
 	GetKeyshare() (keyshare.FrostKeyshare, error)
 	LockKeyshare()
@@ -33,6 +40,7 @@ type SaveDataFetcher interface {
 
 type Signing struct {
 	common.BaseFrostTss
+	id             int
 	coordinator    bool
 	key            keyshare.FrostKeyshare
 	msg            *big.Int
@@ -41,7 +49,9 @@ type Signing struct {
 }
 
 func NewSigning(
+	id int,
 	msg *big.Int,
+	tweak string,
 	sessionID string,
 	host host.Host,
 	comm comm.Communication,
@@ -50,6 +60,21 @@ func NewSigning(
 	fetcher.LockKeyshare()
 	defer fetcher.UnlockKeyshare()
 	key, err := fetcher.GetKeyshare()
+	if err != nil {
+		return nil, err
+	}
+
+	tweakBytes, err := hex.DecodeString(tweak)
+	if err != nil {
+		return nil, err
+	}
+
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweakBytes)
+	if err != nil {
+		return nil, err
+	}
+	key.Key, err = key.Key.Derive(h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +90,7 @@ func NewSigning(
 			Done:          make(chan bool),
 		},
 		key: key,
+		id:  id,
 		msg: msg,
 	}, nil
 }
@@ -178,14 +204,12 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				signature, _ := result.(*taproot.Signature)
+				signature, _ := result.(taproot.Signature)
 
-				if s.coordinator {
-					s.resultChn <- signature
-				} else {
-					s.resultChn <- nil
+				s.resultChn <- Signature{
+					Signature: signature,
+					Id:        s.id,
 				}
-
 				s.Cancel()
 				return nil
 			}

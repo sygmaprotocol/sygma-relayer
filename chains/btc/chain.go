@@ -7,13 +7,12 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/executor"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
-	"github.com/sygmaprotocol/sygma-core/store"
 )
 
 type BatchProposalExecutor interface {
@@ -23,28 +22,43 @@ type EventListener interface {
 	ListenToEvents(ctx context.Context, startBlock *big.Int)
 }
 type BtcChain struct {
-	connection *rpcclient.Client
-	listener   EventListener
-	blockstore *store.BlockStore
-	config     *BtcConfig
+	id uint8
+
+	listener EventListener
+	executor *executor.Executor
+	mh       *executor.BtcMessageHandler
+
 	startBlock *big.Int
 	logger     zerolog.Logger
 }
 
 func NewBtcChain(
-	connection *rpcclient.Client, listener EventListener,
-	blockstore *store.BlockStore, config *BtcConfig,
+	listener EventListener,
+	executor *executor.Executor,
+	mh *executor.BtcMessageHandler,
+	id uint8,
 ) *BtcChain {
 	return &BtcChain{
-		connection: connection,
-		listener:   listener,
-		blockstore: blockstore,
-		config:     config,
-		logger:     log.With().Str("domainID", string(*config.GeneralChainConfig.Id)).Logger()}
+		listener: listener,
+		executor: executor,
+		mh:       mh,
+		id:       id,
+
+		logger: log.With().Uint8("domainID", id).Logger()}
 }
 
-func (c *BtcChain) Write(msgs []*proposal.Proposal) error {
+func (c *BtcChain) Write(props []*proposal.Proposal) error {
+	err := c.executor.Execute(props)
+	if err != nil {
+		c.logger.Err(err).Str("messageID", props[0].MessageID).Msgf("error writing proposals %+v on network %d", props, c.DomainID())
+		return err
+	}
+
 	return nil
+}
+
+func (c *BtcChain) ReceiveMessage(m *message.Message) (*proposal.Proposal, error) {
+	return c.mh.HandleMessage(m)
 }
 
 // PollEvents is the goroutine that polls blocks and searches Deposit events in them.
@@ -55,5 +69,5 @@ func (c *BtcChain) PollEvents(ctx context.Context) {
 }
 
 func (c *BtcChain) DomainID() uint8 {
-	return *c.config.GeneralChainConfig.Id
+	return c.id
 }

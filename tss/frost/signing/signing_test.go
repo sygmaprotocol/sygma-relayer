@@ -5,9 +5,11 @@ package signing_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
@@ -18,6 +20,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"
+	"github.com/taurusgroup/multi-party-sig/pkg/math/curve"
 )
 
 type SigningTestSuite struct {
@@ -33,6 +36,22 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	coordinators := []*tss.Coordinator{}
 	processes := []tss.TssProcess{}
 
+	tweak := "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212"
+	tweakBytes, err := hex.DecodeString(tweak)
+	s.Nil(err)
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweakBytes)
+	s.Nil(err)
+
+	fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", 0))
+	testKeyshare, err := fetcher.GetKeyshare()
+	s.Nil(err)
+	tweakedKeyshare, err := testKeyshare.Key.Derive(h, nil)
+	s.Nil(err)
+
+	msgBytes := []byte("Message")
+	msg := big.NewInt(0)
+	msg.SetBytes(msgBytes)
 	for i, host := range s.Hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -41,10 +60,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		msgBytes := []byte("Message")
-		msg := big.NewInt(0)
-		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -67,12 +83,62 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 
 	sig1 := <-resultChn
 	sig2 := <-resultChn
-	s.NotEqual(sig1, sig2)
-	if sig1 == nil && sig2 == nil {
-		s.Fail("signature is nil")
+	tSig1 := sig1.(signing.Signature)
+	tSig2 := sig2.(signing.Signature)
+	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig1.Signature, msg.Bytes()), true)
+	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig2.Signature, msg.Bytes()), true)
+	cancel()
+	err = pool.Wait()
+	s.Nil(err)
+}
+
+func (s *SigningTestSuite) Test_ProcessTimeout() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := []tss.TssProcess{}
+
+	tweak := "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212"
+	tweakBytes, err := hex.DecodeString(tweak)
+	s.Nil(err)
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweakBytes)
+	s.Nil(err)
+
+	msgBytes := []byte("Message")
+	msg := big.NewInt(0)
+	msg.SetBytes(msgBytes)
+	for i, host := range s.Hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
+
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
+		if err != nil {
+			panic(err)
+		}
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinator.TssTimeout = time.Nanosecond
+		coordinators = append(coordinators, coordinator)
+		processes = append(processes, signing)
+	}
+	tsstest.SetupCommunication(communicationMap)
+
+	resultChn := make(chan interface{})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(ctx)
+	for i, coordinator := range coordinators {
+		coordinator := coordinator
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, processes[i], resultChn)
+		})
 	}
 
+	err = pool.Wait()
+	s.NotNil(err)
 	cancel()
-	err := pool.Wait()
-	s.Nil(err)
 }
