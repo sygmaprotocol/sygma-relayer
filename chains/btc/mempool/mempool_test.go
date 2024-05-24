@@ -29,13 +29,13 @@ func (s *MempoolTestSuite) SetupTest() {
 	s.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/address/testaddress/utxo" {
 			w.WriteHeader(http.StatusOK)
-			w.Write(jsonFileToBytes("./test-data/successful-utxo.json"))
+			_, _ = w.Write(jsonFileToBytes("./test-data/successful-utxo.json"))
 		} else if r.URL.Path == "/api/v1/fees/recommended" {
 			w.WriteHeader(http.StatusOK)
-			w.Write(jsonFileToBytes("./test-data/successful-fee.json"))
+			_, _ = w.Write(jsonFileToBytes("./test-data/successful-fee.json"))
 		} else {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("{\"status\":\"Not found\"}"))
+			_, _ = w.Write([]byte("{\"status\":\"Not found\"}"))
 		}
 	}))
 	s.mempoolAPI = mempool.NewMempoolAPI(s.server.URL)

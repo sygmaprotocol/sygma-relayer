@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/store"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 	mock_store "github.com/sygmaprotocol/sygma-core/mock"
 	"github.com/syndtr/goleveldb/leveldb"
+	"go.uber.org/mock/gomock"
 )
 
 type PropStoreTestSuite struct {
