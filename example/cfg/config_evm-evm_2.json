@@ -107,7 +107,7 @@
       "script": "51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5",
       "tweak": "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212",
       "network": "regtest",
-      "username": "username",
+      "username": "user",
       "password": "password",
       "resources": [
         {

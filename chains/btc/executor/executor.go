@@ -98,14 +98,13 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	if len(proposals) == 0 {
-		return nil
-	}
 	sessionID := proposals[0].MessageID
-
 	props, err := e.proposalsForExecution(proposals)
 	if err != nil {
 		return err
+	}
+	if len(props) == 0 {
+		return nil
 	}
 
 	tx, utxos, err := e.rawTx(props)
@@ -317,7 +316,7 @@ func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*pro
 		}
 
 		if executed {
-			log.Info().Msgf("Proposal %p already executed", prop)
+			log.Info().Msgf("Proposal %s already executed", fmt.Sprintf("%d-%d-%d", prop.Source, prop.Destination, prop.Data.(BtcTransferProposalData).DepositNonce))
 			continue
 		}
 
@@ -338,10 +337,9 @@ func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
 	}
 
 	if status == store.MissingProp || status == store.FailedProp {
-		return true, nil
+		return false, nil
 	}
-
-	return false, err
+	return true, err
 }
 
 func (e *Executor) storeProposalsStatus(props []*proposal.Proposal, status store.PropStatus) {

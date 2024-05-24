@@ -255,7 +255,7 @@ func Run() error {
 					config.GeneralChainConfig.Endpoint,
 					config.Username,
 					config.Password,
-					false)
+					true)
 				if err != nil {
 					panic(err)
 				}

@@ -12,14 +12,14 @@ type Connection struct {
 	*rpcclient.Client
 }
 
-func NewBtcConnection(url string, username string, password string, tls bool) (*Connection, error) {
+func NewBtcConnection(url string, username string, password string, disableTLS bool) (*Connection, error) {
 	// Connect to a Bitcoin node using RPC
 	connConfig := &rpcclient.ConnConfig{
 		HTTPPostMode: true,
 		Host:         url,
 		User:         username,
 		Pass:         password,
-		DisableTLS:   tls,
+		DisableTLS:   disableTLS,
 	}
 
 	client, err := rpcclient.New(connConfig, nil)

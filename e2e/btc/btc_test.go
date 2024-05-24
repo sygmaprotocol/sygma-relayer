@@ -44,6 +44,9 @@ type TestClient interface {
 
 func Test_EVMBtc(t *testing.T) {
 	evmConfig := evm.DEFAULT_CONFIG
+	evmConfig.Erc20LockReleaseAddr = common.HexToAddress("0x8f5b7716a0A5f94Ea10590F9070442f285a31116")
+	evmConfig.Erc20LockReleaseResourceID = evm.SliceTo32Bytes(common.LeftPadBytes([]byte{9}, 31))
+
 	ethClient, err := evmClient.NewEVMClient(evm.ETHEndpoint1, evm.AdminAccount)
 	if err != nil {
 		panic(err)
@@ -101,7 +104,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Btc() {
-	conn, err := connection.NewBtcConnection(btc.BtcEndpoint, "user", "password", false)
+	conn, err := connection.NewBtcConnection(btc.BtcEndpoint, "user", "password", true)
 	s.Nil(err)
 
 	addr, err := btcutil.DecodeAddress("bcrt1pja8aknn7te4empmghnyqnrtjqn0lyg5zy3p5jsdp4le930wnpnxsrtd3ht", &chaincfg.RegressionNetParams)
