@@ -27,6 +27,7 @@ type MpcRelayerConfig struct {
 	TopologyConfiguration   TopologyConfiguration
 	Port                    uint16
 	KeysharePath            string
+	FrostKeysharePath       string
 	Key                     string
 	CommHealthCheckInterval time.Duration
 }
@@ -58,6 +59,7 @@ type RawRelayerConfig struct {
 
 type RawMpcRelayerConfig struct {
 	KeysharePath            string                `mapstructure:"KeysharePath" json:"keysharePath"`
+	FrostKeysharePath       string                `mapstructure:"FrostKeysharePath" json:"frostKeysharePath"`
 	Key                     string                `mapstructure:"Key" json:"key"`
 	Port                    string                `mapstructure:"Port" json:"port" default:"9000"`
 	TopologyConfiguration   TopologyConfiguration `mapstructure:"TopologyConfiguration" json:"topologyConfiguration"`
@@ -135,6 +137,7 @@ func parseMpcConfig(rawConfig RawRelayerConfig) (MpcRelayerConfig, error) {
 
 	mpcConfig.TopologyConfiguration = rawConfig.MpcConfig.TopologyConfiguration
 	mpcConfig.KeysharePath = rawConfig.MpcConfig.KeysharePath
+	mpcConfig.FrostKeysharePath = rawConfig.MpcConfig.FrostKeysharePath
 	mpcConfig.Key = rawConfig.MpcConfig.Key
 
 	duration, err := time.ParseDuration(rawConfig.MpcConfig.CommHealthCheckInterval)

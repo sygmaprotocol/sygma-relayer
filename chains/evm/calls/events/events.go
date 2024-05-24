@@ -17,6 +17,7 @@ func (es EventSig) GetTopic() common.Hash {
 const (
 	DepositSig           EventSig = "Deposit(uint8,bytes32,uint64,address,bytes,bytes)"
 	StartKeygenSig       EventSig = "StartKeygen()"
+	StartFrostKeygenSig  EventSig = "StartedFROSTKeygen()"
 	KeyRefreshSig        EventSig = "KeyRefresh(string)"
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32,bytes)"
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
