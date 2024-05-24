@@ -305,8 +305,6 @@ func Run() error {
 		case "btc":
 			{
 				log.Info().Msgf("Registering btc domain")
-				time.Sleep(time.Second * 5)
-
 				config, err := btc.NewBtcConfig(chainConfig)
 				if err != nil {
 					panic(err)
@@ -316,7 +314,7 @@ func Run() error {
 					config.GeneralChainConfig.Endpoint,
 					config.Username,
 					config.Password,
-					true)
+					false)
 				if err != nil {
 					panic(err)
 				}
