@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains"
+	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -23,6 +25,8 @@ import (
 	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	propStore "github.com/ChainSafe/sygma-relayer/store"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	coreSubstrate "github.com/sygmaprotocol/sygma-core/chains/substrate"
 	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
@@ -32,6 +36,9 @@ import (
 	"github.com/sygmaprotocol/sygma-core/store"
 	"github.com/sygmaprotocol/sygma-core/store/lvldb"
 
+	btcConnection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
+	btcExecutor "github.com/ChainSafe/sygma-relayer/chains/btc/executor"
+	btcListener "github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	substrateExecutor "github.com/ChainSafe/sygma-relayer/chains/substrate/executor"
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
@@ -116,8 +123,6 @@ func Run() error {
 	communication := p2p.NewCommunication(host, "p2p/sygma")
 	electorFactory := elector.NewCoordinatorElectorFactory(host, configuration.RelayerConfig.BullyConfig)
 	coordinator := tss.NewCoordinator(host, communication, electorFactory)
-	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
-	frostKeyshareStore := keyshare.NewFrostKeyshareStore(configuration.RelayerConfig.MpcConfig.FrostKeysharePath)
 
 	// this is temporary solution related to specifics of aws deployment
 	// effectively it waits until old instance is killed
@@ -133,6 +138,9 @@ func Run() error {
 		}
 	}
 	blockstore := store.NewBlockStore(db)
+	keyshareStore := keyshare.NewECDSAKeyshareStore(configuration.RelayerConfig.MpcConfig.KeysharePath)
+	frostKeyshareStore := keyshare.NewFrostKeyshareStore(configuration.RelayerConfig.MpcConfig.FrostKeysharePath)
+	propStore := propStore.NewPropStore(db)
 
 	// wait until executions are done and then stop further executions before exiting
 	exitLock := &sync.RWMutex{}
@@ -293,6 +301,56 @@ func Run() error {
 				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, startBlock)
 
 				domains[*config.GeneralChainConfig.Id] = substrateChain
+			}
+		case "btc":
+			{
+				log.Info().Msgf("Registering btc domain")
+				time.Sleep(time.Second * 5)
+
+				config, err := btc.NewBtcConfig(chainConfig)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := btcConnection.NewBtcConnection(
+					config.GeneralChainConfig.Endpoint,
+					config.Username,
+					config.Password,
+					true)
+				if err != nil {
+					panic(err)
+				}
+
+				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
+				depositHandler := &btcListener.BtcDepositHandler{}
+				eventHandlers := make([]btcListener.EventHandler, 0)
+				resourceAddresses := make(map[[32]byte]btcutil.Address)
+				for _, resource := range config.Resources {
+					resourceAddresses[resource.ResourceID] = resource.Address
+
+					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource))
+				}
+				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
+
+				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
+				mh := &btcExecutor.BtcMessageHandler{}
+				executor := btcExecutor.NewExecutor(
+					propStore,
+					host,
+					communication,
+					coordinator,
+					frostKeyshareStore,
+					conn,
+					mempool,
+					resourceAddresses,
+					config.Tweak,
+					config.Script,
+					config.Network,
+					exitLock)
+
+				btcChain := btc.NewBtcChain(listener, executor, mh, *config.GeneralChainConfig.Id)
+				domains[*config.GeneralChainConfig.Id] = btcChain
+
 			}
 		default:
 			panic(fmt.Errorf("type '%s' not recognized", chainConfig["type"]))
