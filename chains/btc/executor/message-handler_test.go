@@ -1,6 +1,7 @@
 package executor_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/executor"
@@ -26,7 +27,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage() {
 			DepositNonce: 1,
 			ResourceId:   [32]byte{0},
 			Payload: []interface{}{
-				[]byte{2}, // amount
+				big.NewInt(100000045678).Bytes(), // amount
 				[]byte("tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83"),
 			},
 			Type: transfer.FungibleTransfer,
@@ -43,7 +44,40 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage() {
 		Source:      1,
 		Destination: 0,
 		Data: executor.BtcTransferProposalData{
-			Amount:       2,
+			Amount:       10,
+			Recipient:    "tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83",
+			DepositNonce: 1,
+		},
+		Type: transfer.TransferProposalType,
+	})
+}
+
+func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage_Dust() {
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				big.NewInt(1).Bytes(), // amount
+				[]byte("tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83"),
+			},
+			Type: transfer.FungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.BtcMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(err)
+	s.NotNil(prop)
+	s.Equal(prop, &proposal.Proposal{
+		Source:      1,
+		Destination: 0,
+		Data: executor.BtcTransferProposalData{
+			Amount:       0,
 			Recipient:    "tb1pffdrehs8455lgnwquggf4dzf6jduz8v7d2usflyujq4ggh4jaapqpfjj83",
 			DepositNonce: 1,
 		},

@@ -51,6 +51,12 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 		return nil, errors.New("wrong payload recipient format")
 	}
 	bigAmount := new(big.Int).SetBytes(amount)
+
+	// remove 10 decimal places to match Bitcoin network
+	divisor := new(big.Int)
+	divisor.Exp(big.NewInt(10), big.NewInt(10), nil)
+	bigAmount.Div(bigAmount, divisor)
+
 	return proposal.NewProposal(msg.Source, msg.Destination, BtcTransferProposalData{
 		Amount:       bigAmount.Int64(),
 		Recipient:    string(recipient),
