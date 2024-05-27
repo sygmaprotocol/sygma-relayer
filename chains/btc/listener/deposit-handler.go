@@ -37,6 +37,10 @@ func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
 		return nil, err
 	}
 
+	// add 10 decimal places (8->18)
+	multiplier := new(big.Int)
+	multiplier.Exp(big.NewInt(10), big.NewInt(10), nil)
+	amount.Mul(amount, multiplier)
 	payload := []interface{}{
 		amount.Bytes(),
 		evmAdd,

@@ -77,7 +77,6 @@ func (s *DepositHandlerTestSuite) Test_CalculateNonceFail_BlockNumberOverflow() 
 }
 
 func (s *DepositHandlerTestSuite) Test_CalculateNonce() {
-
 	blockNumber := big.NewInt(123)
 	nonce, err := s.fungibleTransferEventHandler.CalculateNonce(blockNumber, 4)
 	s.Equal(nonce, uint64(1234))
@@ -85,7 +84,6 @@ func (s *DepositHandlerTestSuite) Test_CalculateNonce() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
-
 	blockNumber := big.NewInt(100)
 	data2 := map[string]any{
 		"deposit_nonce": uint64(1001),

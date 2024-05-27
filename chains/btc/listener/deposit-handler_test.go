@@ -36,6 +36,7 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 
 	sourceID := uint8(1)
 
+	expectedAmount := big.NewInt(1000000000000)
 	blockNumber := big.NewInt(100)
 	depositNonce := uint64(1)
 	dat := strings.Split(deposit.Data, "_")
@@ -49,7 +50,7 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 			DepositNonce: depositNonce,
 			ResourceId:   deposit.ResourceID,
 			Payload: []interface{}{
-				deposit.Amount.Bytes(),
+				expectedAmount.Bytes(),
 				evmAdd,
 			},
 			Type: transfer.FungibleTransfer,
