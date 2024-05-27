@@ -79,8 +79,6 @@ loop:
 				continue
 			}
 
-			log.Info().Msgf("Fetching btc events for block %d", block.Height)
-
 			head := big.NewInt(block.Height)
 			if startBlock == nil {
 				startBlock = head
@@ -91,6 +89,8 @@ loop:
 				time.Sleep(l.blockRetryInterval)
 				continue
 			}
+
+			log.Info().Msgf("Fetching btc events for block %d", block.Height)
 
 			for _, handler := range l.eventHandlers {
 				err := handler.HandleEvents(startBlock)
@@ -105,7 +105,6 @@ loop:
 			if err != nil {
 				l.log.Error().Str("block", startBlock.String()).Err(err).Msg("Failed to write latest block to blockstore")
 			}
-
 			startBlock.Add(startBlock, big.NewInt(1))
 		}
 	}

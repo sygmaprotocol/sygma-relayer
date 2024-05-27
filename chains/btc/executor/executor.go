@@ -198,7 +198,11 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 }
 
 func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool.Utxo, error) {
-	resourceAddress := e.resourceAddresses[proposals[0].Data.(BtcTransferProposalData).ResourceId]
+	resourceAddress, ok := e.resourceAddresses[proposals[0].Data.(BtcTransferProposalData).ResourceId]
+	if !ok {
+		return nil, nil, fmt.Errorf("no address for resource")
+	}
+
 	tx := wire.NewMsgTx(wire.TxVersion)
 	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
