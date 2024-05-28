@@ -90,7 +90,7 @@ loop:
 				continue
 			}
 
-			log.Info().Msgf("Fetching btc events for block %d", block.Height)
+			log.Debug().Msgf("Fetching btc events for block %d", block.Height)
 
 			for _, handler := range l.eventHandlers {
 				err := handler.HandleEvents(startBlock)
