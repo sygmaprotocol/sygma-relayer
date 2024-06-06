@@ -92,19 +92,19 @@ var DEFAULT_CONFIG = BridgeConfig{
 	Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
 	Erc20LockReleaseResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-	Erc721Addr:        common.HexToAddress("0xABEF96bFC837D1Bc3dA7CCAE29Ca7Fde633aFc56"),
+	Erc721Addr:        common.HexToAddress("0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"),
 	Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 	Erc721ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-	GenericHandlerAddr: common.HexToAddress("0xb61bd8740F60e0Bfc1b5C3fA2Bb9810e4AEf8938"),
+	GenericHandlerAddr: common.HexToAddress("0xF956Ba663bd563f585e00D5973E06b443E5C4D65"),
 	GenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-	AssetStoreAddr:     common.HexToAddress("0xaF831F8eCFC012e269BeD49531ebC794bDEc2fC0"),
+	AssetStoreAddr:     common.HexToAddress("0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"),
 
-	PermissionlessGenericHandlerAddr: common.HexToAddress("0x61d101704F9cC889d8a5496aE5f4ade01e687E47"),
+	PermissionlessGenericHandlerAddr: common.HexToAddress("0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"),
 	PermissionlessGenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
-	Erc1155Addr:        common.HexToAddress("0x94e9070f0354b69e7fb583134a820949a390d341"),
-	Erc1155HandlerAddr: common.HexToAddress("0xa3523820dc62aab22920D871fa7D8600372aC2EE"),
+	Erc1155Addr:        common.HexToAddress("0xFfd243c2C27e303e6d96aA4F7b3840Bf7209F0d7"),
+	Erc1155HandlerAddr: common.HexToAddress("0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"),
 	Erc1155ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
 
 	BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),

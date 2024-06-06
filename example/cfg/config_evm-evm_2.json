@@ -32,15 +32,15 @@
         },
         {
           "type": "erc1155",
-          "address": "0xa3523820dc62aab22920D871fa7D8600372aC2EE"
+          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
         },
         {
           "type": "permissionedGeneric",
-          "address": "0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"
+          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"
+          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
         }
       ],
       "gasLimit": 9000000,
@@ -65,15 +65,15 @@
         },
         {
           "type": "erc1155",
-          "address": "0xa3523820dc62aab22920D871fa7D8600372aC2EE"
+          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
         },
         {
           "type": "permissionedGeneric",
-          "address": "0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"
+          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"
+          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
         }
       ],
       "gasLimit": 9000000,
@@ -112,7 +112,7 @@
       "resources": [
         {
           "address": "bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek",
-          "resourceId": "0x0000000000000000000000000000000000000000000000000000000000000900"
+          "resourceId": "0x0000000000000000000000000000000000000000000000000000000000001000"
         }
       ]
     }

@@ -128,7 +128,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			},
 			{
 				ScriptPubKey: btcjson.ScriptPubKeyResult{
-					Type:    "witness_v0_keyhash",
+					Type:    "witness_v1_taproot",
 					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
 				},
 				Value: float64(0.00019),
@@ -152,7 +152,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			},
 			{
 				ScriptPubKey: btcjson.ScriptPubKeyResult{
-					Type:    "witness_v0_keyhash",
+					Type:    "witness_v1_taproot",
 					Address: "invalidBridgeAddressuhdunc9stwfh6t7adexxrcr04ppy6thgm",
 				},
 				Value: float64(0.00019),

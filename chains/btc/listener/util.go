@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	PubKeyHash       = "pubkeyhash"
-	ScriptHash       = "scripthash"
-	WitnessV0KeyHash = "witness_v0_keyhash"
+	WitnessV1Taproot = "witness_v1_taproot"
 	OP_RETURN        = "nulldata"
 )
 
@@ -35,7 +33,7 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, resource btc.Resource) (Deposit
 		if resource.Address.String() == vout.ScriptPubKey.Address {
 			isBridgeDeposit = true
 			resourceID = resource.ResourceID
-			if vout.ScriptPubKey.Type == PubKeyHash || vout.ScriptPubKey.Type == ScriptHash || vout.ScriptPubKey.Type == WitnessV0KeyHash {
+			if vout.ScriptPubKey.Type == WitnessV1Taproot {
 				amount.Add(amount, big.NewInt(int64(vout.Value*1e8)))
 			}
 		}
