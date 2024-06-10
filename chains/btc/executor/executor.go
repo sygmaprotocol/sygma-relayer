@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -49,13 +50,11 @@ type Executor struct {
 	host        host.Host
 	comm        comm.Communication
 
-	conn              *connection.Connection
-	resourceAddresses map[[32]byte]btcutil.Address
-	tweak             string
-	script            []byte
-	chainCfg          chaincfg.Params
-	mempool           MempoolAPI
-	fetcher           signing.SaveDataFetcher
+	conn      *connection.Connection
+	resources map[[32]byte]config.Resource
+	chainCfg  chaincfg.Params
+	mempool   MempoolAPI
+	fetcher   signing.SaveDataFetcher
 
 	propStorer PropStorer
 	propMutex  sync.Mutex
@@ -71,25 +70,21 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
 	mempool MempoolAPI,
-	resourceAddresses map[[32]byte]btcutil.Address,
-	tweak string,
-	script []byte,
+	resources map[[32]byte]config.Resource,
 	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
-		propStorer:        propStorer,
-		host:              host,
-		comm:              comm,
-		coordinator:       coordinator,
-		exitLock:          exitLock,
-		fetcher:           fetcher,
-		conn:              conn,
-		resourceAddresses: resourceAddresses,
-		tweak:             tweak,
-		script:            script,
-		mempool:           mempool,
-		chainCfg:          chainCfg,
+		propStorer:  propStorer,
+		host:        host,
+		comm:        comm,
+		coordinator: coordinator,
+		exitLock:    exitLock,
+		fetcher:     fetcher,
+		conn:        conn,
+		resources:   resources,
+		mempool:     mempool,
+		chainCfg:    chainCfg,
 	}
 }
 
@@ -107,7 +102,12 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		return nil
 	}
 
-	tx, utxos, err := e.rawTx(props)
+	resource, ok := e.resources[proposals[0].Data.(BtcTransferProposalData).ResourceId]
+	if !ok {
+		return fmt.Errorf("no address for resource")
+	}
+
+	tx, utxos, err := e.rawTx(props, resource)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
 	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
 	for _, utxo := range utxos {
-		txOut := wire.NewTxOut(int64(utxo.Value), e.script)
+		txOut := wire.NewTxOut(int64(utxo.Value), resource.Script)
 		hash, err := chainhash.NewHashFromStr(utxo.TxID)
 		if err != nil {
 			return err
@@ -142,7 +142,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 			signing, err := signing.NewSigning(
 				i,
 				msg,
-				e.tweak,
+				resource.Tweak,
 				fmt.Sprintf("%s-%d", sessionID, i),
 				e.host,
 				e.comm,
@@ -197,18 +197,13 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool.Utxo, error) {
-	resourceAddress, ok := e.resourceAddresses[proposals[0].Data.(BtcTransferProposalData).ResourceId]
-	if !ok {
-		return nil, nil, fmt.Errorf("no address for resource")
-	}
-
+func (e *Executor) rawTx(proposals []*proposal.Proposal, resource config.Resource) (*wire.MsgTx, []mempool.Utxo, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
 		return nil, nil, err
 	}
-	inputAmount, utxos, err := e.inputs(tx, resourceAddress, outputAmount)
+	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,7 +218,7 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 	returnAmount := int64(inputAmount) - fee - outputAmount
 	if returnAmount > 0 {
 		// return extra funds
-		returnScript, err := txscript.PayToAddrScript(resourceAddress)
+		returnScript, err := txscript.PayToAddrScript(resource.Address)
 		if err != nil {
 			return nil, nil, err
 		}

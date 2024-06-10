@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/listener"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/btc/listener/mock"
 	"github.com/ChainSafe/sygma-relayer/config/chain"
@@ -32,7 +32,7 @@ func TestRunTestSuite(t *testing.T) {
 
 func (s *ListenerTestSuite) SetupTest() {
 	s.domainID = 1
-	btcConfig := btc.BtcConfig{
+	btcConfig := config.BtcConfig{
 		GeneralChainConfig: chain.GeneralChainConfig{
 			Id: &s.domainID,
 		},

@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,10 +41,10 @@ type FungibleTransferEventHandler struct {
 	log            zerolog.Logger
 	conn           Connection
 	msgChan        chan []*message.Message
-	resource       btc.Resource
+	resource       config.Resource
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource btc.Resource) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource config.Resource) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
