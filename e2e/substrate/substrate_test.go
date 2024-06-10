@@ -125,7 +125,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 }
 
-/*
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	var accountInfoBefore substrate.Account
 	meta := s.substrateConnection.GetMetadata()
