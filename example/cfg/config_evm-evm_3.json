@@ -111,7 +111,9 @@
       "resources": [
         {
           "address": "bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek",
-          "resourceId": "0x0000000000000000000000000000000000000000000000000000000000001000"
+          "resourceId": "0x0000000000000000000000000000000000000000000000000000000000001000",
+          "script": "51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5",
+          "tweak": "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212"
         }
       ]
     }
