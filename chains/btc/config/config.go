@@ -1,7 +1,7 @@
 // The Licensed Work is (c) 2022 Sygma
 // SPDX-License-Identifier: LGPL-3.0-only
 
-package btc
+package config
 
 import (
 	"encoding/hex"
@@ -19,11 +19,15 @@ import (
 type RawResource struct {
 	Address    string
 	ResourceID string
+	Tweak      string
+	Script     string
 }
 
 type Resource struct {
 	Address    btcutil.Address
 	ResourceID [32]byte
+	Tweak      string
+	Script     []byte
 }
 
 type RawBtcConfig struct {
@@ -36,8 +40,6 @@ type RawBtcConfig struct {
 	BlockRetryInterval       uint64        `mapstructure:"blockRetryInterval" default:"5"`
 	BlockConfirmations       int64         `mapstructure:"blockConfirmations" default:"10"`
 	Network                  string        `mapstructure:"network" default:"mainnet"`
-	Tweak                    string        `mapstructure:"tweak"`
-	Script                   string        `mapstructure:"script"`
 	MempoolUrl               string        `mapstructure:"mempoolUrl"`
 }
 
@@ -101,6 +103,11 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 
 	resources := make([]Resource, len(c.Resources))
 	for i, r := range c.Resources {
+		scriptBytes, err := hex.DecodeString(r.Script)
+		if err != nil {
+			return nil, err
+		}
+
 		address, err := btcutil.DecodeAddress(r.Address, &networkParams)
 		if err != nil {
 			return nil, err
@@ -114,14 +121,12 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		resources[i] = Resource{
 			Address:    address,
 			ResourceID: resource32Bytes,
+			Script:     scriptBytes,
+			Tweak:      r.Tweak,
 		}
 	}
 
 	c.GeneralChainConfig.ParseFlags()
-	scriptBytes, err := hex.DecodeString(c.Script)
-	if err != nil {
-		return nil, err
-	}
 	config := &BtcConfig{
 		GeneralChainConfig: c.GeneralChainConfig,
 		StartBlock:         big.NewInt(c.StartBlock),
@@ -131,8 +136,6 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		Username:           c.Username,
 		Password:           c.Password,
 		Network:            networkParams,
-		Tweak:              c.Tweak,
-		Script:             scriptBytes,
 		MempoolUrl:         c.MempoolUrl,
 		Resources:          resources,
 	}

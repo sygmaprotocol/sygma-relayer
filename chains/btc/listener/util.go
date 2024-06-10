@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
 )
 
@@ -13,7 +13,7 @@ const (
 	OP_RETURN        = "nulldata"
 )
 
-func DecodeDepositEvent(evt btcjson.TxRawResult, resource btc.Resource) (Deposit, bool, error) {
+func DecodeDepositEvent(evt btcjson.TxRawResult, resource config.Resource) (Deposit, bool, error) {
 	amount := big.NewInt(0)
 	isBridgeDeposit := false
 	sender := ""
