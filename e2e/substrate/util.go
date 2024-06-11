@@ -33,6 +33,10 @@ var SubstratePK = signature.KeyringPair{
 	Address:   "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 }
 
+const (
+	SubstrateEndpoint = "ws://localhost:9944"
+)
+
 type USDCAsset struct{}
 
 func (a USDCAsset) Encode(encoder scale.Encoder) error {

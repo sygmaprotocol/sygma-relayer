@@ -24,16 +24,17 @@ test:
 	./scripts/tests.sh
 
 genmocks:
-	mockgen -destination=./tss/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
-	mockgen -destination=./tss/common/mock/communication.go -source=./tss/common/base.go -package mock_tss
-	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go
-	mockgen -destination=./tss/keygen/mock/storer.go -source=./tss/keygen/keygen.go
-	mockgen --package mock_tss -destination=./tss/mock/storer.go -source=./tss/resharing/resharing.go
+	mockgen -destination=./tss/ecdsa/common/mock/tss.go github.com/binance-chain/tss-lib/tss Message
+	mockgen -destination=./tss/ecdsa/common/mock/communication.go -source=./tss/ecdsa/common/base.go -package mock_tss
+	mockgen --package mock_tss -destination=./tss/mock/ecdsa.go -source=./tss/ecdsa/keygen/keygen.go
+	mockgen --package mock_tss -destination=./tss/mock/frost.go -source=./tss/frost/keygen/keygen.go
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 	mockgen -source=./chains/evm/listener/eventHandlers/event-handler.go -destination=./chains/evm/listener/eventHandlers/mock/listener.go
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
 	mockgen -source=./chains/substrate/listener/event-handlers.go -destination=./chains/substrate/listener/mock/handlers.go
+	mockgen -source=./chains/btc/listener/event-handlers.go -destination=./chains/btc/listener/mock/handlers.go
+	mockgen -source=./chains/btc/listener/listener.go -destination=./chains/btc/listener/mock/listener.go
 	mockgen -source=./topology/topology.go -destination=./topology/mock/topology.go
 
 

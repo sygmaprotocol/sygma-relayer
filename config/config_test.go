@@ -64,6 +64,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEY", "test-pk")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_FROSTKEYSHAREPATH", "/cfg/keyshares/0-frost.keyshare")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_PORT", "9000")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
@@ -97,6 +98,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				},
 				Port:                    9000,
 				KeysharePath:            "/cfg/keyshares/0.keyshare",
+				FrostKeysharePath:       "/cfg/keyshares/0-frost.keyshare",
 				Key:                     "test-pk",
 				CommHealthCheckInterval: 5 * time.Minute,
 			},

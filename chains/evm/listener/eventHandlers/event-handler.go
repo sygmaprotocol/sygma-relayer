@@ -21,8 +21,9 @@ import (
 	"github.com/ChainSafe/sygma-relayer/comm/p2p"
 	"github.com/ChainSafe/sygma-relayer/topology"
 	"github.com/ChainSafe/sygma-relayer/tss"
-	"github.com/ChainSafe/sygma-relayer/tss/keygen"
-	"github.com/ChainSafe/sygma-relayer/tss/resharing"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
+	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
+	frostKeygen "github.com/ChainSafe/sygma-relayer/tss/frost/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -30,6 +31,7 @@ import (
 
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
+	FetchFrostKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Refresh, error)
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryEvent, error)
 	FetchRetryDepositEvents(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
@@ -125,7 +127,7 @@ type KeygenEventHandler struct {
 	coordinator   *tss.Coordinator
 	host          host.Host
 	communication comm.Communication
-	storer        keygen.SaveDataStorer
+	storer        keygen.ECDSAKeyshareStorer
 	bridgeAddress common.Address
 	threshold     int
 }
@@ -136,7 +138,7 @@ func NewKeygenEventHandler(
 	coordinator *tss.Coordinator,
 	host host.Host,
 	communication comm.Communication,
-	storer keygen.SaveDataStorer,
+	storer keygen.ECDSAKeyshareStorer,
 	bridgeAddress common.Address,
 	threshold int,
 ) *KeygenEventHandler {
@@ -167,7 +169,6 @@ func (eh *KeygenEventHandler) HandleEvents(
 	if err != nil {
 		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
 	}
-
 	if len(keygenEvents) == 0 {
 		return nil
 	}
@@ -187,6 +188,76 @@ func (eh *KeygenEventHandler) HandleEvents(
 
 func (eh *KeygenEventHandler) sessionID(block *big.Int) string {
 	return fmt.Sprintf("keygen-%s", block.String())
+}
+
+type FrostKeygenEventHandler struct {
+	log             zerolog.Logger
+	eventListener   EventListener
+	coordinator     *tss.Coordinator
+	host            host.Host
+	communication   comm.Communication
+	storer          frostKeygen.FrostKeyshareStorer
+	contractAddress common.Address
+	threshold       int
+}
+
+func NewFrostKeygenEventHandler(
+	logC zerolog.Context,
+	eventListener EventListener,
+	coordinator *tss.Coordinator,
+	host host.Host,
+	communication comm.Communication,
+	storer frostKeygen.FrostKeyshareStorer,
+	contractAddress common.Address,
+	threshold int,
+) *FrostKeygenEventHandler {
+	return &FrostKeygenEventHandler{
+		log:             logC.Logger(),
+		eventListener:   eventListener,
+		coordinator:     coordinator,
+		host:            host,
+		communication:   communication,
+		storer:          storer,
+		contractAddress: contractAddress,
+		threshold:       threshold,
+	}
+}
+
+func (eh *FrostKeygenEventHandler) HandleEvents(
+	startBlock *big.Int,
+	endBlock *big.Int,
+) error {
+	key, err := eh.storer.GetKeyshare()
+	if (key.Threshold != 0) && (err == nil) {
+		return nil
+	}
+
+	keygenEvents, err := eh.eventListener.FetchFrostKeygenEvents(
+		context.Background(), eh.contractAddress, startBlock, endBlock,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to fetch keygen events because of: %+v", err)
+	}
+
+	if len(keygenEvents) == 0 {
+		return nil
+	}
+
+	eh.log.Info().Msgf(
+		"Resolved FROST keygen message in block range: %s-%s", startBlock.String(), endBlock.String(),
+	)
+
+	keygenBlockNumber := big.NewInt(0).SetUint64(keygenEvents[0].BlockNumber)
+	keygen := frostKeygen.NewKeygen(eh.sessionID(keygenBlockNumber), eh.threshold, eh.host, eh.communication, eh.storer)
+	err = eh.coordinator.Execute(context.Background(), keygen, make(chan interface{}, 1))
+	if err != nil {
+		log.Err(err).Msgf("Failed executing keygen")
+	}
+	return nil
+}
+
+func (eh *FrostKeygenEventHandler) sessionID(block *big.Int) string {
+	return fmt.Sprintf("frost-keygen-%s", block.String())
 }
 
 type RefreshEventHandler struct {

@@ -69,6 +69,7 @@ func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 }
 
 func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string) {
+	// simulate real world conditions
 	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }
 

@@ -54,6 +54,21 @@ func (mr *MockEventListenerMockRecorder) FetchDeposits(ctx, address, startBlock,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchDeposits", reflect.TypeOf((*MockEventListener)(nil).FetchDeposits), ctx, address, startBlock, endBlock)
 }
 
+// FetchFrostKeygenEvents mocks base method.
+func (m *MockEventListener) FetchFrostKeygenEvents(ctx context.Context, address common.Address, startBlock, endBlock *big.Int) ([]types.Log, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchFrostKeygenEvents", ctx, address, startBlock, endBlock)
+	ret0, _ := ret[0].([]types.Log)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchFrostKeygenEvents indicates an expected call of FetchFrostKeygenEvents.
+func (mr *MockEventListenerMockRecorder) FetchFrostKeygenEvents(ctx, address, startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchFrostKeygenEvents", reflect.TypeOf((*MockEventListener)(nil).FetchFrostKeygenEvents), ctx, address, startBlock, endBlock)
+}
+
 // FetchKeygenEvents mocks base method.
 func (m *MockEventListener) FetchKeygenEvents(ctx context.Context, address common.Address, startBlock, endBlock *big.Int) ([]types.Log, error) {
 	m.ctrl.T.Helper()
