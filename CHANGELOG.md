@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.4...v2.1.0) (2024-06-11)
+
+
+### Features
+
+* bitcoin ([#296](https://github.com/sygmaprotocol/sygma-relayer/issues/296)) ([ff09579](https://github.com/sygmaprotocol/sygma-relayer/commit/ff09579a5c384f010ecd57657663c29ef26573ea))
+
 ## [2.0.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.3...v2.0.4) (2024-05-29)
 
 
