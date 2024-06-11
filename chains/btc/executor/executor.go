@@ -101,8 +101,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	if len(props) == 0 {
 		return nil
 	}
-
-	resource, ok := e.resources[proposals[0].Data.(BtcTransferProposalData).ResourceId]
+	resource, ok := e.resources[props[0].Data.ResourceId]
 	if !ok {
 		return fmt.Errorf("no address for resource")
 	}
@@ -156,7 +155,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*proposal.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*BtcTransferProposal, sigChn chan interface{}, sessionID string) error {
 	timeout := time.NewTicker(signingTimeout)
 	defer timeout.Stop()
 	defer cancelExecution()
@@ -197,7 +196,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) rawTx(proposals []*proposal.Proposal, resource config.Resource) (*wire.MsgTx, []mempool.Utxo, error) {
+func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resource) (*wire.MsgTx, []mempool.Utxo, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
@@ -228,11 +227,10 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal, resource config.Resourc
 	return tx, utxos, err
 }
 
-func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int64, error) {
+func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (int64, error) {
 	outputAmount := int64(0)
 	for _, prop := range proposals {
-		propData := prop.Data.(BtcTransferProposalData)
-		addr, err := btcutil.DecodeAddress(propData.Recipient, &e.chainCfg)
+		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
 			return 0, err
 		}
@@ -240,9 +238,9 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int6
 		if err != nil {
 			return 0, err
 		}
-		txOut := wire.NewTxOut(propData.Amount, destinationAddrByte)
+		txOut := wire.NewTxOut(prop.Data.Amount, destinationAddrByte)
 		tx.AddTxOut(txOut)
-		outputAmount += propData.Amount
+		outputAmount += prop.Data.Amount
 	}
 	return outputAmount, nil
 }
@@ -305,9 +303,9 @@ func (e *Executor) signaturesFilled(signatures []taproot.Signature) bool {
 	return true
 }
 
-func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*proposal.Proposal, error) {
+func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*BtcTransferProposal, error) {
 	e.propMutex.Lock()
-	props := make([]*proposal.Proposal, 0)
+	props := make([]*BtcTransferProposal, 0)
 	for _, prop := range proposals {
 		executed, err := e.isExecuted(prop)
 		if err != nil {
@@ -323,7 +321,11 @@ func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*pro
 		if err != nil {
 			return props, err
 		}
-		props = append(props, prop)
+		props = append(props, &BtcTransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data:        prop.Data.(BtcTransferProposalData),
+		})
 	}
 	e.propMutex.Unlock()
 	return props, nil
@@ -341,12 +343,12 @@ func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
 	return true, err
 }
 
-func (e *Executor) storeProposalsStatus(props []*proposal.Proposal, status store.PropStatus) {
+func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status store.PropStatus) {
 	for _, prop := range props {
 		err := e.propStorer.StorePropStatus(
 			prop.Source,
 			prop.Destination,
-			prop.Data.(BtcTransferProposalData).DepositNonce,
+			prop.Data.DepositNonce,
 			status)
 		if err != nil {
 			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)

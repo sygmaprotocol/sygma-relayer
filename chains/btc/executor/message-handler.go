@@ -20,6 +20,12 @@ type BtcTransferProposalData struct {
 	ResourceId   [32]byte
 }
 
+type BtcTransferProposal struct {
+	Source      uint8
+	Destination uint8
+	Data        BtcTransferProposalData
+}
+
 type BtcMessageHandler struct{}
 
 func (h *BtcMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
