@@ -7,7 +7,7 @@ name: Sygma Devnet
 on:
   push:
     branches:
-      - bitcoin
+      - main
 
 env:
   ENVIRONMENT: STAGE

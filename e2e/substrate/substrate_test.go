@@ -125,7 +125,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 }
 
-/*
 func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	var accountInfoBefore substrate.Account
 	meta := s.substrateConnection.GetMetadata()
@@ -163,7 +162,6 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
-*/
 
 var amountToDeposit = big.NewInt(100000000000000)
 
