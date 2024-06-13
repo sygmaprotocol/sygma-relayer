@@ -219,7 +219,7 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
 	s.Nil(err)
 
 	// Generate blocks to confirm the transaction
-	_, err = conn.Client.GenerateToAddress(1, add, nil)
+	_, err = conn.Client.GenerateToAddress(2, add, nil)
 	s.Nil(err)
 
 	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)
