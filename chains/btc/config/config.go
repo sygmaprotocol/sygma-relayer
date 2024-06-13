@@ -82,7 +82,6 @@ type BtcConfig struct {
 func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	var c RawBtcConfig
 	err := mapstructure.Decode(chainConfig, &c)
-
 	if err != nil {
 		return nil, err
 	}

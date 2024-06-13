@@ -27,7 +27,6 @@ func TestRunNewBtcConfigTestSuite(t *testing.T) {
 }
 
 func (s *NewBtcConfigTestSuite) Test_FailedDecode() {
-
 	_, err := config.NewBtcConfig(map[string]interface{}{
 		"gasLimit": "invalid",
 	})
