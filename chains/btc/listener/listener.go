@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ChainSafe/sygma-relayer/chains/btc"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/rs/zerolog"
@@ -41,7 +41,7 @@ type BtcListener struct {
 
 // NewBtcListener creates an BtcListener that listens to deposit events on chain
 // and calls event handler when one occurs
-func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *btc.BtcConfig, blockstore BlockStorer,
+func NewBtcListener(connection Connection, eventHandlers []EventHandler, config *config.BtcConfig, blockstore BlockStorer,
 ) *BtcListener {
 	return &BtcListener{
 		log:                log.With().Uint8("domainID", *config.GeneralChainConfig.Id).Logger(),

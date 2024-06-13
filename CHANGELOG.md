@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.1.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.4...v2.1.0) (2024-06-11)
+
+
+### Features
+
+* bitcoin ([#296](https://github.com/sygmaprotocol/sygma-relayer/issues/296)) ([ff09579](https://github.com/sygmaprotocol/sygma-relayer/commit/ff09579a5c384f010ecd57657663c29ef26573ea))
+
+## [2.0.4](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.3...v2.0.4) (2024-05-29)
+
+
+### Bug Fixes
+
+* refresh coordinator being outside the peerstore ([#283](https://github.com/sygmaprotocol/sygma-relayer/issues/283)) ([9dfee13](https://github.com/sygmaprotocol/sygma-relayer/commit/9dfee131d9bfcd69dec45b4051f3bbc655fe0971))
+
+
+### Miscellaneous
+
+* reduced devnet to one nodes per region ([#271](https://github.com/sygmaprotocol/sygma-relayer/issues/271)) ([d84aae3](https://github.com/sygmaprotocol/sygma-relayer/commit/d84aae31ea932e56516548026ffb8637f8e9f182))
+* visibility of image versions ([#292](https://github.com/sygmaprotocol/sygma-relayer/issues/292)) ([ce8a986](https://github.com/sygmaprotocol/sygma-relayer/commit/ce8a98679176c6db8647da1997917f529b916d0a))
+
 ## [2.0.3](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.2...v2.0.3) (2024-05-20)
 
 

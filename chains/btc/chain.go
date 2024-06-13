@@ -8,7 +8,6 @@ import (
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/executor"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"

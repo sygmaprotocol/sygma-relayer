@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -49,13 +50,11 @@ type Executor struct {
 	host        host.Host
 	comm        comm.Communication
 
-	conn              *connection.Connection
-	resourceAddresses map[[32]byte]btcutil.Address
-	tweak             string
-	script            []byte
-	chainCfg          chaincfg.Params
-	mempool           MempoolAPI
-	fetcher           signing.SaveDataFetcher
+	conn      *connection.Connection
+	resources map[[32]byte]config.Resource
+	chainCfg  chaincfg.Params
+	mempool   MempoolAPI
+	fetcher   signing.SaveDataFetcher
 
 	propStorer PropStorer
 	propMutex  sync.Mutex
@@ -71,25 +70,21 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	conn *connection.Connection,
 	mempool MempoolAPI,
-	resourceAddresses map[[32]byte]btcutil.Address,
-	tweak string,
-	script []byte,
+	resources map[[32]byte]config.Resource,
 	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
 ) *Executor {
 	return &Executor{
-		propStorer:        propStorer,
-		host:              host,
-		comm:              comm,
-		coordinator:       coordinator,
-		exitLock:          exitLock,
-		fetcher:           fetcher,
-		conn:              conn,
-		resourceAddresses: resourceAddresses,
-		tweak:             tweak,
-		script:            script,
-		mempool:           mempool,
-		chainCfg:          chainCfg,
+		propStorer:  propStorer,
+		host:        host,
+		comm:        comm,
+		coordinator: coordinator,
+		exitLock:    exitLock,
+		fetcher:     fetcher,
+		conn:        conn,
+		resources:   resources,
+		mempool:     mempool,
+		chainCfg:    chainCfg,
 	}
 }
 
@@ -106,8 +101,12 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	if len(props) == 0 {
 		return nil
 	}
+	resource, ok := e.resources[props[0].Data.ResourceId]
+	if !ok {
+		return fmt.Errorf("no address for resource")
+	}
 
-	tx, utxos, err := e.rawTx(props)
+	tx, utxos, err := e.rawTx(props, resource)
 	if err != nil {
 		return err
 	}
@@ -120,7 +119,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
 	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
 	for _, utxo := range utxos {
-		txOut := wire.NewTxOut(int64(utxo.Value), e.script)
+		txOut := wire.NewTxOut(int64(utxo.Value), resource.Script)
 		hash, err := chainhash.NewHashFromStr(utxo.TxID)
 		if err != nil {
 			return err
@@ -142,7 +141,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 			signing, err := signing.NewSigning(
 				i,
 				msg,
-				e.tweak,
+				resource.Tweak,
 				fmt.Sprintf("%s-%d", sessionID, i),
 				e.host,
 				e.comm,
@@ -156,7 +155,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*proposal.Proposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*BtcTransferProposal, sigChn chan interface{}, sessionID string) error {
 	timeout := time.NewTicker(signingTimeout)
 	defer timeout.Stop()
 	defer cancelExecution()
@@ -197,18 +196,13 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 	}
 }
 
-func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool.Utxo, error) {
-	resourceAddress, ok := e.resourceAddresses[proposals[0].Data.(BtcTransferProposalData).ResourceId]
-	if !ok {
-		return nil, nil, fmt.Errorf("no address for resource")
-	}
-
+func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resource) (*wire.MsgTx, []mempool.Utxo, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	outputAmount, err := e.outputs(tx, proposals)
 	if err != nil {
 		return nil, nil, err
 	}
-	inputAmount, utxos, err := e.inputs(tx, resourceAddress, outputAmount)
+	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,7 +217,7 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 	returnAmount := int64(inputAmount) - fee - outputAmount
 	if returnAmount > 0 {
 		// return extra funds
-		returnScript, err := txscript.PayToAddrScript(resourceAddress)
+		returnScript, err := txscript.PayToAddrScript(resource.Address)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -233,11 +227,10 @@ func (e *Executor) rawTx(proposals []*proposal.Proposal) (*wire.MsgTx, []mempool
 	return tx, utxos, err
 }
 
-func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int64, error) {
+func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (int64, error) {
 	outputAmount := int64(0)
 	for _, prop := range proposals {
-		propData := prop.Data.(BtcTransferProposalData)
-		addr, err := btcutil.DecodeAddress(propData.Recipient, &e.chainCfg)
+		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
 			return 0, err
 		}
@@ -245,9 +238,9 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*proposal.Proposal) (int6
 		if err != nil {
 			return 0, err
 		}
-		txOut := wire.NewTxOut(propData.Amount, destinationAddrByte)
+		txOut := wire.NewTxOut(prop.Data.Amount, destinationAddrByte)
 		tx.AddTxOut(txOut)
-		outputAmount += propData.Amount
+		outputAmount += prop.Data.Amount
 	}
 	return outputAmount, nil
 }
@@ -310,9 +303,9 @@ func (e *Executor) signaturesFilled(signatures []taproot.Signature) bool {
 	return true
 }
 
-func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*proposal.Proposal, error) {
+func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*BtcTransferProposal, error) {
 	e.propMutex.Lock()
-	props := make([]*proposal.Proposal, 0)
+	props := make([]*BtcTransferProposal, 0)
 	for _, prop := range proposals {
 		executed, err := e.isExecuted(prop)
 		if err != nil {
@@ -328,7 +321,11 @@ func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*pro
 		if err != nil {
 			return props, err
 		}
-		props = append(props, prop)
+		props = append(props, &BtcTransferProposal{
+			Source:      prop.Source,
+			Destination: prop.Destination,
+			Data:        prop.Data.(BtcTransferProposalData),
+		})
 	}
 	e.propMutex.Unlock()
 	return props, nil
@@ -346,12 +343,12 @@ func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
 	return true, err
 }
 
-func (e *Executor) storeProposalsStatus(props []*proposal.Proposal, status store.PropStatus) {
+func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status store.PropStatus) {
 	for _, prop := range props {
 		err := e.propStorer.StorePropStatus(
 			prop.Source,
 			prop.Destination,
-			prop.Data.(BtcTransferProposalData).DepositNonce,
+			prop.Data.DepositNonce,
 			status)
 		if err != nil {
 			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)

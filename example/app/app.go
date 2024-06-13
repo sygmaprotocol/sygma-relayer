@@ -18,7 +18,6 @@ import (
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	propStore "github.com/ChainSafe/sygma-relayer/store"
-	"github.com/btcsuite/btcd/btcutil"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
@@ -41,6 +40,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
+	btcConfig "github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	btcConnection "github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	btcExecutor "github.com/ChainSafe/sygma-relayer/chains/btc/executor"
 	btcListener "github.com/ChainSafe/sygma-relayer/chains/btc/listener"
@@ -248,7 +248,7 @@ func Run() error {
 				log.Info().Msgf("Registering btc domain")
 				time.Sleep(time.Second * 5)
 
-				config, err := btc.NewBtcConfig(chainConfig)
+				config, err := btcConfig.NewBtcConfig(chainConfig)
 				if err != nil {
 					panic(err)
 				}
@@ -265,10 +265,9 @@ func Run() error {
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := &btcListener.BtcDepositHandler{}
 				eventHandlers := make([]btcListener.EventHandler, 0)
-				resourceAddresses := make(map[[32]byte]btcutil.Address)
+				resources := make(map[[32]byte]btcConfig.Resource)
 				for _, resource := range config.Resources {
-					resourceAddresses[resource.ResourceID] = resource.Address
-
+					resources[resource.ResourceID] = resource
 					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource))
 				}
 				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
@@ -283,9 +282,7 @@ func Run() error {
 					frostKeyshareStore,
 					conn,
 					mempool,
-					resourceAddresses,
-					config.Tweak,
-					config.Script,
+					resources,
 					config.Network,
 					exitLock)
 
