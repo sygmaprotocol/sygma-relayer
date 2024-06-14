@@ -5,10 +5,17 @@ package btc_test
 
 import (
 	"context"
+	"encoding/hex"
+	"math"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
@@ -126,4 +133,101 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_EVM_to_Btc() {
 	s.Nil(err)
 	s.Equal(balanceAfter[0].Amount*100000000, float64(amountToDeposit.Int64()))
 
+}
+
+func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
+	pk, _ := crypto.HexToECDSA("8df766a778b57d58c2ad239ed98ec0e611a9bfbdc328b61755ebc40cf20c0f3f")
+	dstAddr := crypto.PubkeyToAddress(pk.PublicKey)
+
+	conn, err := connection.NewBtcConnection(btc.BtcEndpoint, "user", "password", true)
+	s.Nil(err)
+	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric, s.gasPricer, s.evmClient)
+	erc20Contract2 := erc20.NewERC20Contract(s.evmClient, s.evmConfig.Erc20LockReleaseAddr, transactor1)
+	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
+
+	// Your Bitcoin address
+	add, _ := btcutil.DecodeAddress("mrheH3ouZNyUbpp9LtWP28xqv1yhNQAsfC", &chaincfg.RegressionNetParams)
+	s.Nil(err)
+
+	recipientAddress, err := btcutil.DecodeAddress("bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek", &chaincfg.RegressionNetParams)
+	s.Nil(err)
+
+	// Define the private key as a hexadecimal string
+	privateKeyHex := "ccfa495d2ae193eeec53db12971bdedfe500603ec53f98a6138f0abe932be84f"
+
+	// Decode the hexadecimal string into a byte slice
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	s.Nil(err)
+
+	// Create a new private key instance
+	privateKey, _ := btcec.PrivKeyFromBytes(privateKeyBytes)
+
+	// Fetch unspent transaction outputs (UTXOs) associated with your Bitcoin address
+	unspent, err := conn.Client.ListUnspentMinMaxAddresses(1, 9999999, []btcutil.Address{add})
+	s.Nil(err)
+
+	// Create the PkScript for the recipient address
+	recipientPkScript, err := txscript.PayToAddrScript(recipientAddress)
+	s.Nil(err)
+
+	// Define data for the OP_RETURN output
+	opReturnData := []byte("0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_01")
+	opReturnScript, err := txscript.NullDataScript(opReturnData)
+	s.Nil(err)
+
+	// Create transaction inputs
+	var txInputs []*wire.TxIn
+	hash, _ := chainhash.NewHashFromStr(unspent[0].TxID)
+	txInput := wire.NewTxIn(&wire.OutPoint{
+		Hash:  *hash,
+		Index: unspent[0].Vout,
+	}, nil, nil)
+
+	txInputs = append(txInputs, txInput)
+
+	// Create transaction outputs
+	txOutputs := []*wire.TxOut{
+		{
+			Value:    int64(unspent[0].Amount*math.Pow(10, 8)) - 10000000,
+			PkScript: recipientPkScript,
+		},
+		{
+			Value:    0,
+			PkScript: opReturnScript,
+		},
+	}
+	// Create transaction
+	tx := wire.NewMsgTx(wire.TxVersion)
+
+	// Add inputs to the transaction
+	tx.TxIn = txInputs
+	// Add outputs to the transaction
+	for _, txOut := range txOutputs {
+		tx.AddTxOut(txOut)
+	}
+
+	subscript, err := hex.DecodeString(unspent[0].ScriptPubKey)
+	s.Nil(err)
+
+	// Sign the transaction
+	sigScript, err := txscript.SignatureScript(tx, 0, subscript, txscript.SigHashAll, privateKey, true)
+	s.Nil(err)
+
+	tx.TxIn[0].SignatureScript = sigScript
+
+	_, err = conn.Client.SendRawTransaction(tx, true)
+	s.Nil(err)
+
+	// Generate blocks to confirm the transaction
+	_, err = conn.Client.GenerateToAddress(2, add, nil)
+	s.Nil(err)
+
+	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)
+	s.Nil(err)
+
+	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
+	s.Nil(err)
+
+	//Balance has increased
+	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
