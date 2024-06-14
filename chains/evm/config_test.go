@@ -62,11 +62,12 @@ func (s *NewEVMConfigTestSuite) Test_InvalidBlockConfirmation() {
 
 func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 	rawConfig := map[string]interface{}{
-		"id":       1,
-		"endpoint": "ws://domain.com",
-		"name":     "evm1",
-		"from":     "address",
-		"bridge":   "bridgeAddress",
+		"id":          1,
+		"endpoint":    "ws://domain.com",
+		"name":        "evm1",
+		"from":        "address",
+		"bridge":      "bridgeAddress",
+		"frostKeygen": "frostKeygen",
 	}
 
 	actualConfig, err := evm.NewEVMConfig(rawConfig)
@@ -81,6 +82,7 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 			Id:       id,
 		},
 		Bridge:                "bridgeAddress",
+		FrostKeygen:           "frostKeygen",
 		GasLimit:              big.NewInt(15000000),
 		MaxGasPrice:           big.NewInt(500000000000),
 		GasMultiplier:         big.NewFloat(1),
@@ -94,11 +96,12 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfig() {
 
 func (s *NewEVMConfigTestSuite) Test_ValidConfigWithCustomTxParams() {
 	rawConfig := map[string]interface{}{
-		"id":       1,
-		"endpoint": "ws://domain.com",
-		"name":     "evm1",
-		"from":     "address",
-		"bridge":   "bridgeAddress",
+		"id":          1,
+		"endpoint":    "ws://domain.com",
+		"name":        "evm1",
+		"from":        "address",
+		"bridge":      "bridgeAddress",
+		"frostKeygen": "frostKeygen",
 		"handlers": []evm.HandlerConfig{
 			{
 				Type:    "erc20",
@@ -130,7 +133,8 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfigWithCustomTxParams() {
 			Endpoint: "ws://domain.com",
 			Id:       id,
 		},
-		Bridge: "bridgeAddress",
+		Bridge:      "bridgeAddress",
+		FrostKeygen: "frostKeygen",
 		Handlers: []evm.HandlerConfig{
 			{
 				Type:    "erc20",

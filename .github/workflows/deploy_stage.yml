@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        relayer_id: [0, 1, 2]
+        relayer_id: [1]
 
     permissions:
       contents: read

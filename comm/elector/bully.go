@@ -10,7 +10,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/config/relayer"
-	"github.com/ChainSafe/sygma-relayer/tss/common"
+	"github.com/ChainSafe/sygma-relayer/tss/util"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
@@ -28,7 +28,7 @@ type bullyCoordinatorElector struct {
 	conf         relayer.BullyConfig
 	mu           *sync.RWMutex
 	coordinator  peer.ID
-	sortedPeers  common.SortablePeerSlice
+	sortedPeers  util.SortablePeerSlice
 }
 
 func NewBullyCoordinatorElector(
@@ -59,7 +59,7 @@ func (bc *bullyCoordinatorElector) Coordinator(ctx context.Context, peers peer.I
 	go bc.listen(ctx)
 	defer cancel()
 
-	bc.sortedPeers = common.SortPeersForSession(peers, bc.sessionID)
+	bc.sortedPeers = util.SortPeersForSession(peers, bc.sessionID)
 	errChan := make(chan error)
 	go bc.startBullyCoordination(errChan)
 

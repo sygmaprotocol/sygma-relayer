@@ -137,6 +137,15 @@ func (l *Listener) FetchKeygenEvents(ctx context.Context, contractAddress common
 	return logs, nil
 }
 
+func (l *Listener) FetchFrostKeygenEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(StartFrostKeygenSig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	return logs, nil
+}
+
 func (l *Listener) FetchRefreshEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*Refresh, error) {
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(KeyRefreshSig), startBlock, endBlock)
 	if err != nil {

@@ -6,6 +6,7 @@ package tsstest
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -29,6 +30,7 @@ func (tc *TestCommunication) Broadcast(
 	msgType comm.MessageType,
 	sessionID string,
 ) error {
+	time.Sleep(time.Millisecond * 500)
 	wMsg := comm.WrappedMessage{
 		MessageType: msgType,
 		SessionID:   sessionID,
@@ -67,6 +69,7 @@ func (ts *TestCommunication) UnSubscribe(subscriptionID comm.SubscriptionID) {
 }
 
 func (ts *TestCommunication) ReceiveMessage(msg *comm.WrappedMessage, topic comm.MessageType, sessionID string) {
+	// simulate real world conditions
 	ts.Subscriptions[comm.SubscriptionID(fmt.Sprintf("%s-%s", sessionID, topic))] <- msg
 }
 

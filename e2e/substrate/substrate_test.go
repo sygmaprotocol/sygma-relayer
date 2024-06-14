@@ -16,7 +16,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/client"
 	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
-	"github.com/sygmaprotocol/sygma-core/crypto/secp256k1"
 
 	"math/big"
 	"testing"
@@ -32,9 +31,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const ETHEndpoint = "ws://localhost:8545"
-const SubstrateEndpoint = "ws://localhost:9944"
-
 type TestClient interface {
 	evm.EVMClient
 	LatestBlock() (*big.Int, error)
@@ -46,31 +42,13 @@ type TestClient interface {
 }
 
 func Test_EVMSubstrate(t *testing.T) {
-	// EVM side config
-	evmConfig := evm.BridgeConfig{
-		BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
-
-		Erc20Addr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
-		Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20ResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
-
-		Erc20LockReleaseAddr:        common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
-		Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
-		Erc20LockReleaseResourceID:  evm.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
-
-		BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-		FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
-		BasicFee:            evm.BasicFee,
-	}
-
-	pk, _ := secp256k1.NewKeypairFromString("cc2c32b154490f09f70c1c8d4b997238448d649e0777495863db231c4ced3616")
-	ethClient, err := evmClient.NewEVMClient(ETHEndpoint, pk)
+	ethClient, err := evmClient.NewEVMClient(evm.ETHEndpoint1, evm.AdminAccount)
 	if err != nil {
 		panic(err)
 	}
 	gasPricer := gas.NewStaticGasPriceDeterminant(ethClient, nil)
 
-	substrateConnection, err := connection.NewSubstrateConnection(SubstrateEndpoint)
+	substrateConnection, err := connection.NewSubstrateConnection(substrate.SubstrateEndpoint)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +66,7 @@ func Test_EVMSubstrate(t *testing.T) {
 			substrateClient,
 			substrateConnection,
 			gasPricer,
-			evmConfig,
+			evm.DEFAULT_CONFIG,
 			assetIdSerialized,
 		),
 	)
