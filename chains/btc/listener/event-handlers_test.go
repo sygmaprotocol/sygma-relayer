@@ -47,7 +47,7 @@ func (s *DepositHandlerTestSuite) SetupTest() {
 	address, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
 	s.feeAddress, _ = btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
 
-	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}}
+	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}, FeeAmount: big.NewInt(10000)}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
@@ -132,9 +132,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			{
 				ScriptPubKey: btcjson.ScriptPubKeyResult{
 					Type:    "witness_v1_taproot",
-					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+					Address: "tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv",
 				},
 				Value: float64(0.00019),
+			},
+			{
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Type:    "witness_v1_taproot",
+					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+				},
+				Value: float64(0.0002),
 			},
 		},
 	}
