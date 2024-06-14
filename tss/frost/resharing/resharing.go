@@ -101,9 +101,9 @@ func (r *Resharing) Run(
 
 	defer r.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error { return r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg) })
 	p.Go(func(ctx context.Context) error { return r.ProcessInboundMessages(ctx, msgChn) })
 	p.Go(func(ctx context.Context) error { return r.processEndMessage(ctx) })
+	p.Go(func(ctx context.Context) error { return r.ProcessOutboundMessages(ctx, outChn, comm.TssReshareMsg) })
 
 	r.Log.Info().Msgf("Started resharing process")
 	return p.Wait()
