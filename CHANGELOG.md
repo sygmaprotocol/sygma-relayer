@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.0...v2.1.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* add timeout for frost outbound messages ([#301](https://github.com/sygmaprotocol/sygma-relayer/issues/301)) ([53c63a0](https://github.com/sygmaprotocol/sygma-relayer/commit/53c63a054948c9dec0d94fdcf17b4ee20c946e17))
+
+
+### Miscellaneous
+
+* add e2e tests btc -&gt; evm transfer ([#298](https://github.com/sygmaprotocol/sygma-relayer/issues/298)) ([79777bd](https://github.com/sygmaprotocol/sygma-relayer/commit/79777bdaab8e86d337bfc03069803b4745b5316f))
+
 ## [2.1.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.0.4...v2.1.0) (2024-06-11)
 
 
