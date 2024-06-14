@@ -137,6 +137,7 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 	tsstest.SetupCommunication(communicationMap)
 
 	s.MockECDSAStorer.EXPECT().LockKeyshare().AnyTimes()
+	s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
 		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
