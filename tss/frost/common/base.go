@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/binance-chain/tss-lib/tss"
@@ -15,6 +16,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
 )
+
+const STARTUP_PAUSE = time.Second * 10
 
 // BaseTss contains common variables and methods to
 // all tss processes.
@@ -63,6 +66,9 @@ func (k *BaseFrostTss) ProcessInboundMessages(ctx context.Context, msgChan chan 
 // ProcessOutboundMessages sends messages received from tss out channel to target peers.
 // On context cancel stops listening to channel and exits.
 func (k *BaseFrostTss) ProcessOutboundMessages(ctx context.Context, outChn chan tss.Message, messageType comm.MessageType) error {
+	// delay sending messages until everyone is ready to accept them
+	time.Sleep(STARTUP_PAUSE)
+
 	for {
 		select {
 		case msg, ok := <-k.Handler.Listen():

@@ -132,9 +132,9 @@ func (s *Signing) Run(
 
 	outChn := make(chan tss.Message)
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx) })
+	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 
 	s.Log.Info().Msgf("Started signing process")
 	return p.Wait()

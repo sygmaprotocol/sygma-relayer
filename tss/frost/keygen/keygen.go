@@ -84,11 +84,11 @@ func (k *Keygen) Run(
 	if err != nil {
 		return err
 	}
-
 	p := pool.New().WithContext(ctx).WithCancelOnError()
-	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
 	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })
 	p.Go(func(ctx context.Context) error { return k.processEndMessage(ctx) })
+	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
+
 	return p.Wait()
 }
 
