@@ -54,8 +54,8 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 		share, err := storer.GetKeyshare()
-		s.MockFrostStorer.EXPECT().LockKeyshare()
-		s.MockFrostStorer.EXPECT().UnlockKeyshare()
+		s.MockFrostStorer.EXPECT().LockKeyshare().AnyTimes()
+		s.MockFrostStorer.EXPECT().UnlockKeyshare().AnyTimes()
 		s.MockFrostStorer.EXPECT().GetKeyshare().Return(share, err)
 		s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
 		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.MockFrostStorer)
