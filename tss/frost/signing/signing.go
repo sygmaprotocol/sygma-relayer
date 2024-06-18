@@ -118,7 +118,6 @@ func (s *Signing) Run(
 
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
-	defer s.Stop()
 	s.Handler, err = protocol.NewMultiHandler(
 		frost.SignTaproot(
 			s.key.Key,
