@@ -89,6 +89,7 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		c.processLock.Lock()
 		c.pendingProcesses[sessionID] = false
 		c.processLock.Unlock()
+		tssProcess.Stop()
 	}()
 
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
@@ -112,7 +113,6 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 	}
 
 	if !tssProcess.Retryable() {
-		tssProcess.Stop()
 		return err
 	}
 

@@ -91,7 +91,6 @@ func (k *Keygen) Run(
 
 	k.Log.Info().Msgf("Started keygen process")
 
-	defer k.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return k.ProcessOutboundMessages(ctx, outChn, comm.TssKeyGenMsg) })
 	p.Go(func(ctx context.Context) error { return k.ProcessInboundMessages(ctx, msgChn) })

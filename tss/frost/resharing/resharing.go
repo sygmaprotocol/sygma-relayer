@@ -99,7 +99,6 @@ func (r *Resharing) Run(
 		return err
 	}
 
-	defer r.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return r.ProcessInboundMessages(ctx, msgChn) })
 	p.Go(func(ctx context.Context) error { return r.processEndMessage(ctx) })
