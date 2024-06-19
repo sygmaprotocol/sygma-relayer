@@ -68,7 +68,6 @@ func (k *Keygen) Run(
 	params []byte,
 ) error {
 	ctx, k.Cancel = context.WithCancel(ctx)
-	defer k.Stop()
 
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)

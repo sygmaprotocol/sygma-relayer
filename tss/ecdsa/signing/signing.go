@@ -120,7 +120,6 @@ func (s *Signing) Run(
 	msgChn := make(chan *comm.WrappedMessage)
 	s.subscriptionID = s.Communication.Subscribe(s.SessionID(), comm.TssKeySignMsg, msgChn)
 
-	defer s.Stop()
 	p := pool.New().WithContext(ctx).WithCancelOnError()
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 	p.Go(func(ctx context.Context) error { return s.ProcessInboundMessages(ctx, msgChn) })
