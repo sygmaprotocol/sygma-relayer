@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.1...v2.1.2) (2024-06-21)
+
+
+### Bug Fixes
+
+* Stop tssProcess only once in coordinator.execute function ([#276](https://github.com/sygmaprotocol/sygma-relayer/issues/276)) ([d2e83e9](https://github.com/sygmaprotocol/sygma-relayer/commit/d2e83e92fd8ec4c0590142479ba3e8c8bf42f626))
+
+
+### Miscellaneous
+
+* remove keyshare check ([#310](https://github.com/sygmaprotocol/sygma-relayer/issues/310)) ([4f50c7c](https://github.com/sygmaprotocol/sygma-relayer/commit/4f50c7c1c578faaef96bf1bb4302c77ffa4c571a))
+
 ## [2.1.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.0...v2.1.1) (2024-06-14)
 
 
