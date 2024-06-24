@@ -202,7 +202,11 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 	if err != nil {
 		return nil, nil, err
 	}
-	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount)
+	feeEstimate, err := e.fee(int64(len(proposals)), int64(len(proposals)))
+	if err != nil {
+		return nil, nil, err
+	}
+	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount+feeEstimate)
 	if err != nil {
 		return nil, nil, err
 	}
