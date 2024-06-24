@@ -227,11 +227,6 @@ func (eh *FrostKeygenEventHandler) HandleEvents(
 	startBlock *big.Int,
 	endBlock *big.Int,
 ) error {
-	key, err := eh.storer.GetKeyshare()
-	if (key.Threshold != 0) && (err == nil) {
-		return nil
-	}
-
 	keygenEvents, err := eh.eventListener.FetchFrostKeygenEvents(
 		context.Background(), eh.contractAddress, startBlock, endBlock,
 	)
