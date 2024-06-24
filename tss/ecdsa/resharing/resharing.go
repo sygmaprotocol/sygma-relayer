@@ -143,7 +143,7 @@ func (r *Resharing) Stop() {
 }
 
 // Ready returns true if all parties from peerstore are ready
-func (r *Resharing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+func (r *Resharing) Ready(readyMap []peer.ID, excludedPeers []peer.ID) (bool, error) {
 	return len(readyMap) == len(r.Host.Peerstore().Peers()), nil
 }
 
@@ -164,7 +164,7 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 }
 
 // StartParams returns threshold and peer subset from the old key to share with new parties.
-func (r *Resharing) StartParams(readyMap map[peer.ID]bool) []byte {
+func (r *Resharing) StartParams() []byte {
 	startParams := &startParams{
 		OldThreshold: r.key.Threshold,
 		OldSubset:    r.key.Peers,

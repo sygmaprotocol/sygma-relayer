@@ -12,11 +12,18 @@ import (
 )
 
 func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
-	sort.Sort(peers)
 	peerSet := mapset.NewSet[peer.ID](peers...)
-	idSlice := make([]party.ID, len(peerSet.ToSlice()))
-	for i, peer := range peerSet.ToSlice() {
-		idSlice[i] = party.ID(peer.Pretty())
+	peerSlice := peerSet.ToSlice()
+
+	idSlice := make([]party.ID, len(peerSlice))
+	for i, peer := range peerSlice {
+		idSlice[i] = party.ID(peer.String())
 	}
+
+	// Sort the idSlice
+	sort.Slice(idSlice, func(i, j int) bool {
+		return idSlice[i] < idSlice[j]
+	})
+
 	return idSlice
 }

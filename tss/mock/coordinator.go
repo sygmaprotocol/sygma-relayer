@@ -36,7 +36,7 @@ func (m *MockTssProcess) EXPECT() *MockTssProcessMockRecorder {
 }
 
 // Ready mocks base method.
-func (m *MockTssProcess) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+func (m *MockTssProcess) Ready(readyMap, excludedPeers []peer.ID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Ready", readyMap, excludedPeers)
 	ret0, _ := ret[0].(bool)
@@ -93,7 +93,7 @@ func (mr *MockTssProcessMockRecorder) SessionID() *gomock.Call {
 }
 
 // StartParams mocks base method.
-func (m *MockTssProcess) StartParams(readyMap map[peer.ID]bool) []byte {
+func (m *MockTssProcess) StartParams(readyMap []peer.ID) []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartParams", readyMap)
 	ret0, _ := ret[0].([]byte)

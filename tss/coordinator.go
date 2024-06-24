@@ -30,9 +30,9 @@ var (
 type TssProcess interface {
 	Run(ctx context.Context, coordinator bool, resultChn chan interface{}, params []byte) error
 	Stop()
-	Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error)
+	Ready(readyMap []peer.ID, excludedPeers []peer.ID) (bool, error)
 	Retryable() bool
-	StartParams(readyMap map[peer.ID]bool) []byte
+	StartParams(readyMap []peer.ID) []byte
 	SessionID() string
 	ValidCoordinators() []peer.ID
 }
@@ -230,8 +230,8 @@ func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
 	readyChan := make(chan *comm.WrappedMessage)
-	readyMap := make(map[peer.ID]bool)
-	readyMap[c.host.ID()] = true
+	readyMap := make([]peer.ID)
+	readyMap = append(readyMap, c.host.ID())
 
 	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
@@ -245,7 +245,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 			{
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
 				if !slices.Contains(excludedPeers, wMsg.From) {
-					readyMap[wMsg.From] = true
+					append(readyMap, wMsg.From)
 				}
 				ready, err := tssProcess.Ready(readyMap, excludedPeers)
 				if err != nil {
