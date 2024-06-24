@@ -230,7 +230,7 @@ func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 // peers are ready, start message is broadcasted and tss process is started.
 func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
 	readyChan := make(chan *comm.WrappedMessage)
-	readyMap := make([]peer.ID)
+	readyMap := make([]peer.ID, 0)
 	readyMap = append(readyMap, c.host.ID())
 
 	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
@@ -245,7 +245,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 			{
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
 				if !slices.Contains(excludedPeers, wMsg.From) {
-					append(readyMap, wMsg.From)
+					readyMap = append(readyMap, wMsg.From)
 				}
 				ready, err := tssProcess.Ready(readyMap, excludedPeers)
 				if err != nil {

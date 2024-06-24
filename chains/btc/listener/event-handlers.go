@@ -15,6 +15,7 @@ import (
 )
 
 type Deposit struct {
+	// ID of the resource that is transfered
 	ResourceID [32]byte
 	// Address of sender (msg.sender: user)
 	SenderAddress string

@@ -163,9 +163,7 @@ func (s *Signing) ValidCoordinators() []peer.ID {
 func (s *Signing) StartParams(readyMap []peer.ID) []byte {
 	readyMap = s.readyParticipants(readyMap)
 	peers := []peer.ID{}
-	for peer := range readyMap {
-		peers = append(peers, peer)
-	}
+	peers = append(peers, readyMap...)
 
 	sortedPeers := util.SortPeersForSession(peers, s.SessionID())
 	peerSubset := []peer.ID{}
@@ -222,14 +220,14 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 
 // readyParticipants returns all ready peers that contain a valid key share
 func (s *Signing) readyParticipants(readyMap []peer.ID) []peer.ID {
-	readyParticipants := make([]peer.ID)
-	for peer, ready := range readyMap {
+	readyParticipants := make([]peer.ID, 0)
+	for _, peer := range readyMap {
 
 		if !slices.Contains(s.key.Peers, peer) {
 			continue
 		}
 
-		append(readyParticipants, peer)
+		readyParticipants = append(readyParticipants, peer)
 	}
 
 	return readyParticipants

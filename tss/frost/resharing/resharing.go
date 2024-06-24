@@ -125,7 +125,7 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 	return r.key.Peers
 }
 
-func (r *Resharing) StartParams() []byte {
+func (r *Resharing) StartParams(readyMap []peer.ID) []byte {
 	return r.key.Key.PublicKey
 }
 

@@ -4,8 +4,6 @@
 package common
 
 import (
-	"sort"
-
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/taurusgroup/multi-party-sig/pkg/party"
@@ -13,17 +11,9 @@ import (
 
 func PartyIDSFromPeers(peers peer.IDSlice) []party.ID {
 	peerSet := mapset.NewSet[peer.ID](peers...)
-	peerSlice := peerSet.ToSlice()
-
-	idSlice := make([]party.ID, len(peerSlice))
-	for i, peer := range peerSlice {
+	idSlice := make([]party.ID, len(peerSet.ToSlice()))
+	for i, peer := range peerSet.ToSlice() {
 		idSlice[i] = party.ID(peer.String())
 	}
-
-	// Sort the idSlice
-	sort.Slice(idSlice, func(i, j int) bool {
-		return idSlice[i] < idSlice[j]
-	})
-
 	return idSlice
 }

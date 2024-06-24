@@ -114,7 +114,7 @@ func (k *Keygen) ValidCoordinators() []peer.ID {
 	return k.Peers
 }
 
-func (k *Keygen) StartParams() []byte {
+func (k *Keygen) StartParams(readyMap []peer.ID) []byte {
 	return []byte{}
 }
 

@@ -164,7 +164,7 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 }
 
 // StartParams returns threshold and peer subset from the old key to share with new parties.
-func (r *Resharing) StartParams() []byte {
+func (r *Resharing) StartParams(readyMap []peer.ID) []byte {
 	startParams := &startParams{
 		OldThreshold: r.key.Threshold,
 		OldSubset:    r.key.Peers,
