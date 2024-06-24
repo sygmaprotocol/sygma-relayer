@@ -108,7 +108,7 @@ func (k *BaseFrostTss) BroadcastPeers(msg *protocol.Message) ([]peer.ID, error) 
 		return k.Peers, nil
 	} else {
 		if string(msg.To) == "" {
-			return []peer.ID{}, nil
+			return k.Peers, nil
 		}
 
 		p, err := peer.Decode(string(msg.To))
