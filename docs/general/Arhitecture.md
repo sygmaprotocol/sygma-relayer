@@ -4,8 +4,8 @@
 
 ## Components
 
-- **[BTC Deposit Format](/docs/general/BTC-Deposit-Format.md)** - BTC deposit format explanation
 - **[CLI commands](/docs/general/CLI.md)** - overview of CLI commands
+- **[Deposit](/docs/general/Deposit.md)** - Deposit data overview
 - **[Fees](/docs/general/Fees.md)** - high-level overview of handling fees
 - **[Relayers](/docs/Home.md)** - relayer technical documentation
 - **[Topology Map](/docs/general/Topology.md)** - overview of topology map usage

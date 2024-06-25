@@ -1,8 +1,7 @@
-# BTC Deposit Transaction Format
-
-This document describes the expected format for BTC deposit transactions and how the deposit amount is calculated.
-
-## Expected BTC Deposit Transaction Format
+# Deposit
+This document describes the expected format of the deposit for different networks
+## BTC Deposit
+## Format
 
 ### OP_RETURN Output
 
@@ -12,7 +11,7 @@ This document describes the expected format for BTC deposit transactions and how
   - The `OP_RETURN` data must be formatted as `receiverEVMAddress_destinationDomainID`.
 
 
-## Amount Calculation
+### Amount Calculation
 
 - The total deposit amount is calculated by summing the values of the outputs that match the resource address.
-- Only outputs with script types of `WitnessV0KeyHash` are considered for the amount calculation.
+- Only outputs with script types of `witness_v1_taproot` are considered for the amount calculation.
