@@ -78,7 +78,7 @@ func (s *DepositHandlerTestSuite) Test_CalculateNonce() {
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	blockNumber := big.NewInt(100)
 	data2 := map[string]any{
-		"deposit_nonce": uint64(1001),
+		"deposit_nonce": uint64(8228687738678474667),
 		"resource_id":   [32]byte{0},
 		"amount":        big.NewInt(19000),
 		"deposit_data":  "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
