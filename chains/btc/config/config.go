@@ -48,7 +48,7 @@ func (c *RawBtcConfig) Validate() error {
 		return err
 	}
 
-	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
+	if c.BlockConfirmations < 1 {
 		return fmt.Errorf("blockConfirmations has to be >=1")
 	}
 

@@ -81,7 +81,7 @@ func (c *RawEVMConfig) Validate() error {
 	if c.Bridge == "" {
 		return fmt.Errorf("required field chain.Bridge empty for chain %v", *c.Id)
 	}
-	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
+	if c.BlockConfirmations < 1 {
 		return fmt.Errorf("blockConfirmations has to be >=1")
 	}
 	return nil
