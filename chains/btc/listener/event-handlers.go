@@ -4,8 +4,9 @@
 package listener
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"math/big"
-	"strconv"
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
@@ -62,7 +63,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 		eh.log.Error().Err(err).Msg("Error fetching events")
 		return err
 	}
-	for evtNumber, evt := range evts {
+	for _, evt := range evts {
 		err := func(evt btcjson.TxRawResult) error {
 			defer func() {
 				if r := recover(); r != nil {
@@ -78,7 +79,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			if !isDeposit {
 				return nil
 			}
-			nonce, err := eh.CalculateNonce(blockNumber, evtNumber)
+			nonce, err := eh.CalculateNonce(blockNumber, evt.Hash)
 			if err != nil {
 				return err
 			}
@@ -119,23 +120,23 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 	return block.Tx, nil
 }
 
-func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, evtNumber int) (uint64, error) {
+func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, transactionHash string) (uint64, error) {
 	// Convert blockNumber to string
 	blockNumberStr := blockNumber.String()
 
-	// Convert evtNumber to *big.Int
-	evtNumberBigInt := big.NewInt(int64(evtNumber))
+	// Concatenate blockNumberStr and transactionHash with a separator
+	concatenatedStr := blockNumberStr + "-" + transactionHash
 
-	// Convert evtNumberBigInt to string
-	evtNumberStr := evtNumberBigInt.String()
+	// Calculate SHA-256 hash of the concatenated string
+	hash := sha256.New()
+	hash.Write([]byte(concatenatedStr))
+	hashBytes := hash.Sum(nil)
 
-	// Concatenate blockNumberStr and evtNumberStr
-	concatenatedStr := blockNumberStr + evtNumberStr
-
-	// Parse the concatenated string to uint64
-	result, err := strconv.ParseUint(concatenatedStr, 10, 64)
-	if err != nil {
-		return 0, err
+	// XOR fold the hash to get a 64-bit value
+	var result uint64
+	for i := 0; i < 4; i++ {
+		part := binary.BigEndian.Uint64(hashBytes[i*8 : (i+1)*8])
+		result ^= part
 	}
 
 	return result, nil
