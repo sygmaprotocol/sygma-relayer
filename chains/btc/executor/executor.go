@@ -344,6 +344,7 @@ func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
 }
 
 func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status store.PropStatus) {
+	e.propMutex.Lock()
 	for _, prop := range props {
 		err := e.propStorer.StorePropStatus(
 			prop.Source,
@@ -354,4 +355,5 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)
 		}
 	}
+	e.propMutex.Unlock()
 }
