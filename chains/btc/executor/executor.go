@@ -354,6 +354,6 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 		if err != nil {
 			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)
 		}
-		e.propMutex.Unlock()
 	}
+	e.propMutex.Unlock()
 }
