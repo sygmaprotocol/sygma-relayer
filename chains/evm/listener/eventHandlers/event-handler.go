@@ -121,7 +121,7 @@ func (eh *RetryEventHandler) HandleEvents(
 					continue
 				}
 				if isExecuted {
-					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Deposit marked as executed %+v", d)
+					eh.log.Debug().Str("messageID", msg.ID).Msgf("Deposit marked as executed %+v", d)
 					continue
 				}
 
