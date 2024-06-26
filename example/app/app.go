@@ -268,7 +268,7 @@ func Run() error {
 				resources := make(map[[32]byte]btcConfig.Resource)
 				for _, resource := range config.Resources {
 					resources[resource.ResourceID] = resource
-					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource))
+					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource, config.FeeAddress))
 				}
 				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
 

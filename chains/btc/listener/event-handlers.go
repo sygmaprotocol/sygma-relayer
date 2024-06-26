@@ -9,6 +9,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -38,16 +39,18 @@ type DepositHandler interface {
 type FungibleTransferEventHandler struct {
 	depositHandler DepositHandler
 	domainID       uint8
+	feeAddress     btcutil.Address
 	log            zerolog.Logger
 	conn           Connection
 	msgChan        chan []*message.Message
 	resource       config.Resource
 }
 
-func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource config.Resource) *FungibleTransferEventHandler {
+func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depositHandler DepositHandler, msgChan chan []*message.Message, conn Connection, resource config.Resource, feeAddress btcutil.Address) *FungibleTransferEventHandler {
 	return &FungibleTransferEventHandler{
 		depositHandler: depositHandler,
 		domainID:       domainID,
+		feeAddress:     feeAddress,
 		log:            logC.Logger(),
 		conn:           conn,
 		msgChan:        msgChan,
@@ -70,7 +73,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 				}
 			}()
 
-			d, isDeposit, err := DecodeDepositEvent(evt, eh.resource)
+			d, isDeposit, err := DecodeDepositEvent(evt, eh.resource, eh.feeAddress)
 			if err != nil {
 				return err
 			}

@@ -152,6 +152,9 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
 	recipientAddress, err := btcutil.DecodeAddress("bcrt1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2sjyr5ek", &chaincfg.RegressionNetParams)
 	s.Nil(err)
 
+	feeAddress, err := btcutil.DecodeAddress("mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt", &chaincfg.RegressionNetParams)
+	s.Nil(err)
+
 	// Define the private key as a hexadecimal string
 	privateKeyHex := "ccfa495d2ae193eeec53db12971bdedfe500603ec53f98a6138f0abe932be84f"
 
@@ -170,6 +173,10 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
 	recipientPkScript, err := txscript.PayToAddrScript(recipientAddress)
 	s.Nil(err)
 
+	// Create the PkScript for the recipient address
+	feeAddressPkScript, err := txscript.PayToAddrScript(feeAddress)
+	s.Nil(err)
+
 	// Define data for the OP_RETURN output
 	opReturnData := []byte("0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_01")
 	opReturnScript, err := txscript.NullDataScript(opReturnData)
@@ -183,13 +190,24 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
 		Index: unspent[0].Vout,
 	}, nil, nil)
 
+	hash2, _ := chainhash.NewHashFromStr(unspent[1].TxID)
+	txInput2 := wire.NewTxIn(&wire.OutPoint{
+		Hash:  *hash2,
+		Index: unspent[1].Vout,
+	}, nil, nil)
+
 	txInputs = append(txInputs, txInput)
+	txInputs = append(txInputs, txInput2)
 
 	// Create transaction outputs
 	txOutputs := []*wire.TxOut{
 		{
 			Value:    int64(unspent[0].Amount*math.Pow(10, 8)) - 10000000,
 			PkScript: recipientPkScript,
+		},
+		{
+			Value:    int64(unspent[1].Amount*math.Pow(10, 8)) - 10000000,
+			PkScript: feeAddressPkScript,
 		},
 		{
 			Value:    0,
@@ -206,14 +224,13 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Btc_to_EVM() {
 		tx.AddTxOut(txOut)
 	}
 
-	subscript, err := hex.DecodeString(unspent[0].ScriptPubKey)
-	s.Nil(err)
-
-	// Sign the transaction
-	sigScript, err := txscript.SignatureScript(tx, 0, subscript, txscript.SigHashAll, privateKey, true)
-	s.Nil(err)
-
-	tx.TxIn[0].SignatureScript = sigScript
+	for i, txIn := range tx.TxIn {
+		subscript, err := hex.DecodeString(unspent[i].ScriptPubKey)
+		s.Nil(err)
+		sigScript, err := txscript.SignatureScript(tx, i, subscript, txscript.SigHashAll, privateKey, true)
+		s.Nil(err)
+		txIn.SignatureScript = sigScript
+	}
 
 	_, err = conn.Client.SendRawTransaction(tx, true)
 	s.Nil(err)
