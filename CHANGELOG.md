@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.2...v2.2.0) (2024-06-26)
+
+
+### Features
+
+* btc fee collection ([#299](https://github.com/sygmaprotocol/sygma-relayer/issues/299)) ([9eeff52](https://github.com/sygmaprotocol/sygma-relayer/commit/9eeff5228db1c157ac53a91ea97732408437345b))
+
 ## [2.1.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.1...v2.1.2) (2024-06-21)
 
 
