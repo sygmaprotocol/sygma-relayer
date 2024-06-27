@@ -10,6 +10,7 @@ import (
 	reflect "reflect"
 
 	events "github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
+	store "github.com/ChainSafe/sygma-relayer/store"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
@@ -127,6 +128,58 @@ func (m *MockEventListener) FetchRetryEvents(ctx context.Context, contractAddres
 func (mr *MockEventListenerMockRecorder) FetchRetryEvents(ctx, contractAddress, startBlock, endBlock interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRetryEvents), ctx, contractAddress, startBlock, endBlock)
+}
+
+// MockPropStorer is a mock of PropStorer interface.
+type MockPropStorer struct {
+	ctrl     *gomock.Controller
+	recorder *MockPropStorerMockRecorder
+}
+
+// MockPropStorerMockRecorder is the mock recorder for MockPropStorer.
+type MockPropStorerMockRecorder struct {
+	mock *MockPropStorer
+}
+
+// NewMockPropStorer creates a new mock instance.
+func NewMockPropStorer(ctrl *gomock.Controller) *MockPropStorer {
+	mock := &MockPropStorer{ctrl: ctrl}
+	mock.recorder = &MockPropStorerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPropStorer) EXPECT() *MockPropStorerMockRecorder {
+	return m.recorder
+}
+
+// PropStatus mocks base method.
+func (m *MockPropStorer) PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PropStatus", source, destination, depositNonce)
+	ret0, _ := ret[0].(store.PropStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PropStatus indicates an expected call of PropStatus.
+func (mr *MockPropStorerMockRecorder) PropStatus(source, destination, depositNonce interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PropStatus", reflect.TypeOf((*MockPropStorer)(nil).PropStatus), source, destination, depositNonce)
+}
+
+// StorePropStatus mocks base method.
+func (m *MockPropStorer) StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StorePropStatus", source, destination, depositNonce, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StorePropStatus indicates an expected call of StorePropStatus.
+func (mr *MockPropStorerMockRecorder) StorePropStatus(source, destination, depositNonce, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StorePropStatus", reflect.TypeOf((*MockPropStorer)(nil).StorePropStatus), source, destination, depositNonce, status)
 }
 
 // MockDepositHandler is a mock of DepositHandler interface.
