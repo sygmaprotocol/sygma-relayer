@@ -106,10 +106,10 @@ type ExcludedPeersTestSuite struct {
 }
 
 func TestRunExcludedPeersTestSuite(t *testing.T) {
-	suite.Run(t, new(PartiesFromPeersTestSuite))
+	suite.Run(t, new(ExcludedPeersTestSuite))
 }
 
-func (s *PartiesFromPeersTestSuite) Test_ExcludePeers_Excluded() {
+func (s *ExcludedPeersTestSuite) Test_ExcludePeers_Excluded() {
 	peerID1, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
 	peerID2, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
 	peerID3, _ := peer.Decode("QmYayosTHxL2xa4jyrQ2PmbhGbrkSxsGM1kzXLTT8SsLVy")
@@ -119,4 +119,24 @@ func (s *PartiesFromPeersTestSuite) Test_ExcludePeers_Excluded() {
 	includedPeers := common.ExcludePeers(peers, excludedPeers)
 
 	s.Equal(includedPeers, peer.IDSlice{peerID1})
+}
+
+type PeersIntersectionTestSuite struct {
+	suite.Suite
+}
+
+func TestRunPeersIntersectionTestSuite(t *testing.T) {
+	suite.Run(t, new(PeersIntersectionTestSuite))
+}
+
+func (s *PeersIntersectionTestSuite) Test_PeersIntersection() {
+	peerID1, _ := peer.Decode("QmcW3oMdSqoEcjbyd51auqC23vhKX6BqfcZcY2HJ3sKAZR")
+	peerID2, _ := peer.Decode("QmZHPnN3CKiTAp8VaJqszbf8m7v4mPh15M421KpVdYHF54")
+	peerID3, _ := peer.Decode("QmYayosTHxL2xa4jyrQ2PmbhGbrkSxsGM1kzXLTT8SsLVy")
+	oldPeers := []peer.ID{peerID1, peerID2, peerID3}
+	newPeers := []peer.ID{peerID3, peerID2}
+
+	includedPeers := common.PeersIntersection(oldPeers, newPeers)
+
+	s.Equal(includedPeers, peer.IDSlice{peerID2, peerID3})
 }
