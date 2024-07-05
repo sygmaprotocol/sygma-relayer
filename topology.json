@@ -1,0 +1,26 @@
+{
+  "peers":[
+    {
+      "peerAddress": "/dns4/chainsafe-testnet.bwarelabs.app/tcp/9000/p2p/QmZbcHF9eBD53fKM6rPfUjgmcL2BXpKrfaCECzrB9feABf"
+    },
+    {
+      "peerAddress": "/dns4/relayer-0.test.buildwithsygma.com/tcp/9000/p2p/QmZRLgawew4QVoFSoraBukMBSmZxpyyMxn8X2gsR63YHoz"
+    },
+    {
+      "peerAddress": "/dns4/relayer-1.test.buildwithsygma.com/tcp/9000/p2p/QmaqkqQhznmpciJSTXkK7V8qs3cDKrKsDfgg9fYyxp5zds"
+    },
+    {
+      "peerAddress": "/dns4/relayer-2.test.buildwithsygma.com/tcp/9000/p2p/QmUVZTpjJtdoGj52mfrYzVX8os7625yLsuCXTjdxanEatF"
+    },
+    {
+      "peerAddress": "/dns4/sygma-testnet-relayer-20.phala.network/tcp/9000/p2p/QmR6hGtdHXXkpq8hc89EViNRYRRu6yvmmuvwnPZoVF2q18"
+    },
+    {
+      "peerAddress": "/dns4/sygma-testnet-relayers-30.chainsafe.dev/tcp/9000/p2p/QmeUyrdxu9JfQdF6UkxByqiSWLDX3FNHHWuHCpvM2ZAbBU"
+    },
+    {
+      "peerAddress": "/dns4/sygma-testnet-relayers-31.chainsafe.dev/tcp/9000/p2p/QmYPLuTAvbyKKYLPLr9by7ndU1iGk42p4Z3pBrNiDudrBM"
+    }
+  ],
+  "threshold": "3"
+}

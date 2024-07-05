@@ -31,6 +31,19 @@ Test if the provided URL contains a topology that can be decrypted with the prov
 - `--url`: URL to fetch topology.
 - `--hash`: Hash of the topology.
 
+### Ping Topology Command (topology)
+
+#### Usage:
+`./sygma-relayer topology ping --decryption-key [key] --url [url] --private-key [key]`
+
+#### Description:
+Ping all nodes in the topology once to check their availability.
+
+#### Flags:
+- `--decryption-key`: Decryption key for the topology.
+- `--url`: URL for the topology.
+- `--private-key`: P2P key.
+
 ## Libp2p (peer) commands
 
 ### Generate Key Command (peer)
@@ -56,7 +69,7 @@ Calculate a libp2p peer ID from the provided base64 encoded libp2p private key.
 
 ### Generate ECDSA keypair
 
-#### Usage: 
+#### Usage:
 `./sygma-relayer keygen gen-key`
 
 #### Description:

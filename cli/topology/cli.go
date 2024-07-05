@@ -13,4 +13,5 @@ var TopologyCLI = &cobra.Command{
 func init() {
 	TopologyCLI.AddCommand(encryptTopologyCMD)
 	TopologyCLI.AddCommand(testTopologyCMD)
+	TopologyCLI.AddCommand(pingCMD)
 }
