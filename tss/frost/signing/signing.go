@@ -147,9 +147,9 @@ func (s *Signing) Stop() {
 }
 
 // Ready returns true if threshold+1 parties are ready to start the signing process.
-func (s *Signing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
-	readyMap = s.readyParticipants(readyMap)
-	return len(readyMap) == s.key.Threshold+1, nil
+func (s *Signing) Ready(readyPeers []peer.ID, excludedPeers []peer.ID) (bool, error) {
+	readyPeers = s.readyParticipants(readyPeers)
+	return len(readyPeers) == s.key.Threshold+1, nil
 }
 
 // ValidCoordinators returns only peers that have a valid keyshare
@@ -160,12 +160,10 @@ func (s *Signing) ValidCoordinators() []peer.ID {
 // StartParams returns peer subset for this tss process. It is calculated
 // by sorting hashes of peer IDs and session ID and chosing ready peers alphabetically
 // until threshold is satisfied.
-func (s *Signing) StartParams(readyMap map[peer.ID]bool) []byte {
-	readyMap = s.readyParticipants(readyMap)
+func (s *Signing) StartParams(readyPeers []peer.ID) []byte {
+	readyPeers = s.readyParticipants(readyPeers)
 	peers := []peer.ID{}
-	for peer := range readyMap {
-		peers = append(peers, peer)
-	}
+	peers = append(peers, readyPeers...)
 
 	sortedPeers := util.SortPeersForSession(peers, s.SessionID())
 	peerSubset := []peer.ID{}
@@ -221,18 +219,15 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 }
 
 // readyParticipants returns all ready peers that contain a valid key share
-func (s *Signing) readyParticipants(readyMap map[peer.ID]bool) map[peer.ID]bool {
-	readyParticipants := make(map[peer.ID]bool)
-	for peer, ready := range readyMap {
-		if !ready {
-			continue
-		}
+func (s *Signing) readyParticipants(readyPeers []peer.ID) []peer.ID {
+	readyParticipants := make([]peer.ID, 0)
+	for _, peer := range readyPeers {
 
 		if !slices.Contains(s.key.Peers, peer) {
 			continue
 		}
 
-		readyParticipants[peer] = true
+		readyParticipants = append(readyParticipants, peer)
 	}
 
 	return readyParticipants
