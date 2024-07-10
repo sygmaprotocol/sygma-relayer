@@ -6,6 +6,7 @@ import (
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
 )
 
 const (
@@ -13,8 +14,10 @@ const (
 	OP_RETURN        = "nulldata"
 )
 
-func DecodeDepositEvent(evt btcjson.TxRawResult, resource config.Resource) (Deposit, bool, error) {
+func DecodeDepositEvent(evt btcjson.TxRawResult, resource config.Resource, feeAddress btcutil.Address) (Deposit, bool, error) {
 	amount := big.NewInt(0)
+	feeAmount := big.NewInt(0)
+
 	isBridgeDeposit := false
 	sender := ""
 	data := ""
@@ -37,9 +40,13 @@ func DecodeDepositEvent(evt btcjson.TxRawResult, resource config.Resource) (Depo
 				amount.Add(amount, big.NewInt(int64(vout.Value*1e8)))
 			}
 		}
+
+		if feeAddress.String() == vout.ScriptPubKey.Address {
+			feeAmount.Add(feeAmount, big.NewInt(int64(vout.Value*1e8)))
+		}
 	}
 
-	if !isBridgeDeposit {
+	if !isBridgeDeposit || (feeAmount.Cmp(resource.FeeAmount) == -1) {
 		return Deposit{}, false, nil
 	}
 
