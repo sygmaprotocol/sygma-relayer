@@ -34,6 +34,7 @@ type DepositHandlerTestSuite struct {
 	resource                     config.Resource
 	msgChan                      chan []*message.Message
 	mockConn                     *mock_listener.MockConnection
+	feeAddress                   btcutil.Address
 }
 
 func TestRunDepositHandlerTestSuite(t *testing.T) {
@@ -43,12 +44,14 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	address, _ := btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
-	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}}
+	address, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
+	s.feeAddress, _ = btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
+
+	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}, FeeAmount: big.NewInt(10000)}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
-	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource)
+	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource, s.feeAddress)
 }
 
 func (s *DepositHandlerTestSuite) Test_FetchDepositFails_GetBlockHashError() {
@@ -129,9 +132,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			{
 				ScriptPubKey: btcjson.ScriptPubKeyResult{
 					Type:    "witness_v1_taproot",
-					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+					Address: "tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv",
 				},
 				Value: float64(0.00019),
+			},
+			{
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Type:    "witness_v1_taproot",
+					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+				},
+				Value: float64(0.0002),
 			},
 		},
 	}
