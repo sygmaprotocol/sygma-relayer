@@ -204,6 +204,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
+				e.storeProposalsStatus(proposals, store.ExecutedProp)
 				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-timeout.C:

@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/ChainSafe/sygma-relayer/store"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
@@ -39,10 +41,16 @@ type EventListener interface {
 	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
 }
 
+type PropStorer interface {
+	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
+	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
 type RetryEventHandler struct {
 	log                zerolog.Logger
 	eventListener      EventListener
 	depositHandler     DepositHandler
+	propStorer         PropStorer
 	bridgeAddress      common.Address
 	bridgeABI          abi.ABI
 	domainID           uint8
@@ -54,6 +62,7 @@ func NewRetryEventHandler(
 	logC zerolog.Context,
 	eventListener EventListener,
 	depositHandler DepositHandler,
+	propStorer PropStorer,
 	bridgeAddress common.Address,
 	domainID uint8,
 	blockConfirmations *big.Int,
@@ -64,6 +73,7 @@ func NewRetryEventHandler(
 		log:                logC.Logger(),
 		eventListener:      eventListener,
 		depositHandler:     depositHandler,
+		propStorer:         propStorer,
 		bridgeAddress:      bridgeAddress,
 		bridgeABI:          bridgeABI,
 		domainID:           domainID,
@@ -106,6 +116,15 @@ func (eh *RetryEventHandler) HandleEvents(
 					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Failed handling deposit %+v", d)
 					continue
 				}
+				isExecuted, err := eh.isExecuted(msg)
+				if err != nil {
+					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Failed checking if deposit executed %+v", d)
+					continue
+				}
+				if isExecuted {
+					eh.log.Debug().Str("messageID", msg.ID).Msgf("Deposit marked as executed %+v", d)
+					continue
+				}
 
 				eh.log.Info().Str("messageID", msg.ID).Msgf(
 					"Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String(),
@@ -120,6 +139,31 @@ func (eh *RetryEventHandler) HandleEvents(
 	}
 
 	return nil
+}
+
+func (eh *RetryEventHandler) isExecuted(msg *message.Message) (bool, error) {
+	var err error
+	propStatus, err := eh.propStorer.PropStatus(
+		msg.Source,
+		msg.Destination,
+		msg.Data.(transfer.TransferMessageData).DepositNonce)
+	if err != nil {
+		return true, err
+	}
+
+	if propStatus == store.ExecutedProp {
+		return true, nil
+	}
+
+	// change the status to failed if proposal is stuck to be able to retry it
+	if propStatus == store.PendingProp {
+		err = eh.propStorer.StorePropStatus(
+			msg.Source,
+			msg.Destination,
+			msg.Data.(transfer.TransferMessageData).DepositNonce,
+			store.FailedProp)
+	}
+	return false, err
 }
 
 type KeygenEventHandler struct {
