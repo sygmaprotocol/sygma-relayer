@@ -101,10 +101,32 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	if len(props) == 0 {
 		return nil
 	}
-	resource, ok := e.resources[props[0].Data.ResourceId]
-	if !ok {
-		return fmt.Errorf("no address for resource")
+
+	propsPerResource := make(map[[32]byte][]*BtcTransferProposal)
+	for _, prop := range props {
+		propsPerResource[prop.Data.ResourceId] = append(propsPerResource[prop.Data.ResourceId], prop)
 	}
+
+	p := pool.New().WithErrors()
+	for resourceID, props := range propsPerResource {
+		resourceID := resourceID
+		props := props
+
+		p.Go(func() error {
+			resource, ok := e.resources[resourceID]
+			if !ok {
+				return fmt.Errorf("no resource for ID %s", hex.EncodeToString(resourceID[:]))
+			}
+
+			sessionID := fmt.Sprintf("%s-%s", sessionID, hex.EncodeToString(resourceID[:]))
+			return e.executeResourceProps(props, resource, sessionID)
+		})
+	}
+	return p.Wait()
+}
+
+func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource config.Resource, sessionID string) error {
+	log.Info().Str("SessionID", sessionID).Msgf("Executing proposals for resource %s", hex.EncodeToString(resource.ResourceID[:]))
 
 	tx, utxos, err := e.rawTx(props, resource)
 	if err != nil {
@@ -203,7 +225,11 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 	if err != nil {
 		return nil, nil, err
 	}
-	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount)
+	feeEstimate, err := e.fee(int64(len(proposals)), int64(len(proposals)))
+	if err != nil {
+		return nil, nil, err
+	}
+	inputAmount, utxos, err := e.inputs(tx, resource.Address, outputAmount+feeEstimate)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -345,6 +371,7 @@ func (e *Executor) isExecuted(prop *proposal.Proposal) (bool, error) {
 }
 
 func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status store.PropStatus) {
+	e.propMutex.Lock()
 	for _, prop := range props {
 		err := e.propStorer.StorePropStatus(
 			prop.Source,
@@ -355,4 +382,5 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 			log.Err(err).Msgf("Failed storing proposal %+v status %s", prop, status)
 		}
 	}
+	e.propMutex.Unlock()
 }

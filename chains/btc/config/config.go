@@ -19,12 +19,14 @@ import (
 type RawResource struct {
 	Address    string
 	ResourceID string
+	FeeAmount  string
 	Tweak      string
 	Script     string
 }
 
 type Resource struct {
 	Address    btcutil.Address
+	FeeAmount  *big.Int
 	ResourceID [32]byte
 	Tweak      string
 	Script     []byte
@@ -34,6 +36,7 @@ type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	Resources                []RawResource `mapstrcture:"resources"`
 	StartBlock               int64         `mapstructure:"startBlock"`
+	FeeAddress               string        `mapstructure:"feeAddress"`
 	Username                 string        `mapstructure:"username"`
 	Password                 string        `mapstructure:"password"`
 	BlockInterval            int64         `mapstructure:"blockInterval" default:"5"`
@@ -48,7 +51,7 @@ func (c *RawBtcConfig) Validate() error {
 		return err
 	}
 
-	if c.BlockConfirmations != 0 && c.BlockConfirmations < 1 {
+	if c.BlockConfirmations < 1 {
 		return fmt.Errorf("blockConfirmations has to be >=1")
 	}
 
@@ -65,6 +68,7 @@ func (c *RawBtcConfig) Validate() error {
 type BtcConfig struct {
 	GeneralChainConfig chain.GeneralChainConfig
 	Resources          []Resource
+	FeeAddress         btcutil.Address
 	Username           string
 	Password           string
 	StartBlock         *big.Int
@@ -100,12 +104,20 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	feeAddress, err := btcutil.DecodeAddress(c.FeeAddress, &networkParams)
+	if err != nil {
+		return nil, err
+	}
 	resources := make([]Resource, len(c.Resources))
 	for i, r := range c.Resources {
 		scriptBytes, err := hex.DecodeString(r.Script)
 		if err != nil {
 			return nil, err
+		}
+
+		feeAmount, success := new(big.Int).SetString(r.FeeAmount, 10)
+		if !success {
+			return nil, fmt.Errorf("error: could not convert string to *big.Int")
 		}
 
 		address, err := btcutil.DecodeAddress(r.Address, &networkParams)
@@ -123,6 +135,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 			ResourceID: resource32Bytes,
 			Script:     scriptBytes,
 			Tweak:      r.Tweak,
+			FeeAmount:  feeAmount,
 		}
 	}
 
@@ -137,6 +150,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		Password:           c.Password,
 		Network:            networkParams,
 		MempoolUrl:         c.MempoolUrl,
+		FeeAddress:         feeAddress,
 		Resources:          resources,
 	}
 	return config, nil

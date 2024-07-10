@@ -8,10 +8,18 @@ import (
 	"sort"
 )
 
+type Status struct {
+	Confirmed   bool
+	BlockHeight uint64 `json:"block_height"`
+	BlockHash   string `json:"block_hash"`
+	BlockTime   uint64 `json:"block_time"`
+}
+
 type Utxo struct {
-	TxID  string `json:"txid"`
-	Vout  uint32 `json:"vout"`
-	Value uint64 `json:"value"`
+	TxID   string `json:"txid"`
+	Vout   uint32 `json:"vout"`
+	Value  uint64 `json:"value"`
+	Status Status `json:"status"`
 }
 
 type Fee struct {
@@ -69,7 +77,7 @@ func (a *MempoolAPI) Utxos(address string) ([]Utxo, error) {
 		return nil, err
 	}
 	sort.Slice(utxos, func(i int, j int) bool {
-		return utxos[i].TxID < utxos[j].TxID
+		return utxos[i].Status.BlockTime < utxos[j].Status.BlockTime
 	})
 
 	return utxos, nil

@@ -117,15 +117,15 @@ func (r *Resharing) Stop() {
 }
 
 // Ready returns true if all parties from peerstore are ready
-func (r *Resharing) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
-	return len(readyMap) == len(r.Host.Peerstore().Peers()), nil
+func (r *Resharing) Ready(readyPeers []peer.ID, excludedPeers []peer.ID) (bool, error) {
+	return len(readyPeers) == len(r.Host.Peerstore().Peers()), nil
 }
 
 func (r *Resharing) ValidCoordinators() []peer.ID {
 	return r.key.Peers
 }
 
-func (r *Resharing) StartParams(readyMap map[peer.ID]bool) []byte {
+func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
 	return r.key.Key.PublicKey
 }
 

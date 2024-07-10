@@ -93,18 +93,21 @@ func (s *NewBtcConfigTestSuite) Test_InvalidPassword() {
 func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 	expectedResource := listener.SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31))
 	expectedAddress, _ := btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
+	feeAddress, _ := btcutil.DecodeAddress("mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt", &chaincfg.TestNet3Params)
 	expectedScript, _ := hex.DecodeString("51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5")
 
 	rawConfig := map[string]interface{}{
-		"id":       1,
-		"endpoint": "ws://domain.com",
-		"name":     "btc1",
-		"username": "username",
-		"password": "pass123",
-		"network":  "testnet",
+		"id":         1,
+		"endpoint":   "ws://domain.com",
+		"name":       "btc1",
+		"username":   "username",
+		"password":   "pass123",
+		"network":    "testnet",
+		"feeAddress": "mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt",
 		"resources": []interface{}{
 			config.RawResource{
 				Address:    "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+				FeeAmount:  "10000000",
 				ResourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
 				Script:     "51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5",
 				Tweak:      "tweak",
@@ -130,12 +133,14 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 		BlockInterval:      big.NewInt(5),
 		BlockRetryInterval: time.Duration(5) * time.Second,
 		Network:            chaincfg.TestNet3Params,
+		FeeAddress:         feeAddress,
 		Resources: []config.Resource{
 			{
 				Address:    expectedAddress,
 				ResourceID: expectedResource,
 				Script:     expectedScript,
 				Tweak:      "tweak",
+				FeeAmount:  big.NewInt(10000000),
 			},
 		},
 	})

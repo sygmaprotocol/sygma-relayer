@@ -34,6 +34,7 @@ type DepositHandlerTestSuite struct {
 	resource                     config.Resource
 	msgChan                      chan []*message.Message
 	mockConn                     *mock_listener.MockConnection
+	feeAddress                   btcutil.Address
 }
 
 func TestRunDepositHandlerTestSuite(t *testing.T) {
@@ -43,12 +44,14 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	address, _ := btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
-	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}}
+	address, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
+	s.feeAddress, _ = btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
+
+	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}, FeeAmount: big.NewInt(10000)}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
-	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource)
+	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource, s.feeAddress)
 }
 
 func (s *DepositHandlerTestSuite) Test_FetchDepositFails_GetBlockHashError() {
@@ -67,26 +70,18 @@ func (s *DepositHandlerTestSuite) Test_FetchDepositFails_GetBlockVerboseTxError(
 	s.NotNil(err)
 }
 
-func (s *DepositHandlerTestSuite) Test_CalculateNonceFail_BlockNumberOverflow() {
-
-	blockNumber := new(big.Int)
-	blockNumber.SetString("18446744073709551616", 10)
-	nonce, err := s.fungibleTransferEventHandler.CalculateNonce(blockNumber, 5)
-	s.Equal(nonce, uint64(0))
-	s.NotNil(err)
-}
-
 func (s *DepositHandlerTestSuite) Test_CalculateNonce() {
-	blockNumber := big.NewInt(123)
-	nonce, err := s.fungibleTransferEventHandler.CalculateNonce(blockNumber, 4)
-	s.Equal(nonce, uint64(1234))
+	blockNumber := big.NewInt(850000)
+	nonce, err := s.fungibleTransferEventHandler.CalculateNonce(blockNumber, "a3f1e4d8b3c5e2a1f6d3c7e4b8a9f3e2c1d4a6b7c8e3f1d2c4b5a6e7")
+	fmt.Println(nonce)
+	s.Equal(nonce, uint64(12849897320021645821))
 	s.Nil(err)
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	blockNumber := big.NewInt(100)
 	data2 := map[string]any{
-		"deposit_nonce": uint64(1001),
+		"deposit_nonce": uint64(8228687738678474667),
 		"resource_id":   [32]byte{0},
 		"amount":        big.NewInt(19000),
 		"deposit_data":  "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
@@ -129,9 +124,16 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 			{
 				ScriptPubKey: btcjson.ScriptPubKeyResult{
 					Type:    "witness_v1_taproot",
-					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+					Address: "tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv",
 				},
 				Value: float64(0.00019),
+			},
+			{
+				ScriptPubKey: btcjson.ScriptPubKeyResult{
+					Type:    "witness_v1_taproot",
+					Address: "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+				},
+				Value: float64(0.0002),
 			},
 		},
 	}
