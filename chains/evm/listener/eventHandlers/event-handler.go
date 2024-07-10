@@ -24,6 +24,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
 	frostKeygen "github.com/ChainSafe/sygma-relayer/tss/frost/keygen"
+	frostResharing "github.com/ChainSafe/sygma-relayer/tss/frost/resharing"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -265,7 +266,8 @@ type RefreshEventHandler struct {
 	host             host.Host
 	communication    comm.Communication
 	connectionGate   *p2p.ConnectionGate
-	storer           resharing.SaveDataStorer
+	ecdsaStorer      resharing.SaveDataStorer
+	frostStorer      frostResharing.FrostKeyshareStorer
 }
 
 func NewRefreshEventHandler(
@@ -277,7 +279,8 @@ func NewRefreshEventHandler(
 	host host.Host,
 	communication comm.Communication,
 	connectionGate *p2p.ConnectionGate,
-	storer resharing.SaveDataStorer,
+	ecdsaStorer resharing.SaveDataStorer,
+	frostStorer frostResharing.FrostKeyshareStorer,
 	bridgeAddress common.Address,
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
@@ -288,7 +291,8 @@ func NewRefreshEventHandler(
 		coordinator:      coordinator,
 		host:             host,
 		communication:    communication,
-		storer:           storer,
+		ecdsaStorer:      ecdsaStorer,
+		frostStorer:      frostStorer,
 		connectionGate:   connectionGate,
 		bridgeAddress:    bridgeAddress,
 	}
@@ -331,11 +335,18 @@ func (eh *RefreshEventHandler) HandleEvents(
 	)
 
 	resharing := resharing.NewResharing(
-		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.storer,
+		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.ecdsaStorer,
 	)
 	err = eh.coordinator.Execute(context.Background(), resharing, make(chan interface{}, 1))
 	if err != nil {
-		log.Err(err).Msgf("Failed executing key refresh")
+		log.Err(err).Msgf("Failed executing ecdsa key refresh")
+	}
+	frostResharing := frostResharing.NewResharing(
+		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.frostStorer,
+	)
+	err = eh.coordinator.Execute(context.Background(), frostResharing, make(chan interface{}, 1))
+	if err != nil {
+		log.Err(err).Msgf("Failed executing frost key refresh")
 	}
 	return nil
 }

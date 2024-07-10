@@ -165,9 +165,10 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 
 // StartParams returns threshold and peer subset from the old key to share with new parties.
 func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
+  oldSubset := common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers())
 	startParams := &startParams{
 		OldThreshold: r.key.Threshold,
-		OldSubset:    r.key.Peers,
+		OldSubset:    oldSubset,
 	}
 	paramBytes, _ := json.Marshal(startParams)
 	return paramBytes
@@ -200,7 +201,7 @@ func (r *Resharing) validateStartParams(params startParams) error {
 	slices.Sort(r.key.Peers)
 	// if relayer is already part of the active subset, check if peer subset
 	// in starting params is same as one saved in keyshare
-	if len(r.key.Peers) != 0 && !slices.Equal(params.OldSubset, r.key.Peers) {
+	if len(r.key.Peers) != 0 && !slices.Equal(params.OldSubset, common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers())) {
 		return errors.New("invalid peers subset in start params")
 	}
 

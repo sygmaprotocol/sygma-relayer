@@ -66,3 +66,15 @@ func ExcludePeers(peers peer.IDSlice, excludedPeers peer.IDSlice) peer.IDSlice {
 	}
 	return includedPeers
 }
+
+func PeersIntersection(oldPeers peer.IDSlice, newPeers peer.IDSlice) peer.IDSlice {
+	includedPeers := make(peer.IDSlice, 0)
+	for _, peer := range oldPeers {
+		if !slices.Contains(newPeers, peer) {
+			continue
+		}
+
+		includedPeers = append(includedPeers, peer)
+	}
+	return includedPeers
+}
