@@ -36,18 +36,18 @@ func (m *MockTssProcess) EXPECT() *MockTssProcessMockRecorder {
 }
 
 // Ready mocks base method.
-func (m *MockTssProcess) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+func (m *MockTssProcess) Ready(readyPeers, excludedPeers []peer.ID) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ready", readyMap, excludedPeers)
+	ret := m.ctrl.Call(m, "Ready", readyPeers, excludedPeers)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Ready indicates an expected call of Ready.
-func (mr *MockTssProcessMockRecorder) Ready(readyMap, excludedPeers interface{}) *gomock.Call {
+func (mr *MockTssProcessMockRecorder) Ready(readyPeers, excludedPeers interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockTssProcess)(nil).Ready), readyMap, excludedPeers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockTssProcess)(nil).Ready), readyPeers, excludedPeers)
 }
 
 // Retryable mocks base method.
@@ -93,17 +93,17 @@ func (mr *MockTssProcessMockRecorder) SessionID() *gomock.Call {
 }
 
 // StartParams mocks base method.
-func (m *MockTssProcess) StartParams(readyMap map[peer.ID]bool) []byte {
+func (m *MockTssProcess) StartParams(readyPeers []peer.ID) []byte {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartParams", readyMap)
+	ret := m.ctrl.Call(m, "StartParams", readyPeers)
 	ret0, _ := ret[0].([]byte)
 	return ret0
 }
 
 // StartParams indicates an expected call of StartParams.
-func (mr *MockTssProcessMockRecorder) StartParams(readyMap interface{}) *gomock.Call {
+func (mr *MockTssProcessMockRecorder) StartParams(readyPeers interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartParams", reflect.TypeOf((*MockTssProcess)(nil).StartParams), readyMap)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartParams", reflect.TypeOf((*MockTssProcess)(nil).StartParams), readyPeers)
 }
 
 // Stop mocks base method.

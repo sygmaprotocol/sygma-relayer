@@ -114,12 +114,12 @@ func (k *Keygen) Stop() {
 // Ready returns true if all parties from the peerstore are ready.
 // Error is returned if excluded peers exist as we need all peers to participate
 // in keygen process.
-func (k *Keygen) Ready(readyMap map[peer.ID]bool, excludedPeers []peer.ID) (bool, error) {
+func (k *Keygen) Ready(readyPeers []peer.ID, excludedPeers []peer.ID) (bool, error) {
 	if len(excludedPeers) > 0 {
 		return false, errors.New("error")
 	}
 
-	return len(readyMap) == len(k.Host.Peerstore().Peers()), nil
+	return len(readyPeers) == len(k.Host.Peerstore().Peers()), nil
 }
 
 // ValidCoordinators returns all peers in peerstore
@@ -127,7 +127,7 @@ func (k *Keygen) ValidCoordinators() []peer.ID {
 	return k.Host.Peerstore().Peers()
 }
 
-func (k *Keygen) StartParams(readyMap map[peer.ID]bool) []byte {
+func (k *Keygen) StartParams(readyPeers []peer.ID) []byte {
 	return []byte{}
 }
 
