@@ -5,6 +5,7 @@ package chains
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -17,8 +18,8 @@ func ProposalsHash(proposals []*transfer.TransferProposal, chainID int64, verifC
 	formattedProps := make([]interface{}, len(proposals))
 	for i, prop := range proposals {
 		formattedProps[i] = map[string]interface{}{
-			"originDomainID": math.NewHexOrDecimal256(int64(prop.Source)),
-			"depositNonce":   math.NewHexOrDecimal256(int64(prop.Data.DepositNonce)),
+			"originDomainID": big.NewInt(int64(prop.Source)),
+			"depositNonce":   new(big.Int).SetUint64(prop.Data.DepositNonce),
 			"resourceID":     hexutil.Encode(prop.Data.ResourceId[:]),
 			"data":           prop.Data.Data,
 		}
