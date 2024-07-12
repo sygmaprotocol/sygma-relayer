@@ -23,11 +23,11 @@ type Utxo struct {
 }
 
 type Fee struct {
-	FastestFee  int64
-	HalfHourFee int64
-	MinimumFee  int64
-	EconomyFee  int64
-	HourFee     int64
+	FastestFee  uint64
+	HalfHourFee uint64
+	MinimumFee  uint64
+	EconomyFee  uint64
+	HourFee     uint64
 }
 
 type MempoolAPI struct {

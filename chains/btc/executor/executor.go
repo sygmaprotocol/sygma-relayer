@@ -31,8 +31,9 @@ import (
 var (
 	signingTimeout = 30 * time.Minute
 
-	INPUT_SIZE  = 180
-	OUTPUT_SIZE = 34
+	INPUT_SIZE          uint64 = 180
+	OUTPUT_SIZE         uint64 = 34
+	FEE_ROUNDING_FACTOR uint64 = 5
 )
 
 type MempoolAPI interface {
@@ -225,7 +226,7 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 	if err != nil {
 		return nil, nil, err
 	}
-	feeEstimate, err := e.fee(int64(len(proposals)), int64(len(proposals)))
+	feeEstimate, err := e.fee(uint64(len(proposals)), uint64(len(proposals)))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -236,26 +237,26 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 	if inputAmount < outputAmount {
 		return nil, nil, fmt.Errorf("utxo input amount %d less than output amount %d", inputAmount, outputAmount)
 	}
-	fee, err := e.fee(int64(len(utxos)), int64(len(proposals))+1)
+	fee, err := e.fee(uint64(len(utxos)), uint64(len(proposals))+1)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	returnAmount := int64(inputAmount) - fee - outputAmount
+	returnAmount := inputAmount - fee - outputAmount
 	if returnAmount > 0 {
 		// return extra funds
 		returnScript, err := txscript.PayToAddrScript(resource.Address)
 		if err != nil {
 			return nil, nil, err
 		}
-		txOut := wire.NewTxOut(returnAmount, returnScript)
+		txOut := wire.NewTxOut(int64(returnAmount), returnScript)
 		tx.AddTxOut(txOut)
 	}
 	return tx, utxos, err
 }
 
-func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (int64, error) {
-	outputAmount := int64(0)
+func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (uint64, error) {
+	outputAmount := uint64(0)
 	for _, prop := range proposals {
 		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
@@ -265,16 +266,16 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (in
 		if err != nil {
 			return 0, err
 		}
-		txOut := wire.NewTxOut(prop.Data.Amount, destinationAddrByte)
+		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
 		tx.AddTxOut(txOut)
 		outputAmount += prop.Data.Amount
 	}
 	return outputAmount, nil
 }
 
-func (e *Executor) inputs(tx *wire.MsgTx, address btcutil.Address, outputAmount int64) (int64, []mempool.Utxo, error) {
+func (e *Executor) inputs(tx *wire.MsgTx, address btcutil.Address, outputAmount uint64) (uint64, []mempool.Utxo, error) {
 	usedUtxos := make([]mempool.Utxo, 0)
-	inputAmount := int64(0)
+	inputAmount := uint64(0)
 	utxos, err := e.mempool.Utxos(address.String())
 	if err != nil {
 		return 0, nil, err
@@ -289,7 +290,7 @@ func (e *Executor) inputs(tx *wire.MsgTx, address btcutil.Address, outputAmount 
 		tx.AddTxIn(txIn)
 
 		usedUtxos = append(usedUtxos, utxo)
-		inputAmount += int64(utxo.Value)
+		inputAmount += uint64(utxo.Value)
 		if inputAmount > outputAmount {
 			break
 		}
@@ -297,12 +298,13 @@ func (e *Executor) inputs(tx *wire.MsgTx, address btcutil.Address, outputAmount 
 	return inputAmount, usedUtxos, nil
 }
 
-func (e *Executor) fee(numOfInputs, numOfOutputs int64) (int64, error) {
+func (e *Executor) fee(numOfInputs, numOfOutputs uint64) (uint64, error) {
 	recommendedFee, err := e.mempool.RecommendedFee()
 	if err != nil {
 		return 0, err
 	}
-	return (numOfInputs*int64(INPUT_SIZE) + numOfOutputs*int64(OUTPUT_SIZE)) * recommendedFee.EconomyFee, nil
+
+	return (numOfInputs*INPUT_SIZE + numOfOutputs*OUTPUT_SIZE) * ((recommendedFee.EconomyFee / FEE_ROUNDING_FACTOR) * FEE_ROUNDING_FACTOR), nil
 }
 
 func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chainhash.Hash, error) {
