@@ -164,7 +164,7 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 				i,
 				msg,
 				resource.Tweak,
-				fmt.Sprintf("%s-%d", sessionID, i),
+				fmt.Sprintf("%s-%s", sessionID, hex.EncodeToString(txHash)),
 				e.host,
 				e.comm,
 				e.fetcher)
