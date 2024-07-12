@@ -244,7 +244,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 		case wMsg := <-readyChan:
 			{
 				log.Debug().Str("SessionID", tssProcess.SessionID()).Msgf("received ready message from %s", wMsg.From)
-				if !slices.Contains(excludedPeers, wMsg.From) {
+				if !slices.Contains(excludedPeers, wMsg.From) && !slices.Contains(readyPeers, wMsg.From) {
 					readyPeers = append(readyPeers, wMsg.From)
 				}
 				ready, err := tssProcess.Ready(readyPeers, excludedPeers)
