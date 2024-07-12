@@ -110,7 +110,7 @@ func (r *Resharing) Run(
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (r *Resharing) Stop() {
-	log.Info().Str("sessionID", r.SessionID()).Msgf("Stopping tss process.")
+	r.Log.Info().Msgf("Stopping tss process.")
 	r.Communication.UnSubscribe(r.subscriptionID)
 	r.storer.UnlockKeyshare()
 	r.Cancel()

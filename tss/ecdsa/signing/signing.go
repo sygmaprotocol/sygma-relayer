@@ -138,7 +138,7 @@ func (s *Signing) Run(
 
 // Stop ends all subscriptions created when starting the tss process.
 func (s *Signing) Stop() {
-	log.Info().Str("sessionID", s.SessionID()).Msgf("Stopping tss process.")
+	s.Log.Info().Msgf("Stopping tss process.")
 	s.Communication.UnSubscribe(s.subscriptionID)
 	s.Cancel()
 }
