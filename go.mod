@@ -6,7 +6,7 @@ require (
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.1.0
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.2.1
 	github.com/creasty/defaults v1.6.0
 	github.com/deckarep/golang-set/v2 v2.1.0
 	github.com/ethereum/go-ethereum v1.13.4
@@ -47,6 +47,7 @@ require (
 	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
+	github.com/vedhavyas/go-subkey/v2 v2.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/zeebo/blake3 v0.2.3 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
@@ -163,7 +164,6 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	github.com/vedhavyas/go-subkey v1.0.4 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.39.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.16.0 // indirect
