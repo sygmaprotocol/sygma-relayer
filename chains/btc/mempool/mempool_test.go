@@ -61,6 +61,17 @@ func (s *MempoolTestSuite) Test_Utxo_SuccessfulFetch() {
 			},
 		},
 		{
+			TxID:  "28154e2008912d27978225c096c22ffe2ea65e1d55bf440ee41c21f9489c7fe2",
+			Vout:  0,
+			Value: 11197,
+			Status: mempool.Status{
+				Confirmed:   true,
+				BlockHeight: 2812826,
+				BlockHash:   "000000000000001a01d4058773384f2c23aed5a7e5ede252f99e290fa58324a3",
+				BlockTime:   1715083122,
+			},
+		},
+		{
 			TxID:  "28154e2008912d27978225c096c22ffe2ea65e1d55bf440ee41c21f9489c7fe9",
 			Vout:  0,
 			Value: 11198,

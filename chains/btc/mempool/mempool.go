@@ -77,7 +77,11 @@ func (a *MempoolAPI) Utxos(address string) ([]Utxo, error) {
 		return nil, err
 	}
 	sort.Slice(utxos, func(i int, j int) bool {
-		return utxos[i].Status.BlockTime < utxos[j].Status.BlockTime
+		if utxos[i].Status.BlockTime == utxos[j].Status.BlockTime {
+			return utxos[i].TxID < utxos[j].TxID
+		} else {
+			return utxos[i].Status.BlockTime < utxos[j].Status.BlockTime
+		}
 	})
 
 	return utxos, nil
