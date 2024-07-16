@@ -60,7 +60,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -115,7 +115,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
