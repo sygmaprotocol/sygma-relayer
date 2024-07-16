@@ -136,7 +136,7 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx) })
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 
-	s.Log.Info().Msgf("Started signing process")
+	s.Log.Info().Msgf("Started signing process for message %s", s.msg.Text(16))
 	return p.Wait()
 }
 

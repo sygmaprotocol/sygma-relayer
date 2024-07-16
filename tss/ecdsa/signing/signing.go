@@ -127,7 +127,7 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx, sigChn) })
 	p.Go(func(ctx context.Context) error { return s.monitorSigning(ctx) })
 
-	s.Log.Info().Msgf("Started signing process")
+	s.Log.Info().Msgf("Started signing process for message %s", s.msg.Text(16))
 
 	tssError := s.Party.Start()
 	if tssError != nil {
