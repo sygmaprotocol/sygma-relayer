@@ -70,7 +70,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	resultChn := make(chan interface{})
+	resultChn := make(chan interface{}, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pool := pool.New().WithContext(ctx)

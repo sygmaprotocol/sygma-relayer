@@ -345,7 +345,7 @@ func (c *Coordinator) waitForStart(
 				for _, process := range tssProcesses {
 					tssProcess := process
 					p.Go(func(ctx context.Context) error {
-						return tssProcess.Run(ctx, true, resultChn, msg.Params)
+						return tssProcess.Run(ctx, false, resultChn, msg.Params)
 					})
 				}
 				return p.Wait()
