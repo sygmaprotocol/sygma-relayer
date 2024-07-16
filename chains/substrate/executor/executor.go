@@ -105,12 +105,13 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		return err
 	}
 
-	sessionID := transferProposals[0].MessageID
+	messageID := transferProposals[0].MessageID
 	msg := big.NewInt(0)
 	msg.SetBytes(propHash)
 	signing, err := signing.NewSigning(
 		msg,
-		sessionID,
+		messageID,
+		messageID,
 		e.host,
 		e.comm,
 		e.fetcher)
@@ -132,7 +133,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		return err
 	})
 	pool.Go(func() error {
-		return e.watchExecution(watchContext, cancelExecution, transferProposals, sigChn, sessionID)
+		return e.watchExecution(watchContext, cancelExecution, transferProposals, sigChn, messageID)
 	})
 	return pool.Wait()
 }

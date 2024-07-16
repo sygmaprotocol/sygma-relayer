@@ -94,8 +94,8 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 	e.exitLock.RLock()
 	defer e.exitLock.RUnlock()
 
-	sessionID := proposals[0].MessageID
-	props, err := e.proposalsForExecution(proposals)
+	messageID := proposals[0].MessageID
+	props, err := e.proposalsForExecution(proposals, messageID)
 	if err != nil {
 		return err
 	}
@@ -119,15 +119,14 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				return fmt.Errorf("no resource for ID %s", hex.EncodeToString(resourceID[:]))
 			}
 
-			sessionID := fmt.Sprintf("%s-%s", sessionID, hex.EncodeToString(resourceID[:]))
-			return e.executeResourceProps(props, resource, sessionID)
+			return e.executeResourceProps(props, resource, messageID)
 		})
 	}
 	return p.Wait()
 }
 
-func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource config.Resource, sessionID string) error {
-	log.Info().Str("SessionID", sessionID).Msgf("Executing proposals for resource %s", hex.EncodeToString(resource.ResourceID[:]))
+func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource config.Resource, messageID string) error {
+	log.Info().Str("messageID", messageID).Msgf("Executing proposals %+v for resource %s", props, hex.EncodeToString(resource.ResourceID[:]))
 
 	tx, utxos, err := e.rawTx(props, resource)
 	if err != nil {
@@ -138,8 +137,11 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	p := pool.New().WithErrors()
 	executionContext, cancelExecution := context.WithCancel(context.Background())
 	watchContext, cancelWatch := context.WithCancel(context.Background())
+	sessionID := fmt.Sprintf("%s-%s", messageID, hex.EncodeToString(resource.ResourceID[:]))
 	defer cancelWatch()
-	p.Go(func() error { return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID) })
+	p.Go(func() error {
+		return e.watchExecution(watchContext, cancelExecution, tx, props, sigChn, sessionID, messageID)
+	})
 	prevOuts := make(map[wire.OutPoint]*wire.TxOut)
 	for _, utxo := range utxos {
 		txOut := wire.NewTxOut(int64(utxo.Value), resource.Script)
@@ -151,6 +153,11 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	}
 	prevOutputFetcher := txscript.NewMultiPrevOutFetcher(prevOuts)
 	sigHashes := txscript.NewTxSigHashes(tx, prevOutputFetcher)
+
+	var buf buffer.Buffer
+	_ = tx.Serialize(&buf)
+	bytes := buf.Bytes()
+	log.Info().Str("messageID", messageID).Msgf("Assembled raw unsigned transaction %s", hex.EncodeToString(bytes))
 
 	// we need to sign each input individually
 	for i := range tx.TxIn {
@@ -165,7 +172,8 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 				i,
 				msg,
 				resource.Tweak,
-				fmt.Sprintf("%s-%s", sessionID, hex.EncodeToString(txHash)),
+				messageID,
+				fmt.Sprintf("%s-%d", sessionID, i),
 				e.host,
 				e.comm,
 				e.fetcher)
@@ -178,7 +186,14 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, tx *wire.MsgTx, proposals []*BtcTransferProposal, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(
+	ctx context.Context,
+	cancelExecution context.CancelFunc,
+	tx *wire.MsgTx,
+	proposals []*BtcTransferProposal,
+	sigChn chan interface{},
+	sessionID string,
+	messageID string) error {
 	timeout := time.NewTicker(signingTimeout)
 	defer timeout.Stop()
 	defer cancelExecution()
@@ -198,7 +213,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				}
 				cancelExecution()
 
-				hash, err := e.sendTx(tx, signatures)
+				hash, err := e.sendTx(tx, signatures, messageID)
 				if err != nil {
 					_ = e.comm.Broadcast(e.host.Peerstore().Peers(), []byte{}, comm.TssFailMsg, sessionID)
 					e.storeProposalsStatus(proposals, store.FailedProp)
@@ -206,7 +221,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 				}
 
 				e.storeProposalsStatus(proposals, store.ExecutedProp)
-				log.Info().Str("SessionID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Str("messageID", messageID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-timeout.C:
 			{
@@ -307,7 +322,7 @@ func (e *Executor) fee(numOfInputs, numOfOutputs uint64) (uint64, error) {
 	return (numOfInputs*INPUT_SIZE + numOfOutputs*OUTPUT_SIZE) * ((recommendedFee.EconomyFee/FEE_ROUNDING_FACTOR)*FEE_ROUNDING_FACTOR + FEE_ROUNDING_FACTOR), nil
 }
 
-func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chainhash.Hash, error) {
+func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature, messageID string) (*chainhash.Hash, error) {
 	for i, sig := range signatures {
 		tx.TxIn[i].Witness = wire.TxWitness{sig}
 	}
@@ -318,7 +333,7 @@ func (e *Executor) sendTx(tx *wire.MsgTx, signatures []taproot.Signature) (*chai
 		return nil, err
 	}
 	bytes := buf.Bytes()
-	log.Debug().Msgf("Assembled raw transaction %s", hex.EncodeToString(bytes))
+	log.Debug().Str("messageID", messageID).Msgf("Assembled raw transaction %s", hex.EncodeToString(bytes))
 	return e.conn.SendRawTransaction(tx, true)
 }
 
@@ -332,7 +347,7 @@ func (e *Executor) signaturesFilled(signatures []taproot.Signature) bool {
 	return true
 }
 
-func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*BtcTransferProposal, error) {
+func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal, messageID string) ([]*BtcTransferProposal, error) {
 	e.propMutex.Lock()
 	props := make([]*BtcTransferProposal, 0)
 	for _, prop := range proposals {
@@ -342,7 +357,7 @@ func (e *Executor) proposalsForExecution(proposals []*proposal.Proposal) ([]*Btc
 		}
 
 		if executed {
-			log.Info().Msgf("Proposal %s already executed", fmt.Sprintf("%d-%d-%d", prop.Source, prop.Destination, prop.Data.(BtcTransferProposalData).DepositNonce))
+			log.Warn().Str("messageID", messageID).Msgf("Proposal %s already executed", fmt.Sprintf("%d-%d-%d", prop.Source, prop.Destination, prop.Data.(BtcTransferProposalData).DepositNonce))
 			continue
 		}
 

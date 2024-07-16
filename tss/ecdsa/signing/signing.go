@@ -44,6 +44,7 @@ type Signing struct {
 
 func NewSigning(
 	msg *big.Int,
+	messageID string,
 	sessionID string,
 	host host.Host,
 	comm comm.Communication,
@@ -64,7 +65,7 @@ func NewSigning(
 			Communication: comm,
 			Peers:         key.Peers,
 			SID:           sessionID,
-			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
+			Log:           log.With().Str("SessionID", sessionID).Str("messageID", messageID).Str("Process", "signing").Logger(),
 			Cancel:        func() {},
 		},
 		key: key,

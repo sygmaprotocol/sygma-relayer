@@ -87,6 +87,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 		if len(batch.proposals) == 0 {
 			continue
 		}
+		messageID := batch.proposals[0].MessageID
 
 		b := batch
 		p.Go(func() error {
@@ -95,13 +96,14 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 				return err
 			}
 
-			sessionID := fmt.Sprintf("%s-%d", batch.proposals[0].MessageID, i)
+			sessionID := fmt.Sprintf("%s-%d", messageID, i)
 			log.Info().Str("messageID", batch.proposals[0].MessageID).Msgf("Starting session with ID: %s", sessionID)
 
 			msg := big.NewInt(0)
 			msg.SetBytes(propHash)
 			signing, err := signing.NewSigning(
 				msg,
+				messageID,
 				sessionID,
 				e.host,
 				e.comm,
@@ -122,14 +124,20 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 				return err
 			})
-			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID) })
+			ep.Go(func() error { return e.watchExecution(watchContext, cancelExecution, b, sigChn, sessionID, messageID) })
 			return ep.Wait()
 		})
 	}
 	return p.Wait()
 }
 
-func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.CancelFunc, batch *Batch, sigChn chan interface{}, sessionID string) error {
+func (e *Executor) watchExecution(
+	ctx context.Context,
+	cancelExecution context.CancelFunc,
+	batch *Batch,
+	sigChn chan interface{},
+	sessionID string,
+	messageID string) error {
 	ticker := time.NewTicker(executionCheckPeriod)
 	timeout := time.NewTicker(signingTimeout)
 	defer ticker.Stop()
@@ -152,7 +160,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
-				log.Info().Str("messageID", sessionID).Msgf("Sent proposals execution with hash: %s", hash)
+				log.Info().Str("messageID", messageID).Msgf("Sent proposals execution with hash: %s", hash)
 			}
 		case <-ticker.C:
 			{
@@ -160,7 +168,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					continue
 				}
 
-				log.Info().Str("messageID", sessionID).Msgf("Successfully executed proposals")
+				log.Info().Str("messageID", messageID).Msgf("Successfully executed proposals")
 				return nil
 			}
 		case <-timeout.C:
