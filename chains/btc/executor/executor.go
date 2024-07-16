@@ -181,7 +181,7 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 			if err != nil {
 				return err
 			}
-			return e.coordinator.Execute(executionContext, signing, sigChn)
+			return e.coordinator.Execute(executionContext, []tss.TssProcess{signing}, sigChn)
 		})
 	}
 	return p.Wait()
@@ -223,6 +223,7 @@ func (e *Executor) watchExecution(
 
 				e.storeProposalsStatus(proposals, store.ExecutedProp)
 				log.Info().Str("messageID", messageID).Msgf("Sent proposals execution with hash: %s", hash)
+				return nil
 			}
 		case <-timeout.C:
 			{

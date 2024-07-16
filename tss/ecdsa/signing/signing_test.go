@@ -63,7 +63,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error {
-			return coordinator.Execute(ctx, processes[i], resultChn)
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
 		})
 	}
 
@@ -112,7 +112,9 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
+		})
 	}
 
 	err := pool.Wait()
@@ -140,8 +142,8 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 	s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, nil) })
 	}
 
 	err := pool.Wait()
