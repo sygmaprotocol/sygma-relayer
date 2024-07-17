@@ -133,7 +133,7 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 		return err
 	}
 
-	sigChn := make(chan interface{})
+	sigChn := make(chan interface{}, len(tx.TxIn))
 	p := pool.New().WithErrors()
 	executionContext, cancelExecution := context.WithCancel(context.Background())
 	watchContext, cancelWatch := context.WithCancel(context.Background())
@@ -160,30 +160,32 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	log.Info().Str("messageID", messageID).Msgf("Assembled raw unsigned transaction %s", hex.EncodeToString(bytes))
 
 	// we need to sign each input individually
+	tssProcesses := make([]tss.TssProcess, len(tx.TxIn))
 	for i := range tx.TxIn {
 		sessionID := fmt.Sprintf("%s-%d", sessionID, i)
 		txHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
 		if err != nil {
 			return err
 		}
-		p.Go(func() error {
-			msg := new(big.Int)
-			msg.SetBytes(txHash[:])
-			signing, err := signing.NewSigning(
-				i,
-				msg,
-				resource.Tweak,
-				messageID,
-				sessionID,
-				e.host,
-				e.comm,
-				e.fetcher)
-			if err != nil {
-				return err
-			}
-			return e.coordinator.Execute(executionContext, signing, sigChn)
-		})
+		msg := new(big.Int)
+		msg.SetBytes(txHash[:])
+		signing, err := signing.NewSigning(
+			i,
+			msg,
+			resource.Tweak,
+			messageID,
+			sessionID,
+			e.host,
+			e.comm,
+			e.fetcher)
+		if err != nil {
+			return err
+		}
+		tssProcesses[i] = signing
 	}
+	p.Go(func() error {
+		return e.coordinator.Execute(executionContext, tssProcesses, sigChn)
+	})
 	return p.Wait()
 }
 
@@ -223,6 +225,7 @@ func (e *Executor) watchExecution(
 
 				e.storeProposalsStatus(proposals, store.ExecutedProp)
 				log.Info().Str("messageID", messageID).Msgf("Sent proposals execution with hash: %s", hash)
+				return nil
 			}
 		case <-timeout.C:
 			{

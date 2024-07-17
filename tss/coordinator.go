@@ -69,8 +69,10 @@ func NewCoordinator(
 }
 
 // Execute calculates process leader and coordinates party readiness and start the tss processes.
-func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}) error {
-	sessionID := tssProcess.SessionID()
+// Array of processes can be passed if all the processes have to have the same peer subset and
+// the result of all of them is needed. The processes should have an unique session ID for each one.
+func (c *Coordinator) Execute(ctx context.Context, tssProcesses []TssProcess, resultChn chan interface{}) error {
+	sessionID := tssProcesses[0].SessionID()
 	value, ok := c.pendingProcesses[sessionID]
 	if ok && value {
 		log.Warn().Str("SessionID", sessionID).Msgf("Process already pending")
@@ -89,71 +91,74 @@ func (c *Coordinator) Execute(ctx context.Context, tssProcess TssProcess, result
 		c.processLock.Lock()
 		c.pendingProcesses[sessionID] = false
 		c.processLock.Unlock()
-		tssProcess.Stop()
+		for _, process := range tssProcesses {
+			process.Stop()
+		}
 	}()
 
 	coordinatorElector := c.electorFactory.CoordinatorElector(sessionID, elector.Static)
-	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcess.ValidCoordinators())
+	coordinator, _ := coordinatorElector.Coordinator(ctx, tssProcesses[0].ValidCoordinators())
 
 	log.Info().Str("SessionID", sessionID).Msgf("Starting process with coordinator %s", coordinator.Pretty())
 
 	p.Go(func(ctx context.Context) error {
-		err := c.start(ctx, tssProcess, coordinator, resultChn, []peer.ID{})
+		err := c.start(ctx, tssProcesses, coordinator, resultChn, []peer.ID{})
 		if err == nil {
 			cancel()
 		}
 		return err
 	})
 	p.Go(func(ctx context.Context) error {
-		return c.watchExecution(ctx, tssProcess, coordinator)
+		return c.watchExecution(ctx, tssProcesses[0], coordinator)
 	})
 	err := p.Wait()
 	if err == nil {
 		return nil
 	}
 
-	if !tssProcess.Retryable() {
+	if !tssProcesses[0].Retryable() {
 		return err
 	}
 
-	return c.handleError(ctx, err, tssProcess, resultChn)
+	return c.handleError(ctx, err, tssProcesses, resultChn)
 }
 
-func (c *Coordinator) handleError(ctx context.Context, err error, tssProcess TssProcess, resultChn chan interface{}) error {
+func (c *Coordinator) handleError(ctx context.Context, err error, tssProcesses []TssProcess, resultChn chan interface{}) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	rp := pool.New().WithContext(ctx).WithCancelOnError()
 	rp.Go(func(ctx context.Context) error {
-		return c.watchExecution(ctx, tssProcess, peer.ID(""))
+		return c.watchExecution(ctx, tssProcesses[0], peer.ID(""))
 	})
+	sessionID := tssProcesses[0].SessionID()
 	switch err := err.(type) {
 	case *CoordinatorError:
 		{
-			log.Err(err).Str("SessionID", tssProcess.SessionID()).Msgf("Tss process failed with error %+v", err)
+			log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 
 			excludedPeers := []peer.ID{err.Peer}
-			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcess, resultChn, excludedPeers) })
+			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcesses, resultChn, excludedPeers) })
 		}
 	case *comm.CommunicationError:
 		{
-			log.Err(err).Str("SessionID", tssProcess.SessionID()).Msgf("Tss process failed with error %+v", err)
-			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcess, resultChn, []peer.ID{}) })
+			log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
+			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcesses, resultChn, []peer.ID{}) })
 		}
 	case *tss.Error:
 		{
-			log.Err(err).Str("SessionID", tssProcess.SessionID()).Msgf("Tss process failed with error %+v", err)
+			log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 			excludedPeers, err := common.PeersFromParties(err.Culprits())
 			if err != nil {
 				return err
 			}
-			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcess, resultChn, excludedPeers) })
+			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcesses, resultChn, excludedPeers) })
 		}
 	case *SubsetError:
 		{
 			// wait for start message if existing singing process fails
 			rp.Go(func(ctx context.Context) error {
-				return c.waitForStart(ctx, tssProcess, resultChn, peer.ID(""), c.TssTimeout)
+				return c.waitForStart(ctx, tssProcesses, resultChn, peer.ID(""), c.TssTimeout)
 			})
 		}
 	default:
@@ -197,24 +202,24 @@ func (c *Coordinator) watchExecution(ctx context.Context, tssProcess TssProcess,
 }
 
 // start initiates listeners for coordinator and participants with static calculated coordinator
-func (c *Coordinator) start(ctx context.Context, tssProcess TssProcess, coordinator peer.ID, resultChn chan interface{}, excludedPeers []peer.ID) error {
+func (c *Coordinator) start(ctx context.Context, tssProcesses []TssProcess, coordinator peer.ID, resultChn chan interface{}, excludedPeers []peer.ID) error {
 	if coordinator.Pretty() == c.host.ID().Pretty() {
-		return c.initiate(ctx, tssProcess, resultChn, excludedPeers)
+		return c.initiate(ctx, tssProcesses, resultChn, excludedPeers)
 	} else {
-		return c.waitForStart(ctx, tssProcess, resultChn, coordinator, c.CoordinatorTimeout)
+		return c.waitForStart(ctx, tssProcesses, resultChn, coordinator, c.CoordinatorTimeout)
 	}
 }
 
 // retry initiates full bully process to calculate coordinator and starts a new tss process after
 // an expected error ocurred during regular tss execution
-func (c *Coordinator) retry(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
-	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcess.SessionID(), elector.Bully)
-	coordinator, err := coordinatorElector.Coordinator(ctx, common.ExcludePeers(tssProcess.ValidCoordinators(), excludedPeers))
+func (c *Coordinator) retry(ctx context.Context, tssProcesses []TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
+	coordinatorElector := c.electorFactory.CoordinatorElector(tssProcesses[0].SessionID(), elector.Bully)
+	coordinator, err := coordinatorElector.Coordinator(ctx, common.ExcludePeers(tssProcesses[0].ValidCoordinators(), excludedPeers))
 	if err != nil {
 		return err
 	}
 
-	return c.start(ctx, tssProcess, coordinator, resultChn, excludedPeers)
+	return c.start(ctx, tssProcesses, coordinator, resultChn, excludedPeers)
 }
 
 // broadcastInitiateMsg sends TssInitiateMsg to all peers
@@ -228,11 +233,12 @@ func (c *Coordinator) broadcastInitiateMsg(sessionID string) {
 // initiate sends initiate message to all peers and waits
 // for ready response. After tss process declares that enough
 // peers are ready, start message is broadcasted and tss process is started.
-func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
+func (c *Coordinator) initiate(ctx context.Context, tssProcesses []TssProcess, resultChn chan interface{}, excludedPeers []peer.ID) error {
 	readyChan := make(chan *comm.WrappedMessage)
 	readyPeers := make([]peer.ID, 0)
 	readyPeers = append(readyPeers, c.host.ID())
 
+	tssProcess := tssProcesses[0]
 	subID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssReadyMsg, readyChan)
 	defer c.communication.UnSubscribe(subID)
 
@@ -262,7 +268,14 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 				}
 
 				_ = c.communication.Broadcast(c.host.Peerstore().Peers(), startMsgBytes, comm.TssStartMsg, tssProcess.SessionID())
-				return tssProcess.Run(ctx, true, resultChn, startParams)
+				p := pool.New().WithContext(ctx).WithCancelOnError()
+				for _, process := range tssProcesses {
+					tssProcess := process
+					p.Go(func(ctx context.Context) error {
+						return tssProcess.Run(ctx, true, resultChn, startParams)
+					})
+				}
+				return p.Wait()
 			}
 		case <-ticker.C:
 			{
@@ -280,7 +293,7 @@ func (c *Coordinator) initiate(ctx context.Context, tssProcess TssProcess, resul
 // when it receives the start message.
 func (c *Coordinator) waitForStart(
 	ctx context.Context,
-	tssProcess TssProcess,
+	tssProcesses []TssProcess,
 	resultChn chan interface{},
 	coordinator peer.ID,
 	timeout time.Duration,
@@ -288,6 +301,7 @@ func (c *Coordinator) waitForStart(
 	msgChan := make(chan *comm.WrappedMessage)
 	startMsgChn := make(chan *comm.WrappedMessage)
 
+	tssProcess := tssProcesses[0]
 	initSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssInitiateMsg, msgChan)
 	defer c.communication.UnSubscribe(initSubID)
 	startSubID := c.communication.Subscribe(tssProcess.SessionID(), comm.TssStartMsg, startMsgChn)
@@ -327,7 +341,14 @@ func (c *Coordinator) waitForStart(
 					return err
 				}
 
-				return tssProcess.Run(ctx, false, resultChn, msg.Params)
+				p := pool.New().WithContext(ctx).WithCancelOnError()
+				for _, process := range tssProcesses {
+					tssProcess := process
+					p.Go(func(ctx context.Context) error {
+						return tssProcess.Run(ctx, false, resultChn, msg.Params)
+					})
+				}
+				return p.Wait()
 			}
 		case <-coordinatorTimeoutTicker.C:
 			{

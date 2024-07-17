@@ -49,7 +49,7 @@ func (s *KeygenTestSuite) Test_ValidKeygenProcess() {
 
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, nil) })
 	}
 
 	err := pool.Wait()

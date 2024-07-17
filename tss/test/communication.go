@@ -6,6 +6,7 @@ package tsstest
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -35,6 +36,8 @@ func (tc *TestCommunication) Broadcast(
 		Payload:     msg,
 		From:        tc.Host.ID(),
 	}
+
+	time.Sleep(100 * time.Millisecond)
 	for _, peer := range peers {
 		if tc.PeerCommunications[peer.Pretty()] == nil {
 			continue

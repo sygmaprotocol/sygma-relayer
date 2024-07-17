@@ -117,7 +117,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 			watchContext, cancelWatch := context.WithCancel(context.Background())
 			ep := pool.New().WithErrors()
 			ep.Go(func() error {
-				err := e.coordinator.Execute(executionContext, signing, sigChn)
+				err := e.coordinator.Execute(executionContext, []tss.TssProcess{signing}, sigChn)
 				if err != nil {
 					cancelWatch()
 				}

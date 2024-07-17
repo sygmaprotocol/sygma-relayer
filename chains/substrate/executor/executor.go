@@ -125,7 +125,7 @@ func (e *Executor) Execute(proposals []*proposal.Proposal) error {
 
 	pool := pool.New().WithErrors()
 	pool.Go(func() error {
-		err := e.coordinator.Execute(executionContext, signing, sigChn)
+		err := e.coordinator.Execute(executionContext, []tss.TssProcess{signing}, sigChn)
 		if err != nil {
 			cancelWatch()
 		}
