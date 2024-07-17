@@ -128,6 +128,28 @@ func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.
 	return retryEvents, nil
 }
 
+func (l *Listener) FetchRetryV2Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryV2Event, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetryV2Sig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	var retryEvents []RetryV2Event
+	for _, dl := range logs {
+		var event RetryV2Event
+		err = l.abi.UnpackIntoInterface(&event, "Retry", dl.Data)
+		if err != nil {
+			log.Error().Msgf(
+				"failed unpacking retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
+			)
+			continue
+		}
+		retryEvents = append(retryEvents, event)
+	}
+
+	return retryEvents, nil
+}
+
 func (l *Listener) FetchKeygenEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(StartKeygenSig), startBlock, endBlock)
 	if err != nil {

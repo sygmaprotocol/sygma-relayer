@@ -4,6 +4,8 @@
 package events
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -22,6 +24,7 @@ const (
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32,bytes)"
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
 	RetrySig             EventSig = "Retry(string)"
+	RetryV2Sig           EventSig = "Retry(uint8,uint8,uint256)"
 	FeeHandlerChanged    EventSig = "FeeHandlerChanged(address)"
 )
 
@@ -33,6 +36,12 @@ type Refresh struct {
 
 type RetryEvent struct {
 	TxHash string
+}
+
+type RetryV2Event struct {
+	SourceDomainID      uint8
+	DestinationDomainID uint8
+	BlockHeight         *big.Int
 }
 
 type Deposit struct {
