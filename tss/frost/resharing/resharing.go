@@ -57,6 +57,7 @@ func NewResharing(
 			},
 		}
 	}
+	key.Key.Threshold = threshold
 
 	return &Resharing{
 		BaseFrostTss: common.BaseFrostTss{
