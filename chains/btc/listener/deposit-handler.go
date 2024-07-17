@@ -22,7 +22,8 @@ func NewBtcDepositHandler() *BtcDepositHandler {
 	return &BtcDepositHandler{}
 }
 
-func (e *BtcDepositHandler) HandleDeposit(sourceID uint8,
+func (e *BtcDepositHandler) HandleDeposit(
+	sourceID uint8,
 	depositNonce uint64,
 	resourceID [32]byte,
 	amount *big.Int,

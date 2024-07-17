@@ -46,7 +46,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -96,7 +96,7 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing2", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing2", "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
