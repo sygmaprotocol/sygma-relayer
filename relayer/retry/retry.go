@@ -6,6 +6,9 @@ package retry
 import (
 	"math/big"
 
+	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/ChainSafe/sygma-relayer/store"
+	"github.com/rs/zerolog/log"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
@@ -17,12 +20,65 @@ type RetryMessageData struct {
 	SourceDomainID      uint8
 	DestinationDomainID uint8
 	BlockHeight         *big.Int
+	ResourceID          [32]byte
 }
 
-type RetryMessage struct {
-	Source      uint8
-	Destination uint8
-	Data        RetryMessageData
-	Type        message.MessageType
-	ID          string
+type PropStorer interface {
+	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
+	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
+func FilterDeposits(
+	propStorer PropStorer,
+	domainDeposits map[uint8][]*message.Message,
+	resourceID [32]byte,
+	destination uint8) (map[uint8][]*message.Message, error) {
+	for domain, deposits := range domainDeposits {
+		filteredDeposits := []*message.Message{}
+		for _, deposit := range deposits {
+			data := deposit.Data.(transfer.TransferMessageData)
+			if data.ResourceId != resourceID || deposit.Destination != destination {
+				continue
+			}
+
+			isExecuted, err := isExecuted(deposit, propStorer)
+			if err != nil {
+				log.Err(err).Str("messageID", deposit.ID).Msgf("Failed checking if deposit executed %+v", deposit)
+				continue
+			}
+			if isExecuted {
+				log.Debug().Str("messageID", deposit.ID).Msgf("Deposit marked as executed %+v", deposit)
+				continue
+			}
+
+			filteredDeposits = append(filteredDeposits, deposit)
+		}
+		domainDeposits[domain] = filteredDeposits
+	}
+	return domainDeposits, nil
+}
+
+func isExecuted(msg *message.Message, propStorer PropStorer) (bool, error) {
+	var err error
+	propStatus, err := propStorer.PropStatus(
+		msg.Source,
+		msg.Destination,
+		msg.Data.(transfer.TransferMessageData).DepositNonce)
+	if err != nil {
+		return true, err
+	}
+
+	if propStatus == store.ExecutedProp {
+		return true, nil
+	}
+
+	// change the status to failed if proposal is stuck to be able to retry it
+	if propStatus == store.PendingProp {
+		err = propStorer.StorePropStatus(
+			msg.Source,
+			msg.Destination,
+			msg.Data.(transfer.TransferMessageData).DepositNonce,
+			store.FailedProp)
+	}
+	return false, err
 }

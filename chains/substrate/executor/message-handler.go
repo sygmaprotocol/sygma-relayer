@@ -5,9 +5,14 @@ package executor
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
+	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/ChainSafe/sygma-relayer/store"
+	"github.com/centrifuge/go-substrate-rpc-client/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
@@ -54,4 +59,58 @@ func fungibleTransferMessageHandler(m *transfer.TransferMessage) (*proposal.Prop
 		Metadata:     m.Data.Metadata,
 		Data:         data,
 	}, m.ID, transfer.TransferProposalType), nil
+}
+
+type PropStorer interface {
+	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
+	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
+type BlockFetcher interface {
+	GetFinalizedHead() (types.Hash, error)
+	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
+}
+
+type RetryMessageHandler struct {
+	eventHandler listener.FungibleTransferEventHandler
+	blockFetcher BlockFetcher
+	propStorer   PropStorer
+	msgChan      chan []*message.Message
+}
+
+func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+	retryData := msg.Data.(retry.RetryMessageData)
+	hash, err := h.blockFetcher.GetFinalizedHead()
+	if err != nil {
+		return nil, err
+	}
+	finalized, err := h.blockFetcher.GetBlock(hash)
+	if err != nil {
+		return nil, err
+	}
+	latestBlock := big.NewInt(int64(finalized.Block.Header.Number))
+	if latestBlock.Cmp(retryData.BlockHeight) != 1 {
+		return nil, fmt.Errorf(
+			"latest block %s higher than receipt block number %s",
+			latestBlock,
+			retryData.BlockHeight,
+		)
+	}
+
+	domainDeposits, err := h.eventHandler.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
+	if err != nil {
+		return nil, err
+	}
+	filteredDeposits, err := retry.FilterDeposits(h.propStorer, domainDeposits, retryData.ResourceID, retryData.DestinationDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deposits := range filteredDeposits {
+		go func(d []*message.Message) {
+			h.msgChan <- d
+		}(deposits)
+	}
+
+	return nil, nil
 }

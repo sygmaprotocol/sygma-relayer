@@ -5,11 +5,16 @@ package executor
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
+	"github.com/ChainSafe/sygma-relayer/chains/btc/listener"
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 )
 
@@ -69,4 +74,54 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 	}, msg.ID, transfer.TransferProposalType), nil
+}
+
+type BlockFetcher interface {
+	GetBlockVerboseTx(*chainhash.Hash) (*btcjson.GetBlockVerboseTxResult, error)
+	GetBestBlockHash() (*chainhash.Hash, error)
+}
+
+type RetryMessageHandler struct {
+	eventHandler       listener.FungibleTransferEventHandler
+	blockFetcher       BlockFetcher
+	blockConfirmations *big.Int
+	propStorer         PropStorer
+	msgChan            chan []*message.Message
+}
+
+func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+	retryData := msg.Data.(retry.RetryMessageData)
+	hash, err := h.blockFetcher.GetBestBlockHash()
+	if err != nil {
+		return nil, err
+	}
+	block, err := h.blockFetcher.GetBlockVerboseTx(hash)
+	if err != nil {
+		return nil, err
+	}
+	latestBlock := big.NewInt(block.Height)
+	if latestBlock.Cmp(new(big.Int).Add(retryData.BlockHeight, h.blockConfirmations)) != 1 {
+		return nil, fmt.Errorf(
+			"latest block %s higher than receipt block number + block confirmations %s",
+			latestBlock,
+			new(big.Int).Add(retryData.BlockHeight, h.blockConfirmations),
+		)
+	}
+
+	domainDeposits, err := h.eventHandler.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
+	if err != nil {
+		return nil, err
+	}
+	filteredDeposits, err := retry.FilterDeposits(h.propStorer, domainDeposits, retryData.ResourceID, retryData.DestinationDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deposits := range filteredDeposits {
+		go func(d []*message.Message) {
+			h.msgChan <- d
+		}(deposits)
+	}
+
+	return nil, nil
 }

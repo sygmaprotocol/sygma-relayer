@@ -60,11 +60,24 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error {
+	domainDeposits, err := eh.ProcessDeposits(blockNumber)
+	if err != nil {
+		return err
+	}
+
+	for _, deposits := range domainDeposits {
+		go func(d []*message.Message) {
+			eh.msgChan <- d
+		}(deposits)
+	}
+	return nil
+}
+
+func (eh *FungibleTransferEventHandler) ProcessDeposits(blockNumber *big.Int) (map[uint8][]*message.Message, error) {
 	domainDeposits := make(map[uint8][]*message.Message)
 	evts, err := eh.FetchEvents(blockNumber)
 	if err != nil {
-		eh.log.Error().Err(err).Msg("Error fetching events")
-		return err
+		return nil, err
 	}
 	for _, evt := range evts {
 		err := func(evt btcjson.TxRawResult) error {
@@ -97,16 +110,10 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			return nil
 		}(evt)
 		if err != nil {
-			log.Error().Err(err).Msgf("%v", err)
+			log.Error().Err(err).Msgf("Failed processing Bitcoin deposit %v", evt)
 		}
 	}
-
-	for _, deposits := range domainDeposits {
-		go func(d []*message.Message) {
-			eh.msgChan <- d
-		}(deposits)
-	}
-	return nil
+	return domainDeposits, nil
 }
 
 func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcjson.TxRawResult, error) {

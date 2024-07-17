@@ -78,10 +78,24 @@ func NewFungibleTransferEventHandler(logC zerolog.Context, domainID uint8, depos
 }
 
 func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	domainDeposits, err := eh.ProcessDeposits(startBlock, endBlock)
+	if err != nil {
+		return err
+	}
+
+	for _, deposits := range domainDeposits {
+		go func(d []*message.Message) {
+			eh.msgChan <- d
+		}(deposits)
+	}
+	return nil
+}
+
+func (eh *FungibleTransferEventHandler) ProcessDeposits(startBlock *big.Int, endBlock *big.Int) (map[uint8][]*message.Message, error) {
 	evts, err := eh.conn.FetchEvents(startBlock, endBlock)
 	if err != nil {
 		log.Error().Err(err).Msg("Error fetching events")
-		return err
+		return nil, err
 	}
 
 	domainDeposits := make(map[uint8][]*message.Message)
@@ -112,13 +126,7 @@ func (eh *FungibleTransferEventHandler) HandleEvents(startBlock *big.Int, endBlo
 			}(*evt)
 		}
 	}
-
-	for _, deposits := range domainDeposits {
-		go func(d []*message.Message) {
-			eh.msgChan <- d
-		}(deposits)
-	}
-	return nil
+	return domainDeposits, nil
 }
 
 type RetryEventHandler struct {

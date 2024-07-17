@@ -44,9 +44,24 @@ func NewDepositEventHandler(eventListener EventListener, depositHandler DepositH
 }
 
 func (eh *DepositEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	domainDeposits, err := eh.ProcessDeposits(startBlock, endBlock)
+	if err != nil {
+		return err
+	}
+
+	for _, deposits := range domainDeposits {
+		go func(d []*message.Message) {
+			eh.msgChan <- d
+		}(deposits)
+	}
+
+	return nil
+}
+
+func (eh *DepositEventHandler) ProcessDeposits(startBlock *big.Int, endBlock *big.Int) (map[uint8][]*message.Message, error) {
 	deposits, err := eh.eventListener.FetchDeposits(context.Background(), eh.bridgeAddress, startBlock, endBlock)
 	if err != nil {
-		return fmt.Errorf("unable to fetch deposit events because of: %+v", err)
+		return nil, fmt.Errorf("unable to fetch deposit events because of: %+v", err)
 	}
 
 	domainDeposits := make(map[uint8][]*message.Message)
@@ -70,11 +85,5 @@ func (eh *DepositEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.I
 		}(d)
 	}
 
-	for _, deposits := range domainDeposits {
-		go func(d []*message.Message) {
-			eh.msgChan <- d
-		}(deposits)
-	}
-
-	return nil
+	return domainDeposits, nil
 }
