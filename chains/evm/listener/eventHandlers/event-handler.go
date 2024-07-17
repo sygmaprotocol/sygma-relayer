@@ -360,15 +360,18 @@ func (eh *RefreshEventHandler) HandleEvents(
 
 	hash := refreshEvents[len(refreshEvents)-1].Hash
 	if hash == "" {
-		return fmt.Errorf("hash cannot be empty string")
+		log.Error().Msgf("Hash cannot be empty string")
+		return nil
 	}
 	topology, err := eh.topologyProvider.NetworkTopology(hash)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("Failed fetching network topology")
+		return nil
 	}
 	err = eh.topologyStore.StoreTopology(topology)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("Failed storing network topology")
+		return nil
 	}
 
 	eh.connectionGate.SetTopology(topology)
@@ -384,6 +387,7 @@ func (eh *RefreshEventHandler) HandleEvents(
 	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{resharing}, make(chan interface{}, 1))
 	if err != nil {
 		log.Err(err).Msgf("Failed executing ecdsa key refresh")
+		return nil
 	}
 	frostResharing := frostResharing.NewResharing(
 		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.frostStorer,
@@ -391,6 +395,7 @@ func (eh *RefreshEventHandler) HandleEvents(
 	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{frostResharing}, make(chan interface{}, 1))
 	if err != nil {
 		log.Err(err).Msgf("Failed executing frost key refresh")
+		return nil
 	}
 	return nil
 }
