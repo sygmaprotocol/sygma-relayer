@@ -38,6 +38,7 @@ genmocks:
 	mockgen -source=./topology/topology.go -destination=./topology/mock/topology.go
 	mockgen -source=./chains/btc/executor/message-handler.go -destination=./chains/btc/executor/mock/message-handler.go
 	mockgen -source=./chains/substrate/executor/message-handler.go -destination=./chains/substrate/executor/mock/message-handler.go
+	mockgen -source=./chains/evm/executor/message-handler.go -destination=./chains/evm/executor/mock/message-handler.go
 
 
 e2e-test:

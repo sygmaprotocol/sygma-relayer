@@ -15,7 +15,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
-	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/store"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/retry"
@@ -220,12 +219,31 @@ type PropStorer interface {
 	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
 }
 
+type DepositProcessor interface {
+	ProcessDeposits(startBlock *big.Int, endBlock *big.Int) (map[uint8][]*message.Message, error)
+}
+
 type RetryMessageHandler struct {
-	eventHandler       eventHandlers.DepositEventHandler
+	depositProcessor   DepositProcessor
 	blockConfirmations *big.Int
 	blockFetcher       BlockFetcher
 	propStorer         PropStorer
 	msgChan            chan []*message.Message
+}
+
+func NewRetryMessageHandler(
+	depositProcessor DepositProcessor,
+	blockFetcher BlockFetcher,
+	propStorer PropStorer,
+	blockConfirmations *big.Int,
+	msgChan chan []*message.Message) *RetryMessageHandler {
+	return &RetryMessageHandler{
+		depositProcessor:   depositProcessor,
+		blockFetcher:       blockFetcher,
+		propStorer:         propStorer,
+		blockConfirmations: blockConfirmations,
+		msgChan:            msgChan,
+	}
 }
 
 func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
@@ -242,7 +260,7 @@ func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Pro
 		)
 	}
 
-	domainDeposits, err := h.eventHandler.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
+	domainDeposits, err := h.depositProcessor.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
 	if err != nil {
 		return nil, err
 	}
