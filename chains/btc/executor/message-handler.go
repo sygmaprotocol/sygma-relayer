@@ -91,7 +91,7 @@ type DepositProcessor interface {
 }
 
 type RetryMessageHandler struct {
-	eventHandler       DepositProcessor
+	depositProcessor   DepositProcessor
 	blockFetcher       BlockFetcher
 	blockConfirmations *big.Int
 	propStorer         PropStorer
@@ -99,13 +99,13 @@ type RetryMessageHandler struct {
 }
 
 func NewRetryMessageHandler(
-	eventHandler DepositProcessor,
+	depositProcessor DepositProcessor,
 	blockFetcher BlockFetcher,
 	blockConfirmations *big.Int,
 	propStorer PropStorer,
 	msgChan chan []*message.Message) *RetryMessageHandler {
 	return &RetryMessageHandler{
-		eventHandler:       eventHandler,
+		depositProcessor:   depositProcessor,
 		blockFetcher:       blockFetcher,
 		blockConfirmations: blockConfirmations,
 		propStorer:         propStorer,
@@ -132,7 +132,7 @@ func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Pro
 		)
 	}
 
-	domainDeposits, err := h.eventHandler.ProcessDeposits(retryData.BlockHeight)
+	domainDeposits, err := h.depositProcessor.ProcessDeposits(retryData.BlockHeight)
 	if err != nil {
 		return nil, err
 	}

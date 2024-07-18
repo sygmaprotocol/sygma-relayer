@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ChainSafe/sygma-relayer/store"
-	"github.com/centrifuge/go-substrate-rpc-client/types"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
@@ -71,11 +70,28 @@ type BlockFetcher interface {
 	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
 }
 
+type DepositProcessor interface {
+	ProcessDeposits(startBlock *big.Int, endBlock *big.Int) (map[uint8][]*message.Message, error)
+}
+
 type RetryMessageHandler struct {
-	eventHandler listener.FungibleTransferEventHandler
-	blockFetcher BlockFetcher
-	propStorer   PropStorer
-	msgChan      chan []*message.Message
+	depositProcessor DepositProcessor
+	blockFetcher     BlockFetcher
+	propStorer       PropStorer
+	msgChan          chan []*message.Message
+}
+
+func NewRetryMessageHandler(
+	depositProcessor DepositProcessor,
+	blockFetcher BlockFetcher,
+	propStorer PropStorer,
+	msgChan chan []*message.Message) *RetryMessageHandler {
+	return &RetryMessageHandler{
+		depositProcessor: depositProcessor,
+		blockFetcher:     blockFetcher,
+		propStorer:       propStorer,
+		msgChan:          msgChan,
+	}
 }
 
 func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
@@ -97,7 +113,7 @@ func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Pro
 		)
 	}
 
-	domainDeposits, err := h.eventHandler.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
+	domainDeposits, err := h.depositProcessor.ProcessDeposits(retryData.BlockHeight, retryData.BlockHeight)
 	if err != nil {
 		return nil, err
 	}
