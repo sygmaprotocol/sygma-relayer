@@ -99,21 +99,6 @@ func (mr *MockEventListenerMockRecorder) FetchRefreshEvents(ctx, address, startB
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRefreshEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRefreshEvents), ctx, address, startBlock, endBlock)
 }
 
-// FetchRetryDepositEvents mocks base method.
-func (m *MockEventListener) FetchRetryDepositEvents(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchRetryDepositEvents", event, bridgeAddress, blockConfirmations)
-	ret0, _ := ret[0].([]events.Deposit)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchRetryDepositEvents indicates an expected call of FetchRetryDepositEvents.
-func (mr *MockEventListenerMockRecorder) FetchRetryDepositEvents(event, bridgeAddress, blockConfirmations interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryDepositEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRetryDepositEvents), event, bridgeAddress, blockConfirmations)
-}
-
 // FetchRetryEvents mocks base method.
 func (m *MockEventListener) FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock, endBlock *big.Int) ([]events.RetryEvent, error) {
 	m.ctrl.T.Helper()
@@ -127,21 +112,6 @@ func (m *MockEventListener) FetchRetryEvents(ctx context.Context, contractAddres
 func (mr *MockEventListenerMockRecorder) FetchRetryEvents(ctx, contractAddress, startBlock, endBlock interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRetryEvents), ctx, contractAddress, startBlock, endBlock)
-}
-
-// FetchRetryV2Events mocks base method.
-func (m *MockEventListener) FetchRetryV2Events(ctx context.Context, contractAddress common.Address, startBlock, endBlock *big.Int) ([]events.RetryEvent, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchRetryV2Events", ctx, contractAddress, startBlock, endBlock)
-	ret0, _ := ret[0].([]events.RetryEvent)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchRetryV2Events indicates an expected call of FetchRetryV2Events.
-func (mr *MockEventListenerMockRecorder) FetchRetryV2Events(ctx, contractAddress, startBlock, endBlock interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryV2Events", reflect.TypeOf((*MockEventListener)(nil).FetchRetryV2Events), ctx, contractAddress, startBlock, endBlock)
 }
 
 // MockDepositHandler is a mock of DepositHandler interface.
