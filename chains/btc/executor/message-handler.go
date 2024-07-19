@@ -31,9 +31,9 @@ type BtcTransferProposal struct {
 	Data        BtcTransferProposalData
 }
 
-type BtcMessageHandler struct{}
+type FungibleMessageHandler struct{}
 
-func (h *BtcMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+func (h *FungibleMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
 	transferMessage := &transfer.TransferMessage{
 		Source:      msg.Source,
 		Destination: msg.Destination,

@@ -42,7 +42,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage() {
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
@@ -75,7 +75,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_ValidMessage_Dust()
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(err)
@@ -107,7 +107,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_IncorrectDataLen() 
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
@@ -131,7 +131,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_IncorrectAmount() {
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
@@ -154,7 +154,7 @@ func (s *BtcMessageHandlerTestSuite) Test_ERC20HandleMessage_IncorrectRecipient(
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)
@@ -177,7 +177,7 @@ func (s *BtcMessageHandlerTestSuite) Test_HandleMessage_InvalidType() {
 		Type: transfer.TransferMessageType,
 	}
 
-	mh := executor.BtcMessageHandler{}
+	mh := executor.FungibleMessageHandler{}
 	prop, err := mh.HandleMessage(message)
 
 	s.Nil(prop)

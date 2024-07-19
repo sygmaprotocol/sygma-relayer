@@ -24,6 +24,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
 	hubEventHandlers "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ChainSafe/sygma-relayer/chains/substrate"
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	propStore "github.com/ChainSafe/sygma-relayer/store"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
@@ -189,11 +190,7 @@ func Run() error {
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
-				mh := message.NewMessageHandler()
 				for _, handler := range config.Handlers {
-
-					mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
-
 					switch handler.Type {
 					case "erc20":
 						{
@@ -221,12 +218,18 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]listener.EventHandler, 0)
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, msgChan))
+
+				depositEventHandler := hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, msgChan)
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewFrostKeygenEventHandler(l, tssListener, coordinator, host, communication, frostKeyshareStore, frostAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, topologyProvider, topologyStore, tssListener, coordinator, host, communication, connectionGate, keyshareStore, frostKeyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, depositHandler, propStore, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, msgChan))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, bridgeAddress, *config.GeneralChainConfig.Id, msgChan))
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
+
+				mh := message.NewMessageHandler()
+				mh.RegisterMessageHandler(retry.RetryMessageType, executor.NewRetryMessageHandler(depositEventHandler, client, propStore, config.BlockConfirmations, msgChan))
+				mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
 
 				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
@@ -273,13 +276,13 @@ func Run() error {
 				depositHandler := substrateListener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, substrateListener.FungibleTransferHandler)
 				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn))
-				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, msgChan))
-
+				depositEventHandler := substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn)
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &substrateExecutor.SubstrateMessageHandler{})
+				mh.RegisterMessageHandler(retry.RetryMessageType, substrateExecutor.NewRetryMessageHandler(depositEventHandler, conn, propStore, msgChan))
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
 
@@ -320,17 +323,21 @@ func Run() error {
 				}
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				depositHandler := &btcListener.BtcDepositHandler{}
-				eventHandlers := make([]btcListener.EventHandler, 0)
 				resources := make(map[[32]byte]btcConfig.Resource)
 				for _, resource := range config.Resources {
 					resources[resource.ResourceID] = resource
-					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource, config.FeeAddress))
 				}
+				depositHandler := &btcListener.BtcDepositHandler{}
+				depositEventHandler := btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resources, config.FeeAddress)
+				eventHandlers := make([]btcListener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
 
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
-				mh := &btcExecutor.BtcMessageHandler{}
+
+				mh := message.NewMessageHandler()
+				mh.RegisterMessageHandler(transfer.TransferMessageType, &btcExecutor.FungibleMessageHandler{})
+				mh.RegisterMessageHandler(retry.RetryMessageType, btcExecutor.NewRetryMessageHandler(depositEventHandler, conn, config.BlockConfirmations, propStore, msgChan))
 				executor := btcExecutor.NewExecutor(
 					propStore,
 					host,
