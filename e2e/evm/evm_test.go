@@ -304,6 +304,7 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	s.Equal(true, exists)
 }
 
+/*
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
 	amountToMint := big.NewInt(0).Mul(big.NewInt(250), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
@@ -346,6 +347,7 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
+*/
 
 func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()

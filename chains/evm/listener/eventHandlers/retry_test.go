@@ -17,19 +17,16 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers/mock"
-	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
-	"github.com/ChainSafe/sygma-relayer/store"
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
 
 type RetryEventHandlerTestSuite struct {
 	suite.Suite
-	retryEventHandler  *eventHandlers.RetryEventHandler
-	mockDepositHandler *mock_listener.MockDepositHandler
-	mockPropStorer     *mock_listener.MockPropStorer
-	mockEventListener  *mock_listener.MockEventListener
-	domainID           uint8
-	msgChan            chan []*message.Message
+	retryEventHandler *eventHandlers.RetryEventHandler
+	mockEventListener *mock_listener.MockEventListener
+	domainID          uint8
+	msgChan           chan []*message.Message
 }
 
 func TestRunRetryEventHandlerTestSuite(t *testing.T) {
@@ -40,21 +37,16 @@ func (s *RetryEventHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
 	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
-	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
-	s.mockPropStorer = mock_listener.NewMockPropStorer(ctrl)
 	s.msgChan = make(chan []*message.Message, 1)
 	s.retryEventHandler = eventHandlers.NewRetryEventHandler(
 		log.With(),
 		s.mockEventListener,
-		s.mockDepositHandler,
-		s.mockPropStorer,
 		common.Address{},
 		s.domainID,
-		big.NewInt(5),
 		s.msgChan)
 }
 
-func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
+func (s *RetryEventHandlerTestSuite) Test_FetchRetryEventsFails() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryEvent{}, fmt.Errorf("error"))
 
 	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
@@ -63,552 +55,39 @@ func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
 	s.Equal(len(s.msgChan), 0)
 }
 
-func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues() {
-	d := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
+func (s *RetryEventHandlerTestSuite) Test_FetchRetryEvents_ValidRetry() {
 	s.mockEventListener.EXPECT().FetchRetryEvents(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{}, fmt.Errorf("error"))
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d.DestinationDomainID,
-		d.DepositNonce,
-		d.ResourceID,
-		d.Data,
-		d.HandlerResponse,
-		msgID,
-	).Return(&message.Message{
-		Data: transfer.TransferMessageData{
-			DepositNonce: 2,
-		},
+	).Return([]events.RetryEvent{
+		{SourceDomainID: 2, DestinationDomainID: 3, ResourceID: [32]byte{1}, BlockHeight: big.NewInt(100)},
+		{SourceDomainID: 3, DestinationDomainID: 4, ResourceID: [32]byte{2}, BlockHeight: big.NewInt(101)},
 	}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
 
 	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
+	msgs2 := <-s.msgChan
+	msgs1 := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, fmt.Errorf("error"))
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
-		panic("error")
-	})
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil).Times(2)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, {Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits_ExecutedIgnored() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.ExecutedProp, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.PendingProp, nil)
-	s.mockPropStorer.EXPECT().StorePropStatus(gomock.Any(), gomock.Any(), gomock.Any(), store.FailedProp).Return(nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{
+	s.Equal(msgs1, []*message.Message{
 		{
-			Data: transfer.TransferMessageData{
-				DepositNonce: 2,
+			Source:      s.domainID,
+			Destination: 2,
+			Data: retry.RetryMessageData{
+				SourceDomainID: 2, DestinationDomainID: 3, ResourceID: [32]byte{1}, BlockHeight: big.NewInt(100),
 			},
+			ID:   "retry-2-3",
+			Type: retry.RetryMessageType,
 		},
 	})
-}
-
-type RetryV2EventHandlerTestSuite struct {
-	suite.Suite
-	retryEventHandler *eventHandlers.RetryV2EventHandler
-	mockEventListener *mock_listener.MockEventListener
-	domainID          uint8
-	msgChan           chan []*message.Message
-}
-
-func TestRunRetryV2EventHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(RetryV2EventHandlerTestSuite))
-}
-
-func (s *RetryV2EventHandlerTestSuite) SetupTest() {
-	ctrl := gomock.NewController(s.T())
-	s.domainID = 1
-	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
-	s.msgChan = make(chan []*message.Message, 1)
-	s.retryEventHandler = eventHandlers.NewRetryV2EventHandler(
-		log.With(),
-		s.mockEventListener,
-		common.Address{},
-		s.domainID,
-		s.msgChan)
-}
-
-func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails() {
-	s.mockEventListener.EXPECT().FetchRetryEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryEvent{}, fmt.Errorf("error"))
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-
-	s.NotNil(err)
-	s.Equal(len(s.msgChan), 0)
-}
-
-func (s *RetryEventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues() {
-	d := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{}, fmt.Errorf("error"))
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d.DestinationDomainID,
-		d.DepositNonce,
-		d.ResourceID,
-		d.Data,
-		d.HandlerResponse,
-		msgID,
-	).Return(&message.Message{
-		Data: transfer.TransferMessageData{
-			DepositNonce: 2,
-		},
-	}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinues() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, fmt.Errorf("error"))
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 2}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event2"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
-		panic("error")
-	})
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.MissingProp, nil).Times(2)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, {Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}})
-}
-
-func (s *RetryEventHandlerTestSuite) Test_MultipleDeposits_ExecutedIgnored() {
-	d1 := events.Deposit{
-		DepositNonce:        1,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	d2 := events.Deposit{
-		DepositNonce:        2,
-		DestinationDomainID: 2,
-		ResourceID:          [32]byte{},
-		HandlerResponse:     []byte{},
-		Data:                []byte{},
-	}
-	s.mockEventListener.EXPECT().FetchRetryEvents(
-		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	).Return([]events.RetryEvent{{TxHash: "event1"}}, nil)
-	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryEvent{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{d1, d2}, nil)
-	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d1.DestinationDomainID,
-		d1.DepositNonce,
-		d1.ResourceID,
-		d1.Data,
-		d1.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 1,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.ExecutedProp, nil)
-	s.mockDepositHandler.EXPECT().HandleDeposit(
-		s.domainID,
-		d2.DestinationDomainID,
-		d2.DepositNonce,
-		d2.ResourceID,
-		d2.Data,
-		d2.HandlerResponse,
-		msgID,
-	).Return(&message.Message{Data: transfer.TransferMessageData{
-		DepositNonce: 2,
-	}}, nil)
-	s.mockPropStorer.EXPECT().PropStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(store.PendingProp, nil)
-	s.mockPropStorer.EXPECT().StorePropStatus(gomock.Any(), gomock.Any(), gomock.Any(), store.FailedProp).Return(nil)
-
-	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
-	msgs := <-s.msgChan
-
-	s.Nil(err)
-	s.Equal(msgs, []*message.Message{
+	s.Equal(msgs2, []*message.Message{
 		{
-			Data: transfer.TransferMessageData{
-				DepositNonce: 2,
+			Source:      s.domainID,
+			Destination: 3,
+			Data: retry.RetryMessageData{
+				SourceDomainID: 3, DestinationDomainID: 4, ResourceID: [32]byte{2}, BlockHeight: big.NewInt(101),
 			},
+			ID:   "retry-3-4",
+			Type: retry.RetryMessageType,
 		},
 	})
 }

@@ -39,27 +39,30 @@ func (eh *RetryEventHandler) HandleEvents(
 	startBlock *big.Int,
 	endBlock *big.Int,
 ) error {
-	retryEvents, err := eh.eventListener.FetchRetryV2Events(context.Background(), eh.retryAddress, startBlock, endBlock)
+	retryEvents, err := eh.eventListener.FetchRetryEvents(context.Background(), eh.retryAddress, startBlock, endBlock)
 	if err != nil {
 		return fmt.Errorf("unable to fetch retry v2 events because of: %+v", err)
 	}
 
 	for _, e := range retryEvents {
-		messageID := fmt.Sprintf("retry-v2-%d-%d-%d", e.SourceDomainID, e.DestinationDomainID, e.BlockHeight)
-		eh.log.Info().Str("messageID", messageID).Msgf(
-			"Resolved retry message %+v in block range: %s-%s", nil, startBlock.String(), endBlock.String(),
-		)
+		messageID := fmt.Sprintf("retry-%d-%d", e.SourceDomainID, e.DestinationDomainID)
 		msg := message.NewMessage(
 			eh.domainID,
 			e.SourceDomainID,
 			retry.RetryMessageData{
-				SourceDomainID: e.SourceDomainID,
-				BlockHeight:    e.BlockHeight,
+				SourceDomainID:      e.SourceDomainID,
+				DestinationDomainID: e.DestinationDomainID,
+				BlockHeight:         e.BlockHeight,
+				ResourceID:          e.ResourceID,
 			},
 			messageID,
 			retry.RetryMessageType,
 		)
-		eh.msgChan <- []*message.Message{msg}
+
+		eh.log.Info().Str("messageID", messageID).Msgf(
+			"Resolved retry message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String(),
+		)
+		go func() { eh.msgChan <- []*message.Message{msg} }()
 	}
 	return nil
 }
