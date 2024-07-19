@@ -60,7 +60,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -70,14 +70,14 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	resultChn := make(chan interface{})
+	resultChn := make(chan interface{}, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pool := pool.New().WithContext(ctx)
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error {
-			return coordinator.Execute(ctx, processes[i], resultChn)
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
 		})
 	}
 
@@ -90,6 +90,74 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	cancel()
 	err = pool.Wait()
 	s.Nil(err)
+}
+
+func (s *SigningTestSuite) Test_MultipleProcesses() {
+	communicationMap := make(map[peer.ID]*tsstest.TestCommunication)
+	coordinators := []*tss.Coordinator{}
+	processes := [][]tss.TssProcess{}
+
+	tweak := "c82aa6ae534bb28aaafeb3660c31d6a52e187d8f05d48bb6bdb9b733a9b42212"
+	tweakBytes, err := hex.DecodeString(tweak)
+	s.Nil(err)
+	h := &curve.Secp256k1Scalar{}
+	err = h.UnmarshalBinary(tweakBytes)
+	s.Nil(err)
+
+	msgBytes := []byte("Message")
+	msg := big.NewInt(0)
+	msg.SetBytes(msgBytes)
+	for i, host := range s.Hosts {
+		communication := tsstest.TestCommunication{
+			Host:          host,
+			Subscriptions: make(map[comm.SubscriptionID]chan *comm.WrappedMessage),
+		}
+		communicationMap[host.ID()] = &communication
+		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
+
+		signing1, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
+		if err != nil {
+			panic(err)
+		}
+		signing2, err := signing.NewSigning(1, msg, tweak, "signing1", "signing2", host, &communication, fetcher)
+		if err != nil {
+			panic(err)
+		}
+		signing3, err := signing.NewSigning(1, msg, tweak, "signing1", "signing3", host, &communication, fetcher)
+		if err != nil {
+			panic(err)
+		}
+		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
+		coordinator := tss.NewCoordinator(host, &communication, electorFactory)
+		coordinators = append(coordinators, coordinator)
+		processes = append(processes, []tss.TssProcess{signing1, signing2, signing3})
+	}
+	tsstest.SetupCommunication(communicationMap)
+
+	resultChn := make(chan interface{}, 6)
+	ctx, cancel := context.WithCancel(context.Background())
+	pool := pool.New().WithContext(ctx)
+	for i, coordinator := range coordinators {
+		coordinator := coordinator
+
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, processes[i], resultChn)
+		})
+	}
+
+	results := make([]signing.Signature, 6)
+	i := 0
+	for result := range resultChn {
+		sig := result.(signing.Signature)
+		results[i] = sig
+		i++
+		if i == 5 {
+			break
+		}
+	}
+	err = pool.Wait()
+	s.NotNil(err)
+	cancel()
 }
 
 func (s *SigningTestSuite) Test_ProcessTimeout() {
@@ -115,7 +183,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -134,7 +202,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error {
-			return coordinator.Execute(ctx, processes[i], resultChn)
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
 		})
 	}
 

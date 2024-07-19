@@ -68,7 +68,9 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 	resultChn := make(chan interface{})
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
+		})
 	}
 
 	err := pool.Wait()
@@ -113,7 +115,9 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_RemovePeer() {
 	resultChn := make(chan interface{})
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
+		})
 	}
 
 	err := pool.Wait()

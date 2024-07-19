@@ -52,6 +52,7 @@ func NewSigning(
 	id int,
 	msg *big.Int,
 	tweak string,
+	messageID string,
 	sessionID string,
 	host host.Host,
 	comm comm.Communication,
@@ -85,7 +86,7 @@ func NewSigning(
 			Communication: comm,
 			Peers:         key.Peers,
 			SID:           sessionID,
-			Log:           log.With().Str("SessionID", sessionID).Str("Process", "signing").Logger(),
+			Log:           log.With().Str("SessionID", sessionID).Str("messageID", messageID).Str("Process", "signing").Logger(),
 			Cancel:        func() {},
 			Done:          make(chan bool),
 		},
@@ -135,13 +136,13 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx) })
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 
-	s.Log.Info().Msgf("Started signing process")
+	s.Log.Info().Msgf("Started signing process for message %s", s.msg.Text(16))
 	return p.Wait()
 }
 
 // Stop ends all subscriptions created when starting the tss process.
 func (s *Signing) Stop() {
-	log.Info().Str("sessionID", s.SessionID()).Msgf("Stopping tss process.")
+	s.Log.Info().Msgf("Stopping tss process.")
 	s.Communication.UnSubscribe(s.subscriptionID)
 	s.Cancel()
 }

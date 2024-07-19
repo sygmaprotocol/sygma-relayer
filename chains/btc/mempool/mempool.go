@@ -23,11 +23,11 @@ type Utxo struct {
 }
 
 type Fee struct {
-	FastestFee  int64
-	HalfHourFee int64
-	MinimumFee  int64
-	EconomyFee  int64
-	HourFee     int64
+	FastestFee  uint64
+	HalfHourFee uint64
+	MinimumFee  uint64
+	EconomyFee  uint64
+	HourFee     uint64
 }
 
 type MempoolAPI struct {
@@ -77,7 +77,11 @@ func (a *MempoolAPI) Utxos(address string) ([]Utxo, error) {
 		return nil, err
 	}
 	sort.Slice(utxos, func(i int, j int) bool {
-		return utxos[i].Status.BlockTime < utxos[j].Status.BlockTime
+		if utxos[i].Status.BlockTime == utxos[j].Status.BlockTime {
+			return utxos[i].TxID < utxos[j].TxID
+		} else {
+			return utxos[i].Status.BlockTime < utxos[j].Status.BlockTime
+		}
 	})
 
 	return utxos, nil

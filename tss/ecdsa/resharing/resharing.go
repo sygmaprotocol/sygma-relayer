@@ -136,7 +136,7 @@ func (r *Resharing) Run(
 
 // Stop ends all subscriptions created when starting the tss process and unlocks keyshare.
 func (r *Resharing) Stop() {
-	log.Info().Str("sessionID", r.SessionID()).Msgf("Stopping tss process.")
+	r.Log.Info().Msgf("Stopping tss process.")
 	r.Communication.UnSubscribe(r.subscriptionID)
 	r.storer.UnlockKeyshare()
 	r.Cancel()
@@ -165,7 +165,7 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 
 // StartParams returns threshold and peer subset from the old key to share with new parties.
 func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
-  oldSubset := common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers())
+	oldSubset := common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers())
 	startParams := &startParams{
 		OldThreshold: r.key.Threshold,
 		OldSubset:    oldSubset,

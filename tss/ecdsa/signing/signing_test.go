@@ -46,7 +46,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -56,14 +56,14 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	}
 	tsstest.SetupCommunication(communicationMap)
 
-	resultChn := make(chan interface{})
+	resultChn := make(chan interface{}, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pool := pool.New().WithContext(ctx)
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
 		pool.Go(func(ctx context.Context) error {
-			return coordinator.Execute(ctx, processes[i], resultChn)
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
 		})
 	}
 
@@ -96,7 +96,7 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 		msgBytes := []byte("Message")
 		msg := big.NewInt(0)
 		msg.SetBytes(msgBytes)
-		signing, err := signing.NewSigning(msg, "signing2", host, &communication, fetcher)
+		signing, err := signing.NewSigning(msg, "signing2", "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -112,7 +112,9 @@ func (s *SigningTestSuite) Test_SigningTimeout() {
 	pool := pool.New().WithContext(context.Background())
 	for i, coordinator := range coordinators {
 		coordinator := coordinator
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], resultChn) })
+		pool.Go(func(ctx context.Context) error {
+			return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, resultChn)
+		})
 	}
 
 	err := pool.Wait()
@@ -140,8 +142,8 @@ func (s *SigningTestSuite) Test_PendingProcessExists() {
 	s.MockECDSAStorer.EXPECT().UnlockKeyshare().AnyTimes()
 	pool := pool.New().WithContext(context.Background()).WithCancelOnError()
 	for i, coordinator := range coordinators {
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
-		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, processes[i], nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, nil) })
+		pool.Go(func(ctx context.Context) error { return coordinator.Execute(ctx, []tss.TssProcess{processes[i]}, nil) })
 	}
 
 	err := pool.Wait()
