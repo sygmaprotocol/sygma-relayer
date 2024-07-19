@@ -47,7 +47,7 @@ func (eh *RetryEventHandler) HandleEvents(
 	for _, e := range retryEvents {
 		messageID := fmt.Sprintf("retry-v2-%d-%d-%d", e.SourceDomainID, e.DestinationDomainID, e.BlockHeight)
 		eh.log.Info().Str("messageID", messageID).Msgf(
-			"Resolved retry v2 message %+v in block range: %s-%s", nil, startBlock.String(), endBlock.String(),
+			"Resolved retry message %+v in block range: %s-%s", nil, startBlock.String(), endBlock.String(),
 		)
 		msg := message.NewMessage(
 			eh.domainID,
