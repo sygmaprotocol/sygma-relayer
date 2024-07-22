@@ -277,7 +277,7 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 
 func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (uint64, error) {
 	outputAmount := uint64(0)
-	for _, prop := range proposals {
+	for i, prop := range proposals {
 		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
 			return 0, err
@@ -287,14 +287,13 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 			return 0, err
 		}
 
-		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Data.DepositNonce)))
+		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
+		tx.AddTxOut(txOut)
+		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Data.DepositNonce)) + "_" + strconv.Itoa(int(i)))
 		opReturnScript, err := txscript.NullDataScript(opReturnData)
 		if err != nil {
 			return 0, err
 		}
-
-		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
-		tx.AddTxOut(txOut)
 
 		opReturnOut := wire.NewTxOut(0, opReturnScript)
 		tx.AddTxOut(opReturnOut)
