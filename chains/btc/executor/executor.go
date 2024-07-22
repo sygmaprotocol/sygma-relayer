@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strconv"
 	"sync"
 	"time"
 
@@ -285,8 +286,19 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 		if err != nil {
 			return 0, err
 		}
+
+		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Source)))
+		opReturnScript, err := txscript.NullDataScript(opReturnData)
+		if err != nil {
+			return 0, err
+		}
+
 		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
 		tx.AddTxOut(txOut)
+
+		opReturnOut := wire.NewTxOut(0, opReturnScript)
+		tx.AddTxOut(opReturnOut)
+
 		outputAmount += prop.Data.Amount
 	}
 	return outputAmount, nil
