@@ -289,7 +289,8 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 
 		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
 		tx.AddTxOut(txOut)
-		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Data.DepositNonce)) + "_" + strconv.Itoa(int(i)))
+
+		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Data.DepositNonce)) + "_" + strconv.Itoa(int(i*2)))
 		opReturnScript, err := txscript.NullDataScript(opReturnData)
 		if err != nil {
 			return 0, err
