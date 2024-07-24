@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -35,8 +34,6 @@ var (
 	INPUT_SIZE          uint64 = 180
 	OUTPUT_SIZE         uint64 = 34
 	FEE_ROUNDING_FACTOR uint64 = 5
-	IPFS_JWT_TOKEN      string = os.Getenv("IPFS_JWT_TOKEN")
-	IPFS_URL            string = os.Getenv("IPFS_URL")
 )
 
 type MempoolAPI interface {
@@ -47,10 +44,6 @@ type MempoolAPI interface {
 type PropStorer interface {
 	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
 	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
-}
-
-type IPFSResponse struct {
-	IpfsHash string `json:"IpfsHash"`
 }
 
 type Executor struct {
