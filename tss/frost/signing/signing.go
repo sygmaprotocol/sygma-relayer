@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"math/big"
 
 	errors "github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/binance-chain/tss-lib/tss"
@@ -43,14 +42,14 @@ type Signing struct {
 	id             int
 	coordinator    bool
 	key            keyshare.FrostKeyshare
-	msg            *big.Int
+	msg            []byte
 	resultChn      chan interface{}
 	subscriptionID comm.SubscriptionID
 }
 
 func NewSigning(
 	id int,
-	msg *big.Int,
+	msg []byte,
 	tweak string,
 	messageID string,
 	sessionID string,
@@ -123,7 +122,7 @@ func (s *Signing) Run(
 		frost.SignTaproot(
 			s.key.Key,
 			common.PartyIDSFromPeers(peerSubset),
-			s.msg.Bytes(),
+			s.msg,
 		),
 		[]byte(s.SessionID()))
 	if err != nil {
@@ -136,7 +135,7 @@ func (s *Signing) Run(
 	p.Go(func(ctx context.Context) error { return s.processEndMessage(ctx) })
 	p.Go(func(ctx context.Context) error { return s.ProcessOutboundMessages(ctx, outChn, comm.TssKeySignMsg) })
 
-	s.Log.Info().Msgf("Started signing process for message %s", s.msg.Text(16))
+	s.Log.Info().Msgf("Started signing process for message %s", hex.EncodeToString(s.msg))
 	return p.Wait()
 }
 

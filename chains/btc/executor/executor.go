@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -163,15 +162,13 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	tssProcesses := make([]tss.TssProcess, len(tx.TxIn))
 	for i := range tx.TxIn {
 		sessionID := fmt.Sprintf("%s-%d", sessionID, i)
-		txHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
+		signingHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
 		if err != nil {
 			return err
 		}
-		msg := new(big.Int)
-		msg.SetBytes(txHash[:])
 		signing, err := signing.NewSigning(
 			i,
-			msg,
+			signingHash,
 			resource.Tweak,
 			messageID,
 			sessionID,
