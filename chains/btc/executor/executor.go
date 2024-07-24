@@ -1,11 +1,16 @@
 package executor
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
-	"strconv"
+	"mime/multipart"
+	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -35,6 +40,8 @@ var (
 	INPUT_SIZE          uint64 = 180
 	OUTPUT_SIZE         uint64 = 34
 	FEE_ROUNDING_FACTOR uint64 = 5
+	IPFS_JWT_TOKEN      string = os.Getenv("IPFS_JWT_TOKEN")
+	IPFS_URL            string = os.Getenv("IPFS_URL")
 )
 
 type MempoolAPI interface {
@@ -45,6 +52,10 @@ type MempoolAPI interface {
 type PropStorer interface {
 	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
 	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
+type IPFSResponse struct {
+	IpfsHash string `json:"IpfsHash"`
 }
 
 type Executor struct {
@@ -277,7 +288,9 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 
 func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (uint64, error) {
 	outputAmount := uint64(0)
-	for i, prop := range proposals {
+	var dataToUpload []map[string]interface{}
+
+	for _, prop := range proposals {
 		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
 			return 0, err
@@ -290,17 +303,36 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
 		tx.AddTxOut(txOut)
 
-		opReturnData := []byte(strconv.Itoa(int(prop.Source)) + "_" + strconv.Itoa(int(prop.Data.DepositNonce)))
-		opReturnScript, err := txscript.NullDataScript(opReturnData)
-		if err != nil {
-			return 0, err
-		}
-
-		opReturnOut := wire.NewTxOut(0, opReturnScript)
-		tx.AddTxOut(opReturnOut)
+		dataToUpload = append(dataToUpload, map[string]interface{}{
+			"sourceDomain": prop.Source,
+			"depositNonce": prop.Data.DepositNonce,
+		})
 
 		outputAmount += prop.Data.Amount
 	}
+
+	// Convert the array to JSON
+	jsonData, err := json.Marshal(dataToUpload)
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while handling data for upload")
+
+	}
+
+	// Upload to IPFS
+	cid, err := uploadToIpfs(jsonData)
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while uploading metadata to ipfs")
+	}
+
+	// Store the CID in OP_RETURN
+	opReturnData := []byte("syg_" + cid)
+	opReturnScript, err := txscript.NullDataScript(opReturnData)
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while constructiong OP_RETURN data")
+	}
+
+	opReturnOut := wire.NewTxOut(0, opReturnScript)
+	tx.AddTxOut(opReturnOut)
 	return outputAmount, nil
 }
 
@@ -416,4 +448,50 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 		}
 	}
 	e.propMutex.Unlock()
+}
+
+func uploadToIpfs(data []byte) (string, error) {
+	// url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
+
+	// Create a new multipart form file
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "metadata.json")
+	if err != nil {
+		return "", err
+	}
+	part.Write(data)
+	writer.Close()
+
+	// Create a new request
+	req, err := http.NewRequest("POST", IPFS_URL, body)
+	if err != nil {
+		return "", err
+	}
+
+	// Set the headers
+	req.Header.Add("Authorization", "Bearer "+IPFS_JWT_TOKEN)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	// Make the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read the response
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse the response
+	var ipfsResponse IPFSResponse
+	if err := json.Unmarshal(respBody, &ipfsResponse); err != nil {
+		return "", err
+	}
+
+	return ipfsResponse.IpfsHash, nil
 }
