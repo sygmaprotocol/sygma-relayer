@@ -32,18 +32,23 @@ type Resource struct {
 	Script     []byte
 }
 
+type UploaderConfig struct {
+	URL   string `mapstructure:"url" default:"https://api.pinata.cloud/pinning/pinFileToIPFS"`
+	Token string `mapstructure:"token" default:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJkOTU2YTZiNC1mOWFlLTRmZDctYTc5My0zZTFmM2FjYzc4MjIiLCJlbWFpbCI6InRjYXIxMjEyOTNAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImNkZDljZGFmYWJhOTYxMGYxNDdjIiwic2NvcGVkS2V5U2VjcmV0IjoiMGI0OTQ4NmZjMTYzNmQxZTIyZTE5OGFlZWViOGE2NmRjMDM4NmRmNWRlOTkyY2NlOTlkZDBiYzQ5YzBiODdmYSIsImV4cCI6MTc1MzM2MTkxN30.xP92Ts9661M3CjxIEKobZ_jwdIPmxb_m2POJ4mpNBss"`
+}
 type RawBtcConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
-	Resources                []RawResource `mapstrcture:"resources"`
-	StartBlock               int64         `mapstructure:"startBlock"`
-	FeeAddress               string        `mapstructure:"feeAddress"`
-	Username                 string        `mapstructure:"username"`
-	Password                 string        `mapstructure:"password"`
-	BlockInterval            int64         `mapstructure:"blockInterval" default:"5"`
-	BlockRetryInterval       uint64        `mapstructure:"blockRetryInterval" default:"5"`
-	BlockConfirmations       int64         `mapstructure:"blockConfirmations" default:"10"`
-	Network                  string        `mapstructure:"network" default:"mainnet"`
-	MempoolUrl               string        `mapstructure:"mempoolUrl"`
+	Resources                []RawResource  `mapstrcture:"resources"`
+	StartBlock               int64          `mapstructure:"startBlock"`
+	FeeAddress               string         `mapstructure:"feeAddress"`
+	Username                 string         `mapstructure:"username"`
+	Password                 string         `mapstructure:"password"`
+	BlockInterval            int64          `mapstructure:"blockInterval" default:"5"`
+	BlockRetryInterval       uint64         `mapstructure:"blockRetryInterval" default:"5"`
+	BlockConfirmations       int64          `mapstructure:"blockConfirmations" default:"10"`
+	Network                  string         `mapstructure:"network" default:"mainnet"`
+	MempoolUrl               string         `mapstructure:"mempoolUrl"`
+	UploaderConfig           UploaderConfig `mapstructure:"uploaderConfig"`
 }
 
 func (c *RawBtcConfig) Validate() error {
@@ -79,6 +84,7 @@ type BtcConfig struct {
 	Script             []byte
 	MempoolUrl         string
 	Network            chaincfg.Params
+	UploaderConfig     UploaderConfig
 }
 
 // NewBtcConfig decodes and validates an instance of an BtcConfig from
@@ -152,6 +158,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 		MempoolUrl:         c.MempoolUrl,
 		FeeAddress:         feeAddress,
 		Resources:          resources,
+		UploaderConfig:     c.UploaderConfig,
 	}
 	return config, nil
 }

@@ -1,14 +1,9 @@
 package executor
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -16,6 +11,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/uploader"
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/store"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -72,6 +68,7 @@ type Executor struct {
 	propMutex  sync.Mutex
 
 	exitLock *sync.RWMutex
+	uploader uploader.Uploader
 }
 
 func NewExecutor(
@@ -85,6 +82,7 @@ func NewExecutor(
 	resources map[[32]byte]config.Resource,
 	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
+	uploader uploader.Uploader,
 ) *Executor {
 	return &Executor{
 		propStorer:  propStorer,
@@ -97,6 +95,7 @@ func NewExecutor(
 		resources:   resources,
 		mempool:     mempool,
 		chainCfg:    chainCfg,
+		uploader:    uploader,
 	}
 }
 
@@ -297,26 +296,19 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 			return 0, err
 		}
 
-		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
-		tx.AddTxOut(txOut)
-
 		dataToUpload = append(dataToUpload, map[string]interface{}{
 			"sourceDomain": prop.Source,
 			"depositNonce": prop.Data.DepositNonce,
 		})
 
+		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
+		tx.AddTxOut(txOut)
+
 		outputAmount += prop.Data.Amount
 	}
 
-	// Convert the array to JSON
-	jsonData, err := json.Marshal(dataToUpload)
-	if err != nil {
-		log.Error().Err(err).Msg("Error occured while handling data for upload")
-
-	}
-
 	// Upload to IPFS
-	cid, err := uploadToIpfs(jsonData)
+	cid, err := e.uploader.Upload(dataToUpload)
 	if err != nil {
 		log.Error().Err(err).Msg("Error occured while uploading metadata to ipfs")
 	}
@@ -445,51 +437,4 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 		}
 	}
 	e.propMutex.Unlock()
-}
-
-func uploadToIpfs(data []byte) (string, error) {
-	// Create a new multipart form file
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "metadata.json")
-	if err != nil {
-		return "", err
-	}
-	_, err = part.Write(data)
-	if err != nil {
-		return "", err
-	}
-	writer.Close()
-
-	// Create a new request
-	req, err := http.NewRequest("POST", IPFS_URL, body)
-	if err != nil {
-		return "", err
-	}
-
-	// Set the headers
-	req.Header.Add("Authorization", "Bearer "+IPFS_JWT_TOKEN)
-	req.Header.Add("Content-Type", writer.FormDataContentType())
-
-	// Make the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	// Parse the response
-	var ipfsResponse IPFSResponse
-	if err := json.Unmarshal(respBody, &ipfsResponse); err != nil {
-		return "", err
-	}
-
-	return ipfsResponse.IpfsHash, nil
 }

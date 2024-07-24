@@ -113,6 +113,10 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 				Tweak:      "tweak",
 			},
 		},
+		"uploaderConfig": config.UploaderConfig{
+			URL:   "https://testIPFSProvider.com",
+			Token: "testToken",
+		},
 	}
 
 	actualConfig, err := config.NewBtcConfig(rawConfig)
@@ -142,6 +146,10 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 				Tweak:      "tweak",
 				FeeAmount:  big.NewInt(10000000),
 			},
+		},
+		UploaderConfig: config.UploaderConfig{
+			URL:   "https://testIPFSProvider.com",
+			Token: "testToken",
 		},
 	})
 }
