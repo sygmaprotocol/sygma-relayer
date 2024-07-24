@@ -332,7 +332,7 @@ func Run() error {
 
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
 				mh := &btcExecutor.BtcMessageHandler{}
-				uploader := uploader.NewIPFSUploader(config.UploaderConfig)
+				uploader := uploader.NewIPFSUploader(configuration.RelayerConfig.UploaderConfig)
 
 				executor := btcExecutor.NewExecutor(
 					propStore,

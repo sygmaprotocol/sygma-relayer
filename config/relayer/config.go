@@ -21,6 +21,7 @@ type RelayerConfig struct {
 	Id                        string
 	MpcConfig                 MpcRelayerConfig
 	BullyConfig               BullyConfig
+	UploaderConfig            UploaderConfig
 }
 
 type MpcRelayerConfig struct {
@@ -46,6 +47,10 @@ type TopologyConfiguration struct {
 	Path          string `mapstructure:"Path" json:"path"`
 }
 
+type UploaderConfig struct {
+	URL   string `mapstructure:"url"`
+	Token string `mapstructure:"token"`
+}
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`
 	LogLevel                  string              `mapstructure:"LogLevel" json:"logLevel" default:"info"`
@@ -55,6 +60,7 @@ type RawRelayerConfig struct {
 	Id                        string              `mapstructure:"Id" json:"id"`
 	MpcConfig                 RawMpcRelayerConfig `mapstructure:"MpcConfig" json:"mpcConfig"`
 	BullyConfig               RawBullyConfig      `mapstructure:"BullyConfig" json:"bullyConfig"`
+	UploaderConfig            UploaderConfig      `mapstructure:"uploaderConfig"`
 }
 
 type RawMpcRelayerConfig struct {
@@ -123,6 +129,7 @@ func NewRelayerConfig(rawConfig RawRelayerConfig) (RelayerConfig, error) {
 	config.BullyConfig = bullyConfig
 	config.Env = rawConfig.Env
 	config.Id = rawConfig.Id
+	config.UploaderConfig = rawConfig.UploaderConfig
 	return config, nil
 }
 

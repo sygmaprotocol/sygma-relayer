@@ -7,7 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
+	"github.com/ChainSafe/sygma-relayer/config/relayer"
 )
 
 type Uploader interface {
@@ -15,10 +15,10 @@ type Uploader interface {
 }
 
 type IPFSUploader struct {
-	config config.UploaderConfig
+	config relayer.UploaderConfig
 }
 
-func NewIPFSUploader(config config.UploaderConfig) *IPFSUploader {
+func NewIPFSUploader(config relayer.UploaderConfig) *IPFSUploader {
 	return &IPFSUploader{config: config}
 }
 
