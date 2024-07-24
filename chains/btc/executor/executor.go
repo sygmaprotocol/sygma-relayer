@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"mime/multipart"
 	"net/http"
@@ -451,8 +451,6 @@ func (e *Executor) storeProposalsStatus(props []*BtcTransferProposal, status sto
 }
 
 func uploadToIpfs(data []byte) (string, error) {
-	// url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
-
 	// Create a new multipart form file
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -460,7 +458,10 @@ func uploadToIpfs(data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	part.Write(data)
+	_, err = part.Write(data)
+	if err != nil {
+		return "", err
+	}
 	writer.Close()
 
 	// Create a new request
@@ -482,7 +483,7 @@ func uploadToIpfs(data []byte) (string, error) {
 	defer resp.Body.Close()
 
 	// Read the response
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
