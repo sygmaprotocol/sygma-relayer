@@ -27,7 +27,6 @@ type IPFSResponse struct {
 }
 
 func (s *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, error) {
-
 	// Convert proposals to JSON
 	jsonData, err := json.Marshal(dataToUpload)
 	if err != nil {
