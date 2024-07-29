@@ -48,8 +48,8 @@ type TopologyConfiguration struct {
 }
 
 type UploaderConfig struct {
-	URL   string `mapstructure:"url"`
-	Token string `mapstructure:"token"`
+	URL       string `mapstructure:"url"`
+	AuthToken string `mapstructure:"authToken"`
 }
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`

@@ -53,7 +53,7 @@ func (s *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, er
 	}
 
 	// Set the headers
-	req.Header.Add("Authorization", "Bearer "+s.config.Token)
+	req.Header.Add("Authorization", "Bearer "+s.config.AuthToken)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	// Make the request

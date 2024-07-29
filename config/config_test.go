@@ -280,8 +280,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						ElectionWaitTime: "1s",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 			},
@@ -302,8 +302,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						},
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -335,8 +335,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						ElectionWaitTime: "",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -358,8 +358,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port:                  "2020",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 
@@ -387,8 +387,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						// Port: use default value,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -421,8 +421,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    3 * time.Minute,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -457,8 +457,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    "1s",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -493,8 +493,8 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    time.Second,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:   "https://testIPFSProvider.com",
-						Token: "testToken",
+						URL:       "https://testIPFSProvider.com",
+						AuthToken: "testToken",
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
