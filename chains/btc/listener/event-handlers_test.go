@@ -31,7 +31,7 @@ type DepositHandlerTestSuite struct {
 	fungibleTransferEventHandler *listener.FungibleTransferEventHandler
 	mockDepositHandler           *mock_listener.MockDepositHandler
 	domainID                     uint8
-	resource                     config.Resource
+	resources                    map[[32]byte]config.Resource
 	msgChan                      chan []*message.Message
 	mockConn                     *mock_listener.MockConnection
 	feeAddress                   btcutil.Address
@@ -44,14 +44,17 @@ func TestRunDepositHandlerTestSuite(t *testing.T) {
 func (s *DepositHandlerTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.domainID = 1
-	address, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
+	address1, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvv", &chaincfg.TestNet3Params)
+	address2, _ := btcutil.DecodeAddress("tb1pdf5c3q35ssem2l25n435fa69qr7dzwkc6gsqehuflr3euh905l2slafjvc", &chaincfg.TestNet3Params)
 	s.feeAddress, _ = btcutil.DecodeAddress("tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm", &chaincfg.TestNet3Params)
 
-	s.resource = config.Resource{Address: address, ResourceID: [32]byte{}, FeeAmount: big.NewInt(10000)}
+	s.resources = make(map[[32]byte]config.Resource)
+	s.resources[[32]byte{1}] = config.Resource{Address: address1, ResourceID: [32]byte{1}, FeeAmount: big.NewInt(10000)}
+	s.resources[[32]byte{2}] = config.Resource{Address: address2, ResourceID: [32]byte{2}, FeeAmount: big.NewInt(10001)}
 	s.mockDepositHandler = mock_listener.NewMockDepositHandler(ctrl)
 	s.msgChan = make(chan []*message.Message, 2)
 	s.mockConn = mock_listener.NewMockConnection(ctrl)
-	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resource, s.feeAddress)
+	s.fungibleTransferEventHandler = listener.NewFungibleTransferEventHandler(zerolog.Context{}, s.domainID, s.mockDepositHandler, s.msgChan, s.mockConn, s.resources, s.feeAddress)
 }
 
 func (s *DepositHandlerTestSuite) Test_FetchDepositFails_GetBlockHashError() {
@@ -82,7 +85,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 	blockNumber := big.NewInt(100)
 	data2 := map[string]any{
 		"deposit_nonce": uint64(8228687738678474667),
-		"resource_id":   [32]byte{0},
+		"resource_id":   [32]byte{1},
 		"amount":        big.NewInt(19000),
 		"deposit_data":  "0xe9f23A8289764280697a03aC06795eA92a170e42_1",
 	}

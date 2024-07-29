@@ -5,7 +5,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -68,42 +67,6 @@ func (l *Listener) unpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
 	}
 
 	return &dl, nil
-}
-
-func (l *Listener) FetchRetryDepositEvents(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
-	depositEvents := make([]Deposit, 0)
-	retryDepositTxHash := common.HexToHash(event.TxHash)
-	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
-	if err != nil {
-		return depositEvents, fmt.Errorf(
-			"unable to fetch logs for retried deposit %s, because of: %+v", retryDepositTxHash.Hex(), err,
-		)
-	}
-	latestBlock, err := l.client.LatestBlock()
-	if err != nil {
-		return depositEvents, err
-	}
-	if latestBlock.Cmp(receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations)) != 1 {
-		return depositEvents, fmt.Errorf(
-			"latest block %s higher than receipt block number + block confirmations %s",
-			latestBlock,
-			receipt.BlockNumber.Add(receipt.BlockNumber, blockConfirmations),
-		)
-	}
-
-	for _, lg := range receipt.Logs {
-		if lg.Address != bridgeAddress {
-			continue
-		}
-
-		var depositEvent Deposit
-		err := l.abi.UnpackIntoInterface(&depositEvent, "Deposit", lg.Data)
-		if err == nil {
-			depositEvents = append(depositEvents, depositEvent)
-		}
-	}
-
-	return depositEvents, nil
 }
 
 func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryEvent, error) {
