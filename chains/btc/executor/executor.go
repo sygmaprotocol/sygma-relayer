@@ -10,6 +10,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/connection"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/uploader"
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/store"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -60,6 +61,7 @@ type Executor struct {
 	propMutex  sync.Mutex
 
 	exitLock *sync.RWMutex
+	uploader uploader.Uploader
 }
 
 func NewExecutor(
@@ -73,6 +75,7 @@ func NewExecutor(
 	resources map[[32]byte]config.Resource,
 	chainCfg chaincfg.Params,
 	exitLock *sync.RWMutex,
+	uploader uploader.Uploader,
 ) *Executor {
 	return &Executor{
 		propStorer:  propStorer,
@@ -85,6 +88,7 @@ func NewExecutor(
 		resources:   resources,
 		mempool:     mempool,
 		chainCfg:    chainCfg,
+		uploader:    uploader,
 	}
 }
 
@@ -273,6 +277,8 @@ func (e *Executor) rawTx(proposals []*BtcTransferProposal, resource config.Resou
 
 func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (uint64, error) {
 	outputAmount := uint64(0)
+	var dataToUpload []map[string]interface{}
+
 	for _, prop := range proposals {
 		addr, err := btcutil.DecodeAddress(prop.Data.Recipient, &e.chainCfg)
 		if err != nil {
@@ -282,10 +288,33 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 		if err != nil {
 			return 0, err
 		}
+
+		dataToUpload = append(dataToUpload, map[string]interface{}{
+			"sourceDomain": prop.Source,
+			"depositNonce": prop.Data.DepositNonce,
+		})
+
 		txOut := wire.NewTxOut(int64(prop.Data.Amount), destinationAddrByte)
 		tx.AddTxOut(txOut)
+
 		outputAmount += prop.Data.Amount
 	}
+
+	// Upload to IPFS
+	cid, err := e.uploader.Upload(dataToUpload)
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while uploading metadata to ipfs")
+	}
+
+	// Store the CID in OP_RETURN
+	opReturnData := []byte("syg_" + cid)
+	opReturnScript, err := txscript.NullDataScript(opReturnData)
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while constructiong OP_RETURN data")
+	}
+
+	opReturnOut := wire.NewTxOut(0, opReturnScript)
+	tx.AddTxOut(opReturnOut)
 	return outputAmount, nil
 }
 
