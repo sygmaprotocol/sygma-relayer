@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.2.0...v2.2.1) (2024-08-08)
+
+
+### Miscellaneous
+
+* update fees docs ([#343](https://github.com/sygmaprotocol/sygma-relayer/issues/343)) ([6cfbbcc](https://github.com/sygmaprotocol/sygma-relayer/commit/6cfbbccbd1e0e699433a767f44870a45938e3a29))
+
 ## [2.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.2...v2.2.0) (2024-07-24)
 
 
