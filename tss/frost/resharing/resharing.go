@@ -99,10 +99,10 @@ func (r *Resharing) Run(
 	if err != nil {
 		return err
 	}
-	r.key.Key.PublicKey = startParams.PublicKey
 	// initialize verification shares for the new relayer
 	if len(r.key.Key.VerificationShares) == 0 {
 		r.key.Key.VerificationShares = startParams.VerificationShares
+		r.key.Key.PublicKey = startParams.PublicKey
 	}
 
 	// Add a new verification share for each party that does not already have one
