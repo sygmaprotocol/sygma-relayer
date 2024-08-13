@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.2...v2.2.0) (2024-07-24)
+
+
+### Features
+
+* btc fee collection ([#299](https://github.com/sygmaprotocol/sygma-relayer/issues/299)) ([9eeff52](https://github.com/sygmaprotocol/sygma-relayer/commit/9eeff5228db1c157ac53a91ea97732408437345b))
+* enable starting multiple tss processes with the same peer subset ([#331](https://github.com/sygmaprotocol/sygma-relayer/issues/331)) ([f65b16f](https://github.com/sygmaprotocol/sygma-relayer/commit/f65b16f9388e365a656817b526de5d8b1c39643a))
+* unlock pending btc proposals when doing retry ([#319](https://github.com/sygmaprotocol/sygma-relayer/issues/319)) ([5c67c79](https://github.com/sygmaprotocol/sygma-relayer/commit/5c67c793902c2ed121cccab6433bc8a1aa9aba84))
+
+
+### Bug Fixes
+
+* add fee estimate when calculating btc inputs ([#311](https://github.com/sygmaprotocol/sygma-relayer/issues/311)) ([0ca3a1b](https://github.com/sygmaprotocol/sygma-relayer/commit/0ca3a1b93d5d885a8c2686e86582df4413ea174b))
+* bad non zero check ([#315](https://github.com/sygmaprotocol/sygma-relayer/issues/315)) ([90ab5eb](https://github.com/sygmaprotocol/sygma-relayer/commit/90ab5ebe26ee157aab7999c053b4a08f026afcaf))
+* bump core to fix panic on invalid domain ([#328](https://github.com/sygmaprotocol/sygma-relayer/issues/328)) ([34830ae](https://github.com/sygmaprotocol/sygma-relayer/commit/34830aef2ddad502fea96ac3905762f7ddfba120))
+* enforce proposal execution per resource ([#309](https://github.com/sygmaprotocol/sygma-relayer/issues/309)) ([49a0777](https://github.com/sygmaprotocol/sygma-relayer/commit/49a07772563f1a579035f979ae6db6511f803e2b))
+* fix typos ([#313](https://github.com/sygmaprotocol/sygma-relayer/issues/313)) ([a3c54af](https://github.com/sygmaprotocol/sygma-relayer/commit/a3c54afd957bae2d1e918846a1319059811b6f12))
+* handle msg.To being empty properly ([#312](https://github.com/sygmaprotocol/sygma-relayer/issues/312)) ([68a3acc](https://github.com/sygmaprotocol/sygma-relayer/commit/68a3accae212d7712b94079f8c33133572d8c479))
+* ignore refresh errors to prevent infinite loops ([#332](https://github.com/sygmaprotocol/sygma-relayer/issues/332)) ([496e9ae](https://github.com/sygmaprotocol/sygma-relayer/commit/496e9aed26cbb041f92c34ee9ea39f3f939865a7))
+* is proposal executed nonce ([#335](https://github.com/sygmaprotocol/sygma-relayer/issues/335)) ([a966428](https://github.com/sygmaprotocol/sygma-relayer/commit/a96642887db523557f7d19506df481b24225d4b1))
+* possible race condition ([#316](https://github.com/sygmaprotocol/sygma-relayer/issues/316)) ([b9b5341](https://github.com/sygmaprotocol/sygma-relayer/commit/b9b5341f61b7cdf1ca2c408d1f05074d979a4e80))
+* post audit fixes ([#329](https://github.com/sygmaprotocol/sygma-relayer/issues/329)) ([d23d61d](https://github.com/sygmaprotocol/sygma-relayer/commit/d23d61d4be792c030a74c832547865e2e8c05035))
+* reduce tx nonce collision chances ([#314](https://github.com/sygmaprotocol/sygma-relayer/issues/314)) ([5431db5](https://github.com/sygmaprotocol/sygma-relayer/commit/5431db55c1dcb47b41616032ed0cc376d0fcf78e))
+* remove ECDSA peer ([#324](https://github.com/sygmaprotocol/sygma-relayer/issues/324)) ([3c4cbaa](https://github.com/sygmaprotocol/sygma-relayer/commit/3c4cbaa5a5bae5d14af2f3e343445dc56c17d84f))
+* schnorr signature hash missing leading zeroes ([#341](https://github.com/sygmaprotocol/sygma-relayer/issues/341)) ([34f52b1](https://github.com/sygmaprotocol/sygma-relayer/commit/34f52b17c314aca63e4d32c7988eb1e7049eb576))
+* sort utxos by oldest to prevent mismatched messages ([#317](https://github.com/sygmaprotocol/sygma-relayer/issues/317)) ([033b58a](https://github.com/sygmaprotocol/sygma-relayer/commit/033b58a92236bf8c97198912cbfb4c0ec487e7b4))
+* update key threshold when doing frost resharing ([#333](https://github.com/sygmaprotocol/sygma-relayer/issues/333)) ([f1e6db1](https://github.com/sygmaprotocol/sygma-relayer/commit/f1e6db13998487c6af77097615f68344c84c8f53))
+* update sygma-core version ([#321](https://github.com/sygmaprotocol/sygma-relayer/issues/321)) ([94429d4](https://github.com/sygmaprotocol/sygma-relayer/commit/94429d42b26726ccfa8414a24dacdc61b51f5783))
+
+
+### Miscellaneous
+
+* add btc deposit format explanation ([#318](https://github.com/sygmaprotocol/sygma-relayer/issues/318)) ([080554c](https://github.com/sygmaprotocol/sygma-relayer/commit/080554c24662acb74153789c343dcc8fb57b5e5c))
+* bump polkadot libs ([#330](https://github.com/sygmaprotocol/sygma-relayer/issues/330)) ([1119f23](https://github.com/sygmaprotocol/sygma-relayer/commit/1119f231542225bc64c2e4511e35e63d382fe11c))
+
 ## [2.1.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.1...v2.1.2) (2024-06-21)
 
 

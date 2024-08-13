@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"testing"
 	"time"
 
@@ -50,8 +49,6 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	s.Nil(err)
 
 	msgBytes := []byte("Message")
-	msg := big.NewInt(0)
-	msg.SetBytes(msgBytes)
 	for i, host := range s.Hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -60,7 +57,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -85,8 +82,8 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	sig2 := <-resultChn
 	tSig1 := sig1.(signing.Signature)
 	tSig2 := sig2.(signing.Signature)
-	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig1.Signature, msg.Bytes()), true)
-	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig2.Signature, msg.Bytes()), true)
+	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig1.Signature, msgBytes), true)
+	s.Equal(tweakedKeyshare.PublicKey.Verify(tSig2.Signature, msgBytes), true)
 	cancel()
 	err = pool.Wait()
 	s.Nil(err)
@@ -105,8 +102,6 @@ func (s *SigningTestSuite) Test_MultipleProcesses() {
 	s.Nil(err)
 
 	msgBytes := []byte("Message")
-	msg := big.NewInt(0)
-	msg.SetBytes(msgBytes)
 	for i, host := range s.Hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -115,15 +110,15 @@ func (s *SigningTestSuite) Test_MultipleProcesses() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing1, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing1, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
-		signing2, err := signing.NewSigning(1, msg, tweak, "signing1", "signing2", host, &communication, fetcher)
+		signing2, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
-		signing3, err := signing.NewSigning(1, msg, tweak, "signing1", "signing3", host, &communication, fetcher)
+		signing3, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing3", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -173,8 +168,6 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 	s.Nil(err)
 
 	msgBytes := []byte("Message")
-	msg := big.NewInt(0)
-	msg.SetBytes(msgBytes)
 	for i, host := range s.Hosts {
 		communication := tsstest.TestCommunication{
 			Host:          host,
@@ -183,7 +176,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msg, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
