@@ -5,6 +5,7 @@ package resharing
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
@@ -17,9 +18,14 @@ import (
 	"github.com/taurusgroup/multi-party-sig/pkg/math/curve"
 	"github.com/taurusgroup/multi-party-sig/pkg/party"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
+	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 )
 
+type startParams struct {
+	PublicKey          taproot.PublicKey
+	VerificationShares map[party.ID]*curve.Secp256k1Point
+}
 type FrostKeyshareStorer interface {
 	GetKeyshare() (keyshare.FrostKeyshare, error)
 	StoreKeyshare(keyshare keyshare.FrostKeyshare) error
@@ -89,8 +95,25 @@ func (r *Resharing) Run(
 	outChn := make(chan tss.Message)
 	msgChn := make(chan *comm.WrappedMessage)
 	r.subscriptionID = r.Communication.Subscribe(r.SessionID(), comm.TssReshareMsg, msgChn)
+	startParams, err := r.unmarshallStartParams(params)
+	if err != nil {
+		return err
+	}
+	r.key.Key.PublicKey = startParams.PublicKey
+	// initialize verification shares for the new relayer
+	if len(r.key.Key.VerificationShares) == 0 {
+		r.key.Key.VerificationShares = startParams.VerificationShares
+	}
 
-	r.key.Key.PublicKey = params
+	// Add a new verification share for each party that does not already have one
+	partyIds := common.PartyIDSFromPeers(append(r.Host.Peerstore().Peers(), r.Host.ID()))
+	group := curve.Secp256k1{}
+	for _, k := range partyIds {
+		if r.key.Key.VerificationShares[k] == nil {
+			r.key.Key.VerificationShares[k] = group.NewPoint().(*curve.Secp256k1Point)
+		}
+	}
+
 	r.Handler, err = protocol.NewMultiHandler(
 		frost.RefreshTaproot(
 			r.key.Key,
@@ -127,7 +150,23 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 }
 
 func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
-	return r.key.Key.PublicKey
+
+	startParams := &startParams{
+		PublicKey:          r.key.Key.PublicKey,
+		VerificationShares: r.key.Key.VerificationShares,
+	}
+	paramBytes, _ := json.Marshal(startParams)
+	return paramBytes
+}
+
+func (r *Resharing) unmarshallStartParams(paramBytes []byte) (startParams, error) {
+	var startParams startParams
+	err := json.Unmarshal(paramBytes, &startParams)
+	if err != nil {
+		return startParams, err
+	}
+
+	return startParams, nil
 }
 
 func (r *Resharing) Retryable() bool {
