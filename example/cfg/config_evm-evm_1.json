@@ -21,6 +21,7 @@
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
+      "retry": "0x8E85C30C137953Ce6804E16E73061E408E580372",
       "handlers": [
         {
           "type": "erc20",
@@ -32,15 +33,11 @@
         },
         {
           "type": "erc1155",
-          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
-        },
-        {
-          "type": "permissionedGeneric",
-          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
+          "address": "0x5e6924e6A120bd833617D0873f0a1b747ee2D743"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
+          "address": "0x0047F2dBE11537aD513DCcdb07728D5d4DB68308"
         }
       ],
       "gasLimit": 9000000,
@@ -54,6 +51,7 @@
       "type": "evm",
       "endpoint": "ws://evm2-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
+      "retry": "0x8E85C30C137953Ce6804E16E73061E408E580372",
       "handlers": [
         {
           "type": "erc20",
@@ -65,15 +63,11 @@
         },
         {
           "type": "erc1155",
-          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
-        },
-        {
-          "type": "permissionedGeneric",
-          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
+          "address": "0x5e6924e6A120bd833617D0873f0a1b747ee2D743"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
+          "address": "0x0047F2dBE11537aD513DCcdb07728D5d4DB68308"
         }
       ],
       "gasLimit": 9000000,

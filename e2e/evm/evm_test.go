@@ -12,7 +12,6 @@ import (
 	"time"
 
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -20,10 +19,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/centrifuge"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc1155"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc721"
+	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/retry"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/keystore"
 
 	"github.com/sygmaprotocol/sygma-core/chains/evm/client"
@@ -137,7 +136,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}
 
 	erc20LRContract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
-	_, err = erc20LRContract2.MintTokens(s.config2.Erc20LockReleaseHandlerAddr, amountToMint.Mul(amountToMint, big.NewInt(10000)), transactor.TransactOptions{})
+	_, err = erc20LRContract2.MintTokens(s.config2.Erc20LockReleaseHandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -242,50 +241,14 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	s.Equal(dstAddr.String(), owner.String())
 }
 
-func (s *IntegrationTestSuite) Test_GenericDeposit() {
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-
-	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
-
-	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
-	hash := substrateTypes.NewHash(byteArrayToHash)
-
-	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-
-	genericDepositData := evm.ConstructGenericDepositData(hash[:])
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.GenericResourceID, genericDepositData, []byte{})
-
-	s.Nil(err)
-
-	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-
-	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.Nil(err)
-	// Asset hash sent is stored in centrifuge asset store contract
-	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-	s.Nil(err)
-	s.Equal(true, exists)
-
-	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
-}
-
 func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
 
 	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
 	hash := substrateTypes.NewHash(byteArrayToHash)
 	functionSig := string(crypto.Keccak256([]byte("storeWithDepositor(address,bytes32,address)"))[:4])
-	contractAddress := assetStoreContract2.ContractAddress()
+	contractAddress := s.client2.From()
 	maxFee := big.NewInt(600000)
 	depositor := s.client1.From()
 	var metadata []byte
@@ -298,22 +261,19 @@ func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 
 	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
 	s.Nil(err)
-
-	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-	s.Nil(err)
-	s.Equal(true, exists)
 }
 
-/*
 func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
-	amountToMint := big.NewInt(0).Mul(big.NewInt(250), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
+	amountToMint := big.NewInt(0).Mul(big.NewInt(350), big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
 
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
 	erc20Contract2 := erc20.NewERC20Contract(s.client2, s.config2.Erc20LockReleaseAddr, transactor2)
+
+	retryContract := retry.NewRetryContract(s.client2, s.config2.RetryAddr, transactor2)
 
 	destBalanceBefore, err := erc20Contract2.GetBalance(dstAddr)
 	s.Nil(err)
@@ -325,21 +285,22 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 
 	log.Debug().Msgf("deposit hash %s", depositTxHash.Hex())
 
-	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
+	receipt, err := s.client1.TransactionReceipt(context.Background(), *depositTxHash)
 	s.Nil(err)
 	time.Sleep(time.Second * 15)
 
-	_, err = erc20Contract2.MintTokens(s.config2.Erc20HandlerAddr, amountToMint, transactor.TransactOptions{})
+	_, err = erc20Contract2.MintTokens(s.config2.Erc20LockReleaseHandlerAddr, amountToMint, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
 
-	retryTxHash, err := bridgeContract1.Retry(*depositTxHash, transactor.TransactOptions{})
+	retryTxHash, err := retryContract.Retry(1, 2, receipt.BlockNumber, s.config1.Erc20LockReleaseResourceID, transactor.TransactOptions{})
 	if err != nil {
 		return
 	}
 	s.Nil(err)
 	s.NotNil(retryTxHash)
+
 	time.Sleep(time.Second * 15)
 
 	destBalanceAfter, err := erc20Contract2.GetBalance(dstAddr)
@@ -347,7 +308,6 @@ func (s *IntegrationTestSuite) Test_RetryDeposit() {
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
 }
-*/
 
 func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()

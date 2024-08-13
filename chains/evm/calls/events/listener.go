@@ -23,15 +23,18 @@ type ChainClient interface {
 }
 
 type Listener struct {
-	client ChainClient
-	abi    abi.ABI
+	client   ChainClient
+	abi      abi.ABI
+	retryAbi abi.ABI
 }
 
 func NewListener(client ChainClient) *Listener {
+	retryAbi, _ := abi.JSON(strings.NewReader(consts.RetryABI))
 	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &Listener{
-		client: client,
-		abi:    abi,
+		client:   client,
+		abi:      abi,
+		retryAbi: retryAbi,
 	}
 }
 
@@ -78,7 +81,7 @@ func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.
 	var retryEvents []RetryEvent
 	for _, dl := range logs {
 		var event RetryEvent
-		err = l.abi.UnpackIntoInterface(&event, "Retry", dl.Data)
+		err = l.retryAbi.UnpackIntoInterface(&event, "Retry", dl.Data)
 		if err != nil {
 			log.Error().Msgf(
 				"failed unpacking retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
