@@ -150,7 +150,6 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 }
 
 func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
-
 	startParams := &startParams{
 		PublicKey:          r.key.Key.PublicKey,
 		VerificationShares: r.key.Key.VerificationShares,
