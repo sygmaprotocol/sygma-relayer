@@ -48,8 +48,10 @@ type TopologyConfiguration struct {
 }
 
 type UploaderConfig struct {
-	URL       string `mapstructure:"url"`
-	AuthToken string `mapstructure:"authToken"`
+	URL            string        `mapstructure:"url"`
+	AuthToken      string        `mapstructure:"authToken"`
+	MaxRetries     uint64        `mapstructure:"MaxRetries" json:"maxRetries" default:"5"`
+	MaxElapsedTime time.Duration `mapstructure:"MaxElapsedTime" json:"maxElapsedTime" default:"300000"` // 5 min
 }
 type RawRelayerConfig struct {
 	OpenTelemetryCollectorURL string              `mapstructure:"OpenTelemetryCollectorURL" json:"opentelemetryCollectorURL"`

@@ -109,6 +109,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    3 * time.Minute,
 			},
+			UploaderConfig: relayer.UploaderConfig{
+				MaxRetries:     5,
+				MaxElapsedTime: 300000,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{
 			{
@@ -212,6 +216,10 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    3 * time.Minute,
 			},
+			UploaderConfig: relayer.UploaderConfig{
+				MaxRetries:     5,
+				MaxElapsedTime: 300000,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{
 			{
@@ -280,8 +288,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						ElectionWaitTime: "1s",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 			},
@@ -302,8 +312,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						},
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -335,8 +347,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						ElectionWaitTime: "",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -358,8 +372,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						Port:                  "2020",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 
@@ -387,8 +403,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						// Port: use default value,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -421,8 +439,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    3 * time.Minute,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -457,8 +477,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    "1s",
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -493,8 +515,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						BullyWaitTime:    time.Second,
 					},
 					UploaderConfig: relayer.UploaderConfig{
-						URL:       "https://testIPFSProvider.com",
-						AuthToken: "testToken",
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{

@@ -15,8 +15,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-const MAX_RETRIES = 3
-
 type Uploader interface {
 	Upload(proposals []map[string]interface{}) (string, error)
 }
@@ -33,7 +31,7 @@ type IPFSResponse struct {
 	IpfsHash string `json:"IpfsHash"`
 }
 
-func (s *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, error) {
+func (i *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, error) {
 	jsonData, err := json.Marshal(dataToUpload)
 	if err != nil {
 		return "", err
@@ -51,28 +49,28 @@ func (s *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, er
 	}
 	writer.Close()
 
-	req, err := http.NewRequest("POST", s.config.URL, body)
+	req, err := http.NewRequest("POST", i.config.URL, body)
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Add("Authorization", "Bearer "+s.config.AuthToken)
+	req.Header.Add("Authorization", "Bearer "+i.config.AuthToken)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	var ipfsResponse IPFSResponse
 
 	// Define the operation to be retried
 	operation := func() error {
-		return s.performRequest(req, &ipfsResponse)
+		return i.performRequest(req, &ipfsResponse)
 	}
 	expBackoff := backoff.NewExponentialBackOff()
-	expBackoff.MaxElapsedTime = time.Minute
+	expBackoff.MaxElapsedTime = i.config.MaxElapsedTime
 
 	notify := func(err error, duration time.Duration) {
 		log.Warn().Err(err).Msg("Unable to upload metadata to ipfs")
 	}
 
-	err = backoff.RetryNotify(operation, backoff.WithMaxRetries(expBackoff, 5), notify)
+	err = backoff.RetryNotify(operation, backoff.WithMaxRetries(expBackoff, i.config.MaxRetries), notify)
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +78,7 @@ func (s *IPFSUploader) Upload(dataToUpload []map[string]interface{}) (string, er
 	return ipfsResponse.IpfsHash, nil
 }
 
-func (s *IPFSUploader) performRequest(req *http.Request, ipfsResponse *IPFSResponse) error {
+func (i *IPFSUploader) performRequest(req *http.Request, ipfsResponse *IPFSResponse) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
