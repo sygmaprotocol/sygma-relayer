@@ -109,6 +109,10 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    3 * time.Minute,
 			},
+			UploaderConfig: relayer.UploaderConfig{
+				MaxRetries:     5,
+				MaxElapsedTime: 300000,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{
 			{
@@ -212,6 +216,10 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 				ElectionWaitTime: 2 * time.Second,
 				BullyWaitTime:    3 * time.Minute,
 			},
+			UploaderConfig: relayer.UploaderConfig{
+				MaxRetries:     5,
+				MaxElapsedTime: 300000,
+			},
 		},
 		ChainConfigs: []map[string]interface{}{
 			{
@@ -279,6 +287,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						PingInterval:     "1s",
 						ElectionWaitTime: "1s",
 					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
+					},
 				},
 			},
 			shouldFail: true,
@@ -296,6 +310,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 							Url:           "url",
 							Path:          "path",
 						},
+					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -326,6 +346,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						PingInterval:     "",
 						ElectionWaitTime: "",
 					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
+					},
 				},
 				ChainConfigs: []map[string]interface{}{{
 					"type": "evm",
@@ -345,7 +371,14 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						TopologyConfiguration: relayer.TopologyConfiguration{},
 						Port:                  "2020",
 					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
+					},
 				},
+
 				ChainConfigs: []map[string]interface{}{{
 					"type": "evm",
 					"name": "chain1",
@@ -368,6 +401,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 							Path:          "path",
 						},
 						// Port: use default value,
+					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -398,6 +437,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						PingInterval:     1 * time.Second,
 						ElectionWaitTime: 2 * time.Second,
 						BullyWaitTime:    3 * time.Minute,
+					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
@@ -431,6 +476,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						ElectionWaitTime: "1s",
 						BullyWaitTime:    "1s",
 					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
+					},
 				},
 				ChainConfigs: []map[string]interface{}{{
 					"type": "evm",
@@ -462,6 +513,12 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 						PingInterval:     time.Second,
 						ElectionWaitTime: time.Second,
 						BullyWaitTime:    time.Second,
+					},
+					UploaderConfig: relayer.UploaderConfig{
+						URL:            "https://testIPFSProvider.com",
+						AuthToken:      "testToken",
+						MaxRetries:     5,
+						MaxElapsedTime: 5 * time.Minute,
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
