@@ -97,6 +97,7 @@ var DEFAULT_CONFIG = BridgeConfig{
 
 	Erc1155ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
 	Erc1155HandlerAddr: common.HexToAddress("0x5e6924e6A120bd833617D0873f0a1b747ee2D743"),
+	Erc1155Addr:        common.HexToAddress("0x6a7C2f9BCb884Dac619680e2E1319ff0a7Ffd6b8"),
 
 	BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
 	FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
