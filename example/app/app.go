@@ -10,6 +10,7 @@ import (
 	substrateCheckMetadataModeEnabledClient "github.com/sygmaprotocol/sygma-core/chains/substrate/client"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -227,8 +228,10 @@ func Run() error {
 				subClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substratePallet.NewPallet(subClient, nil, false)
 
-				// TODO: add config.isCheckMetadataModeEnabled
-				isCheckMetadataModeEnabled := true
+				// Temporarily differ the substrate chain with CheckMetadataModeEnabled chain and non-CheckMetadataModeEnabled
+				// chain by the endpoint name without touching the chain configure.
+				// This will only stay in this temporary feature branch
+				isCheckMetadataModeEnabled := strings.Contains(config.GeneralChainConfig.Endpoint, "tangle")
 				if isCheckMetadataModeEnabled {
 					connCheckMetadataModeEnabled, err := connectionCheckMetadataModeEnabled.NewCheckMetadataModeEnabledConnection(config.GeneralChainConfig.Endpoint)
 					if err != nil {
