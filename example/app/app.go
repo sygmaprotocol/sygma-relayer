@@ -15,11 +15,13 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/uploader"
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
 	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	propStore "github.com/ChainSafe/sygma-relayer/store"
+	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/listener"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/gas"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
@@ -63,7 +65,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/config"
 	"github.com/ChainSafe/sygma-relayer/keyshare"
 	"github.com/ChainSafe/sygma-relayer/topology"
-	"github.com/ChainSafe/sygma-relayer/tss"
 	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
 )
 
@@ -308,6 +309,7 @@ func Run() error {
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &btcExecutor.FungibleMessageHandler{})
 				mh.RegisterMessageHandler(retry.RetryMessageType, btcExecutor.NewRetryMessageHandler(depositEventHandler, conn, config.BlockConfirmations, propStore, msgChan))
+				uploader := uploader.NewIPFSUploader(configuration.RelayerConfig.UploaderConfig)
 				executor := btcExecutor.NewExecutor(
 					propStore,
 					host,
@@ -318,7 +320,8 @@ func Run() error {
 					mempool,
 					resources,
 					config.Network,
-					exitLock)
+					exitLock,
+					uploader)
 
 				btcChain := btc.NewBtcChain(listener, executor, mh, *config.GeneralChainConfig.Id)
 				domains[*config.GeneralChainConfig.Id] = btcChain

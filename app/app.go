@@ -17,6 +17,7 @@ import (
 	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
+	"github.com/ChainSafe/sygma-relayer/chains/btc/uploader"
 	"github.com/ChainSafe/sygma-relayer/chains/evm"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/contracts/bridge"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -336,10 +337,11 @@ func Run() error {
 				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
 
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
-
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &btcExecutor.FungibleMessageHandler{})
 				mh.RegisterMessageHandler(retry.RetryMessageType, btcExecutor.NewRetryMessageHandler(depositEventHandler, conn, config.BlockConfirmations, propStore, msgChan))
+				uploader := uploader.NewIPFSUploader(configuration.RelayerConfig.UploaderConfig)
+
 				executor := btcExecutor.NewExecutor(
 					propStore,
 					host,
@@ -350,7 +352,8 @@ func Run() error {
 					mempool,
 					resources,
 					config.Network,
-					exitLock)
+					exitLock,
+					uploader)
 
 				btcChain := btc.NewBtcChain(listener, executor, mh, *config.GeneralChainConfig.Id)
 				domains[*config.GeneralChainConfig.Id] = btcChain
