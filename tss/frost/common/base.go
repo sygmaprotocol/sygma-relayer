@@ -37,7 +37,7 @@ type BaseFrostTss struct {
 func (k *BaseFrostTss) ProcessInboundMessages(ctx context.Context, msgChan chan *comm.WrappedMessage) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf(string(debug.Stack()))
+			err = fmt.Errorf("%s", string(debug.Stack()))
 		}
 	}()
 
