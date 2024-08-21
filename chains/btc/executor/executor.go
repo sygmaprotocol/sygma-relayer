@@ -165,8 +165,8 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 	// we need to sign each input individually
 	tssProcesses := make([]tss.TssProcess, len(tx.TxIn))
 	for i := range tx.TxIn {
-		sessionID := fmt.Sprintf("%s-%d", sessionID, i)
 		signingHash, err := txscript.CalcTaprootSignatureHash(sigHashes, txscript.SigHashDefault, tx, i, prevOutputFetcher)
+		sessionID := hex.EncodeToString(signingHash)
 		if err != nil {
 			return err
 		}
@@ -304,6 +304,7 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 	cid, err := e.uploader.Upload(dataToUpload)
 	if err != nil {
 		log.Error().Err(err).Msg("Error occured while uploading metadata to ipfs")
+		return 0, err
 	}
 
 	// Store the CID in OP_RETURN
@@ -311,6 +312,7 @@ func (e *Executor) outputs(tx *wire.MsgTx, proposals []*BtcTransferProposal) (ui
 	opReturnScript, err := txscript.NullDataScript(opReturnData)
 	if err != nil {
 		log.Error().Err(err).Msg("Error occured while constructiong OP_RETURN data")
+		return 0, err
 	}
 
 	opReturnOut := wire.NewTxOut(0, opReturnScript)
