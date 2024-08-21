@@ -84,7 +84,7 @@ func NewSigning(
 			Host:          host,
 			Communication: comm,
 			Peers:         key.Peers,
-			SID:           string(msg[:]),
+			SID:           sessionID,
 			Log:           log.With().Str("SessionID", sessionID).Str("messageID", messageID).Str("Process", "signing").Logger(),
 			Cancel:        func() {},
 			Done:          make(chan bool),
