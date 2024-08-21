@@ -52,6 +52,15 @@ services:
     ports:
       - "9944:9944"
       - "9933:9933"
+      
+  ipfs0:
+    container_name: ipfs0
+    image: ipfs/kubo:release
+    ports:
+      - "4001:4001" 
+      - "5002:5001" 
+      - "8080:8080" 
+
 
   relayer1:
     container_name: example_relayer1

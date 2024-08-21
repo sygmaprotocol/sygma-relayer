@@ -12,7 +12,10 @@
       },
       "commHealthCheckInterval": "24h"
     },
-    "opentelemetryCollectorURL": "http://otel-collector:4318"
+    "opentelemetryCollectorURL": "http://otel-collector:4318",
+    "UploaderConfig":{
+      "URL":"http://ipfs0:5001/api/v0/add"
+    }
   },
   "domains": [
   {
