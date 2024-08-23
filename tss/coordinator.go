@@ -135,7 +135,7 @@ func (c *Coordinator) handleError(ctx context.Context, err error, tssProcesses [
 	switch err := err.(type) {
 	case *CoordinatorError:
 		{
-			log.Err(err).Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
+			log.Warn().Str("SessionID", sessionID).Msgf("Tss process failed with error %+v", err)
 
 			excludedPeers := []peer.ID{err.Peer}
 			rp.Go(func(ctx context.Context) error { return c.retry(ctx, tssProcesses, resultChn, excludedPeers) })
