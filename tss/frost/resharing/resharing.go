@@ -18,13 +18,12 @@ import (
 	"github.com/taurusgroup/multi-party-sig/pkg/math/curve"
 	"github.com/taurusgroup/multi-party-sig/pkg/party"
 	"github.com/taurusgroup/multi-party-sig/pkg/protocol"
-	"github.com/taurusgroup/multi-party-sig/pkg/taproot"
 	"github.com/taurusgroup/multi-party-sig/protocols/frost"
 )
 
 type startParams struct {
-	PublicKey          taproot.PublicKey
-	VerificationShares map[party.ID]*curve.Secp256k1Point
+	PublicKey          []byte              `json:"publicKey"`
+	VerificationShares map[party.ID][]byte `json:"verificationShares"`
 }
 type FrostKeyshareStorer interface {
 	GetKeyshare() (keyshare.FrostKeyshare, error)
@@ -99,9 +98,19 @@ func (r *Resharing) Run(
 	if err != nil {
 		return err
 	}
+
+	verificationShares := make(map[party.ID]*curve.Secp256k1Point)
+	for id, point := range startParams.VerificationShares {
+		p := new(curve.Secp256k1Point)
+		err = p.UnmarshalBinary(point)
+		if err != nil {
+			return err
+		}
+		verificationShares[id] = p
+	}
 	// initialize verification shares for the new relayer
 	if len(r.key.Key.VerificationShares) == 0 {
-		r.key.Key.VerificationShares = startParams.VerificationShares
+		r.key.Key.VerificationShares = verificationShares
 		r.key.Key.PublicKey = startParams.PublicKey
 	}
 
@@ -150,9 +159,17 @@ func (r *Resharing) ValidCoordinators() []peer.ID {
 }
 
 func (r *Resharing) StartParams(readyPeers []peer.ID) []byte {
+	// Create a map of verification shares in JSON-compatible format
+	verificationShares := make(map[party.ID][]byte)
+	for id, point := range r.key.Key.VerificationShares {
+		pointBytes, _ := point.MarshalBinary()
+
+		verificationShares[id] = pointBytes
+	}
+
 	startParams := &startParams{
 		PublicKey:          r.key.Key.PublicKey,
-		VerificationShares: r.key.Key.VerificationShares,
+		VerificationShares: verificationShares,
 	}
 	paramBytes, _ := json.Marshal(startParams)
 	return paramBytes
