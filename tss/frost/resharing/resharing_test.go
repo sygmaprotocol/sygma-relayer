@@ -19,6 +19,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type ResharingTestSuite struct {
@@ -52,7 +53,12 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		}
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
-		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, storer)
+		share, err := storer.GetKeyshare("")
+		s.MockFrostStorer.EXPECT().LockKeyshare()
+		s.MockFrostStorer.EXPECT().UnlockKeyshare()
+		s.MockFrostStorer.EXPECT().GetKeyshare("").Return(share, err)
+		s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, s.MockFrostStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
@@ -94,7 +100,12 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_RemovePeer() {
 		}
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
-		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, storer)
+		share, err := storer.GetKeyshare("")
+		s.MockFrostStorer.EXPECT().LockKeyshare()
+		s.MockFrostStorer.EXPECT().UnlockKeyshare()
+		s.MockFrostStorer.EXPECT().GetKeyshare("").Return(share, err)
+		s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
+		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, s.MockFrostStorer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
