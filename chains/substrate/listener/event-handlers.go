@@ -5,6 +5,7 @@ package listener
 
 import (
 	"fmt"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/block"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
@@ -17,7 +18,7 @@ import (
 
 type Connection interface {
 	GetFinalizedHead() (types.Hash, error)
-	GetBlock(blockHash types.Hash) (*types.SignedBlock, error)
+	GetBlock(blockHash types.Hash) (*block.SignedBlock, error)
 	GetBlockHash(blockNumber uint64) (types.Hash, error)
 	GetBlockEvents(hash types.Hash) ([]*parser.Event, error)
 	UpdateMetatdata() error
