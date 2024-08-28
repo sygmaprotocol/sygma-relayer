@@ -5,12 +5,12 @@
 package mock_listener
 
 import (
-	"github.com/centrifuge/go-substrate-rpc-client/v4/types/block"
 	big "math/big"
 	reflect "reflect"
 
 	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	block "github.com/centrifuge/go-substrate-rpc-client/v4/types/block"
 	gomock "github.com/golang/mock/gomock"
 	message "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
