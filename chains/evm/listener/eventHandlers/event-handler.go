@@ -389,14 +389,6 @@ func (eh *RefreshEventHandler) HandleEvents(
 		log.Err(err).Msgf("Failed executing ecdsa key refresh")
 		return nil
 	}
-	frostResharing := frostResharing.NewResharing(
-		eh.sessionID(startBlock), "", topology.Threshold, eh.host, eh.communication, eh.frostStorer,
-	)
-	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{frostResharing}, make(chan interface{}, 1))
-	if err != nil {
-		log.Err(err).Msgf("Failed executing frost key refresh")
-		return nil
-	}
 	return nil
 }
 
