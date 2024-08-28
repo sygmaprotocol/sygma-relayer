@@ -25,7 +25,7 @@ type FrostKeyshareStorer interface {
 	StoreKeyshare(keyshare keyshare.FrostKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
-	GetKeyshare() (keyshare.FrostKeyshare, error)
+	GetKeyshare(publicKey string) (keyshare.FrostKeyshare, error)
 }
 
 type Keygen struct {

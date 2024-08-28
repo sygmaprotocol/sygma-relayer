@@ -390,7 +390,7 @@ func (eh *RefreshEventHandler) HandleEvents(
 		return nil
 	}
 	frostResharing := frostResharing.NewResharing(
-		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.frostStorer,
+		eh.sessionID(startBlock), "", topology.Threshold, eh.host, eh.communication, eh.frostStorer,
 	)
 	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{frostResharing}, make(chan interface{}, 1))
 	if err != nil {

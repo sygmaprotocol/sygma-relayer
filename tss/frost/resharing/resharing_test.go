@@ -14,7 +14,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss"
 	"github.com/ChainSafe/sygma-relayer/tss/frost/resharing"
 	tsstest "github.com/ChainSafe/sygma-relayer/tss/test"
-	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
@@ -53,12 +52,7 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_OldAndNewSubset() {
 		}
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
-		share, err := storer.GetKeyshare()
-		s.MockFrostStorer.EXPECT().LockKeyshare()
-		s.MockFrostStorer.EXPECT().UnlockKeyshare()
-		s.MockFrostStorer.EXPECT().GetKeyshare().Return(share, err)
-		s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.MockFrostStorer)
+		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, storer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
@@ -100,12 +94,7 @@ func (s *ResharingTestSuite) Test_ValidResharingProcess_RemovePeer() {
 		}
 		communicationMap[host.ID()] = &communication
 		storer := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
-		share, err := storer.GetKeyshare()
-		s.MockFrostStorer.EXPECT().LockKeyshare()
-		s.MockFrostStorer.EXPECT().UnlockKeyshare()
-		s.MockFrostStorer.EXPECT().GetKeyshare().Return(share, err)
-		s.MockFrostStorer.EXPECT().StoreKeyshare(gomock.Any()).Return(nil)
-		resharing := resharing.NewResharing("resharing2", 1, host, &communication, s.MockFrostStorer)
+		resharing := resharing.NewResharing("resharing2", "", 1, host, &communication, storer)
 		electorFactory := elector.NewCoordinatorElectorFactory(host, s.BullyConfig)
 		coordinators = append(coordinators, tss.NewCoordinator(host, &communication, electorFactory))
 		processes = append(processes, resharing)
