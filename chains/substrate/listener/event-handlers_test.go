@@ -5,6 +5,7 @@ package listener_test
 
 import (
 	"fmt"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/types/block"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
@@ -354,7 +355,7 @@ func (s *RetryHandlerTestSuite) Test_CannotFetchLatestBlock() {
 
 func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
@@ -380,7 +381,7 @@ func (s *RetryHandlerTestSuite) Test_EventTooNew() {
 
 func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
@@ -409,7 +410,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockHashFails() {
 
 func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
@@ -438,7 +439,7 @@ func (s *RetryHandlerTestSuite) Test_FetchingBlockEventsFails() {
 
 func (s *RetryHandlerTestSuite) Test_NoEvents() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
@@ -467,7 +468,7 @@ func (s *RetryHandlerTestSuite) Test_NoEvents() {
 
 func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
@@ -563,7 +564,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 
 func (s *RetryHandlerTestSuite) Test_EventPanics() {
 	s.mockConn.EXPECT().GetFinalizedHead().Return(types.Hash{}, nil)
-	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&types.SignedBlock{Block: types.Block{
+	s.mockConn.EXPECT().GetBlock(gomock.Any()).Return(&block.SignedBlock{Block: block.Block{
 		Header: types.Header{
 			Number: types.BlockNumber(uint32(100)),
 		},
