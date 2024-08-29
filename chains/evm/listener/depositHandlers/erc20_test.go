@@ -32,8 +32,13 @@ func TestRunErc20HandlerTestSuite(t *testing.T) {
 func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	// 0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b
 	recipientByteSlice := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
+	maxFee := big.NewInt(200000)
+	optionalMessage := common.LeftPadBytes(maxFee.Bytes(), 32)
+	optionalMessage = append(optionalMessage, []byte("optionalMessage")...)
 
-	optionalMessage := []byte("optionalMessage")
+	metadata := make(map[string]interface{})
+	metadata["gasLimit"] = uint64(200000)
+
 	calldata := evm.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
 	calldata = append(calldata, optionalMessage...)
 	depositLog := &events.Deposit{
@@ -60,7 +65,8 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 				recipientAddressParsed,
 				optionalMessage,
 			},
-			Type: transfer.FungibleTransfer,
+			Type:     transfer.FungibleTransfer,
+			Metadata: metadata,
 		},
 		Type: transfer.TransferMessageType,
 		ID:   "messageID",

@@ -44,17 +44,20 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 		recipientAddress,
 	}
 
+	metadata := make(map[string]interface{})
 	// append optional message if it exists
-	if len(calldata) > int(64+recipientAddressLength.Int64()) {
+	if len(calldata) > int(96+recipientAddressLength.Int64()) {
+		metadata["gasLimit"] = new(big.Int).SetBytes(calldata[64+recipientAddressLength.Int64() : 96+recipientAddressLength.Int64()]).Uint64()
 		payload = append(payload, calldata[64+recipientAddressLength.Int64():])
 	}
+
 	return message.NewMessage(
 		sourceID,
 		destID,
 		transfer.TransferMessageData{
 			DepositNonce: nonce,
 			ResourceId:   resourceID,
-			Metadata:     nil,
+			Metadata:     metadata,
 			Payload:      payload,
 			Type:         transfer.FungibleTransfer,
 		},
