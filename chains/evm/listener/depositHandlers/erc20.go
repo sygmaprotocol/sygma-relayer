@@ -43,6 +43,11 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 		amount,
 		recipientAddress,
 	}
+
+	// append optional message if it exists
+	if len(calldata) > int(64+recipientAddressLength.Int64()) {
+		payload = append(payload, calldata[64+recipientAddressLength.Int64():])
+	}
 	return message.NewMessage(
 		sourceID,
 		destID,
