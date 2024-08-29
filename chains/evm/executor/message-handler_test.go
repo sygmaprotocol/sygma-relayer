@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectERC20PayloadLen = errors.New("malformed payload. Len  of payload should be 2")
+var errIncorrectERC20PayloadLen = errors.New("wrong payload length 1")
 var errIncorrectERC721PayloadLen = errors.New("malformed payload. Len  of payload should be 3")
 var errIncorrectGenericPayloadLen = errors.New("malformed payload. Len  of payload should be 1")
 var errIncorrectERC1155PayloadLen = errors.New("malformed payload. Len  of payload should be 4")
