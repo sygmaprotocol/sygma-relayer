@@ -6,7 +6,7 @@ name: Sygma Devnet
 on:
   push:
     branches:
-      - main
+      - mpetrun5/erc20-additional-data
 
 env:
   ENVIRONMENT: STAGE
