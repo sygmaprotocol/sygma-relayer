@@ -194,5 +194,5 @@ require (
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/binance-chain/tss-lib => github.com/ChainSafe/threshlib v0.0.0-20230420112309-603112eb4684
-	github.com/taurusgroup/multi-party-sig => github.com/sygmaprotocol/multi-party-sig v0.6.2
+	github.com/taurusgroup/multi-party-sig => github.com/sygmaprotocol/multi-party-sig v0.6.3
 )
