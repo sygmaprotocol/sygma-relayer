@@ -22,6 +22,7 @@ type RawResource struct {
 	FeeAmount  string
 	Tweak      string
 	Script     string
+	PublicKey  []byte
 }
 
 type Resource struct {
@@ -30,6 +31,7 @@ type Resource struct {
 	ResourceID [32]byte
 	Tweak      string
 	Script     []byte
+	PublicKey  string
 }
 
 type RawBtcConfig struct {
@@ -136,6 +138,7 @@ func NewBtcConfig(chainConfig map[string]interface{}) (*BtcConfig, error) {
 			Script:     scriptBytes,
 			Tweak:      r.Tweak,
 			FeeAmount:  feeAmount,
+			PublicKey:  hex.EncodeToString(r.PublicKey),
 		}
 	}
 

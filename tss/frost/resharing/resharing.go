@@ -27,7 +27,7 @@ type startParams struct {
 	VerificationShares map[party.ID]*curve.Secp256k1Point
 }
 type FrostKeyshareStorer interface {
-	GetKeyshare() (keyshare.FrostKeyshare, error)
+	GetKeyshare(publicKey string) (keyshare.FrostKeyshare, error)
 	StoreKeyshare(keyshare keyshare.FrostKeyshare) error
 	LockKeyshare()
 	UnlockKeyshare()
@@ -43,6 +43,7 @@ type Resharing struct {
 
 func NewResharing(
 	sessionID string,
+	publicKey string,
 	threshold int,
 	host host.Host,
 	comm comm.Communication,
@@ -50,7 +51,7 @@ func NewResharing(
 ) *Resharing {
 	storer.LockKeyshare()
 	var key keyshare.FrostKeyshare
-	key, err := storer.GetKeyshare()
+	key, err := storer.GetKeyshare(publicKey)
 	if err != nil {
 		// empty key for parties that don't have one
 		key = keyshare.FrostKeyshare{

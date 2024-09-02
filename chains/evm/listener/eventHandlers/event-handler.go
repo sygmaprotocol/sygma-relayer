@@ -26,7 +26,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
 	frostKeygen "github.com/ChainSafe/sygma-relayer/tss/frost/keygen"
-	frostResharing "github.com/ChainSafe/sygma-relayer/tss/frost/resharing"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -311,7 +310,6 @@ type RefreshEventHandler struct {
 	communication    comm.Communication
 	connectionGate   *p2p.ConnectionGate
 	ecdsaStorer      resharing.SaveDataStorer
-	frostStorer      frostResharing.FrostKeyshareStorer
 }
 
 func NewRefreshEventHandler(
@@ -324,7 +322,6 @@ func NewRefreshEventHandler(
 	communication comm.Communication,
 	connectionGate *p2p.ConnectionGate,
 	ecdsaStorer resharing.SaveDataStorer,
-	frostStorer frostResharing.FrostKeyshareStorer,
 	bridgeAddress common.Address,
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
@@ -336,7 +333,6 @@ func NewRefreshEventHandler(
 		host:             host,
 		communication:    communication,
 		ecdsaStorer:      ecdsaStorer,
-		frostStorer:      frostStorer,
 		connectionGate:   connectionGate,
 		bridgeAddress:    bridgeAddress,
 	}
@@ -387,14 +383,6 @@ func (eh *RefreshEventHandler) HandleEvents(
 	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{resharing}, make(chan interface{}, 1))
 	if err != nil {
 		log.Err(err).Msgf("Failed executing ecdsa key refresh")
-		return nil
-	}
-	frostResharing := frostResharing.NewResharing(
-		eh.sessionID(startBlock), topology.Threshold, eh.host, eh.communication, eh.frostStorer,
-	)
-	err = eh.coordinator.Execute(context.Background(), []tss.TssProcess{frostResharing}, make(chan interface{}, 1))
-	if err != nil {
-		log.Err(err).Msgf("Failed executing frost key refresh")
 		return nil
 	}
 	return nil

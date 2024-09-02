@@ -96,6 +96,8 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 	feeAddress, _ := btcutil.DecodeAddress("mkHS9ne12qx9pS9VojpwU5xtRd4T7X7ZUt", &chaincfg.TestNet3Params)
 	expectedScript, _ := hex.DecodeString("51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5")
 
+	expectedPublicKey := "36c62696a3869cb46b2e6c93be73d039e6ab341853d824efadecd3dcee332c1a"
+	publicKeyBytes, _ := hex.DecodeString(expectedPublicKey)
 	rawConfig := map[string]interface{}{
 		"id":         1,
 		"endpoint":   "ws://domain.com",
@@ -111,6 +113,14 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 				ResourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
 				Script:     "51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5",
 				Tweak:      "tweak",
+			},
+			config.RawResource{
+				Address:    "tb1qln69zuhdunc9stwfh6t7adexxrcr04ppy6thgm",
+				FeeAmount:  "10000000",
+				ResourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
+				Script:     "51206a698882348433b57d549d6344f74500fcd13ad8d2200cdf89f8e39e5cafa7d5",
+				Tweak:      "tweak",
+				PublicKey:  publicKeyBytes,
 			},
 		},
 	}
@@ -141,6 +151,15 @@ func (s *NewBtcConfigTestSuite) Test_ValidConfig() {
 				Script:     expectedScript,
 				Tweak:      "tweak",
 				FeeAmount:  big.NewInt(10000000),
+				PublicKey:  "",
+			},
+			{
+				Address:    expectedAddress,
+				ResourceID: expectedResource,
+				Script:     expectedScript,
+				Tweak:      "tweak",
+				FeeAmount:  big.NewInt(10000000),
+				PublicKey:  expectedPublicKey,
 			},
 		},
 	})

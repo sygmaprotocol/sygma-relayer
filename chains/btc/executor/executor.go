@@ -172,6 +172,7 @@ func (e *Executor) executeResourceProps(props []*BtcTransferProposal, resource c
 		}
 		signing, err := signing.NewSigning(
 			i,
+			resource.PublicKey,
 			signingHash,
 			resource.Tweak,
 			messageID,

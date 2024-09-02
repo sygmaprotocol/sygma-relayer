@@ -43,7 +43,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 	s.Nil(err)
 
 	fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", 0))
-	testKeyshare, err := fetcher.GetKeyshare()
+	testKeyshare, err := fetcher.GetKeyshare("")
 	s.Nil(err)
 	tweakedKeyshare, err := testKeyshare.Key.Derive(h, nil)
 	s.Nil(err)
@@ -57,7 +57,7 @@ func (s *SigningTestSuite) Test_ValidSigningProcess() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, "", msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -110,15 +110,15 @@ func (s *SigningTestSuite) Test_MultipleProcesses() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing1, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing1, err := signing.NewSigning(1, "", msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
-		signing2, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing2", host, &communication, fetcher)
+		signing2, err := signing.NewSigning(1, "", msgBytes, tweak, "signing1", "signing2", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
-		signing3, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing3", host, &communication, fetcher)
+		signing3, err := signing.NewSigning(1, "", msgBytes, tweak, "signing1", "signing3", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
@@ -176,7 +176,7 @@ func (s *SigningTestSuite) Test_ProcessTimeout() {
 		communicationMap[host.ID()] = &communication
 		fetcher := keyshare.NewFrostKeyshareStore(fmt.Sprintf("../../test/keyshares/%d-frost.keyshare", i))
 
-		signing, err := signing.NewSigning(1, msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
+		signing, err := signing.NewSigning(1, "", msgBytes, tweak, "signing1", "signing1", host, &communication, fetcher)
 		if err != nil {
 			panic(err)
 		}
