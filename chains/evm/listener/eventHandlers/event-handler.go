@@ -26,7 +26,6 @@ import (
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/keygen"
 	"github.com/ChainSafe/sygma-relayer/tss/ecdsa/resharing"
 	frostKeygen "github.com/ChainSafe/sygma-relayer/tss/frost/keygen"
-	frostResharing "github.com/ChainSafe/sygma-relayer/tss/frost/resharing"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -311,7 +310,6 @@ type RefreshEventHandler struct {
 	communication    comm.Communication
 	connectionGate   *p2p.ConnectionGate
 	ecdsaStorer      resharing.SaveDataStorer
-	frostStorer      frostResharing.FrostKeyshareStorer
 }
 
 func NewRefreshEventHandler(
@@ -324,7 +322,6 @@ func NewRefreshEventHandler(
 	communication comm.Communication,
 	connectionGate *p2p.ConnectionGate,
 	ecdsaStorer resharing.SaveDataStorer,
-	frostStorer frostResharing.FrostKeyshareStorer,
 	bridgeAddress common.Address,
 ) *RefreshEventHandler {
 	return &RefreshEventHandler{
@@ -336,7 +333,6 @@ func NewRefreshEventHandler(
 		host:             host,
 		communication:    communication,
 		ecdsaStorer:      ecdsaStorer,
-		frostStorer:      frostStorer,
 		connectionGate:   connectionGate,
 		bridgeAddress:    bridgeAddress,
 	}
