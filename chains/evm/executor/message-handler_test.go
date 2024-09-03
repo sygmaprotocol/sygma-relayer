@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var errIncorrectERC20PayloadLen = errors.New("malformed payload. Len  of payload should be 2")
+var errIncorrectERC20PayloadLen = errors.New("wrong payload length 1")
 var errIncorrectERC721PayloadLen = errors.New("malformed payload. Len  of payload should be 3")
 var errIncorrectGenericPayloadLen = errors.New("malformed payload. Len  of payload should be 1")
 var errIncorrectERC1155PayloadLen = errors.New("malformed payload. Len  of payload should be 4")
@@ -47,7 +47,6 @@ func (s *ERC20HandlerTestSuite) SetupTest()     {}
 func (s *ERC20HandlerTestSuite) TearDownTest()  {}
 
 func (s *ERC20HandlerTestSuite) TestERC20HandleMessage() {
-
 	message := &message.Message{
 		Source:      1,
 		Destination: 0,
@@ -68,6 +67,40 @@ func (s *ERC20HandlerTestSuite) TestERC20HandleMessage() {
 
 	s.Nil(err)
 	s.NotNil(prop)
+}
+
+func (s *ERC20HandlerTestSuite) TestERC20HandleMessage_WithOptionalMessage() {
+	amount := []byte{2}
+	recipient := []byte{241, 229, 143, 177, 119, 4, 194, 218, 132, 121, 165, 51, 249, 250, 212, 173, 9, 147, 202, 107}
+	optionalMessage := []byte("optionalMessage")
+
+	expectedData := common.LeftPadBytes(amount, 32)
+	expectedData = append(expectedData, common.LeftPadBytes(big.NewInt(int64(len(recipient))).Bytes(), 32)...)
+	expectedData = append(expectedData, recipient...)
+	expectedData = append(expectedData, optionalMessage...)
+
+	message := &message.Message{
+		Source:      1,
+		Destination: 0,
+		Data: transfer.TransferMessageData{
+			DepositNonce: 1,
+			ResourceId:   [32]byte{0},
+			Payload: []interface{}{
+				amount,
+				recipient,
+				optionalMessage,
+			},
+			Type: transfer.FungibleTransfer,
+		},
+		Type: transfer.TransferMessageType,
+	}
+
+	mh := executor.TransferMessageHandler{}
+	prop, err := mh.HandleMessage(message)
+
+	s.Nil(err)
+	s.NotNil(prop)
+	s.Equal(prop.Data.(transfer.TransferProposalData).Data, expectedData)
 }
 
 func (s *ERC20HandlerTestSuite) TestERC20HandleMessageIncorrectDataLen() {
