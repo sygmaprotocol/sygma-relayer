@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ChainSafe/sygma-relayer/store"
@@ -38,6 +39,7 @@ type EventListener interface {
 	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryEvent, error)
 	FetchRetryDepositEvents(event events.RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
+	FetchTransferLiqudityEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.TransferLiquidity, error)
 }
 
 type PropStorer interface {
@@ -447,5 +449,76 @@ func (eh *DepositEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.I
 		}(deposits)
 	}
 
+	return nil
+}
+
+type TransferLiqudityEventHandler struct {
+	log           zerolog.Logger
+	adminAddress  common.Address
+	eventListener EventListener
+	domainID      uint8
+	msgChan       chan []*message.Message
+}
+
+func NewTransferLiquidityEventHandler(
+	logC zerolog.Context,
+	eventListener EventListener,
+	adminAddress common.Address,
+	domainID uint8,
+	msgChan chan []*message.Message,
+) *TransferLiqudityEventHandler {
+	return &TransferLiqudityEventHandler{
+		log:           logC.Logger(),
+		domainID:      domainID,
+		msgChan:       msgChan,
+		eventListener: eventListener,
+		adminAddress:  adminAddress,
+	}
+}
+
+func (eh *TransferLiqudityEventHandler) HandleEvents(
+	startBlock *big.Int,
+	endBlock *big.Int,
+) error {
+	transferLiqudityEvents, err := eh.eventListener.FetchTransferLiqudityEvents(
+		context.Background(), eh.adminAddress, startBlock, endBlock,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to fetch transfer liqudity events because of: %+v", err)
+	}
+	if len(transferLiqudityEvents) == 0 {
+		return nil
+	}
+
+	domainMsgs := make(map[uint8][]*message.Message)
+	for _, e := range transferLiqudityEvents {
+		messageID := fmt.Sprintf("%d-%d-%d-%d-transfer-liqudity", eh.domainID, e.DomainID, startBlock, endBlock)
+		payload := []interface{}{
+			common.LeftPadBytes(e.Amount.Bytes(), 32),
+			e.DestinationAddress,
+		}
+
+		msg := message.NewMessage(
+			eh.domainID,
+			e.DomainID,
+			transfer.TransferMessageData{
+				DepositNonce: chains.CalculateNonce(endBlock, e.TransactionHash),
+				ResourceId:   e.ResourceID,
+				Metadata:     nil,
+				Payload:      payload,
+				Type:         transfer.FungibleTransfer,
+			},
+			messageID,
+			transfer.TransferMessageType)
+		domainMsgs[e.DomainID] = append(domainMsgs[e.DomainID], msg)
+
+		log.Debug().Str("messageID", msg.ID).Msgf("Resolved transfer liqudity message %+v in block range: %s-%s", msg, startBlock.String(), endBlock.String())
+	}
+
+	for _, msgs := range domainMsgs {
+		go func(msgs []*message.Message) {
+			eh.msgChan <- msgs
+		}(msgs)
+	}
 	return nil
 }
