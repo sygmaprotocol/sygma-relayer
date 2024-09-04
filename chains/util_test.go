@@ -35,3 +35,11 @@ func (s *UtilTestSuite) Test_CalculateStartingBlock_Nil() {
 	s.Nil(res)
 	s.NotNil(err)
 }
+
+func (s *UtilTestSuite) Test_CalculateNonce_ValidNonce() {
+	blockNumber := big.NewInt(850000)
+
+	nonce := CalculateNonce(blockNumber, "a3f1e4d8b3c5e2a1f6d3c7e4b8a9f3e2c1d4a6b7c8e3f1d2c4b5a6e7")
+
+	s.Equal(nonce, uint64(12849897320021645821))
+}
