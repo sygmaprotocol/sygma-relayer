@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ChainSafe/sygma-relayer/comm"
@@ -201,6 +202,16 @@ func (r *Resharing) validateStartParams(params startParams) error {
 	slices.Sort(r.key.Peers)
 	// if relayer is already part of the active subset, check if peer subset
 	// in starting params is same as one saved in keyshare
+
+	fmt.Println("OLD SUBSET")
+	for _, peer := range params.OldSubset {
+		fmt.Println(peer.Pretty())
+	}
+	fmt.Println("INTERSECTION")
+	for _, peer := range common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers()) {
+		fmt.Println(peer.Pretty())
+	}
+
 	if len(r.key.Peers) != 0 && !slices.Equal(params.OldSubset, common.PeersIntersection(r.key.Peers, r.Host.Peerstore().Peers())) {
 		return errors.New("invalid peers subset in start params")
 	}

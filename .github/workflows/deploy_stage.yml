@@ -6,7 +6,7 @@ name: Sygma Devnet
 on:
   push:
     branches:
-      - main
+      - test
 
 env:
   ENVIRONMENT: STAGE
