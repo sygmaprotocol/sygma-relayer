@@ -28,10 +28,9 @@ func TestRunErc20HandlerTestSuite(t *testing.T) {
 
 func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 	deposit := &listener.Deposit{
-		SenderAddress: "senderAddress",
-		ResourceID:    [32]byte{0},
-		Amount:        big.NewInt(100),
-		Data:          "0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_1",
+		ResourceID: [32]byte{0},
+		Amount:     big.NewInt(100),
+		Data:       "0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_1",
 	}
 
 	sourceID := uint8(1)
@@ -70,10 +69,9 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent_InvalidDestinationDomainID() {
 
 	deposit := &listener.Deposit{
-		SenderAddress: "senderAddress",
-		ResourceID:    [32]byte{0},
-		Amount:        big.NewInt(100),
-		Data:          "0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_InvalidDestinationDomainID",
+		ResourceID: [32]byte{0},
+		Amount:     big.NewInt(100),
+		Data:       "0x1c3A03D04c026b1f4B4208D2ce053c5686E6FB8d_InvalidDestinationDomainID",
 	}
 
 	sourceID := uint8(1)

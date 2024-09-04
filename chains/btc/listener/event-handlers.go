@@ -4,10 +4,9 @@
 package listener
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
 	"math/big"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/btcutil"
@@ -82,11 +81,8 @@ func (eh *FungibleTransferEventHandler) HandleEvents(blockNumber *big.Int) error
 			if !isDeposit {
 				return nil
 			}
-			nonce, err := eh.CalculateNonce(blockNumber, evt.Hash)
-			if err != nil {
-				return err
-			}
 
+			nonce := chains.CalculateNonce(blockNumber, evt.Hash)
 			m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber)
 			if err != nil {
 				return err
@@ -121,26 +117,4 @@ func (eh *FungibleTransferEventHandler) FetchEvents(startBlock *big.Int) ([]btcj
 		return nil, err
 	}
 	return block.Tx, nil
-}
-
-func (eh *FungibleTransferEventHandler) CalculateNonce(blockNumber *big.Int, transactionHash string) (uint64, error) {
-	// Convert blockNumber to string
-	blockNumberStr := blockNumber.String()
-
-	// Concatenate blockNumberStr and transactionHash with a separator
-	concatenatedStr := blockNumberStr + "-" + transactionHash
-
-	// Calculate SHA-256 hash of the concatenated string
-	hash := sha256.New()
-	hash.Write([]byte(concatenatedStr))
-	hashBytes := hash.Sum(nil)
-
-	// XOR fold the hash to get a 64-bit value
-	var result uint64
-	for i := 0; i < 4; i++ {
-		part := binary.BigEndian.Uint64(hashBytes[i*8 : (i+1)*8])
-		result ^= part
-	}
-
-	return result, nil
 }

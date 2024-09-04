@@ -501,3 +501,89 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 	s.Nil(err)
 	s.Equal(msgs, []*message.Message{{Data: transfer.TransferMessageData{DepositNonce: 1}}, {Data: transfer.TransferMessageData{DepositNonce: 2}}})
 }
+
+type TransferLiqudityHandlerTestSuite struct {
+	suite.Suite
+	transferLiqudityEventHandler *eventHandlers.TransferLiqudityEventHandler
+	mockEventListener            *mock_listener.MockEventListener
+	domainID                     uint8
+	msgChan                      chan []*message.Message
+}
+
+func TestRunTrasferLiqudityHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(TransferLiqudityHandlerTestSuite))
+}
+
+func (s *TransferLiqudityHandlerTestSuite) SetupTest() {
+	ctrl := gomock.NewController(s.T())
+	s.domainID = 1
+	s.mockEventListener = mock_listener.NewMockEventListener(ctrl)
+	s.msgChan = make(chan []*message.Message, 2)
+	s.transferLiqudityEventHandler = eventHandlers.NewTransferLiquidityEventHandler(log.Logger.With(), s.mockEventListener, common.Address{}, s.domainID, s.msgChan)
+}
+
+func (s *TransferLiqudityHandlerTestSuite) Test_FetchDepositFails() {
+	s.mockEventListener.EXPECT().FetchTransferLiqudityEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]*events.TransferLiquidity{}, fmt.Errorf("error"))
+
+	err := s.transferLiqudityEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+
+	s.NotNil(err)
+	s.Equal(len(s.msgChan), 0)
+}
+
+func (s *TransferLiqudityHandlerTestSuite) Test_NoEvents() {
+	s.mockEventListener.EXPECT().FetchTransferLiqudityEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]*events.TransferLiquidity{}, nil)
+
+	err := s.transferLiqudityEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+
+	s.Nil(err)
+	s.Equal(len(s.msgChan), 0)
+}
+
+func (s *TransferLiqudityHandlerTestSuite) Test_ValidEvents() {
+	e1 := &events.TransferLiquidity{
+		DomainID:           2,
+		ResourceID:         [32]byte{1},
+		Amount:             big.NewInt(100),
+		TransactionHash:    "hash1",
+		DestinationAddress: []byte("recipient1"),
+	}
+	e2 := &events.TransferLiquidity{
+		DomainID:           3,
+		ResourceID:         [32]byte{2},
+		Amount:             big.NewInt(200),
+		TransactionHash:    "hash2",
+		DestinationAddress: []byte("recipient2"),
+	}
+	s.mockEventListener.EXPECT().FetchTransferLiqudityEvents(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]*events.TransferLiquidity{e1, e2}, nil)
+
+	err := s.transferLiqudityEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
+
+	s.Nil(err)
+	msg1 := <-s.msgChan
+	msg2 := <-s.msgChan
+
+	s.Equal(len(msg1), 1)
+	s.Equal(len(msg2), 1)
+	s.Equal(msg1[0].Data.(transfer.TransferMessageData), transfer.TransferMessageData{
+		DepositNonce: 1147060075541026355,
+		ResourceId:   e1.ResourceID,
+		Metadata:     nil,
+		Payload: []interface{}{
+			common.LeftPadBytes(e1.Amount.Bytes(), 32),
+			e1.DestinationAddress,
+		},
+		Type: transfer.FungibleTransfer,
+	})
+	s.Equal(msg2[0].Data.(transfer.TransferMessageData), transfer.TransferMessageData{
+		DepositNonce: 17571779095163939953,
+		ResourceId:   e2.ResourceID,
+		Metadata:     nil,
+		Payload: []interface{}{
+			common.LeftPadBytes(e2.Amount.Bytes(), 32),
+			e2.DestinationAddress,
+		},
+		Type: transfer.FungibleTransfer,
+	})
+
+}

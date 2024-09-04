@@ -130,6 +130,21 @@ func (mr *MockEventListenerMockRecorder) FetchRetryEvents(ctx, contractAddress, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRetryEvents", reflect.TypeOf((*MockEventListener)(nil).FetchRetryEvents), ctx, contractAddress, startBlock, endBlock)
 }
 
+// FetchTransferLiqudityEvents mocks base method.
+func (m *MockEventListener) FetchTransferLiqudityEvents(ctx context.Context, contractAddress common.Address, startBlock, endBlock *big.Int) ([]*events.TransferLiquidity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchTransferLiqudityEvents", ctx, contractAddress, startBlock, endBlock)
+	ret0, _ := ret[0].([]*events.TransferLiquidity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchTransferLiqudityEvents indicates an expected call of FetchTransferLiqudityEvents.
+func (mr *MockEventListenerMockRecorder) FetchTransferLiqudityEvents(ctx, contractAddress, startBlock, endBlock interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTransferLiqudityEvents", reflect.TypeOf((*MockEventListener)(nil).FetchTransferLiqudityEvents), ctx, contractAddress, startBlock, endBlock)
+}
+
 // MockPropStorer is a mock of PropStorer interface.
 type MockPropStorer struct {
 	ctrl     *gomock.Controller

@@ -32,7 +32,7 @@ type Signature struct {
 }
 
 type SaveDataFetcher interface {
-	GetKeyshare() (keyshare.FrostKeyshare, error)
+	GetKeyshare(publicKey string) (keyshare.FrostKeyshare, error)
 	LockKeyshare()
 	UnlockKeyshare()
 }
@@ -49,6 +49,7 @@ type Signing struct {
 
 func NewSigning(
 	id int,
+	publicKey string,
 	msg []byte,
 	tweak string,
 	messageID string,
@@ -59,7 +60,7 @@ func NewSigning(
 ) (*Signing, error) {
 	fetcher.LockKeyshare()
 	defer fetcher.UnlockKeyshare()
-	key, err := fetcher.GetKeyshare()
+	key, err := fetcher.GetKeyshare(publicKey)
 	if err != nil {
 		return nil, err
 	}

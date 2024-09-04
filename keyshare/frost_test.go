@@ -5,6 +5,8 @@ package keyshare_test
 
 import (
 	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"os"
 	"testing"
 
@@ -32,11 +34,10 @@ func (s *FrostKeyshareStoreTestSuite) SetupTest() {
 	s.keyshareStore = keyshare.NewFrostKeyshareStore(s.path)
 }
 func (s *FrostKeyshareStoreTestSuite) TearDownTest() {
-	os.Remove(s.path)
 }
 
 func (s *FrostKeyshareStoreTestSuite) Test_RetrieveInvalidFile() {
-	_, err := s.keyshareStore.GetKeyshare()
+	_, err := s.keyshareStore.GetKeyshare("")
 	s.NotNil(err)
 }
 
@@ -61,15 +62,16 @@ func (s *FrostKeyshareStoreTestSuite) Test_StoreAndRetrieveShare() {
 		Threshold:          1,
 		PrivateShare:       privateShare,
 		VerificationShares: verificationShares,
-		PublicKey:          taproot.PublicKey{},
+		PublicKey:          taproot.PublicKey{1},
 		ChainKey:           []byte{},
 	}, threshold, peers)
 
 	err := s.keyshareStore.StoreKeyshare(keyshare)
 	s.Nil(err)
 
-	storedKeyshare, err := s.keyshareStore.GetKeyshare()
+	storedKeyshare, err := s.keyshareStore.GetKeyshare(hex.EncodeToString(keyshare.Key.PublicKey))
 	s.Nil(err)
 
 	s.Equal(keyshare, storedKeyshare)
+	os.Remove(fmt.Sprintf("%s.%s", s.path, hex.EncodeToString(keyshare.Key.PublicKey)))
 }

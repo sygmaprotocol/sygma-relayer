@@ -4,6 +4,8 @@
 package chains
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 )
@@ -16,4 +18,27 @@ func CalculateStartingBlock(startBlock *big.Int, blockConfirmations *big.Int) (*
 	mod := big.NewInt(0).Mod(startBlock, blockConfirmations)
 	startBlock.Sub(startBlock, mod)
 	return startBlock, nil
+}
+
+// CalculateNonce calculates a transfer nonce for networks that don't have smart contracts
+func CalculateNonce(blockNumber *big.Int, transactionHash string) uint64 {
+	// Convert blockNumber to string
+	blockNumberStr := blockNumber.String()
+
+	// Concatenate blockNumberStr and transactionHash with a separator
+	concatenatedStr := blockNumberStr + "-" + transactionHash
+
+	// Calculate SHA-256 hash of the concatenated string
+	hash := sha256.New()
+	hash.Write([]byte(concatenatedStr))
+	hashBytes := hash.Sum(nil)
+
+	// XOR fold the hash to get a 64-bit value
+	var result uint64
+	for i := 0; i < 4; i++ {
+		part := binary.BigEndian.Uint64(hashBytes[i*8 : (i+1)*8])
+		result ^= part
+	}
+
+	return result
 }

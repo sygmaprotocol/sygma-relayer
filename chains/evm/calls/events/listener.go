@@ -24,15 +24,18 @@ type ChainClient interface {
 }
 
 type Listener struct {
-	client ChainClient
-	abi    abi.ABI
+	client   ChainClient
+	abi      abi.ABI
+	adminAbi abi.ABI
 }
 
 func NewListener(client ChainClient) *Listener {
-	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
+	bridgeAbi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
+	adminAbi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &Listener{
-		client: client,
-		abi:    abi,
+		client:   client,
+		abi:      bridgeAbi,
+		adminAbi: adminAbi,
 	}
 }
 
@@ -126,6 +129,36 @@ func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.
 	}
 
 	return retryEvents, nil
+}
+
+func (l *Listener) FetchTransferLiqudityEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]*TransferLiquidity, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(TransferLiquiditySig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	transferLiqudityEvents := make([]*TransferLiquidity, 0)
+	for _, re := range logs {
+		r, err := l.unpackTransferLiqudity(re.Data)
+		if err != nil {
+			log.Err(err).Msgf("failed unpacking refresh event log")
+			continue
+		}
+
+		r.TransactionHash = re.TxHash.Hex()
+		transferLiqudityEvents = append(transferLiqudityEvents, r)
+	}
+	return transferLiqudityEvents, nil
+}
+
+func (l *Listener) unpackTransferLiqudity(data []byte) (*TransferLiquidity, error) {
+	var tl TransferLiquidity
+	err := l.adminAbi.UnpackIntoInterface(&tl, "TransferLiquidity", data)
+	if err != nil {
+		return &TransferLiquidity{}, err
+	}
+
+	return &tl, nil
 }
 
 func (l *Listener) FetchKeygenEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error) {

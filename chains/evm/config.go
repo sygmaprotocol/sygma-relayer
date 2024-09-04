@@ -24,7 +24,7 @@ type HandlerConfig struct {
 type EVMConfig struct {
 	GeneralChainConfig    chain.GeneralChainConfig
 	Bridge                string
-	FrostKeygen           string
+	Admin                 string
 	Handlers              []HandlerConfig
 	MaxGasPrice           *big.Int
 	GasMultiplier         *big.Float
@@ -62,7 +62,7 @@ func (c *EVMConfig) String() string {
 type RawEVMConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	Bridge                   string          `mapstructure:"bridge"`
-	FrostKeygen              string          `mapstructure:"frostKeygen"`
+	Admin                    string          `mapstructure:"admin"`
 	Handlers                 []HandlerConfig `mapstrcture:"handlers"`
 	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"500000000000"`
 	GasMultiplier            float64         `mapstructure:"gasMultiplier" default:"1"`
@@ -111,7 +111,7 @@ func NewEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 		GeneralChainConfig:    c.GeneralChainConfig,
 		Handlers:              c.Handlers,
 		Bridge:                c.Bridge,
-		FrostKeygen:           c.FrostKeygen,
+		Admin:                 c.Admin,
 		BlockRetryInterval:    time.Duration(c.BlockRetryInterval) * time.Second,
 		GasLimit:              big.NewInt(c.GasLimit),
 		MaxGasPrice:           big.NewInt(c.MaxGasPrice),
