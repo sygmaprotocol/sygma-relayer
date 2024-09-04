@@ -4,6 +4,8 @@
 package events
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -23,7 +25,18 @@ const (
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
 	RetrySig             EventSig = "Retry(string)"
 	FeeHandlerChanged    EventSig = "FeeHandlerChanged(address)"
+	TransferLiquiditySig EventSig = "TransferLiquidity(uint8,bytes32,uint256,bytes)"
 )
+
+// TransferLiquidity holds params required to transfer
+// liqudity from one address to another via the MPC key
+type TransferLiquidity struct {
+	DomainID           uint8
+	ResourceID         [32]byte
+	Amount             *big.Int
+	DestinationAddress []byte
+	TransactionHash    string
+}
 
 // Refresh struct holds key refresh event data
 type Refresh struct {
