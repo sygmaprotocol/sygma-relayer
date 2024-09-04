@@ -14,7 +14,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	mock_listener "github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers/mock"
@@ -567,7 +566,7 @@ func (s *TransferLiqudityHandlerTestSuite) Test_ValidEvents() {
 	s.Equal(len(msg1), 1)
 	s.Equal(len(msg2), 1)
 	s.Equal(msg1[0].Data.(transfer.TransferMessageData), transfer.TransferMessageData{
-		DepositNonce: chains.CalculateNonce(big.NewInt(5), e1.TransactionHash),
+		DepositNonce: 1147060075541026355,
 		ResourceId:   e1.ResourceID,
 		Metadata:     nil,
 		Payload: []interface{}{
@@ -577,7 +576,7 @@ func (s *TransferLiqudityHandlerTestSuite) Test_ValidEvents() {
 		Type: transfer.FungibleTransfer,
 	})
 	s.Equal(msg2[0].Data.(transfer.TransferMessageData), transfer.TransferMessageData{
-		DepositNonce: chains.CalculateNonce(big.NewInt(5), e2.TransactionHash),
+		DepositNonce: 17571779095163939953,
 		ResourceId:   e2.ResourceID,
 		Metadata:     nil,
 		Payload: []interface{}{

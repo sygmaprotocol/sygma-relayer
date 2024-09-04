@@ -32,6 +32,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 )
 
+const NONCE_OFFSET uint64 = 1000000000000000
+
 type EventListener interface {
 	FetchKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	FetchFrostKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
@@ -498,11 +500,16 @@ func (eh *TransferLiqudityEventHandler) HandleEvents(
 			e.DestinationAddress,
 		}
 
+		depositNonce := chains.CalculateNonce(endBlock, e.TransactionHash)
+		// prevents nonce collisions with regular deposits
+		if depositNonce < NONCE_OFFSET {
+			depositNonce += NONCE_OFFSET
+		}
 		msg := message.NewMessage(
 			eh.domainID,
 			e.DomainID,
 			transfer.TransferMessageData{
-				DepositNonce: chains.CalculateNonce(endBlock, e.TransactionHash),
+				DepositNonce: depositNonce,
 				ResourceId:   e.ResourceID,
 				Metadata:     nil,
 				Payload:      payload,
