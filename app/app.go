@@ -196,7 +196,7 @@ func Run() error {
 					mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
 
 					switch handler.Type {
-					case "erc20":
+					case "erc20", "native":
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
 						}

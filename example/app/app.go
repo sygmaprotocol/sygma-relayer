@@ -164,11 +164,9 @@ func Run() error {
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
-				//mh.RegisterMessageHandler("FungibleTransfer", &executor.TransferMessageHandler{})
 				for _, handler := range config.Handlers {
-
 					switch handler.Type {
-					case "erc20":
+					case "erc20", "native":
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
 						}
