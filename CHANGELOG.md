@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.3.0...v2.4.0) (2024-09-16)
+
+
+### Features
+
+* treat native handler as erc20 ([#361](https://github.com/sygmaprotocol/sygma-relayer/issues/361)) ([d292ca0](https://github.com/sygmaprotocol/sygma-relayer/commit/d292ca0909459d2ad272bc76756996ed0333be63))
+
+
+### Bug Fixes
+
+* remove invalid frost resharing ([#363](https://github.com/sygmaprotocol/sygma-relayer/issues/363)) ([491f4f4](https://github.com/sygmaprotocol/sygma-relayer/commit/491f4f4367b5db716898c1157a1f2d66f0d5559a))
+* remove peer as well as addresses from peerstore ([#359](https://github.com/sygmaprotocol/sygma-relayer/issues/359)) ([fca7423](https://github.com/sygmaprotocol/sygma-relayer/commit/fca74235f8a1b10e123e41d580715fa889fbc3fe))
+
 ## [2.3.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.2.0...v2.3.0) (2024-09-03)
 
 
