@@ -6,7 +6,7 @@ require (
 	github.com/binance-chain/tss-lib v0.0.0-00010101000000-000000000000
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
-	github.com/centrifuge/go-substrate-rpc-client/v4 v4.2.1
+	github.com/centrifuge/go-substrate-rpc-client/v4 v4.2.2-0.20240917092335-6cd32ee625ca
 	github.com/creasty/defaults v1.6.0
 	github.com/deckarep/golang-set/v2 v2.1.0
 	github.com/ethereum/go-ethereum v1.13.4
@@ -20,8 +20,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.4
-	github.com/sygmaprotocol/go-substrate-rpc-client/v4 v4.2.2-0.20240813185906-0395c914c6f8
-	github.com/sygmaprotocol/sygma-core v0.0.0-20240813191424-fff897579766
+	github.com/sygmaprotocol/sygma-core v0.0.0-20240918140014-445b2f2c6bc1
 	github.com/taurusgroup/multi-party-sig v0.6.0-alpha-2021-09-21.0.20230619131919-9c7c6ffd7217
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/metric v1.16.0

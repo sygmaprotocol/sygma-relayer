@@ -28,25 +28,14 @@ type BridgeProposal struct {
 }
 
 type Pallet struct {
-	c                          *client.SubstrateClient
-	m                          *client.SubstrateCheckMetadataModeEnabledClient
-	isCheckMetadataModeEnabled bool
-}
-
-func (p *Pallet) TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error {
-	//TODO implement me
-	return nil
+	*client.SubstrateClient
 }
 
 func NewPallet(
 	client *client.SubstrateClient,
-	checkMetadataModeEnabledClient *client.SubstrateCheckMetadataModeEnabledClient,
-	isCheckMetadataModeEnabled bool,
 ) *Pallet {
 	return &Pallet{
 		client,
-		checkMetadataModeEnabledClient,
-		isCheckMetadataModeEnabled,
 	}
 }
 
@@ -64,27 +53,15 @@ func (p *Pallet) ExecuteProposals(
 		})
 	}
 
-	if p.isCheckMetadataModeEnabled {
-		hash, _, err := p.m.Transact(
-			"SygmaBridge.execute_proposal",
-			bridgeProposals,
-			signature,
-		)
-		return types.Hash(hash), nil, err
-	} else {
-		return p.c.Transact(
-			"SygmaBridge.execute_proposal",
-			bridgeProposals,
-			signature,
-		)
-	}
+	return p.Transact(
+		"SygmaBridge.execute_proposal",
+		bridgeProposals,
+		signature,
+	)
 }
 
 func (p *Pallet) ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error) {
-	if !p.isCheckMetadataModeEnabled {
-		return chains.ProposalsHash(proposals, p.c.ChainID.Int64(), verifyingContract, bridgeVersion)
-	}
-	return chains.ProposalsHash(proposals, p.m.ChainID.Int64(), verifyingContract, bridgeVersion)
+	return chains.ProposalsHash(proposals, p.ChainID.Int64(), verifyingContract, bridgeVersion)
 }
 
 func (p *Pallet) IsProposalExecuted(prop *transfer.TransferProposal) (bool, error) {
@@ -94,16 +71,10 @@ func (p *Pallet) IsProposalExecuted(prop *transfer.TransferProposal) (bool, erro
 		Str("resourceID", hexutil.Encode(prop.Data.ResourceId[:])).
 		Msg("Getting is proposal executed")
 	var res bool
-	if !p.isCheckMetadataModeEnabled {
-		err := p.c.Conn.Call(&res, "sygma_isProposalExecuted", prop.Data.DepositNonce, prop.Source)
-		if err != nil {
-			return false, err
-		}
-		return res, nil
-	}
-	err := p.m.Conn.Call(&res, "sygma_isProposalExecuted", prop.Data.DepositNonce, prop.Source)
+	err := p.Conn.Call(&res, "sygma_isProposalExecuted", prop.Data.DepositNonce, prop.Source)
 	if err != nil {
 		return false, err
 	}
+
 	return res, nil
 }

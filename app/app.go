@@ -6,8 +6,8 @@ package app
 import (
 	"context"
 	"fmt"
-	substrateCheckMetadataModeEnabledSignature "github.com/sygmaprotocol/go-substrate-rpc-client/v4/signature"
-	substrateCheckMetadataModeEnabledClient "github.com/sygmaprotocol/sygma-core/chains/substrate/client"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	"net/http"
 	"os"
 	"os/signal"
@@ -52,9 +52,7 @@ import (
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/monitored"
 	"github.com/sygmaprotocol/sygma-core/chains/evm/transactor/transaction"
 	substrateClient "github.com/sygmaprotocol/sygma-core/chains/substrate/client"
-	connection "github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
-	connectionCheckMetadataModeEnabled "github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
-
+	"github.com/sygmaprotocol/sygma-core/chains/substrate/connection"
 	coreSubstrateListener "github.com/sygmaprotocol/sygma-core/chains/substrate/listener"
 
 	"github.com/ChainSafe/sygma-relayer/comm/elector"
@@ -259,30 +257,21 @@ func Run() error {
 					panic(err)
 				}
 
+				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
+				if err != nil {
+					panic(err)
+				}
 				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, config.SubstrateNetwork)
 				if err != nil {
 					panic(err)
 				}
 
-				conn, err := connection.NewSubstrateConnection(config.GeneralChainConfig.Endpoint)
+				substrateEventRetriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(conn.RPC.State), conn.RPC.State)
 				if err != nil {
 					panic(err)
 				}
-				subClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
-				bridgePallet := substratePallet.NewPallet(subClient, nil, false)
-
-				// Temporarily differ the substrate chain with CheckMetadataModeEnabled chain and non-CheckMetadataModeEnabled
-				// chain by the endpoint name without touching the chain configure.
-				// This will only stay in this temporary feature branch
-				isCheckMetadataModeEnabled := strings.Contains(config.GeneralChainConfig.Endpoint, "tangle")
-				if isCheckMetadataModeEnabled {
-					connCheckMetadataModeEnabled, err := connectionCheckMetadataModeEnabled.NewCheckMetadataModeEnabledConnection(config.GeneralChainConfig.Endpoint)
-					if err != nil {
-						panic(err)
-					}
-					subCheckMetadataModeEnabledClient := substrateCheckMetadataModeEnabledClient.NewSubstrateCheckMetadataModeEnabledClient(connCheckMetadataModeEnabled, (*substrateCheckMetadataModeEnabledSignature.KeyringPair)(&keyPair), config.ChainID, config.Tip)
-					bridgePallet = substratePallet.NewPallet(nil, subCheckMetadataModeEnabledClient, true)
-				}
+				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip, substrateEventRetriever)
+				bridgePallet := substratePallet.NewPallet(substrateClient)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
@@ -305,7 +294,7 @@ func Run() error {
 					panic(err)
 				}
 				if startBlock == nil {
-					head, err := subClient.LatestBlock()
+					head, err := substrateClient.LatestBlock()
 					if err != nil {
 						panic(err)
 					}

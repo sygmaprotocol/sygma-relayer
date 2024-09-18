@@ -10,6 +10,7 @@ import (
 
 	parser "github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	block "github.com/centrifuge/go-substrate-rpc-client/v4/types/block"
 	gomock "github.com/golang/mock/gomock"
 	message "github.com/sygmaprotocol/sygma-core/relayer/message"
 )
@@ -53,10 +54,10 @@ func (mr *MockConnectionMockRecorder) FetchEvents(startBlock, endBlock interface
 }
 
 // GetBlock mocks base method.
-func (m *MockConnection) GetBlock(blockHash types.Hash) (*types.SignedBlock, error) {
+func (m *MockConnection) GetBlock(blockHash types.Hash) (*block.SignedBlock, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlock", blockHash)
-	ret0, _ := ret[0].(*types.SignedBlock)
+	ret0, _ := ret[0].(*block.SignedBlock)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
