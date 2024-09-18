@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.0...v2.4.1) (2024-09-18)
+
+
+### Bug Fixes
+
+* add generic call gas limit buffer ([#364](https://github.com/sygmaprotocol/sygma-relayer/issues/364)) ([3f01dae](https://github.com/sygmaprotocol/sygma-relayer/commit/3f01dae4cc69f46afd5c308c463ed6ae42a9f5f6))
+
 ## [2.4.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.3.0...v2.4.0) (2024-09-16)
 
 
