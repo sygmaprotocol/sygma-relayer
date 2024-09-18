@@ -6,7 +6,8 @@ package substrate_test
 import (
 	"context"
 	"encoding/binary"
-
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/ethereum/go-ethereum/core/types"
 	evmClient "github.com/sygmaprotocol/sygma-core/chains/evm/client"
@@ -52,7 +53,8 @@ func Test_EVMSubstrate(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	substrateClient := client.NewSubstrateClient(substrateConnection, &substrate.SubstratePK, big.NewInt(5), 0)
+	retriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(substrateConnection.RPC.State), substrateConnection.RPC.State)
+	substrateClient := client.NewSubstrateClient(substrateConnection, &substrate.SubstratePK, big.NewInt(5), 0, retriever)
 
 	var assetId uint32 = 2000
 	assetIdSerialized := make([]byte, 4)
@@ -139,10 +141,11 @@ func (s *IntegrationTestSuite) Test_Erc20Deposit_Substrate_to_EVM() {
 	destBalanceBefore, err := erc20Contract.GetBalance(s.evmClient.From())
 	s.Nil(err)
 
-	extHash, sub, err := s.substrateClient.Transact("SygmaBridge.deposit", substrate.USDCAsset{}, substrate.Destination{})
+	extrinsicMethod := "SygmaBridge.deposit"
+	extHash, sub, err := s.substrateClient.Transact(extrinsicMethod, substrate.USDCAsset{}, substrate.Destination{})
 	s.Nil(err)
 
-	err = s.substrateClient.TrackExtrinsic(extHash, sub)
+	err = s.substrateClient.TrackExtrinsic(extHash, sub, extrinsicMethod)
 	s.Nil(err)
 
 	err = evm.WaitForProposalExecuted(s.evmClient, s.evmConfig.BridgeAddr)

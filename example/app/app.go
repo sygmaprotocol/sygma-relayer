@@ -6,6 +6,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/retriever"
+	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/state"
 	"os"
 	"os/signal"
 	"sync"
@@ -224,7 +226,8 @@ func Run() error {
 
 				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
-				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
+				substrateEventRetriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(conn.RPC.State), conn.RPC.State)
+				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip, substrateEventRetriever)
 				bridgePallet := substratePallet.NewPallet(substrateClient)
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)

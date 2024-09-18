@@ -37,7 +37,7 @@ type BridgePallet interface {
 	IsProposalExecuted(p *transfer.TransferProposal) (bool, error)
 	ExecuteProposals(proposals []*transfer.TransferProposal, signature []byte) (types.Hash, *author.ExtrinsicStatusSubscription, error)
 	ProposalsHash(proposals []*transfer.TransferProposal) ([]byte, error)
-	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription) error
+	TrackExtrinsic(extHash types.Hash, sub *author.ExtrinsicStatusSubscription, extrinsicMethod string) error
 }
 
 type Executor struct {
@@ -161,7 +161,7 @@ func (e *Executor) watchExecution(ctx context.Context, cancelExecution context.C
 					return err
 				}
 
-				return e.bridge.TrackExtrinsic(hash, sub)
+				return e.bridge.TrackExtrinsic(hash, sub, "SygmaBridge.execute_proposal")
 			}
 		case <-ticker.C:
 			{
