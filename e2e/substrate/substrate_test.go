@@ -54,6 +54,9 @@ func Test_EVMSubstrate(t *testing.T) {
 		panic(err)
 	}
 	retriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(substrateConnection.RPC.State), substrateConnection.RPC.State)
+	if err != nil {
+		panic(err)
+	}
 	substrateClient := client.NewSubstrateClient(substrateConnection, &substrate.SubstratePK, big.NewInt(5), 0, retriever)
 
 	var assetId uint32 = 2000

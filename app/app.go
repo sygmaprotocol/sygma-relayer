@@ -267,6 +267,9 @@ func Run() error {
 				}
 
 				substrateEventRetriever, err := retriever.NewDefaultEventRetriever(state.NewEventProvider(conn.RPC.State), conn.RPC.State)
+				if err != nil {
+					panic(err)
+				}
 				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip, substrateEventRetriever)
 				bridgePallet := substratePallet.NewPallet(substrateClient)
 
