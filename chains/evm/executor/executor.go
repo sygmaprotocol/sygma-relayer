@@ -27,7 +27,6 @@ import (
 
 const (
 	TRANSFER_GAS_COST uint64 = 200000
-	GENERIC_CALL_COST uint64 = 100000
 )
 
 type Batch struct {
@@ -215,7 +214,7 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		var propGasLimit uint64
 		l, ok := transferProposal.Data.Metadata["gasLimit"]
 		if ok {
-			propGasLimit = l.(uint64) + GENERIC_CALL_COST
+			propGasLimit = l.(uint64) + TRANSFER_GAS_COST
 		} else {
 			propGasLimit = TRANSFER_GAS_COST
 		}
