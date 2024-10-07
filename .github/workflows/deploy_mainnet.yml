@@ -15,7 +15,7 @@ on:
         required: true
         type: string
 
-run-name: Deploy Relayers to mainnet - ${{ inputs.release_tag }} by @${{ github.actor }}
+run-name: Deploy Relayers to Mainnet - ${{ inputs.release_tag }} by @${{ github.actor }}
 
 env:
   ENVIRONMENT: 'MAINNET'

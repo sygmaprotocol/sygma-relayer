@@ -7,6 +7,8 @@ on:
   release:
     types:
       - published
+
+run-name: Deploy Relayers to Testnet - ${{ inputs.release_tag }} by @${{ github.actor }}
       
 env:
   ENVIRONMENT: 'TESTNET'

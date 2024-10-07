@@ -8,6 +8,8 @@ on:
     branches:
       - main
 
+run-name: Deploy Relayers to Devnet - ${{ inputs.release_tag }} by @${{ github.actor }}
+
 env:
   ENVIRONMENT: STAGE
   REGISTRY: 'ghcr.io'
