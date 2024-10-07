@@ -15,20 +15,23 @@ on:
         required: true
         type: string
 
+run-name: Deploy Relayers to mainnet - ${{ inputs.release_tag }} by @${{ github.actor }}
 
 env:
   ENVIRONMENT: 'MAINNET'
   REGISTRY: 'ghcr.io'
-  AWS_MAINNET: '${{ secrets.AWS_MAINNET }}'
 
 jobs:
             ######################## region 1 ########################
   deploy_region_1:
     name: deploy
     runs-on: ubuntu-latest
+    environment: mainnet
     strategy:
       matrix:
         relayer_id: [0, 1]
+    env:
+      AWS_MAINNET: '${{ secrets.AWS_MAINNET }}'
 
     permissions:
       contents: read
@@ -62,7 +65,7 @@ jobs:
           variables: |
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_MAINNET }}
-            awsRegion=${{ secrets.AWS_REGION }}
+            awsRegion=${{ secrets.AWS_REGION_1 }}
             imageTag=${{ inputs.release_tag }}
             awsEnv=${{ env.ENVIRONMENT }}
             awsEfs=${{ secrets.MAINNET_EFS_1 }}
@@ -71,7 +74,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_MAINNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION_1 }}
           role-session-name: GithubActions
 
       - name: deploy task definition
@@ -86,7 +89,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
         if: always()
@@ -95,9 +98,12 @@ jobs:
   deploy_region_3:
     name: deploy
     runs-on: ubuntu-latest
+    environment: mainnet
     strategy:
       matrix:
         relayer_id: [2]
+    env:
+      AWS_MAINNET: '${{ secrets.AWS_MAINNET }}'
 
     permissions:
       contents: read
@@ -155,7 +161,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          fields: repo,message,commit,author,action,job,eventName,ref,workflow # selectable (default: repo,message)
+          fields: repo,message,commit,author,action,job,eventName,ref,workflow
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
         if: always()
