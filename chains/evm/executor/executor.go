@@ -25,7 +25,9 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
-const TRANSFER_GAS_COST = 200000
+const (
+	TRANSFER_GAS_COST uint64 = 200000
+)
 
 type Batch struct {
 	proposals []*transfer.TransferProposal
@@ -212,9 +214,9 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		var propGasLimit uint64
 		l, ok := transferProposal.Data.Metadata["gasLimit"]
 		if ok {
-			propGasLimit = l.(uint64)
+			propGasLimit = l.(uint64) + TRANSFER_GAS_COST
 		} else {
-			propGasLimit = uint64(TRANSFER_GAS_COST)
+			propGasLimit = TRANSFER_GAS_COST
 		}
 		currentBatch.gasLimit += propGasLimit
 		if currentBatch.gasLimit >= e.transactionMaxGas {
