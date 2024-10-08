@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.2](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.1...v2.4.2) (2024-10-08)
+
+
+### Miscellaneous
+
+* Access Secrets based on specific environments ([#367](https://github.com/sygmaprotocol/sygma-relayer/issues/367)) ([eed1e97](https://github.com/sygmaprotocol/sygma-relayer/commit/eed1e97d4cb09c9c2920aedcdec3801157629e94))
+
 ## [2.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.0...v2.4.1) (2024-09-18)
 
 
