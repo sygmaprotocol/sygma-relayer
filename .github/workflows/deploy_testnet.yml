@@ -7,18 +7,18 @@ on:
   release:
     types:
       - published
+
+run-name: Deploy Relayers to Testnet - ${{ inputs.release_tag }} by @${{ github.actor }}
       
 env:
   ENVIRONMENT: 'TESTNET'
   REGISTRY: 'ghcr.io'
   TAG: 'stable'
-  AWS_TESTNET: '${{ secrets.AWS_ARN }}'
 
 jobs:
   push:
     name: push
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       id-token: write
@@ -60,10 +60,12 @@ jobs:
     needs: push
     name: deploy
     runs-on: ubuntu-latest
+    environment: testnet
     strategy:
       matrix:
         relayer_id: [0, 1]
-
+    env:
+      AWS_TESTNET: '${{ secrets.AWS_TESTNET }}'
     permissions:
       contents: read
       id-token: write
@@ -84,7 +86,7 @@ jobs:
           variables: |
             relayerId=${{ matrix.relayer_id }}
             awsAccountId=${{ env.AWS_TESTNET }}
-            awsRegion=${{ secrets.AWS_REGION }}
+            awsRegion=${{ secrets.AWS_REGION_1 }}
             awsEfs=${{ secrets.TESTNET_EFS_1 }}
             imageTag=${{ github.ref_name }}
 
@@ -92,7 +94,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_TESTNET }}:role/github-actions-${{ env.ENVIRONMENT }}-chainbridge
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION_1 }}
           role-session-name: GithubActions
 
       - name: deploy task definition
@@ -112,17 +114,17 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
         if: always()
 
-          ######################## region 2 ########################
-
           ######################## region 3 ########################
   deploy_reg_3:
     needs: push
     name: deploy region 3
     runs-on: ubuntu-latest
+    environment: testnet
     strategy:
       matrix:
         relayer_id: [2]
-
+    env:
+      AWS_TESTNET: '${{ secrets.AWS_TESTNET }}'
     permissions:
       contents: read
       id-token: write
