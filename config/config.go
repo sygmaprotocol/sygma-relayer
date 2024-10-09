@@ -97,6 +97,12 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	if err != nil {
 		return config, err
 	}
+	if config == nil {
+		config := &Config{}
+		config.RelayerConfig = relayerConfig
+		config.ChainConfigs = rawConfig.ChainConfigs
+		return config, nil
+	}
 
 	chainConfigs := make([]map[string]interface{}, 0)
 	for i, chain := range rawConfig.ChainConfigs {
