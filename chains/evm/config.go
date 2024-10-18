@@ -29,6 +29,7 @@ type EVMConfig struct {
 	MaxGasPrice           *big.Int
 	GasMultiplier         *big.Float
 	GasLimit              *big.Int
+	TransferGas           uint64
 	GasIncreasePercentage *big.Int
 	StartBlock            *big.Int
 	BlockConfirmations    *big.Int
@@ -39,7 +40,7 @@ type EVMConfig struct {
 func (c *EVMConfig) String() string {
 	privateKey, _ := crypto.HexToECDSA(c.GeneralChainConfig.Key)
 	kp := secp256k1.NewKeypair(*privateKey)
-	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', Bridge: '%s', Handlers: %+v, MaxGasPrice: '%s', GasMultiplier: '%s', GasLimit: '%s', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s'`,
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', Bridge: '%s', Handlers: %+v, MaxGasPrice: '%s', GasMultiplier: '%s', GasLimit: '%s', TransferGas: '%d', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s'`,
 		c.GeneralChainConfig.Name,
 		*c.GeneralChainConfig.Id,
 		c.GeneralChainConfig.Type,
@@ -52,6 +53,7 @@ func (c *EVMConfig) String() string {
 		c.MaxGasPrice,
 		c.GasMultiplier,
 		c.GasLimit,
+		c.TransferGas,
 		c.StartBlock,
 		c.BlockConfirmations,
 		c.BlockInterval,
@@ -68,6 +70,7 @@ type RawEVMConfig struct {
 	GasMultiplier            float64         `mapstructure:"gasMultiplier" default:"1"`
 	GasIncreasePercentage    int64           `mapstructure:"gasIncreasePercentage" default:"15"`
 	GasLimit                 int64           `mapstructure:"gasLimit" default:"15000000"`
+	TransferGas              uint64          `mapstructure:"transferGas" default:"250000"`
 	StartBlock               int64           `mapstructure:"startBlock"`
 	BlockConfirmations       int64           `mapstructure:"blockConfirmations" default:"10"`
 	BlockInterval            int64           `mapstructure:"blockInterval" default:"5"`
@@ -114,6 +117,7 @@ func NewEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 		FrostKeygen:           c.FrostKeygen,
 		BlockRetryInterval:    time.Duration(c.BlockRetryInterval) * time.Second,
 		GasLimit:              big.NewInt(c.GasLimit),
+		TransferGas:           c.TransferGas,
 		MaxGasPrice:           big.NewInt(c.MaxGasPrice),
 		GasIncreasePercentage: big.NewInt(c.GasIncreasePercentage),
 		GasMultiplier:         big.NewFloat(c.GasMultiplier),
