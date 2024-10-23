@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.5.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.1...v2.5.0) (2024-10-23)
+
+
+### Features
+
+* match configs by domainID ([#375](https://github.com/sygmaprotocol/sygma-relayer/issues/375)) ([f695875](https://github.com/sygmaprotocol/sygma-relayer/commit/f6958751cf3838aedca255d8469525fa3056f2ce))
+
+
+### Bug Fixes
+
+* enable setting custom transfer gas per chain ([#376](https://github.com/sygmaprotocol/sygma-relayer/issues/376)) ([0b38483](https://github.com/sygmaprotocol/sygma-relayer/commit/0b3848362c193ba4463dd14e6a52748063acd1b7))
+* panic on shared config network fetching ([#378](https://github.com/sygmaprotocol/sygma-relayer/issues/378)) ([6cd6397](https://github.com/sygmaprotocol/sygma-relayer/commit/6cd6397f02c63589e4fdb4d8326a45283a69e029))
+
+
+### Miscellaneous
+
+* Access Secrets based on specific environments ([#367](https://github.com/sygmaprotocol/sygma-relayer/issues/367)) ([eed1e97](https://github.com/sygmaprotocol/sygma-relayer/commit/eed1e97d4cb09c9c2920aedcdec3801157629e94))
+* Update version of Substrate pallet  ([#377](https://github.com/sygmaprotocol/sygma-relayer/issues/377)) ([4a3613b](https://github.com/sygmaprotocol/sygma-relayer/commit/4a3613b7e6e853c6c83c57c830fd78b2a49830b3))
+
 ## [2.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.0...v2.4.1) (2024-09-18)
 
 
