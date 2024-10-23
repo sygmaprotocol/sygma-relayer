@@ -78,7 +78,7 @@ func Run() error {
 
 	var configuration *config.Config
 	if configURL != "" {
-		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
+		configuration, err = config.GetSharedConfigFromNetwork(configURL)
 		panicOnError(err)
 	}
 
