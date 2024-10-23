@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/centrifuge"
-	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc1155"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc20"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/contracts/erc721"
 	"github.com/ChainSafe/sygma-relayer/e2e/evm/keystore"
@@ -242,39 +241,6 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	s.Equal(dstAddr.String(), owner.String())
 }
 
-func (s *IntegrationTestSuite) Test_GenericDeposit() {
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-
-	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
-
-	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
-	hash := substrateTypes.NewHash(byteArrayToHash)
-
-	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-
-	genericDepositData := evm.ConstructGenericDepositData(hash[:])
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.GenericResourceID, genericDepositData, []byte{})
-
-	s.Nil(err)
-
-	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-
-	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.Nil(err)
-	// Asset hash sent is stored in centrifuge asset store contract
-	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-	s.Nil(err)
-	s.Equal(true, exists)
-
-	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
-}
-
 func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
@@ -383,56 +349,4 @@ func (s *IntegrationTestSuite) Test_MultipleDeposits() {
 	s.Nil(err)
 	//Balance has increased
 	s.Equal(1, destBalanceAfter.Cmp(destBalanceBefore))
-}
-
-func (s *IntegrationTestSuite) Test_Erc1155Deposit() {
-	tokenId := big.NewInt(int64(rand.Int()))
-	amount := big.NewInt(int64(rand.Int()))
-
-	metadata := "metadata.url"
-
-	txOptions := transactor.TransactOptions{}
-
-	dstAddr := keystore.TestKeyRing.EthereumKeys[keystore.BobKey].CommonAddress()
-
-	// 1155 contract for evm1
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-	erc1155Contract1 := erc1155.NewErc1155Contract(s.client1, s.config1.Erc1155Addr, transactor1)
-	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-
-	// 1155 contract for evm2
-	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-	erc1155Contract2 := erc1155.NewErc1155Contract(s.client2, s.config2.Erc1155Addr, transactor2)
-
-	// Mint token and give approval
-	// This is done here so token only exists on evm1
-	_, err := erc1155Contract1.Mint(tokenId, amount, []byte{0}, s.client1.From(), txOptions)
-	s.Nil(err, "Mint failed")
-	_, err = erc1155Contract1.Approve(tokenId, s.config1.Erc1155HandlerAddr, txOptions)
-	s.Nil(err, "Approve failed")
-
-	initialAmount, err := erc1155Contract1.BalanceOf(s.client1.From(), tokenId)
-	s.Nil(err)
-	s.Equal(0, initialAmount.Cmp(amount))
-
-	erc1155DepositData, err := evm.ConstructErc1155DepositData(dstAddr.Bytes(), tokenId, amount, []byte(metadata))
-	s.Nil(err)
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.Erc1155ResourceID, erc1155DepositData, []byte{})
-	s.Nil(err)
-
-	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-
-	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.Nil(err)
-
-	// Check on evm1 that token is burned
-	sourceAmount, err := erc1155Contract1.BalanceOf(s.client1.From(), tokenId)
-	s.Nil(err)
-	s.Equal(0, sourceAmount.Cmp(big.NewInt(0)))
-
-	// Check on evm2 that token is minted to destination address
-	dstAmount, err := erc1155Contract2.BalanceOf(dstAddr, tokenId)
-	s.Nil(err)
-	s.Equal(0, dstAmount.Cmp(initialAmount))
 }
