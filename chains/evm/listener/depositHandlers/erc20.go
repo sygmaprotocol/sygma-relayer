@@ -6,6 +6,7 @@ package depositHandlers
 import (
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -62,5 +63,5 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 			Type:         transfer.FungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType), nil
+		transfer.TransferMessageType, time.Now()), nil
 }

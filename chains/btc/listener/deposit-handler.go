@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/common"
@@ -54,5 +55,5 @@ func (e *BtcDepositHandler) HandleDeposit(
 		Metadata:     nil,
 		Payload:      payload,
 		Type:         transfer.FungibleTransfer,
-	}, messageID, transfer.TransferMessageType), nil
+	}, messageID, transfer.TransferMessageType, time.Now()), nil
 }

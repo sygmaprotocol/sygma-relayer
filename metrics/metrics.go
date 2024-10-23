@@ -25,8 +25,8 @@ type SygmaMetrics struct {
 }
 
 // NewMetrics creates an instance of metrics
-func NewSygmaMetrics(meter api.Meter, env, relayerID string) (*SygmaMetrics, error) {
-	relayerMetrics, err := observability.NewRelayerMetrics(meter, attribute.String("relayerid", relayerID), attribute.String("env", env))
+func NewSygmaMetrics(ctx context.Context, meter api.Meter, env, relayerID string) (*SygmaMetrics, error) {
+	relayerMetrics, err := observability.NewRelayerMetrics(ctx, meter, attribute.String("relayerid", relayerID), attribute.String("env", env))
 	if err != nil {
 		return nil, err
 	}

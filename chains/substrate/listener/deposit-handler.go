@@ -5,6 +5,7 @@ package listener
 
 import (
 	"errors"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
@@ -112,5 +113,5 @@ func FungibleTransferHandler(
 			Type:         transfer.FungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType), nil
+		transfer.TransferMessageType, time.Now()), nil
 }

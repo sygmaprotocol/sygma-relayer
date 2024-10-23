@@ -66,8 +66,9 @@ func GetConfigFromFile(path string, config *Config) (*Config, error) {
 }
 
 // GetSharedConfigFromNetwork fetches shared configuration from URL and parses it.
-func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
+func GetSharedConfigFromNetwork(url string) (*Config, error) {
 	rawConfig := RawConfig{}
+	config := &Config{}
 
 	resp, err := http.Get(url)
 	if err != nil {
