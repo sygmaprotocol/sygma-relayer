@@ -38,10 +38,6 @@
           "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
         },
         {
-          "type": "permissionedGeneric",
-          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
-        },
-        {
           "type": "permissionlessGeneric",
           "address": "0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"
         }
@@ -69,10 +65,6 @@
         {
           "type": "erc1155",
           "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
-        },
-        {
-          "type": "permissionedGeneric",
-          "address": "0xF956Ba663bd563f585e00D5973E06b443E5C4D65"
         },
         {
           "type": "permissionlessGeneric",

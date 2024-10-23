@@ -6,6 +6,7 @@ package depositHandlers_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/depositHandlers"
@@ -29,12 +30,14 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 	recipient := common.HexToAddress("0xf1e58fb17704c2da8479a533f9fad4ad0993ca6b")
 
 	calldata := evm.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), []byte{})
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
 		Data:                calldata,
 		HandlerResponse:     []byte{},
+		Timestamp:           timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -56,8 +59,9 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 			Type: transfer.NonFungibleTransfer,
 		},
 
-		Type: transfer.TransferMessageType,
-		ID:   "messageID",
+		Type:      transfer.TransferMessageType,
+		ID:        "messageID",
+		Timestamp: timestamp,
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -68,7 +72,8 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerEmptyMetadata() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-		"messageID")
+		"messageID",
+		timestamp)
 
 	s.Nil(err)
 	s.NotNil(m)
@@ -82,6 +87,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerIncorrectDataLen() {
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 16)...)
 	calldata = append(calldata, metadata...)
 
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -89,6 +95,7 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerIncorrectDataLen() {
 		SenderAddress:       common.HexToAddress("0x4CEEf6139f00F9F4535Ad19640Ff7A0137708485"),
 		Data:                calldata,
 		HandlerResponse:     []byte{},
+		Timestamp:           timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -101,7 +108,8 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandlerIncorrectDataLen() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-		"messageID")
+		"messageID",
+		timestamp)
 	s.Nil(m)
 	s.EqualError(err, "invalid calldata length: less than 84 bytes")
 }
@@ -111,12 +119,14 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 	metadata := []byte("metadata.url")
 
 	calldata := evm.ConstructErc721DepositData(recipient.Bytes(), big.NewInt(2), metadata)
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
 		DepositNonce:        1,
 		Data:                calldata,
 		HandlerResponse:     []byte{},
+		Timestamp:           timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -138,8 +148,9 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 			Type: transfer.NonFungibleTransfer,
 		},
 
-		Type: transfer.TransferMessageType,
-		ID:   "messageID",
+		Type:      transfer.TransferMessageType,
+		ID:        "messageID",
+		Timestamp: timestamp,
 	}
 
 	erc721DepositHandler := depositHandlers.Erc721DepositHandler{}
@@ -150,7 +161,8 @@ func (s *Erc721HandlerTestSuite) TestErc721DepositHandler() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-		"messageID")
+		"messageID",
+		timestamp)
 	s.Nil(err)
 	s.NotNil(m)
 	s.Equal(expected, m)

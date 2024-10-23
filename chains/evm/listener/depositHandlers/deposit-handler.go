@@ -5,6 +5,7 @@ package depositHandlers
 
 import (
 	"errors"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/listener/eventHandlers"
 	"github.com/ethereum/go-ethereum/common"
@@ -38,7 +39,8 @@ func (e *ETHDepositHandler) HandleDeposit(
 	resourceID [32]byte,
 	calldata,
 	handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	handlerAddr, err := e.handlerMatcher.GetHandlerAddressForResourceID(resourceID)
 	if err != nil {
 		return nil, err
@@ -49,7 +51,7 @@ func (e *ETHDepositHandler) HandleDeposit(
 		return nil, err
 	}
 
-	return depositHandler.HandleDeposit(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse, messageID)
+	return depositHandler.HandleDeposit(sourceID, destID, depositNonce, resourceID, calldata, handlerResponse, messageID, timestamp)
 }
 
 // matchAddressWithHandlerFunc matches a handler address with an associated handler function

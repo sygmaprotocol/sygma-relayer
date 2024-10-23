@@ -23,7 +23,8 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 	resourceID [32]byte,
 	calldata,
 	handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -63,5 +64,7 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 			Type:         transfer.FungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType, time.Now()), nil
+		transfer.TransferMessageType,
+		timestamp,
+	), nil
 }

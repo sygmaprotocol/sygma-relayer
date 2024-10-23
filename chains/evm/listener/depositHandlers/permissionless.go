@@ -20,7 +20,8 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(
 	nonce uint64,
 	resourceID [32]byte,
 	calldata, handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	if len(calldata) < 76 {
 		err := errors.New("invalid calldata length: less than 76 bytes")
 		return nil, err
@@ -64,5 +65,7 @@ func (dh *PermissionlessGenericDepositHandler) HandleDeposit(
 			Type:         transfer.PermissionlessGenericTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType, time.Now()), nil
+		transfer.TransferMessageType,
+		timestamp,
+	), nil
 }
