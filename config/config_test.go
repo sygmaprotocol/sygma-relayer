@@ -74,11 +74,130 @@ func (s *GetConfigTestSuite) Test_GetConfigFromENV() {
 
 	// load from Env
 	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
+		"id":                 1,
 		"blockConfirmations": 5,
 		"gasLimit":           500,
 	}, {
+		"id":                 2,
 		"blockConfirmations": 3,
 		"gasLimit":           300,
+	}}})
+
+	s.Nil(err)
+
+	s.Equal(config.Config{
+		RelayerConfig: relayer.RelayerConfig{
+			LogLevel:   1,
+			LogFile:    "out.log",
+			Env:        "TEST",
+			Id:         "123",
+			HealthPort: 9001,
+			MpcConfig: relayer.MpcRelayerConfig{
+				TopologyConfiguration: relayer.TopologyConfiguration{
+					EncryptionKey: "test-enc-key",
+					Url:           "http://test.com",
+					Path:          "path",
+				},
+				Port:                    9000,
+				KeysharePath:            "/cfg/keyshares/0.keyshare",
+				FrostKeysharePath:       "/cfg/keyshares/0-frost.keyshare",
+				Key:                     "test-pk",
+				CommHealthCheckInterval: 5 * time.Minute,
+			},
+			BullyConfig: relayer.BullyConfig{
+				PingWaitTime:     1 * time.Second,
+				PingBackOff:      1 * time.Second,
+				PingInterval:     1 * time.Second,
+				ElectionWaitTime: 2 * time.Second,
+				BullyWaitTime:    3 * time.Minute,
+			},
+			UploaderConfig: relayer.UploaderConfig{
+				MaxRetries:     5,
+				MaxElapsedTime: 300000,
+			},
+		},
+		ChainConfigs: []map[string]interface{}{
+			{
+				"id":                 float64(1),
+				"type":               "evm",
+				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+				"gasLimit":           500,
+				"maxGasPrice":        2e+10,
+				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+				"name":               "evm1",
+				"endpoint":           "ws://evm1-1:8546",
+				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+				"blockConfirmations": float64(2),
+			},
+			{
+				"id":                 float64(2),
+				"type":               "evm",
+				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+				"gasLimit":           300,
+				"maxGasPrice":        2e+10,
+				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+				"name":               "evm2",
+				"endpoint":           "ws://evm2-1:8546",
+				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+				"blockConfirmations": float64(2),
+			},
+		},
+	}, *cnf)
+}
+
+func (s *GetConfigTestSuite) Test_GetConfigFromENV_RandomOrder() {
+	_ = os.Setenv("SYG_CHAINS", `[
+   {
+      "id":1,
+      "from":"0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+      "name":"evm1",
+      "type":"evm",
+      "endpoint":"ws://evm1-1:8546",
+      "bridge":"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+      "erc20Handler":"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+      "erc721Handler":"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+      "genericHandler":"0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+      "maxGasPrice":20000000000,
+      "blockConfirmations":2
+   },
+	 {
+   "id":2,
+   "from":"0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
+   "name":"evm2",
+   "type":"evm",
+   "endpoint":"ws://evm2-1:8546",
+   "bridge":"0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
+   "erc20Handler":"0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
+   "erc721Handler":"0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
+   "genericHandler":"0xe1588E2c6a002AE93AeD325A910Ed30961874109",
+   "maxGasPrice":20000000000,
+   "blockConfirmations":2
+}
+]`)
+
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEY", "test-pk")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_KEYSHAREPATH", "/cfg/keyshares/0.keyshare")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_FROSTKEYSHAREPATH", "/cfg/keyshares/0-frost.keyshare")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_PORT", "9000")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_ENCRYPTIONKEY", "test-enc-key")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_URL", "http://test.com")
+	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
+	_ = os.Setenv("SYG_RELAYER_ENV", "TEST")
+	_ = os.Setenv("SYG_RELAYER_ID", "123")
+
+	// load from Env
+	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
+		"id":                 2,
+		"blockConfirmations": 3,
+		"gasLimit":           300,
+	}, {
+		"id":                 1,
+		"blockConfirmations": 5,
+		"gasLimit":           500,
 	}}})
 
 	s.Nil(err)
@@ -186,71 +305,13 @@ func (s *GetConfigTestSuite) Test_SharedConfigLengthMismatch() {
 	_ = os.Setenv("SYG_RELAYER_MPCCONFIG_TOPOLOGYCONFIGURATION_PATH", "path")
 
 	// load from Env
-	cnf, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
+	_, err := config.GetConfigFromENV(&config.Config{ChainConfigs: []map[string]interface{}{{
+		"id":                 1,
 		"blockConfirmations": 5,
 		"gasLimit":           500,
 	}}})
 
-	s.Nil(err)
-
-	s.Equal(config.Config{
-		RelayerConfig: relayer.RelayerConfig{
-			LogLevel:   1,
-			LogFile:    "out.log",
-			HealthPort: 9001,
-			MpcConfig: relayer.MpcRelayerConfig{
-				TopologyConfiguration: relayer.TopologyConfiguration{
-					EncryptionKey: "test-enc-key",
-					Url:           "http://test.com",
-					Path:          "path",
-				},
-				Port:                    9000,
-				KeysharePath:            "/cfg/keyshares/0.keyshare",
-				Key:                     "test-pk",
-				CommHealthCheckInterval: 5 * time.Minute,
-			},
-			BullyConfig: relayer.BullyConfig{
-				PingWaitTime:     1 * time.Second,
-				PingBackOff:      1 * time.Second,
-				PingInterval:     1 * time.Second,
-				ElectionWaitTime: 2 * time.Second,
-				BullyWaitTime:    3 * time.Minute,
-			},
-			UploaderConfig: relayer.UploaderConfig{
-				MaxRetries:     5,
-				MaxElapsedTime: 300000,
-			},
-		},
-		ChainConfigs: []map[string]interface{}{
-			{
-				"id":                 float64(1),
-				"type":               "evm",
-				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
-				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
-				"gasLimit":           500,
-				"maxGasPrice":        2e+10,
-				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
-				"name":               "evm1",
-				"endpoint":           "ws://evm1-1:8546",
-				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
-				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
-				"blockConfirmations": float64(2),
-			},
-			{
-				"id":                 float64(2),
-				"type":               "evm",
-				"bridge":             "0xd606A00c1A39dA53EA7Bb3Ab570BBE40b156EB66",
-				"erc721Handler":      "0x75dF75bcdCa8eA2360c562b4aaDBAF3dfAf5b19b",
-				"maxGasPrice":        2e+10,
-				"from":               "0xff93B45308FD417dF303D6515aB04D9e89a750Ca",
-				"name":               "evm2",
-				"endpoint":           "ws://evm2-1:8546",
-				"erc20Handler":       "0x3cA3808176Ad060Ad80c4e08F30d85973Ef1d99e",
-				"genericHandler":     "0xe1588E2c6a002AE93AeD325A910Ed30961874109",
-				"blockConfirmations": float64(2),
-			},
-		},
-	}, *cnf)
+	s.NotNil(err)
 }
 
 type ConfigTestCase struct {
@@ -267,6 +328,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			name: "missing chain type",
 			inConfig: config.RawConfig{
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"name": "chain1",
 				}},
 				RelayerConfig: relayer.RawRelayerConfig{
@@ -319,6 +381,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "chain1",
 				}},
@@ -354,6 +417,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "chain1",
 				}},
@@ -380,6 +444,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 				},
 
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "chain1",
 				}},
@@ -410,6 +475,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "evm1",
 				}},
@@ -446,6 +512,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "evm1",
 				}},
@@ -484,6 +551,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "evm1",
 				}},
@@ -522,6 +590,7 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 					},
 				},
 				ChainConfigs: []map[string]interface{}{{
+					"id":   float64(1),
 					"type": "evm",
 					"name": "evm1",
 				}},
@@ -534,7 +603,13 @@ func (s *GetConfigTestSuite) Test_GetConfigFromFile() {
 			file, _ := json.Marshal(t.inConfig)
 			_ = os.WriteFile("test.json", file, 0644)
 
-			conf, err := config.GetConfigFromFile("test.json", &config.Config{})
+			conf, err := config.GetConfigFromFile("test.json", &config.Config{
+				ChainConfigs: []map[string]interface{}{
+					{
+						"id": 1,
+					},
+				},
+			})
 
 			_ = os.Remove("test.json")
 
