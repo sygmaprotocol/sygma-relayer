@@ -76,7 +76,7 @@ func Run() error {
 	configFlag := viper.GetString(config.ConfigFlagName)
 	configURL := viper.GetString("config-url")
 
-	configuration := &config.Config{}
+	var configuration *config.Config
 	if configURL != "" {
 		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
 		panicOnError(err)
