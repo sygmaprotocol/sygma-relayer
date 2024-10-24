@@ -30,6 +30,7 @@ func (e *BtcDepositHandler) HandleDeposit(
 	amount *big.Int,
 	data string,
 	blockNumber *big.Int,
+	timestamp time.Time,
 ) (*message.Message, error) {
 	// data is composed of recieverEVMAddress_destinationDomainID
 	parsedData := strings.Split(data, "_")
@@ -55,5 +56,8 @@ func (e *BtcDepositHandler) HandleDeposit(
 		Metadata:     nil,
 		Payload:      payload,
 		Type:         transfer.FungibleTransfer,
-	}, messageID, transfer.TransferMessageType, time.Now()), nil
+	},
+		messageID,
+		transfer.TransferMessageType,
+		timestamp), nil
 }

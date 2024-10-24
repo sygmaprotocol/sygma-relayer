@@ -96,6 +96,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		data2["amount"],
 		data2["deposit_data"],
 		blockNumber,
+		gomock.Any(),
 	).Return(&message.Message{
 		Source:      s.domainID,
 		Destination: uint8(1),
