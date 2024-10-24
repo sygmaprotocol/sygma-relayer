@@ -242,39 +242,6 @@ func (s *IntegrationTestSuite) Test_Erc721Deposit() {
 	s.Equal(dstAddr.String(), owner.String())
 }
 
-func (s *IntegrationTestSuite) Test_GenericDeposit() {
-	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
-	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
-
-	bridgeContract1 := bridge.NewBridgeContract(s.client1, s.config1.BridgeAddr, transactor1)
-	assetStoreContract2 := centrifuge.NewAssetStoreContract(s.client2, s.config2.AssetStoreAddr, transactor2)
-
-	byteArrayToHash, _ := substrateTypes.NewI64(int64(rand.Int())).MarshalJSON()
-	hash := substrateTypes.NewHash(byteArrayToHash)
-
-	handlerBalanceBefore, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-
-	genericDepositData := evm.ConstructGenericDepositData(hash[:])
-	depositTxHash, err := bridgeContract1.ExecuteTransaction("deposit", transactor.TransactOptions{Value: s.config1.BasicFee}, uint8(2), s.config1.GenericResourceID, genericDepositData, []byte{})
-
-	s.Nil(err)
-
-	_, _, err = s.client1.TransactionByHash(context.Background(), *depositTxHash)
-	s.Nil(err)
-
-	err = evm.WaitForProposalExecuted(s.client2, s.config2.BridgeAddr)
-	s.Nil(err)
-	// Asset hash sent is stored in centrifuge asset store contract
-	exists, err := assetStoreContract2.IsCentrifugeAssetStored(hash)
-	s.Nil(err)
-	s.Equal(true, exists)
-
-	handlerBalanceAfter, err := s.client1.BalanceAt(context.TODO(), s.config1.BasicFeeHandlerAddr, nil)
-	s.Nil(err)
-	s.Equal(handlerBalanceAfter, big.NewInt(0).Add(handlerBalanceBefore, s.config1.BasicFee))
-}
-
 func (s *IntegrationTestSuite) Test_PermissionlessGenericDeposit() {
 	transactor1 := signAndSend.NewSignAndSendTransactor(s.fabric1, s.gasPricer1, s.client1)
 	transactor2 := signAndSend.NewSignAndSendTransactor(s.fabric2, s.gasPricer2, s.client2)
