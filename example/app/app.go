@@ -173,10 +173,6 @@ func Run() error {
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
 						}
-					case "permissionedGeneric":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.GenericDepositHandler{})
-						}
 					case "permissionlessGeneric":
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.PermissionlessGenericDepositHandler{})
