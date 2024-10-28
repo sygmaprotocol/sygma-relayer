@@ -14,7 +14,7 @@ import (
 )
 
 type DepositHandlers map[transfer.TransferType]DepositHandlerFunc
-type DepositHandlerFunc func(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, messageID string) (*message.Message, error)
+type DepositHandlerFunc func(sourceID uint8, destId types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, messageID string, timestamp time.Time) (*message.Message, error)
 
 type SubstrateDepositHandler struct {
 	depositHandlers DepositHandlers
@@ -39,7 +39,8 @@ func (e *SubstrateDepositHandler) HandleDeposit(
 	resourceID types.Bytes32,
 	calldata []byte,
 	transferType types.U8,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	var depositType transfer.TransferType
 	if transferType == FungibleTransfer {
 		depositType = transfer.FungibleTransfer
@@ -52,7 +53,7 @@ func (e *SubstrateDepositHandler) HandleDeposit(
 		return nil, err
 	}
 
-	return depositHandler(sourceID, destID, depositNonce, resourceID, calldata, messageID)
+	return depositHandler(sourceID, destID, depositNonce, resourceID, calldata, messageID, timestamp)
 }
 
 // matchAddressWithHandlerFunc matches a transfer type with an associated handler function
@@ -82,7 +83,8 @@ func FungibleTransferHandler(
 	nonce types.U64,
 	resourceID types.Bytes32,
 	calldata []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -113,5 +115,6 @@ func FungibleTransferHandler(
 			Type:         transfer.FungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType, time.Now()), nil
+		transfer.TransferMessageType,
+		timestamp), nil
 }

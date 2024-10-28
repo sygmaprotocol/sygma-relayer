@@ -44,6 +44,11 @@ func DecodeDepositEvent(evtFields registry.DecodedFields) (events.Deposit, error
 			if err != nil {
 				return events.Deposit{}, err
 			}
+		case "block_timestamp":
+			err := mapstructure.Decode(evtField.Value, &d.Timestamp)
+			if err != nil {
+				return events.Deposit{}, err
+			}
 		}
 	}
 	return d, nil
