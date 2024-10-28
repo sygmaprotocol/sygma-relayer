@@ -275,7 +275,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d1["sygma_traits_TransferType"],
 		msgID,
 		gomock.Any(),
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -632,7 +632,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d1["sygma_traits_TransferType"],
 		msgID,
 		gomock.Any(),
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(

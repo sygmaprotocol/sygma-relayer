@@ -156,14 +156,16 @@ func Run() error {
 			log.Error().Msgf("Error shutting down meter provider: %v", err)
 		}
 	}()
-	sygmaMetrics, err := metrics.NewSygmaMetrics(mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sygmaMetrics, err := metrics.NewSygmaMetrics(ctx, mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
 	if err != nil {
 		panic(err)
 	}
 	msgChan := make(chan []*message.Message)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	domains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
@@ -185,7 +187,7 @@ func Run() error {
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
-				t := monitored.NewMonitoredTransactor(transaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				t := monitored.NewMonitoredTransactor(*config.GeneralChainConfig.Id, transaction.NewTransaction, gasPricer, sygmaMetrics, client, config.MaxGasPrice, config.GasIncreasePercentage)
 				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
@@ -354,7 +356,7 @@ func Run() error {
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
-	r := relayer.NewRelayer(domains)
+	r := relayer.NewRelayer(domains, sygmaMetrics)
 	go r.Start(ctx, msgChan)
 
 	sysErr := make(chan os.Signal, 1)

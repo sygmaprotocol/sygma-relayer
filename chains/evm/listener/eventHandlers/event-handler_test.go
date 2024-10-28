@@ -186,7 +186,7 @@ func (s *RetryEventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinue(
 		d1.HandlerResponse,
 		msgID,
 		gomock.Any(),
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -441,7 +441,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d1.HandlerResponse,
 		msgID,
 		gomock.Any(),
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
