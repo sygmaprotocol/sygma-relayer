@@ -9,8 +9,6 @@ import (
 )
 
 type MpcMetrics struct {
-	opts metric.MeasurementOption
-
 	totalRelayersGauge     api.Int64ObservableGauge
 	availableRelayersGauge api.Int64ObservableGauge
 	totalRelayerCount      *int64

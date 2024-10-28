@@ -9,8 +9,6 @@ import (
 )
 
 type HostMetrics struct {
-	opts metric.MeasurementOption
-
 	startTimeGauge api.Int64ObservableGauge
 }
 
