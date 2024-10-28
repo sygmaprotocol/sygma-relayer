@@ -121,6 +121,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{}, fmt.Errorf("error"))
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
@@ -130,6 +131,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -194,6 +196,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -206,6 +209,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -270,6 +274,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
 		panic("error")
 	})
@@ -281,6 +286,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanics_ExecutionContinues() 
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -522,6 +528,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -534,6 +541,7 @@ func (s *RetryHandlerTestSuite) Test_ValidEvents() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -623,6 +631,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d1["deposit_data"],
 		d1["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Do(func(sourceID, destID, nonce, resourceID, calldata, depositType, msgID interface{}) {
 		panic("error")
 	})
@@ -634,6 +643,7 @@ func (s *RetryHandlerTestSuite) Test_EventPanics() {
 		d2["deposit_data"],
 		d2["sygma_traits_TransferType"],
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
