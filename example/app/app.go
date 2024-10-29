@@ -113,7 +113,10 @@ func Run() error {
 	exitLock := &sync.RWMutex{}
 	defer exitLock.Lock()
 
-	mp, err := observability.InitMetricProvider(context.Background(), configuration.RelayerConfig.OpenTelemetryCollectorURL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	mp, err := observability.InitMetricProvider(ctx, configuration.RelayerConfig.OpenTelemetryCollectorURL)
 	if err != nil {
 		panic(err)
 	}
@@ -122,13 +125,12 @@ func Run() error {
 			log.Error().Msgf("Error shutting down meter provider: %v", err)
 		}
 	}()
-	sygmaMetrics, err := metrics.NewSygmaMetrics(mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
+
+	sygmaMetrics, err := metrics.NewSygmaMetrics(ctx, mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id, "latest")
 	if err != nil {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	msgChan := make(chan []*message.Message)
 	chains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
@@ -155,8 +157,9 @@ func Run() error {
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				frostAddress := common.HexToAddress(config.FrostKeygen)
 				dummyGasPricer := gas.NewStaticGasPriceDeterminant(client, nil)
-				t := monitored.NewMonitoredTransactor(transaction.NewTransaction, dummyGasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
-				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
+				t := monitored.NewMonitoredTransactor(
+					*config.GeneralChainConfig.Id, transaction.NewTransaction, dummyGasPricer, sygmaMetrics, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				go t.Monitor(ctx, time.Second*15, time.Minute*10, time.Minute)
 
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
@@ -168,10 +171,6 @@ func Run() error {
 					case "erc20", "native":
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
-						}
-					case "permissionedGeneric":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.GenericDepositHandler{})
 						}
 					case "permissionlessGeneric":
 						{
@@ -296,8 +295,7 @@ func Run() error {
 	}
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
-
-	r := relayer.NewRelayer(chains)
+	r := relayer.NewRelayer(chains, sygmaMetrics)
 
 	go r.Start(ctx, msgChan)
 

@@ -759,8 +759,8 @@ github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbe
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/sygmaprotocol/multi-party-sig v0.0.0-20240523153754-9377ba09c35e h1:IzidTxe1CT6O5qy2gK9NQO/hrC+2wjDGzCxCF+kjCKU=
 github.com/sygmaprotocol/multi-party-sig v0.0.0-20240523153754-9377ba09c35e/go.mod h1:roZI3gaKCo15PUSB4LdJpTLTjq8TFsJiOH5kpcN1HpQ=
-github.com/sygmaprotocol/sygma-core v0.0.0-20240710140025-258996be150b h1:gaXOurg/0X/iKS7uED0RLTieilJymQUNoyXOTwI1710=
-github.com/sygmaprotocol/sygma-core v0.0.0-20240710140025-258996be150b/go.mod h1:b4RZCyYr20Mp4WAAj4TkC6gU2KZ0ZWcpSGmKc6n8NKc=
+github.com/sygmaprotocol/sygma-core v0.0.0-20241028121638-2c5597ae589f h1:tZb5+2slQMAb+OTYZGDvri7JJn8osd9lPJWbNv9Z8XU=
+github.com/sygmaprotocol/sygma-core v0.0.0-20241028121638-2c5597ae589f/go.mod h1:Shna6DuIf/SE2yGmhO+76Ou0oszfWKabX4n8gMnIH8U=
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a h1:1ur3QoCqvE5fl+nylMaIr9PVV1w343YRDtsy+Rwu7XI=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
@@ -774,6 +774,8 @@ github.com/urfave/cli v1.22.2/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/urfave/cli v1.22.5 h1:lNq9sAHXK2qfdI8W+GRItjCEkI+2oR4d+MEHy1CKXoU=
 github.com/urfave/cli v1.22.5/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli/v2 v2.25.7 h1:VAzn5oq403l5pHjc4OhD54+XGO9cdKVL/7lDjF+iKUs=
+github.com/vedhavyas/go-subkey v1.0.4 h1:QwjBZx4w7qXC2lmqol2jJfhaNXPI9BsgLZiMiCwqGDU=
+github.com/vedhavyas/go-subkey v1.0.4/go.mod h1:aOIil/KS9hJlnr9ZSQKSoXdu/MbnkCxG4x9IOlLsMtI=
 github.com/vedhavyas/go-subkey/v2 v2.0.0 h1:LemDIsrVtRSOkp0FA8HxP6ynfKjeOj3BY2U9UNfeDMA=
 github.com/vedhavyas/go-subkey/v2 v2.0.0/go.mod h1:95aZ+XDCWAUUynjlmi7BtPExjXgXxByE0WfBwbmIRH4=
 github.com/viant/assertly v0.4.8/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=

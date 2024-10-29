@@ -6,6 +6,7 @@ package listener_test
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -43,6 +44,7 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 	evmAdd := common.HexToAddress(dat[0]).Bytes()
 	messageID := fmt.Sprintf("%d-%d-%d", sourceID, 1, blockNumber)
 
+	timestamp := time.Now()
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: uint8(1),
@@ -55,12 +57,13 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent() {
 			},
 			Type: transfer.FungibleTransfer,
 		},
-		Type: transfer.TransferMessageType,
-		ID:   messageID,
+		Type:      transfer.TransferMessageType,
+		ID:        messageID,
+		Timestamp: timestamp,
 	}
 
 	btcDepositHandler := listener.NewBtcDepositHandler()
-	message, err := btcDepositHandler.HandleDeposit(sourceID, depositNonce, deposit.ResourceID, deposit.Amount, deposit.Data, blockNumber)
+	message, err := btcDepositHandler.HandleDeposit(sourceID, depositNonce, deposit.ResourceID, deposit.Amount, deposit.Data, blockNumber, timestamp)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -82,7 +85,7 @@ func (s *Erc20HandlerTestSuite) Test_Erc20HandleEvent_InvalidDestinationDomainID
 	depositNonce := uint64(1)
 
 	btcDepositHandler := listener.NewBtcDepositHandler()
-	message, err := btcDepositHandler.HandleDeposit(sourceID, depositNonce, deposit.ResourceID, deposit.Amount, deposit.Data, blockNumber)
+	message, err := btcDepositHandler.HandleDeposit(sourceID, depositNonce, deposit.ResourceID, deposit.Amount, deposit.Data, blockNumber, time.Now())
 
 	s.Nil(message)
 	s.NotNil(err)

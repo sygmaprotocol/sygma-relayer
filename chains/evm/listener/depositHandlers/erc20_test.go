@@ -7,6 +7,7 @@ import (
 	"errors"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/e2e/evm"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
@@ -54,6 +55,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	amountParsed := calldata[:32]
 	recipientAddressParsed := calldata[64 : 64+len(recipientByteSlice)]
 
+	timestamp := time.Now()
 	expected := &message.Message{
 		Source:      sourceID,
 		Destination: depositLog.DestinationDomainID,
@@ -68,8 +70,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 			Type:     transfer.FungibleTransfer,
 			Metadata: metadata,
 		},
-		Type: transfer.TransferMessageType,
-		ID:   "messageID",
+		Type:      transfer.TransferMessageType,
+		ID:        "messageID",
+		Timestamp: timestamp,
 	}
 	erc20DepositHandler := depositHandlers.Erc20DepositHandler{}
 	message, err := erc20DepositHandler.HandleDeposit(
@@ -79,7 +82,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-		"messageID")
+		"messageID",
+		timestamp,
+	)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -113,6 +118,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectDataLen() {
 		depositLog.Data,
 		depositLog.HandlerResponse,
 		"messageID",
+		time.Now(),
 	)
 
 	s.Nil(message)

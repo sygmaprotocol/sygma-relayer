@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -111,6 +112,7 @@ func (eh *RetryEventHandler) HandleEvents(
 				msg, err := eh.depositHandler.HandleDeposit(
 					eh.domainID, d.DestinationDomainID, d.DepositNonce,
 					d.ResourceID, d.Data, d.HandlerResponse, messageID,
+					d.Timestamp,
 				)
 				if err != nil {
 					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Failed handling deposit %+v", d)
@@ -397,7 +399,7 @@ func (eh *RefreshEventHandler) sessionID(block *big.Int) string {
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string) (*message.Message, error)
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string, timestamp time.Time) (*message.Message, error)
 }
 
 type DepositEventHandler struct {
@@ -434,7 +436,7 @@ func (eh *DepositEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.I
 			}()
 
 			messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse, messageID)
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse, messageID, d.Timestamp)
 			if err != nil {
 				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
 				return

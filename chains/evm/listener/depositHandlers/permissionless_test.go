@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
@@ -46,6 +47,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		depositor.Bytes(),
 		maxFee,
 	)
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -53,6 +55,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		SenderAddress:       common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b"),
 		Data:                calldata,
 		HandlerResponse:     []byte{},
+		Timestamp:           timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -72,8 +75,9 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 			Metadata: metadata,
 			Type:     transfer.PermissionlessGenericTransfer,
 		},
-		Type: transfer.TransferMessageType,
-		ID:   "messageID",
+		Type:      transfer.TransferMessageType,
+		ID:        "messageID",
+		Timestamp: timestamp,
 	}
 
 	permissionlessGenericHandler := depositHandlers.PermissionlessGenericDepositHandler{}
@@ -86,6 +90,7 @@ func (s *PermissionlessGenericHandlerTestSuite) TestHandleEvent() {
 		depositLog.Data,
 		depositLog.HandlerResponse,
 		"messageID",
+		timestamp,
 	)
 
 	s.Nil(err)
@@ -98,6 +103,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleEvent_IncorrectDataLe
 	metadata["gasLimit"] = uint64(200000)
 	var calldata []byte
 	calldata = append(calldata, math.PaddedBigBytes(big.NewInt(int64(len(metadata))), 32)...)
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestinationDomainID: 0,
 		ResourceID:          [32]byte{0},
@@ -105,6 +111,7 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleEvent_IncorrectDataLe
 		SenderAddress:       common.HexToAddress("0x5C1F5961696BaD2e73f73417f07EF55C62a2dC5b"),
 		Data:                calldata,
 		HandlerResponse:     []byte{},
+		Timestamp:           timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -117,7 +124,8 @@ func (s *PermissionlessGenericHandlerTestSuite) Test_HandleEvent_IncorrectDataLe
 		depositLog.ResourceID,
 		depositLog.Data,
 		depositLog.HandlerResponse,
-		"messageID")
+		"messageID",
+		timestamp)
 
 	s.NotNil(err)
 }

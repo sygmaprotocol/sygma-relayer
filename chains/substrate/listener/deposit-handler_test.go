@@ -5,6 +5,7 @@ package listener_test
 
 import (
 	"errors"
+	"time"
 	"unsafe"
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -43,6 +44,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	calldata = append(calldata, recipientLen...)
 	calldata = append(calldata, types.Bytes(recipient)...)
 
+	timestamp := time.Now()
 	depositLog := &events.Deposit{
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
@@ -50,6 +52,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		TransferType: types.NewU8(0),
 		CallData:     calldata,
 		Handler:      [1]byte{0},
+		Timestamp:    timestamp,
 	}
 
 	sourceID := uint8(1)
@@ -68,8 +71,9 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 			},
 			Type: transfer.FungibleTransfer,
 		},
-		Type: transfer.TransferMessageType,
-		ID:   "messageID",
+		Type:      transfer.TransferMessageType,
+		ID:        "messageID",
+		Timestamp: timestamp,
 	}
 
 	message, err := listener.FungibleTransferHandler(
@@ -78,7 +82,8 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 		depositLog.DepositNonce,
 		depositLog.ResourceID,
 		depositLog.CallData,
-		"messageID")
+		"messageID",
+		timestamp)
 
 	s.Nil(err)
 	s.NotNil(message)
@@ -105,7 +110,8 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEventIncorrectdeposit_dataLen() {
 		depositLog.DepositNonce,
 		depositLog.ResourceID,
 		depositLog.CallData,
-		"messageID")
+		"messageID",
+		time.Now())
 	s.Nil(message)
 	s.EqualError(err, errIncorrectDataLen.Error())
 }
@@ -121,24 +127,26 @@ func (s *Erc20HandlerTestSuite) TestSuccesfullyRegisterFungibleTransferHandler()
 	calldata = append(calldata, recipientLen...)
 	calldata = append(calldata, types.Bytes(recipient)...)
 
+	timestamp := time.Now()
 	d1 := &events.Deposit{
 		DestDomainID: types.NewU8(2),
 		ResourceID:   types.Bytes32{1},
 		DepositNonce: types.NewU64(1),
 		TransferType: types.NewU8(0),
 		CallData:     calldata,
+		Timestamp:    timestamp,
 		Handler:      [1]byte{0},
 	}
 
 	depositHandler := listener.NewSubstrateDepositHandler()
 	// Register FungibleTransferHandler function
 	depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, listener.FungibleTransferHandler)
-	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType, "messageID")
+	message1, err1 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, d1.TransferType, "messageID", d1.Timestamp)
 	s.Nil(err1)
 	s.NotNil(message1)
 
 	// Use unregistered transfer type
-	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, 1, "messageID")
+	message2, err2 := depositHandler.HandleDeposit(1, d1.DestDomainID, d1.DepositNonce, d1.ResourceID, d1.CallData, 1, "messageID", d1.Timestamp)
 	s.Nil(message2)
 	s.NotNil(err2)
 	s.EqualError(err2, errNoCorrespondingDepositHandler.Error())

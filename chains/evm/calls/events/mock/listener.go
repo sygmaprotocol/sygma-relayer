@@ -37,6 +37,21 @@ func (m *MockChainClient) EXPECT() *MockChainClientMockRecorder {
 	return m.recorder
 }
 
+// BlockByNumber mocks base method.
+func (m *MockChainClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BlockByNumber", ctx, number)
+	ret0, _ := ret[0].(*types.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BlockByNumber indicates an expected call of BlockByNumber.
+func (mr *MockChainClientMockRecorder) BlockByNumber(ctx, number interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockByNumber", reflect.TypeOf((*MockChainClient)(nil).BlockByNumber), ctx, number)
+}
+
 // FetchEventLogs mocks base method.
 func (m *MockChainClient) FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock, endBlock *big.Int) ([]types.Log, error) {
 	m.ctrl.T.Helper()

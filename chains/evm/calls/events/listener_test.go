@@ -106,14 +106,25 @@ func (s *ListenerTestSuite) Test_FetchRetryDepositEvents_ValidEvent() {
 			{
 				Address: common.HexToAddress("0x1ec6b294902d42fee964d29fa962e5976e71e67d"),
 				Data:    depositEvent,
+				Topics: []common.Hash{
+					{},
+					{},
+				},
+				BlockNumber: 14,
 			},
 			{
 				Address: common.HexToAddress("0x5798e01f4b1d8f6a5d91167414f3a915d021bc4a"),
 				Data:    depositEvent,
+				Topics: []common.Hash{
+					{},
+					{},
+				},
+				BlockNumber: 14,
 			},
 		},
 	}, nil)
 	s.mockClient.EXPECT().LatestBlock().Return(big.NewInt(20), nil)
+	s.mockClient.EXPECT().BlockByNumber(gomock.Any(), big.NewInt(14)).Return(nil, fmt.Errorf("error"))
 
 	deposits, err := s.listener.FetchRetryDepositEvents(
 		events.RetryEvent{TxHash: "0xf25ed4a14bf7ad20354b46fe38d7d4525f2ea3042db9a9954ef8d73c558b500c"},
