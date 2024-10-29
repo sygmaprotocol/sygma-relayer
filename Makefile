@@ -31,6 +31,7 @@ genmocks:
 	mockgen -source=./tss/coordinator.go -destination=./tss/mock/coordinator.go
 	mockgen -source=./comm/communication.go -destination=./comm/mock/communication.go
 	mockgen -source=./chains/evm/listener/eventHandlers/deposit.go -destination=./chains/evm/listener/eventHandlers/mock/listener.go
+	mockgen -source=./chains/evm/listener/eventHandlers/retry.go -destination=./chains/evm/listener/eventHandlers/mock/retry.go
 	mockgen -source=./chains/evm/calls/events/listener.go -destination=./chains/evm/calls/events/mock/listener.go
 	mockgen -source=./chains/substrate/listener/event-handlers.go -destination=./chains/substrate/listener/mock/handlers.go
 	mockgen -source=./chains/btc/listener/event-handlers.go -destination=./chains/btc/listener/mock/handlers.go

@@ -17,7 +17,9 @@ type EventListener interface {
 	FetchFrostKeygenEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]types.Log, error)
 	FetchRefreshEvents(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Refresh, error)
 	FetchDeposits(ctx context.Context, address common.Address, startBlock *big.Int, endBlock *big.Int) ([]*events.Deposit, error)
-	FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryEvent, error)
+	FetchRetryV1Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryV1Event, error)
+	FetchRetryV2Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]events.RetryV2Event, error)
+	FetchRetryDepositEvents(event events.RetryV1Event, bridgeAddress common.Address, blockConfirmations *big.Int) ([]events.Deposit, error)
 }
 
 type DepositHandler interface {

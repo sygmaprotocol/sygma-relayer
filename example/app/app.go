@@ -194,7 +194,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewFrostKeygenEventHandler(l, tssListener, coordinator, host, communication, frostKeyshareStore, frostAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, frostKeyshareStore, bridgeAddress))
 				if config.Retry != "" {
-					eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, common.HexToAddress(config.Retry), *config.GeneralChainConfig.Id, msgChan))
+					eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryV2EventHandler(l, tssListener, common.HexToAddress(config.Retry), *config.GeneralChainConfig.Id, msgChan))
 				}
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
 

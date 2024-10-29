@@ -33,7 +33,11 @@ type Refresh struct {
 	Hash string
 }
 
-type RetryEvent struct {
+type RetryV1Event struct {
+	TxHash string
+}
+
+type RetryV2Event struct {
 	SourceDomainID      uint8
 	DestinationDomainID uint8
 	BlockHeight         *big.Int
