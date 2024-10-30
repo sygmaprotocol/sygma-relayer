@@ -81,11 +81,11 @@ var DEFAULT_CONFIG = BridgeConfig{
 	BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
 	RetryAddr:  common.HexToAddress("0xAD825082B91980E7C8908652269c96a47D687cC5"),
 
-	Erc20Addr:        common.HexToAddress("0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46"),
+	Erc20Addr:        common.HexToAddress("0xA45E01c8D945D47ADa916828828B201d0815b83F"),
 	Erc20HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 	Erc20ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-	Erc20LockReleaseAddr:        common.HexToAddress("0xA45E01c8D945D47ADa916828828B201d0815b83F"),
+	Erc20LockReleaseAddr:        common.HexToAddress("0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46"),
 	Erc20LockReleaseHandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 	Erc20LockReleaseResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
