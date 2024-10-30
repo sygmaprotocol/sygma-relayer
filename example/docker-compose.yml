@@ -31,7 +31,7 @@ services:
   evm1-1:
     image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.10.1
     container_name: evm1-1
-    command: -d --db data/ --blockTime 2 > /dev/null
+    command: --chain.chainId 1337 --db data/ --blockTime 2 --m 'black toward wish jar twin produce remember fluid always confirm bacon slush' > /dev/null
     logging:
       driver: none
     ports:
@@ -39,7 +39,7 @@ services:
 
   evm2-1:
     image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.10.1
-    command: -d --db data/ --blockTime 2 > /dev/null
+    command: --chain.chainId 1338 --db data/ --blockTime 2 --m 'black toward wish jar twin produce remember fluid always confirm bacon slush' > /dev/null
     container_name: evm2-1
     logging:
       driver: none
