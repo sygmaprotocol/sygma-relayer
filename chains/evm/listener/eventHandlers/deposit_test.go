@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
@@ -51,12 +52,14 @@ func (s *DepositHandlerTestSuite) Test_FetchDepositFails() {
 }
 
 func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
+	timestamp := time.Now()
 	d1 := &events.Deposit{
 		DepositNonce:        1,
 		DestinationDomainID: 2,
 		ResourceID:          [32]byte{},
 		HandlerResponse:     []byte{},
 		Data:                []byte{},
+		Timestamp:           timestamp,
 	}
 	d2 := &events.Deposit{
 		DepositNonce:        2,
@@ -64,6 +67,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		ResourceID:          [32]byte{},
 		HandlerResponse:     []byte{},
 		Data:                []byte{},
+		Timestamp:           timestamp,
 	}
 	deposits := []*events.Deposit{d1, d2}
 	s.mockEventListener.EXPECT().FetchDeposits(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(deposits, nil)
@@ -76,6 +80,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
+		d1.Timestamp,
 	).Return(&message.Message{}, fmt.Errorf("error"))
 	s.mockDepositHandler.EXPECT().HandleDeposit(
 		s.domainID,
@@ -85,6 +90,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue() {
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		d2.Timestamp,
 	).Return(
 		&message.Message{
 			Data: transfer.TransferMessageData{
@@ -127,7 +133,8 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
+		gomock.Any(),
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -138,6 +145,7 @@ func (s *DepositHandlerTestSuite) Test_HandleDepositPanis_ExecutionContinues() {
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,
@@ -176,6 +184,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 1}},
 		nil,
@@ -188,6 +197,7 @@ func (s *DepositHandlerTestSuite) Test_SuccessfulHandleDeposit() {
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(
 		&message.Message{Data: transfer.TransferMessageData{DepositNonce: 2}},
 		nil,

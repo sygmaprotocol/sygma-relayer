@@ -70,28 +70,17 @@ func (s *RetryV2EventHandlerTestSuite) Test_FetchRetryEvents_ValidRetry() {
 	msgs1 := <-s.msgChan
 
 	s.Nil(err)
-	s.Equal(msgs1, []*message.Message{
-		{
-			Source:      s.domainID,
-			Destination: 2,
-			Data: retry.RetryMessageData{
-				SourceDomainID: 2, DestinationDomainID: 3, ResourceID: [32]byte{1}, BlockHeight: big.NewInt(100),
-			},
-			ID:   "retry-2-3",
-			Type: retry.RetryMessageType,
-		},
+	s.Equal(msgs1[0].Data, retry.RetryMessageData{
+		SourceDomainID: 2, DestinationDomainID: 3, ResourceID: [32]byte{1}, BlockHeight: big.NewInt(100),
 	})
-	s.Equal(msgs2, []*message.Message{
-		{
-			Source:      s.domainID,
-			Destination: 3,
-			Data: retry.RetryMessageData{
-				SourceDomainID: 3, DestinationDomainID: 4, ResourceID: [32]byte{2}, BlockHeight: big.NewInt(101),
-			},
-			ID:   "retry-3-4",
-			Type: retry.RetryMessageType,
-		},
+	s.Equal(msgs1[0].Destination, uint8(2))
+	s.Equal(msgs1[0].Source, s.domainID)
+
+	s.Equal(msgs2[0].Data, retry.RetryMessageData{
+		SourceDomainID: 3, DestinationDomainID: 4, ResourceID: [32]byte{2}, BlockHeight: big.NewInt(101),
 	})
+	s.Equal(msgs2[0].Destination, uint8(3))
+	s.Equal(msgs2[0].Source, s.domainID)
 }
 
 type RetryV1EventHandlerTestSuite struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/consts"
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
@@ -63,6 +64,7 @@ func (eh *RetryV2EventHandler) HandleEvents(
 			},
 			messageID,
 			retry.RetryMessageType,
+			time.Now(),
 		)
 
 		eh.log.Info().Str("messageID", messageID).Msgf(
@@ -142,7 +144,7 @@ func (eh *RetryV1EventHandler) HandleEvents(
 				messageID := fmt.Sprintf("retry-%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
 				msg, err := eh.depositHandler.HandleDeposit(
 					eh.domainID, d.DestinationDomainID, d.DepositNonce,
-					d.ResourceID, d.Data, d.HandlerResponse, messageID,
+					d.ResourceID, d.Data, d.HandlerResponse, messageID, d.Timestamp,
 				)
 				if err != nil {
 					eh.log.Err(err).Str("messageID", msg.ID).Msgf("Failed handling deposit %+v", d)

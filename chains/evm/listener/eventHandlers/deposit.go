@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/evm/calls/events"
 	"github.com/ethereum/go-ethereum/common"
@@ -23,7 +24,7 @@ type EventListener interface {
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string) (*message.Message, error)
+	HandleDeposit(sourceID, destID uint8, nonce uint64, resourceID [32]byte, calldata, handlerResponse []byte, messageID string, timestamp time.Time) (*message.Message, error)
 }
 
 type DepositEventHandler struct {
@@ -75,7 +76,7 @@ func (eh *DepositEventHandler) ProcessDeposits(startBlock *big.Int, endBlock *bi
 			}()
 
 			messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestinationDomainID, startBlock, endBlock)
-			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse, messageID)
+			m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestinationDomainID, d.DepositNonce, d.ResourceID, d.Data, d.HandlerResponse, messageID, d.Timestamp)
 			if err != nil {
 				log.Error().Err(err).Str("start block", startBlock.String()).Str("end block", endBlock.String()).Uint8("domainID", eh.domainID).Msgf("%v", err)
 				return
