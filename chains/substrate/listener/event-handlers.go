@@ -128,3 +128,102 @@ func (eh *FungibleTransferEventHandler) ProcessDeposits(startBlock *big.Int, end
 	}
 	return domainDeposits, nil
 }
+
+type RetryEventHandler struct {
+	conn           Connection
+	domainID       uint8
+	depositHandler DepositHandler
+	log            zerolog.Logger
+	msgChan        chan []*message.Message
+}
+
+func NewRetryEventHandler(logC zerolog.Context, conn Connection, depositHandler DepositHandler, domainID uint8, msgChan chan []*message.Message) *RetryEventHandler {
+	return &RetryEventHandler{
+		depositHandler: depositHandler,
+		domainID:       domainID,
+		conn:           conn,
+		log:            logC.Logger(),
+		msgChan:        msgChan,
+	}
+}
+
+func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int) error {
+	evts, err := rh.conn.FetchEvents(startBlock, endBlock)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching events")
+		return err
+	}
+
+	hash, err := rh.conn.GetFinalizedHead()
+	if err != nil {
+		return err
+	}
+	finalized, err := rh.conn.GetBlock(hash)
+	if err != nil {
+		return err
+	}
+	finalizedBlockNumber := big.NewInt(int64(finalized.Block.Header.Number))
+
+	domainDeposits := make(map[uint8][]*message.Message)
+	for _, evt := range evts {
+		if evt.Name == events.RetryEvent {
+			err := func(evt parser.Event) error {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Error().Msgf("panic occured while handling retry event %+v because %s", evt, r)
+					}
+				}()
+				er, err := DecodeRetryEvent(evt.Fields)
+				if err != nil {
+					return err
+				}
+				// (latestBlockNumber - event.DepositOnBlockHeight) == blockConfirmations
+				if big.NewInt(finalizedBlockNumber.Int64()).Cmp(er.DepositOnBlockHeight.Int) == -1 {
+					log.Warn().Msgf("Retry event for block number %d has not enough confirmations", er.DepositOnBlockHeight)
+					return nil
+				}
+
+				bh, err := rh.conn.GetBlockHash(er.DepositOnBlockHeight.Uint64())
+				if err != nil {
+					return err
+				}
+
+				bEvts, err := rh.conn.GetBlockEvents(bh)
+				if err != nil {
+					return err
+				}
+
+				for _, event := range bEvts {
+					if event.Name == events.DepositEvent {
+						d, err := DecodeDepositEvent(event.Fields)
+						if err != nil {
+							return err
+						}
+
+						messageID := fmt.Sprintf("retry-%d-%d-%d-%d", rh.domainID, d.DestDomainID, startBlock, endBlock)
+						m, err := rh.depositHandler.HandleDeposit(
+							rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID,
+						)
+						if err != nil {
+							return err
+						}
+
+						rh.log.Info().Str("messageID", messageID).Msgf("Resolved retry message %+v", d)
+
+						domainDeposits[m.Destination] = append(domainDeposits[m.Destination], m)
+					}
+				}
+
+				return nil
+			}(*evt)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, deposits := range domainDeposits {
+		rh.msgChan <- deposits
+	}
+	return nil
+}

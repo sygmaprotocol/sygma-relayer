@@ -127,7 +127,7 @@ func (s *RetryV1EventHandlerTestSuite) SetupTest() {
 }
 
 func (s *RetryV1EventHandlerTestSuite) Test_FetchDepositFails() {
-	s.mockEventListener.EXPECT().FetchRetryV2Events(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryV1Event{}, fmt.Errorf("error"))
+	s.mockEventListener.EXPECT().FetchRetryV1Events(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]events.RetryV1Event{}, fmt.Errorf("error"))
 
 	err := s.retryEventHandler.HandleEvents(big.NewInt(0), big.NewInt(5))
 
@@ -144,7 +144,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues
 		Data:                []byte{},
 	}
 	msgID := fmt.Sprintf("retry-%d-%d-%d-%d", 1, 2, 0, 5)
-	s.mockEventListener.EXPECT().FetchRetryV2Events(
+	s.mockEventListener.EXPECT().FetchRetryV1Events(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return([]events.RetryV1Event{{TxHash: "event1"}, {TxHash: "event2"}}, nil)
 	s.mockEventListener.EXPECT().FetchRetryDepositEvents(events.RetryV1Event{TxHash: "event1"}, gomock.Any(), big.NewInt(5)).Return([]events.Deposit{}, fmt.Errorf("error"))
