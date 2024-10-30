@@ -4,6 +4,8 @@
 package events
 
 import (
+	"time"
+
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 )
 
@@ -14,6 +16,7 @@ type Deposit struct {
 	TransferType types.U8      `mapstructure:"sygma_traits_TransferType"`
 	CallData     []byte        `mapstructure:"deposit_data"`
 	Handler      [1]byte       `mapstructure:"handler_response"`
+	Timestamp    time.Time     `mapstructure:"block_timestamp"`
 }
 
 type Retry struct {

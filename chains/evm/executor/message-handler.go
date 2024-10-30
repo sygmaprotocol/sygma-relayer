@@ -91,8 +91,8 @@ func PermissionlessGenericMessageHandler(msg *transfer.TransferMessage) (*propos
 }
 
 func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, error) {
-	if len(msg.Data.Payload) != 2 {
-		return nil, errors.New("malformed payload. Len  of payload should be 2")
+	if len(msg.Data.Payload) != 2 && len(msg.Data.Payload) != 3 {
+		return nil, fmt.Errorf("wrong payload length %d", len(msg.Data.Payload))
 	}
 	amount, ok := msg.Data.Payload[0].([]byte)
 	if !ok {
@@ -107,6 +107,14 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 	recipientLen := big.NewInt(int64(len(recipient))).Bytes()
 	data = append(data, common.LeftPadBytes(recipientLen, 32)...) // length of recipient (uint256)
 	data = append(data, recipient...)                             // recipient ([]byte)
+	if len(msg.Data.Payload) == 3 {
+		optionalMessage, ok := msg.Data.Payload[2].([]byte)
+		if !ok {
+			return nil, errors.New("wrong optional message format")
+		}
+
+		data = append(data, optionalMessage...)
+	}
 
 	return proposal.NewProposal(msg.Source, msg.Destination, transfer.TransferProposalData{
 		DepositNonce: msg.Data.DepositNonce,

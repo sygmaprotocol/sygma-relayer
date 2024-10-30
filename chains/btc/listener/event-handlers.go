@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/btc/config"
 	"github.com/btcsuite/btcd/btcjson"
@@ -34,6 +35,7 @@ type DepositHandler interface {
 		amount *big.Int,
 		data string,
 		blockNumber *big.Int,
+		timestamp time.Time,
 	) (*message.Message, error)
 }
 
@@ -108,7 +110,7 @@ func (eh *FungibleTransferEventHandler) ProcessDeposits(blockNumber *big.Int) (m
 					return err
 				}
 
-				m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber)
+				m, err := eh.depositHandler.HandleDeposit(eh.domainID, nonce, d.ResourceID, d.Amount, d.Data, blockNumber, time.Unix(evt.Blocktime, 0))
 				if err != nil {
 					return err
 				}

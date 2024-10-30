@@ -6,6 +6,7 @@ package depositHandlers
 import (
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -22,7 +23,8 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 	resourceID [32]byte,
 	calldata,
 	handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	if len(calldata) < 84 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -43,16 +45,26 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 		amount,
 		recipientAddress,
 	}
+
+	metadata := make(map[string]interface{})
+	// append optional message if it exists
+	if len(calldata) > int(96+recipientAddressLength.Int64()) {
+		metadata["gasLimit"] = new(big.Int).SetBytes(calldata[64+recipientAddressLength.Int64() : 96+recipientAddressLength.Int64()]).Uint64()
+		payload = append(payload, calldata[64+recipientAddressLength.Int64():])
+	}
+
 	return message.NewMessage(
 		sourceID,
 		destID,
 		transfer.TransferMessageData{
 			DepositNonce: nonce,
 			ResourceId:   resourceID,
-			Metadata:     nil,
+			Metadata:     metadata,
 			Payload:      payload,
 			Type:         transfer.FungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType), nil
+		transfer.TransferMessageType,
+		timestamp,
+	), nil
 }

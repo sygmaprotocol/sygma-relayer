@@ -25,8 +25,6 @@ import (
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 )
 
-const TRANSFER_GAS_COST = 200000
-
 type Batch struct {
 	proposals []*transfer.TransferProposal
 	gasLimit  uint64
@@ -51,6 +49,7 @@ type Executor struct {
 	bridge            BridgeContract
 	exitLock          *sync.RWMutex
 	transactionMaxGas uint64
+	transferGasCost   uint64
 }
 
 func NewExecutor(
@@ -61,6 +60,7 @@ func NewExecutor(
 	fetcher signing.SaveDataFetcher,
 	exitLock *sync.RWMutex,
 	transactionMaxGas uint64,
+	transferGasCost uint64,
 ) *Executor {
 	return &Executor{
 		host:              host,
@@ -70,6 +70,7 @@ func NewExecutor(
 		fetcher:           fetcher,
 		exitLock:          exitLock,
 		transactionMaxGas: transactionMaxGas,
+		transferGasCost:   transferGasCost,
 	}
 }
 
@@ -212,9 +213,9 @@ func (e *Executor) proposalBatches(proposals []*proposal.Proposal) ([]*Batch, er
 		var propGasLimit uint64
 		l, ok := transferProposal.Data.Metadata["gasLimit"]
 		if ok {
-			propGasLimit = l.(uint64)
+			propGasLimit = l.(uint64) + e.transferGasCost
 		} else {
-			propGasLimit = uint64(TRANSFER_GAS_COST)
+			propGasLimit = e.transferGasCost
 		}
 		currentBatch.gasLimit += propGasLimit
 		if currentBatch.gasLimit >= e.transactionMaxGas {

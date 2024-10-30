@@ -7,6 +7,7 @@ package mock_listener
 import (
 	big "math/big"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	message "github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -36,16 +37,16 @@ func (m *MockDepositHandler) EXPECT() *MockDepositHandlerMockRecorder {
 }
 
 // HandleDeposit mocks base method.
-func (m *MockDepositHandler) HandleDeposit(sourceID uint8, depositNonce uint64, resourceID [32]byte, amount *big.Int, data string, blockNumber *big.Int) (*message.Message, error) {
+func (m *MockDepositHandler) HandleDeposit(sourceID uint8, depositNonce uint64, resourceID [32]byte, amount *big.Int, data string, blockNumber *big.Int, timestamp time.Time) (*message.Message, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, depositNonce, resourceID, amount, data, blockNumber)
+	ret := m.ctrl.Call(m, "HandleDeposit", sourceID, depositNonce, resourceID, amount, data, blockNumber, timestamp)
 	ret0, _ := ret[0].(*message.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // HandleDeposit indicates an expected call of HandleDeposit.
-func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, depositNonce, resourceID, amount, data, blockNumber interface{}) *gomock.Call {
+func (mr *MockDepositHandlerMockRecorder) HandleDeposit(sourceID, depositNonce, resourceID, amount, data, blockNumber, timestamp interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, depositNonce, resourceID, amount, data, blockNumber)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleDeposit", reflect.TypeOf((*MockDepositHandler)(nil).HandleDeposit), sourceID, depositNonce, resourceID, amount, data, blockNumber, timestamp)
 }

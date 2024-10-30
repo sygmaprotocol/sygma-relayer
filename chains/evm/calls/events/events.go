@@ -5,6 +5,7 @@ package events
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -59,4 +60,6 @@ type Deposit struct {
 	// ERC721Handler: responds with deposited token metadata acquired by calling a tokenURI method in the token contract
 	// GenericHandler: responds with the raw bytes returned from the call to the target contract
 	HandlerResponse []byte
+	// Timestamp is the timestamp of the block that the deposit event is in
+	Timestamp time.Time
 }

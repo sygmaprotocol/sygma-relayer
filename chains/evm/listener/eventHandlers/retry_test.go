@@ -157,6 +157,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_FetchDepositFails_ExecutionContinues
 		d.Data,
 		d.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{
 		Data: transfer.TransferMessageData{
 			DepositNonce: 2,
@@ -202,6 +203,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, fmt.Errorf("error"))
@@ -213,6 +215,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_HandleDepositFails_ExecutionContinue
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -254,7 +257,8 @@ func (s *RetryV1EventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinu
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
-	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID interface{}) {
+		gomock.Any(),
+	).Do(func(sourceID, destID, nonce, resourceID, calldata, handlerResponse, msgID, timestamp interface{}) {
 		panic("error")
 	})
 	s.mockDepositHandler.EXPECT().HandleDeposit(
@@ -265,6 +269,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_HandlingRetryPanics_ExecutionContinu
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -307,6 +312,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_MultipleDeposits() {
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, nil)
@@ -318,6 +324,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_MultipleDeposits() {
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)
@@ -362,6 +369,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_MultipleDeposits_ExecutedIgnored() {
 		d1.Data,
 		d1.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 1,
 	}}, nil)
@@ -374,6 +382,7 @@ func (s *RetryV1EventHandlerTestSuite) Test_MultipleDeposits_ExecutedIgnored() {
 		d2.Data,
 		d2.HandlerResponse,
 		msgID,
+		gomock.Any(),
 	).Return(&message.Message{Data: transfer.TransferMessageData{
 		DepositNonce: 2,
 	}}, nil)

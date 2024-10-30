@@ -6,6 +6,7 @@ package listener
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ChainSafe/sygma-relayer/chains/substrate/events"
 	"github.com/centrifuge/go-substrate-rpc-client/v4/registry/parser"
@@ -56,7 +57,16 @@ func (eh *SystemUpdateEventHandler) HandleEvents(startBlock *big.Int, endBlock *
 }
 
 type DepositHandler interface {
-	HandleDeposit(sourceID uint8, destID types.U8, nonce types.U64, resourceID types.Bytes32, calldata []byte, transferType types.U8, messageID string) (*message.Message, error)
+	HandleDeposit(
+		sourceID uint8,
+		destID types.U8,
+		nonce types.U64,
+		resourceID types.Bytes32,
+		calldata []byte,
+		transferType types.U8,
+		messageID string,
+		timestamp time.Time,
+	) (*message.Message, error)
 }
 
 type FungibleTransferEventHandler struct {
@@ -115,7 +125,8 @@ func (eh *FungibleTransferEventHandler) ProcessDeposits(startBlock *big.Int, end
 				}
 
 				messageID := fmt.Sprintf("%d-%d-%d-%d", eh.domainID, d.DestDomainID, startBlock, endBlock)
-				m, err := eh.depositHandler.HandleDeposit(eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID)
+				m, err := eh.depositHandler.HandleDeposit(
+					eh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID, d.Timestamp)
 				if err != nil {
 					log.Error().Err(err).Msgf("%v", err)
 					return
@@ -202,7 +213,7 @@ func (rh *RetryEventHandler) HandleEvents(startBlock *big.Int, endBlock *big.Int
 
 						messageID := fmt.Sprintf("retry-%d-%d-%d-%d", rh.domainID, d.DestDomainID, startBlock, endBlock)
 						m, err := rh.depositHandler.HandleDeposit(
-							rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID,
+							rh.domainID, d.DestDomainID, d.DepositNonce, d.ResourceID, d.CallData, d.TransferType, messageID, d.Timestamp,
 						)
 						if err != nil {
 							return err

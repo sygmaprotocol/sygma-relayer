@@ -77,9 +77,9 @@ func Run() error {
 	configFlag := viper.GetString(config.ConfigFlagName)
 	configURL := viper.GetString("config-url")
 
-	configuration := &config.Config{}
+	var configuration *config.Config
 	if configURL != "" {
-		configuration, err = config.GetSharedConfigFromNetwork(configURL, configuration)
+		configuration, err = config.GetSharedConfigFromNetwork(configURL)
 		panicOnError(err)
 	}
 
@@ -157,14 +157,16 @@ func Run() error {
 			log.Error().Msgf("Error shutting down meter provider: %v", err)
 		}
 	}()
-	sygmaMetrics, err := metrics.NewSygmaMetrics(mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sygmaMetrics, err := metrics.NewSygmaMetrics(ctx, mp.Meter("relayer-metric-provider"), configuration.RelayerConfig.Env, configuration.RelayerConfig.Id, Version)
 	if err != nil {
 		panic(err)
 	}
 	msgChan := make(chan []*message.Message)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	domains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
@@ -186,20 +188,16 @@ func Run() error {
 					UpperLimitFeePerGas: config.MaxGasPrice,
 					GasPriceFactor:      config.GasMultiplier,
 				})
-				t := monitored.NewMonitoredTransactor(transaction.NewTransaction, gasPricer, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				t := monitored.NewMonitoredTransactor(*config.GeneralChainConfig.Id, transaction.NewTransaction, gasPricer, sygmaMetrics, client, config.MaxGasPrice, config.GasIncreasePercentage)
 				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
 				for _, handler := range config.Handlers {
 					switch handler.Type {
-					case "erc20":
+					case "erc20", "native":
 						{
 							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.Erc20DepositHandler{})
-						}
-					case "permissionedGeneric":
-						{
-							depositHandler.RegisterDepositHandler(handler.Address, &depositHandlers.GenericDepositHandler{})
 						}
 					case "permissionlessGeneric":
 						{
@@ -233,7 +231,7 @@ func Run() error {
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(retry.RetryMessageType, executor.NewRetryMessageHandler(depositEventHandler, client, propStore, config.BlockConfirmations, msgChan))
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
-				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64())
+				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64(), config.TransferGas)
 
 				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
 				if err != nil {
@@ -366,7 +364,7 @@ func Run() error {
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
 
-	r := relayer.NewRelayer(domains)
+	r := relayer.NewRelayer(domains, sygmaMetrics)
 	go r.Start(ctx, msgChan)
 
 	sysErr := make(chan os.Signal, 1)

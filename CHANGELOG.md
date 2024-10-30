@@ -1,5 +1,65 @@
 # Changelog
 
+## [2.5.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.1...v2.5.0) (2024-10-23)
+
+
+### Features
+
+* match configs by domainID ([#375](https://github.com/sygmaprotocol/sygma-relayer/issues/375)) ([f695875](https://github.com/sygmaprotocol/sygma-relayer/commit/f6958751cf3838aedca255d8469525fa3056f2ce))
+
+
+### Bug Fixes
+
+* enable setting custom transfer gas per chain ([#376](https://github.com/sygmaprotocol/sygma-relayer/issues/376)) ([0b38483](https://github.com/sygmaprotocol/sygma-relayer/commit/0b3848362c193ba4463dd14e6a52748063acd1b7))
+* panic on shared config network fetching ([#378](https://github.com/sygmaprotocol/sygma-relayer/issues/378)) ([6cd6397](https://github.com/sygmaprotocol/sygma-relayer/commit/6cd6397f02c63589e4fdb4d8326a45283a69e029))
+
+
+### Miscellaneous
+
+* Access Secrets based on specific environments ([#367](https://github.com/sygmaprotocol/sygma-relayer/issues/367)) ([eed1e97](https://github.com/sygmaprotocol/sygma-relayer/commit/eed1e97d4cb09c9c2920aedcdec3801157629e94))
+* Update version of Substrate pallet  ([#377](https://github.com/sygmaprotocol/sygma-relayer/issues/377)) ([4a3613b](https://github.com/sygmaprotocol/sygma-relayer/commit/4a3613b7e6e853c6c83c57c830fd78b2a49830b3))
+
+## [2.4.1](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.0...v2.4.1) (2024-09-18)
+
+
+### Bug Fixes
+
+* add generic call gas limit buffer ([#364](https://github.com/sygmaprotocol/sygma-relayer/issues/364)) ([3f01dae](https://github.com/sygmaprotocol/sygma-relayer/commit/3f01dae4cc69f46afd5c308c463ed6ae42a9f5f6))
+
+## [2.4.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.3.0...v2.4.0) (2024-09-16)
+
+
+### Features
+
+* treat native handler as erc20 ([#361](https://github.com/sygmaprotocol/sygma-relayer/issues/361)) ([d292ca0](https://github.com/sygmaprotocol/sygma-relayer/commit/d292ca0909459d2ad272bc76756996ed0333be63))
+
+
+### Bug Fixes
+
+* remove invalid frost resharing ([#363](https://github.com/sygmaprotocol/sygma-relayer/issues/363)) ([491f4f4](https://github.com/sygmaprotocol/sygma-relayer/commit/491f4f4367b5db716898c1157a1f2d66f0d5559a))
+* remove peer as well as addresses from peerstore ([#359](https://github.com/sygmaprotocol/sygma-relayer/issues/359)) ([fca7423](https://github.com/sygmaprotocol/sygma-relayer/commit/fca74235f8a1b10e123e41d580715fa889fbc3fe))
+
+## [2.3.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.2.0...v2.3.0) (2024-09-03)
+
+
+### Features
+
+* erc20 additional data ([#356](https://github.com/sygmaprotocol/sygma-relayer/issues/356)) ([74f3c5b](https://github.com/sygmaprotocol/sygma-relayer/commit/74f3c5b30e7cdc62600bffba45dbb6416bea5e09))
+* upload btc execution metadata to ipfs ([#339](https://github.com/sygmaprotocol/sygma-relayer/issues/339)) ([ff55000](https://github.com/sygmaprotocol/sygma-relayer/commit/ff55000d8e78f2138fd3d5849a8ae110429508cd))
+
+
+### Bug Fixes
+
+* frost key resharing ([#346](https://github.com/sygmaprotocol/sygma-relayer/issues/346)) ([7b35e11](https://github.com/sygmaprotocol/sygma-relayer/commit/7b35e11a5eaaa5d76ed01a5030432a70ee69d0c8))
+* return error when upload to ipfs fails ([#350](https://github.com/sygmaprotocol/sygma-relayer/issues/350)) ([8aff649](https://github.com/sygmaprotocol/sygma-relayer/commit/8aff6493514ce260563fe3d143079ca88b36ce29))
+* treat coordinator missing as a warn log ([#352](https://github.com/sygmaprotocol/sygma-relayer/issues/352)) ([25c41f5](https://github.com/sygmaprotocol/sygma-relayer/commit/25c41f5ba0df0801636ccd8d3496f41e466dacab))
+
+
+### Miscellaneous
+
+* add ipfs node to docker-compose ([#351](https://github.com/sygmaprotocol/sygma-relayer/issues/351)) ([09039b5](https://github.com/sygmaprotocol/sygma-relayer/commit/09039b53c05e6ded762650eae31086a28e8df109))
+* update fees docs ([#343](https://github.com/sygmaprotocol/sygma-relayer/issues/343)) ([6cfbbcc](https://github.com/sygmaprotocol/sygma-relayer/commit/6cfbbccbd1e0e699433a767f44870a45938e3a29))
+
 ## [2.2.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.1.2...v2.2.0) (2024-07-24)
 
 

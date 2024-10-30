@@ -6,6 +6,7 @@ package depositHandlers
 import (
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 
@@ -21,7 +22,8 @@ func (dh *Erc721DepositHandler) HandleDeposit(
 	nonce uint64,
 	resourceID [32]byte,
 	calldata, handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	if len(calldata) < 64 {
 		err := errors.New("invalid calldata length: less than 84 bytes")
 		return nil, err
@@ -67,5 +69,7 @@ func (dh *Erc721DepositHandler) HandleDeposit(
 			Type:         transfer.NonFungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType), nil
+		transfer.TransferMessageType,
+		timestamp,
+	), nil
 }

@@ -66,8 +66,9 @@ func GetConfigFromFile(path string, config *Config) (*Config, error) {
 }
 
 // GetSharedConfigFromNetwork fetches shared configuration from URL and parses it.
-func GetSharedConfigFromNetwork(url string, config *Config) (*Config, error) {
+func GetSharedConfigFromNetwork(url string) (*Config, error) {
 	rawConfig := RawConfig{}
+	config := &Config{}
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -97,25 +98,68 @@ func processRawConfig(rawConfig RawConfig, config *Config) (*Config, error) {
 	if err != nil {
 		return config, err
 	}
+	if config == nil {
+		config := &Config{}
+		config.RelayerConfig = relayerConfig
+		config.ChainConfigs = rawConfig.ChainConfigs
+		return config, nil
+	}
 
 	chainConfigs := make([]map[string]interface{}, 0)
 	for i, chain := range rawConfig.ChainConfigs {
-		if i < len(config.ChainConfigs) {
-			err := mergo.Merge(&chain, config.ChainConfigs[i])
-			if err != nil {
-				return config, err
-			}
+		if chain["id"] == 0 || chain["id"] == nil {
+			return config, fmt.Errorf("chain 'id' not configured for chain %d", i)
 		}
-
 		if chain["type"] == "" || chain["type"] == nil {
 			return config, fmt.Errorf("chain 'type' must be provided for every configured chain")
 		}
+
+		chainConfig, err := findChainConfig(chain["id"], config.ChainConfigs)
+		if err != nil {
+			return config, err
+		}
+
+		err = mergo.Merge(&chain, chainConfig)
+		if err != nil {
+			return config, err
+		}
+
 		chainConfigs = append(chainConfigs, chain)
 	}
 
 	config.ChainConfigs = chainConfigs
 	config.RelayerConfig = relayerConfig
 	return config, nil
+}
+
+func findChainConfig(id interface{}, configs []map[string]interface{}) (interface{}, error) {
+	for _, config := range configs {
+		if compareDomainID(id, config["id"]) {
+			return config, nil
+		}
+	}
+
+	return nil, fmt.Errorf("missing chain %v", id)
+}
+
+func compareDomainID(a, b interface{}) bool {
+	switch a := a.(type) {
+	case int:
+		switch b := b.(type) {
+		case int:
+			return a == b
+		case float64:
+			return float64(a) == b
+		}
+	case float64:
+		switch b := b.(type) {
+		case int:
+			return a == float64(b)
+		case float64:
+			return a == b
+		}
+	}
+	return false
 }
 
 var (

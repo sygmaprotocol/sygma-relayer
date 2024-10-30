@@ -4,6 +4,8 @@
 package depositHandlers
 
 import (
+	"time"
+
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
@@ -17,7 +19,8 @@ func (dh *Erc1155DepositHandler) HandleDeposit(
 	nonce uint64,
 	resourceID [32]byte,
 	calldata, handlerResponse []byte,
-	messageID string) (*message.Message, error) {
+	messageID string,
+	timestamp time.Time) (*message.Message, error) {
 	erc1155Type, err := GetErc1155Type()
 	if err != nil {
 		return nil, err
@@ -46,7 +49,9 @@ func (dh *Erc1155DepositHandler) HandleDeposit(
 			Type:         transfer.SemiFungibleTransfer,
 		},
 		messageID,
-		transfer.TransferMessageType), nil
+		transfer.TransferMessageType,
+		timestamp,
+	), nil
 }
 
 func GetErc1155Type() (abi.Arguments, error) {

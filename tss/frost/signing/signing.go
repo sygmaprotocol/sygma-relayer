@@ -195,12 +195,11 @@ func (s *Signing) processEndMessage(ctx context.Context) error {
 		select {
 		case <-s.Done:
 			{
-				s.Log.Info().Msg("Successfully generated signature")
-
 				result, err := s.Handler.Result()
 				if err != nil {
 					return err
 				}
+				s.Log.Info().Msg("Successfully generated signature")
 				signature, _ := result.(taproot.Signature)
 
 				s.resultChn <- Signature{

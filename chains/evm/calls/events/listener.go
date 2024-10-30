@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,6 +22,7 @@ type ChainClient interface {
 	FetchEventLogs(ctx context.Context, contractAddress common.Address, event string, startBlock *big.Int, endBlock *big.Int) ([]ethTypes.Log, error)
 	WaitAndReturnTxReceipt(h common.Hash) (*ethTypes.Receipt, error)
 	LatestBlock() (*big.Int, error)
+	BlockByNumber(ctx context.Context, number *big.Int) (*ethTypes.Block, error)
 }
 
 type Listener struct {
@@ -47,30 +49,36 @@ func (l *Listener) FetchDeposits(ctx context.Context, contractAddress common.Add
 	deposits := make([]*Deposit, 0)
 
 	for _, dl := range logs {
-		d, err := l.unpackDeposit(l.abi, dl.Data)
+		d, err := l.parseDeposit(ctx, dl)
 		if err != nil {
 			log.Error().Msgf("failed unpacking deposit event log: %v", err)
 			continue
 		}
 
-		d.SenderAddress = common.BytesToAddress(dl.Topics[1].Bytes())
 		log.Debug().Msgf("Found deposit log in block: %d, TxHash: %s, contractAddress: %s, sender: %s", dl.BlockNumber, dl.TxHash, dl.Address, d.SenderAddress)
-
 		deposits = append(deposits, d)
 	}
 
 	return deposits, nil
 }
 
-func (l *Listener) unpackDeposit(abi abi.ABI, data []byte) (*Deposit, error) {
-	var dl Deposit
-
-	err := abi.UnpackIntoInterface(&dl, "Deposit", data)
+func (l *Listener) parseDeposit(ctx context.Context, dl ethTypes.Log) (*Deposit, error) {
+	var d Deposit
+	err := l.abi.UnpackIntoInterface(&d, "Deposit", dl.Data)
 	if err != nil {
 		return &Deposit{}, err
 	}
 
-	return &dl, nil
+	d.SenderAddress = common.BytesToAddress(dl.Topics[1].Bytes())
+	block, err := l.client.BlockByNumber(ctx, new(big.Int).SetUint64(dl.BlockNumber))
+	if err == nil {
+		log.Warn().Msgf("Failed fetching block with number %d because of: %+v", dl.BlockNumber, err)
+		d.Timestamp = time.Unix(int64(block.Time()), 0)
+	} else {
+		d.Timestamp = time.Now()
+	}
+
+	return &d, nil
 }
 
 func (l *Listener) FetchRetryDepositEvents(event RetryV1Event, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
@@ -99,11 +107,12 @@ func (l *Listener) FetchRetryDepositEvents(event RetryV1Event, bridgeAddress com
 			continue
 		}
 
-		var depositEvent Deposit
-		err := l.abi.UnpackIntoInterface(&depositEvent, "Deposit", lg.Data)
-		if err == nil {
-			depositEvents = append(depositEvents, depositEvent)
+		d, err := l.parseDeposit(context.Background(), *lg)
+		if err != nil {
+			log.Error().Msgf("failed unpacking deposit event log: %v", err)
+			continue
 		}
+		depositEvents = append(depositEvents, *d)
 	}
 
 	return depositEvents, nil
