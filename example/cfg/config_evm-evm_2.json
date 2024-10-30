@@ -24,23 +24,23 @@
       "type": "evm",
       "endpoint": "ws://evm1-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
-      "retry": "0x8E85C30C137953Ce6804E16E73061E408E580372",
+      "retry": "0xAD825082B91980E7C8908652269c96a47D687cC5",
       "handlers": [
         {
           "type": "erc20",
-          "address": "0x02091EefF969b33A5CE8A729DaE325879bf76f90"
-        },
-        {
-          "type": "erc721",
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
+          "type": "erc721",
+          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+        },
+        {
           "type": "erc1155",
-          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
+          "address": "0xE54Dc792c226AEF99D6086527b98b36a4ADDe56a"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x0047F2dBE11537aD513DCcdb07728D5d4DB68308"
+          "address": "0x94e9070f0354b69E7FB583134A820949A390D341"
         }
       ],
       "gasLimit": 9000000,
@@ -54,23 +54,23 @@
       "type": "evm",
       "endpoint": "ws://evm2-1:8545",
       "bridge": "0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68",
-      "retry": "0x8E85C30C137953Ce6804E16E73061E408E580372",
+      "retry": "0xAD825082B91980E7C8908652269c96a47D687cC5",
       "handlers": [
         {
           "type": "erc20",
-          "address": "0x02091EefF969b33A5CE8A729DaE325879bf76f90"
-        },
-        {
-          "type": "erc721",
           "address": "0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"
         },
         {
+          "type": "erc721",
+          "address": "0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"
+        },
+        {
           "type": "erc1155",
-          "address": "0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"
+          "address": "0xE54Dc792c226AEF99D6086527b98b36a4ADDe56a"
         },
         {
           "type": "permissionlessGeneric",
-          "address": "0x0047F2dBE11537aD513DCcdb07728D5d4DB68308"
+          "address": "0x94e9070f0354b69E7FB583134A820949A390D341"
         }
       ],
       "gasLimit": 9000000,
