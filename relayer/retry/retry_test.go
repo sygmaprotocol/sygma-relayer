@@ -48,11 +48,11 @@ func (s *FilterDepositsTestSuite) Test_NoValidDeposits() {
 		},
 	}
 
-	deposits, err := retry.FilterDeposits(s.mockPropStorer, deposits, validResource, validDomain)
+	d, err := retry.FilterDeposits(s.mockPropStorer, deposits, validResource, validDomain)
 
-	expectedDeposits := make(map[uint8][]*message.Message)
+	expectedDeposits := make([]*message.Message, 0)
 	s.Nil(err)
-	s.Equal(deposits, expectedDeposits)
+	s.Equal(d, expectedDeposits)
 }
 
 func (s *FilterDepositsTestSuite) Test_FilterDeposits() {
@@ -124,10 +124,9 @@ func (s *FilterDepositsTestSuite) Test_FilterDeposits() {
 	s.mockPropStorer.EXPECT().PropStatus(invalidDomain, validDomain, failedExecutionCheckNonce).Return(store.PendingProp, fmt.Errorf("error"))
 	s.mockPropStorer.EXPECT().StorePropStatus(invalidDomain, validDomain, pendingNonce, store.FailedProp).Return(nil)
 
-	deposits, err := retry.FilterDeposits(s.mockPropStorer, deposits, validResource, validDomain)
+	d, err := retry.FilterDeposits(s.mockPropStorer, deposits, validResource, validDomain)
 
-	expectedDeposits := make(map[uint8][]*message.Message)
-	expectedDeposits[validDomain] = []*message.Message{
+	expectedDeposits := []*message.Message{
 		{
 			Source:      invalidDomain,
 			Destination: validDomain,
@@ -146,5 +145,5 @@ func (s *FilterDepositsTestSuite) Test_FilterDeposits() {
 		},
 	}
 	s.Nil(err)
-	s.Equal(deposits, expectedDeposits)
+	s.Equal(d, expectedDeposits)
 }

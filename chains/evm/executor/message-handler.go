@@ -276,12 +276,10 @@ func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Pro
 	if err != nil {
 		return nil, err
 	}
-
-	for _, deposits := range filteredDeposits {
-		go func(d []*message.Message) {
-			h.msgChan <- d
-		}(deposits)
+	if len(filteredDeposits) == 0 {
+		return nil, nil
 	}
 
+	h.msgChan <- filteredDeposits
 	return nil, nil
 }

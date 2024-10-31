@@ -28,18 +28,19 @@ type PropStorer interface {
 	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
 }
 
+// FilterDeposits filters deposits per domain and resource
+// that are to be retried.
 func FilterDeposits(
 	propStorer PropStorer,
 	domainDeposits map[uint8][]*message.Message,
 	resourceID [32]byte,
-	destination uint8) (map[uint8][]*message.Message, error) {
-	filteredDomainDeposits := make(map[uint8][]*message.Message)
+	destination uint8) ([]*message.Message, error) {
+	filteredDeposits := make([]*message.Message, 0)
 	for domain, deposits := range domainDeposits {
 		if domain != destination {
 			continue
 		}
 
-		filteredDeposits := []*message.Message{}
 		for _, deposit := range deposits {
 			data := deposit.Data.(transfer.TransferMessageData)
 			if data.ResourceId != resourceID {
@@ -58,13 +59,8 @@ func FilterDeposits(
 
 			filteredDeposits = append(filteredDeposits, deposit)
 		}
-		if len(filteredDeposits) == 0 {
-			continue
-		}
-
-		filteredDomainDeposits[domain] = filteredDeposits
 	}
-	return filteredDomainDeposits, nil
+	return filteredDeposits, nil
 }
 
 func isExecuted(msg *message.Message, propStorer PropStorer) (bool, error) {

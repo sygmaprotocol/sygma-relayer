@@ -700,7 +700,7 @@ func (s *RetryMessageHandlerTestSuite) SetupTest() {
 	s.mockBlockFetcher = mock_executor.NewMockBlockFetcher(ctrl)
 	s.mockDepositProcessor = mock_executor.NewMockDepositProcessor(ctrl)
 	s.mockPropStorer = mock_executor.NewMockPropStorer(ctrl)
-	s.msgChan = make(chan []*message.Message)
+	s.msgChan = make(chan []*message.Message, 1)
 	s.messageHandler = executor.NewRetryMessageHandler(
 		s.mockDepositProcessor,
 		s.mockBlockFetcher,
