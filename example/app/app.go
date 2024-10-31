@@ -190,6 +190,7 @@ func Run() error {
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewFrostKeygenEventHandler(l, tssListener, coordinator, host, communication, frostKeyshareStore, frostAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, frostKeyshareStore, bridgeAddress))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryV1EventHandler(l, tssListener, depositHandler, propStore, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, msgChan))
 				if config.Retry != "" {
 					eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryV2EventHandler(l, tssListener, common.HexToAddress(config.Retry), *config.GeneralChainConfig.Id, msgChan))
 				}
@@ -245,6 +246,7 @@ func Run() error {
 				depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, substrateListener.FungibleTransferHandler)
 				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
 				depositEventHandler := substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn)
+				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, msgChan))
 				eventHandlers = append(eventHandlers, depositEventHandler)
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
