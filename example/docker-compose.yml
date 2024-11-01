@@ -85,9 +85,9 @@ services:
       logging: "promtail"
       logging_jobname: "containerlogs"
     ports:
-      - "4001:4001" 
-      - "5002:5001" 
-      - "8080:8080" 
+      - "4001:4001"
+      - "5002:5001"
+      - "8080:8080"
     logging: *default-logging
 
   relayer1:
@@ -160,8 +160,8 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./config/grafana/datasources/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ./config/grafana/plugins/app.yaml:/etc/grafana/provisioning/plugins/app.yaml
+      - ./grafana/datasources/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/plugins/app.yaml:/etc/grafana/provisioning/plugins/app.yaml
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -177,14 +177,14 @@ services:
       - 3100:3100
     command: -config.file=/etc/loki/loki.yaml
     volumes:
-      - ./config/loki/loki.yaml:/etc/loki/loki.yaml
+      - ./loki/loki.yaml:/etc/loki/loki.yaml
     logging: *default-logging
 
   promtail:
     image:  grafana/promtail:3.0.0
     container_name: promtail
     volumes:
-      - ./config/promtail/promtail.yaml:/etc/promtail/docker-config.yaml
+      - ./promtail/promtail.yaml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/docker-config.yaml
