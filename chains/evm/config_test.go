@@ -102,6 +102,7 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfigWithCustomTxParams() {
 		"name":        "evm1",
 		"from":        "address",
 		"bridge":      "bridgeAddress",
+		"retry":       "retryAddress",
 		"frostKeygen": "frostKeygen",
 		"handlers": []evm.HandlerConfig{
 			{
@@ -136,6 +137,7 @@ func (s *NewEVMConfigTestSuite) Test_ValidConfigWithCustomTxParams() {
 			Id:       id,
 		},
 		Bridge:      "bridgeAddress",
+		Retry:       "retryAddress",
 		FrostKeygen: "frostKeygen",
 		Handlers: []evm.HandlerConfig{
 			{

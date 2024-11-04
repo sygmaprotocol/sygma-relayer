@@ -12,11 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ChainSafe/sygma-relayer/chains"
 	"github.com/ChainSafe/sygma-relayer/chains/btc"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/mempool"
 	"github.com/ChainSafe/sygma-relayer/chains/btc/uploader"
 	substrateListener "github.com/ChainSafe/sygma-relayer/chains/substrate/listener"
 	substratePallet "github.com/ChainSafe/sygma-relayer/chains/substrate/pallet"
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
 	propStore "github.com/ChainSafe/sygma-relayer/store"
 	"github.com/ChainSafe/sygma-relayer/tss"
@@ -132,40 +134,32 @@ func Run() error {
 	}
 
 	msgChan := make(chan []*message.Message)
-	chains := make(map[uint8]relayer.RelayedChain)
+	domains := make(map[uint8]relayer.RelayedChain)
 	for _, chainConfig := range configuration.ChainConfigs {
 		switch chainConfig["type"] {
 		case "evm":
 			{
 				config, err := evm.NewEVMConfig(chainConfig)
-				if err != nil {
-					panic(err)
-				}
-
+				panicOnError(err)
 				kp, err := secp256k1.NewKeypairFromString(config.GeneralChainConfig.Key)
-				if err != nil {
-					panic(err)
-				}
+				panicOnError(err)
 
 				client, err := evmClient.NewEVMClient(config.GeneralChainConfig.Endpoint, kp)
-				if err != nil {
-					panic(err)
-				}
+				panicOnError(err)
 
 				log.Info().Str("domain", config.String()).Msgf("Registering EVM domain")
 
 				bridgeAddress := common.HexToAddress(config.Bridge)
 				frostAddress := common.HexToAddress(config.FrostKeygen)
-				dummyGasPricer := gas.NewStaticGasPriceDeterminant(client, nil)
-				t := monitored.NewMonitoredTransactor(
-					*config.GeneralChainConfig.Id, transaction.NewTransaction, dummyGasPricer, sygmaMetrics, client, config.MaxGasPrice, config.GasIncreasePercentage)
-				go t.Monitor(ctx, time.Second*15, time.Minute*10, time.Minute)
-
+				gasPricer := gas.NewLondonGasPriceClient(client, &gas.GasPricerOpts{
+					UpperLimitFeePerGas: config.MaxGasPrice,
+					GasPriceFactor:      config.GasMultiplier,
+				})
+				t := monitored.NewMonitoredTransactor(*config.GeneralChainConfig.Id, transaction.NewTransaction, gasPricer, sygmaMetrics, client, config.MaxGasPrice, config.GasIncreasePercentage)
+				go t.Monitor(ctx, time.Minute*3, time.Minute*10, time.Minute)
 				bridgeContract := bridge.NewBridgeContract(client, bridgeAddress, t)
 
 				depositHandler := depositHandlers.NewETHDepositHandler(bridgeContract)
-				mh := message.NewMessageHandler()
-				mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
 				for _, handler := range config.Handlers {
 					switch handler.Type {
 					case "erc20", "native":
@@ -190,17 +184,41 @@ func Run() error {
 				tssListener := events.NewListener(client)
 				eventHandlers := make([]listener.EventHandler, 0)
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, msgChan))
+
+				depositEventHandler := hubEventHandlers.NewDepositEventHandler(depositListener, depositHandler, bridgeAddress, *config.GeneralChainConfig.Id, msgChan)
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewKeygenEventHandler(l, tssListener, coordinator, host, communication, keyshareStore, bridgeAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewFrostKeygenEventHandler(l, tssListener, coordinator, host, communication, frostKeyshareStore, frostAddress, networkTopology.Threshold))
 				eventHandlers = append(eventHandlers, hubEventHandlers.NewRefreshEventHandler(l, nil, nil, tssListener, coordinator, host, communication, connectionGate, keyshareStore, frostKeyshareStore, bridgeAddress))
-				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryEventHandler(l, tssListener, depositHandler, propStore, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, msgChan))
+				eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryV1EventHandler(l, tssListener, depositHandler, propStore, bridgeAddress, *config.GeneralChainConfig.Id, config.BlockConfirmations, msgChan))
+				if config.Retry != "" {
+					eventHandlers = append(eventHandlers, hubEventHandlers.NewRetryV2EventHandler(l, tssListener, common.HexToAddress(config.Retry), *config.GeneralChainConfig.Id, msgChan))
+				}
 				evmListener := listener.NewEVMListener(client, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockConfirmations, config.BlockInterval)
+
+				mh := message.NewMessageHandler()
+				mh.RegisterMessageHandler(retry.RetryMessageType, executor.NewRetryMessageHandler(depositEventHandler, client, propStore, config.BlockConfirmations, msgChan))
+				mh.RegisterMessageHandler(transfer.TransferMessageType, &executor.TransferMessageHandler{})
 				executor := executor.NewExecutor(host, communication, coordinator, bridgeContract, keyshareStore, exitLock, config.GasLimit.Uint64(), config.TransferGas)
 
-				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, config.StartBlock)
+				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
+				if err != nil {
+					panic(err)
+				}
+				if startBlock == nil {
+					head, err := client.LatestBlock()
+					if err != nil {
+						panic(err)
+					}
+					startBlock = head
+				}
+				startBlock, err = chains.CalculateStartingBlock(startBlock, config.BlockInterval)
+				if err != nil {
+					panic(err)
+				}
+				chain := coreEvm.NewEVMChain(evmListener, mh, executor, *config.GeneralChainConfig.Id, startBlock)
 
-				chains[*config.GeneralChainConfig.Id] = chain
+				domains[*config.GeneralChainConfig.Id] = chain
 			}
 		case "substrate":
 			{
@@ -213,38 +231,53 @@ func Run() error {
 				if err != nil {
 					panic(err)
 				}
-
 				keyPair, err := signature.KeyringPairFromSecret(config.GeneralChainConfig.Key, config.SubstrateNetwork)
 				if err != nil {
 					panic(err)
 				}
 
-				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
-
 				substrateClient := substrateClient.NewSubstrateClient(conn, &keyPair, config.ChainID, config.Tip)
 				bridgePallet := substratePallet.NewPallet(substrateClient)
+
+				log.Info().Str("domain", config.String()).Msgf("Registering substrate domain")
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
 				depositHandler := substrateListener.NewSubstrateDepositHandler()
 				depositHandler.RegisterDepositHandler(transfer.FungibleTransfer, substrateListener.FungibleTransferHandler)
 				eventHandlers := make([]coreSubstrateListener.EventHandler, 0)
-				eventHandlers = append(eventHandlers, substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn))
+				depositEventHandler := substrateListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn)
 				eventHandlers = append(eventHandlers, substrateListener.NewRetryEventHandler(l, conn, depositHandler, *config.GeneralChainConfig.Id, msgChan))
-
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				substrateListener := coreSubstrateListener.NewSubstrateListener(conn, eventHandlers, blockstore, sygmaMetrics, *config.GeneralChainConfig.Id, config.BlockRetryInterval, config.BlockInterval)
 
 				mh := message.NewMessageHandler()
 				mh.RegisterMessageHandler(transfer.TransferMessageType, &substrateExecutor.SubstrateMessageHandler{})
+				mh.RegisterMessageHandler(retry.RetryMessageType, substrateExecutor.NewRetryMessageHandler(depositEventHandler, conn, propStore, msgChan))
 
 				sExecutor := substrateExecutor.NewExecutor(host, communication, coordinator, bridgePallet, keyshareStore, conn, exitLock)
-				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, config.StartBlock)
-				chains[*config.GeneralChainConfig.Id] = substrateChain
+
+				startBlock, err := blockstore.GetStartBlock(*config.GeneralChainConfig.Id, config.StartBlock, config.GeneralChainConfig.LatestBlock, config.GeneralChainConfig.FreshStart)
+				if err != nil {
+					panic(err)
+				}
+				if startBlock == nil {
+					head, err := substrateClient.LatestBlock()
+					if err != nil {
+						panic(err)
+					}
+					startBlock = head
+				}
+				startBlock, err = chains.CalculateStartingBlock(startBlock, config.BlockInterval)
+				if err != nil {
+					panic(err)
+				}
+				substrateChain := coreSubstrate.NewSubstrateChain(substrateListener, mh, sExecutor, *config.GeneralChainConfig.Id, startBlock)
+
+				domains[*config.GeneralChainConfig.Id] = substrateChain
 			}
 		case "btc":
 			{
 				log.Info().Msgf("Registering btc domain")
-				time.Sleep(time.Second * 5)
-
 				config, err := btcConfig.NewBtcConfig(chainConfig)
 				if err != nil {
 					panic(err)
@@ -260,17 +293,21 @@ func Run() error {
 				}
 
 				l := log.With().Str("chain", fmt.Sprintf("%v", config.GeneralChainConfig.Name)).Uint8("domainID", *config.GeneralChainConfig.Id)
-				depositHandler := &btcListener.BtcDepositHandler{}
-				eventHandlers := make([]btcListener.EventHandler, 0)
 				resources := make(map[[32]byte]btcConfig.Resource)
 				for _, resource := range config.Resources {
 					resources[resource.ResourceID] = resource
-					eventHandlers = append(eventHandlers, btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resource, config.FeeAddress))
 				}
+				depositHandler := &btcListener.BtcDepositHandler{}
+				depositEventHandler := btcListener.NewFungibleTransferEventHandler(l, *config.GeneralChainConfig.Id, depositHandler, msgChan, conn, resources, config.FeeAddress)
+				eventHandlers := make([]btcListener.EventHandler, 0)
+				eventHandlers = append(eventHandlers, depositEventHandler)
 				listener := btcListener.NewBtcListener(conn, eventHandlers, config, blockstore)
 
 				mempool := mempool.NewMempoolAPI(config.MempoolUrl)
-				mh := &btcExecutor.BtcMessageHandler{}
+
+				mh := message.NewMessageHandler()
+				mh.RegisterMessageHandler(transfer.TransferMessageType, &btcExecutor.FungibleMessageHandler{})
+				mh.RegisterMessageHandler(retry.RetryMessageType, btcExecutor.NewRetryMessageHandler(depositEventHandler, conn, config.BlockConfirmations, propStore, msgChan))
 				uploader := uploader.NewIPFSUploader(configuration.RelayerConfig.UploaderConfig)
 				executor := btcExecutor.NewExecutor(
 					propStore,
@@ -286,7 +323,7 @@ func Run() error {
 					uploader)
 
 				btcChain := btc.NewBtcChain(listener, executor, mh, *config.GeneralChainConfig.Id)
-				chains[*config.GeneralChainConfig.Id] = btcChain
+				domains[*config.GeneralChainConfig.Id] = btcChain
 
 			}
 		default:
@@ -295,7 +332,7 @@ func Run() error {
 	}
 
 	go jobs.StartCommunicationHealthCheckJob(host, configuration.RelayerConfig.MpcConfig.CommHealthCheckInterval, sygmaMetrics)
-	r := relayer.NewRelayer(chains, sygmaMetrics)
+	r := relayer.NewRelayer(domains, sygmaMetrics)
 
 	go r.Start(ctx, msgChan)
 
@@ -310,4 +347,10 @@ func Run() error {
 	log.Info().Msgf("terminating got ` [%v] signal", sig)
 	return nil
 
+}
+
+func panicOnError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

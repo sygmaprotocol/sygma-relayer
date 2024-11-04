@@ -25,7 +25,7 @@ type BtcChain struct {
 
 	listener EventListener
 	executor *executor.Executor
-	mh       *executor.BtcMessageHandler
+	mh       *message.MessageHandler
 
 	startBlock *big.Int
 	logger     zerolog.Logger
@@ -34,7 +34,7 @@ type BtcChain struct {
 func NewBtcChain(
 	listener EventListener,
 	executor *executor.Executor,
-	mh *executor.BtcMessageHandler,
+	mh *message.MessageHandler,
 	id uint8,
 ) *BtcChain {
 	return &BtcChain{

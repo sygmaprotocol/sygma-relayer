@@ -41,11 +41,6 @@ type MempoolAPI interface {
 	Utxos(address string) ([]mempool.Utxo, error)
 }
 
-type PropStorer interface {
-	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
-	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
-}
-
 type Executor struct {
 	coordinator *tss.Coordinator
 	host        host.Host

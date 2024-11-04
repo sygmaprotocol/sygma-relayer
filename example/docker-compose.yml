@@ -29,17 +29,17 @@ services:
     entrypoint: /cfg/entrypoint/entrypoint.sh
 
   evm1-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.7.0
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm1-v2.10.1
     container_name: evm1-1
-    command: ganache-cli --chainId 1337 -d --db data/ --blockTime 2 > /dev/null
+    command: --chain.chainId 1337 --db data/ --blockTime 2 --m 'black toward wish jar twin produce remember fluid always confirm bacon slush' > /dev/null
     logging:
       driver: none
     ports:
       - "8545:8545"
 
   evm2-1:
-    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.7.0
-    command: ganache-cli --chainId 1338 -d --db data/ --blockTime 2 > /dev/null
+    image: ghcr.io/sygmaprotocol/sygma-solidity:evm2-v2.10.1
+    command: --chain.chainId 1338 --db data/ --blockTime 2 --m 'black toward wish jar twin produce remember fluid always confirm bacon slush' > /dev/null
     container_name: evm2-1
     logging:
       driver: none

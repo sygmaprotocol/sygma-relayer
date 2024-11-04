@@ -26,15 +26,18 @@ type ChainClient interface {
 }
 
 type Listener struct {
-	client ChainClient
-	abi    abi.ABI
+	client   ChainClient
+	abi      abi.ABI
+	retryAbi abi.ABI
 }
 
 func NewListener(client ChainClient) *Listener {
+	retryAbi, _ := abi.JSON(strings.NewReader(consts.RetryABI))
 	abi, _ := abi.JSON(strings.NewReader(consts.BridgeABI))
 	return &Listener{
-		client: client,
-		abi:    abi,
+		client:   client,
+		abi:      abi,
+		retryAbi: retryAbi,
 	}
 }
 
@@ -78,7 +81,7 @@ func (l *Listener) parseDeposit(ctx context.Context, dl ethTypes.Log) (*Deposit,
 	return &d, nil
 }
 
-func (l *Listener) FetchRetryDepositEvents(event RetryEvent, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
+func (l *Listener) FetchRetryDepositEvents(event RetryV1Event, bridgeAddress common.Address, blockConfirmations *big.Int) ([]Deposit, error) {
 	depositEvents := make([]Deposit, 0)
 	retryDepositTxHash := common.HexToHash(event.TxHash)
 	receipt, err := l.client.WaitAndReturnTxReceipt(retryDepositTxHash)
@@ -115,16 +118,38 @@ func (l *Listener) FetchRetryDepositEvents(event RetryEvent, bridgeAddress commo
 	return depositEvents, nil
 }
 
-func (l *Listener) FetchRetryEvents(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryEvent, error) {
+func (l *Listener) FetchRetryV1Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryV1Event, error) {
 	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetrySig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
 	}
 
-	var retryEvents []RetryEvent
+	var retryEvents []RetryV1Event
 	for _, dl := range logs {
-		var event RetryEvent
+		var event RetryV1Event
 		err = l.abi.UnpackIntoInterface(&event, "Retry", dl.Data)
+		if err != nil {
+			log.Error().Msgf(
+				"failed unpacking retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,
+			)
+			continue
+		}
+		retryEvents = append(retryEvents, event)
+	}
+
+	return retryEvents, nil
+}
+
+func (l *Listener) FetchRetryV2Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryV2Event, error) {
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetrySig), startBlock, endBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	var retryEvents []RetryV2Event
+	for _, dl := range logs {
+		var event RetryV2Event
+		err = l.retryAbi.UnpackIntoInterface(&event, "Retry", dl.Data)
 		if err != nil {
 			log.Error().Msgf(
 				"failed unpacking retry event with txhash %s, because of: %+v", dl.TxHash.Hex(), err,

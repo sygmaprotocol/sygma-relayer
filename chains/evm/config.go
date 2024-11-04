@@ -24,6 +24,7 @@ type HandlerConfig struct {
 type EVMConfig struct {
 	GeneralChainConfig    chain.GeneralChainConfig
 	Bridge                string
+	Retry                 string
 	FrostKeygen           string
 	Handlers              []HandlerConfig
 	MaxGasPrice           *big.Int
@@ -40,7 +41,7 @@ type EVMConfig struct {
 func (c *EVMConfig) String() string {
 	privateKey, _ := crypto.HexToECDSA(c.GeneralChainConfig.Key)
 	kp := secp256k1.NewKeypair(*privateKey)
-	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', Bridge: '%s', Handlers: %+v, MaxGasPrice: '%s', GasMultiplier: '%s', GasLimit: '%s', TransferGas: '%d', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s'`,
+	return fmt.Sprintf(`Name: '%s', Id: '%d', Type: '%s', BlockstorePath: '%s', FreshStart: '%t', LatestBlock: '%t', Key address: '%s', Bridge: '%s', Retry: '%s', Handlers: %+v, MaxGasPrice: '%s', GasMultiplier: '%s', GasLimit: '%s', TransferGas: '%d', StartBlock: '%s', BlockConfirmations: '%s', BlockInterval: '%s', BlockRetryInterval: '%s'`,
 		c.GeneralChainConfig.Name,
 		*c.GeneralChainConfig.Id,
 		c.GeneralChainConfig.Type,
@@ -49,6 +50,7 @@ func (c *EVMConfig) String() string {
 		c.GeneralChainConfig.LatestBlock,
 		kp.Address(),
 		c.Bridge,
+		c.Retry,
 		c.Handlers,
 		c.MaxGasPrice,
 		c.GasMultiplier,
@@ -64,6 +66,7 @@ func (c *EVMConfig) String() string {
 type RawEVMConfig struct {
 	chain.GeneralChainConfig `mapstructure:",squash"`
 	Bridge                   string          `mapstructure:"bridge"`
+	Retry                    string          `mapstructure:"retry"`
 	FrostKeygen              string          `mapstructure:"frostKeygen"`
 	Handlers                 []HandlerConfig `mapstrcture:"handlers"`
 	MaxGasPrice              int64           `mapstructure:"maxGasPrice" default:"500000000000"`
@@ -114,6 +117,7 @@ func NewEVMConfig(chainConfig map[string]interface{}) (*EVMConfig, error) {
 		GeneralChainConfig:    c.GeneralChainConfig,
 		Handlers:              c.Handlers,
 		Bridge:                c.Bridge,
+		Retry:                 c.Retry,
 		FrostKeygen:           c.FrostKeygen,
 		BlockRetryInterval:    time.Duration(c.BlockRetryInterval) * time.Second,
 		GasLimit:              big.NewInt(c.GasLimit),
