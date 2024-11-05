@@ -5,12 +5,17 @@ package executor
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 	"github.com/sygmaprotocol/sygma-core/relayer/proposal"
 
+	"github.com/ChainSafe/sygma-relayer/relayer/retry"
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/ChainSafe/sygma-relayer/store"
 )
 
 type BtcTransferProposalData struct {
@@ -26,9 +31,9 @@ type BtcTransferProposal struct {
 	Data        BtcTransferProposalData
 }
 
-type BtcMessageHandler struct{}
+type FungibleMessageHandler struct{}
 
-func (h *BtcMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+func (h *FungibleMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
 	transferMessage := &transfer.TransferMessage{
 		Source:      msg.Source,
 		Destination: msg.Destination,
@@ -69,4 +74,76 @@ func ERC20MessageHandler(msg *transfer.TransferMessage) (*proposal.Proposal, err
 		DepositNonce: msg.Data.DepositNonce,
 		ResourceId:   msg.Data.ResourceId,
 	}, msg.ID, transfer.TransferProposalType), nil
+}
+
+type BlockFetcher interface {
+	GetBlockVerboseTx(*chainhash.Hash) (*btcjson.GetBlockVerboseTxResult, error)
+	GetBestBlockHash() (*chainhash.Hash, error)
+}
+
+type PropStorer interface {
+	StorePropStatus(source, destination uint8, depositNonce uint64, status store.PropStatus) error
+	PropStatus(source, destination uint8, depositNonce uint64) (store.PropStatus, error)
+}
+
+type DepositProcessor interface {
+	ProcessDeposits(blockNumber *big.Int) (map[uint8][]*message.Message, error)
+}
+
+type RetryMessageHandler struct {
+	depositProcessor   DepositProcessor
+	blockFetcher       BlockFetcher
+	blockConfirmations *big.Int
+	propStorer         PropStorer
+	msgChan            chan []*message.Message
+}
+
+func NewRetryMessageHandler(
+	depositProcessor DepositProcessor,
+	blockFetcher BlockFetcher,
+	blockConfirmations *big.Int,
+	propStorer PropStorer,
+	msgChan chan []*message.Message) *RetryMessageHandler {
+	return &RetryMessageHandler{
+		depositProcessor:   depositProcessor,
+		blockFetcher:       blockFetcher,
+		blockConfirmations: blockConfirmations,
+		propStorer:         propStorer,
+		msgChan:            msgChan,
+	}
+}
+
+func (h *RetryMessageHandler) HandleMessage(msg *message.Message) (*proposal.Proposal, error) {
+	retryData := msg.Data.(retry.RetryMessageData)
+	hash, err := h.blockFetcher.GetBestBlockHash()
+	if err != nil {
+		return nil, err
+	}
+	block, err := h.blockFetcher.GetBlockVerboseTx(hash)
+	if err != nil {
+		return nil, err
+	}
+	latestBlock := big.NewInt(block.Height)
+	if latestBlock.Cmp(new(big.Int).Add(retryData.BlockHeight, h.blockConfirmations)) != 1 {
+		return nil, fmt.Errorf(
+			"latest block %s higher than receipt block number + block confirmations %s",
+			latestBlock,
+			new(big.Int).Add(retryData.BlockHeight, h.blockConfirmations),
+		)
+	}
+
+	domainDeposits, err := h.depositProcessor.ProcessDeposits(retryData.BlockHeight)
+	if err != nil {
+		return nil, err
+	}
+	filteredDeposits, err := retry.FilterDeposits(h.propStorer, domainDeposits, retryData.ResourceID, retryData.DestinationDomainID)
+	if err != nil {
+		return nil, err
+	}
+	if len(filteredDeposits) == 0 {
+		return nil, nil
+	}
+
+	h.msgChan <- filteredDeposits
+	return nil, nil
 }

@@ -49,6 +49,7 @@ type EVMClient interface {
 
 type BridgeConfig struct {
 	BridgeAddr common.Address
+	RetryAddr  common.Address
 
 	Erc20Addr        common.Address
 	Erc20HandlerAddr common.Address
@@ -58,12 +59,7 @@ type BridgeConfig struct {
 	Erc20LockReleaseHandlerAddr common.Address
 	Erc20LockReleaseResourceID  [32]byte
 
-	GenericHandlerAddr common.Address
-	AssetStoreAddr     common.Address
-	GenericResourceID  [32]byte
-
-	PermissionlessGenericHandlerAddr common.Address
-	PermissionlessGenericResourceID  [32]byte
+	PermissionlessGenericResourceID [32]byte
 
 	Erc721Addr        common.Address
 	Erc721HandlerAddr common.Address
@@ -83,32 +79,28 @@ type BridgeConfig struct {
 
 var DEFAULT_CONFIG = BridgeConfig{
 	BridgeAddr: common.HexToAddress("0x6CdE2Cd82a4F8B74693Ff5e194c19CA08c2d1c68"),
+	RetryAddr:  common.HexToAddress("0xAD825082B91980E7C8908652269c96a47D687cC5"),
 
-	Erc20Addr:        common.HexToAddress("0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6"),
-	Erc20HandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+	Erc20Addr:        common.HexToAddress("0xA45E01c8D945D47ADa916828828B201d0815b83F"),
+	Erc20HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 	Erc20ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{0}, 31)),
 
-	Erc20LockReleaseAddr:        common.HexToAddress("0x1ED1d77911944622FCcDDEad8A731fd77E94173e"),
-	Erc20LockReleaseHandlerAddr: common.HexToAddress("0x02091EefF969b33A5CE8A729DaE325879bf76f90"),
+	Erc20LockReleaseAddr:        common.HexToAddress("0x783BB8123b8532CC85C8D2deF2f47C55D1e46b46"),
+	Erc20LockReleaseHandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
 	Erc20LockReleaseResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{3}, 31)),
 
-	Erc721Addr:        common.HexToAddress("0xa4640d1315Be1f88aC4F81546AA2C785cf247C31"),
-	Erc721HandlerAddr: common.HexToAddress("0xC2D334e2f27A9dB2Ed8C4561De86C1A00EBf6760"),
+	Erc721Addr:        common.HexToAddress("0x67272Fa6DB7ADa1639736753eD99f9D0C9e1450D"),
+	Erc721HandlerAddr: common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
 	Erc721ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{2}, 31)),
 
-	GenericHandlerAddr: common.HexToAddress("0xF956Ba663bd563f585e00D5973E06b443E5C4D65"),
-	GenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{1}, 31)),
-	AssetStoreAddr:     common.HexToAddress("0xa2451c8553371E754F5e93A440aDcCa1c0DcF395"),
+	PermissionlessGenericResourceID: SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
 
-	PermissionlessGenericHandlerAddr: common.HexToAddress("0x156fA85e1df5d69B0F138dcEbAa5a14ca640FaED"),
-	PermissionlessGenericResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{5}, 31)),
-
-	Erc1155Addr:        common.HexToAddress("0xFfd243c2C27e303e6d96aA4F7b3840Bf7209F0d7"),
-	Erc1155HandlerAddr: common.HexToAddress("0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"),
 	Erc1155ResourceID:  SliceTo32Bytes(common.LeftPadBytes([]byte{4}, 31)),
+	Erc1155HandlerAddr: common.HexToAddress("0xE54Dc792c226AEF99D6086527b98b36a4ADDe56a"),
+	Erc1155Addr:        common.HexToAddress("0x9Fd58882b82EFaD2867f7eaB43539907bc07C360"),
 
-	BasicFeeHandlerAddr: common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
-	FeeRouterAddress:    common.HexToAddress("0xF28c11CB14C6d2B806f99EA8b138F65e74a1Ed66"),
+	BasicFeeHandlerAddr: common.HexToAddress("0x8dA96a8C2b2d3e5ae7e668d0C94393aa8D5D3B94"),
+	FeeRouterAddress:    common.HexToAddress("0x1CcB4231f2ff299E1E049De76F0a1D2B415C563A"),
 	BasicFee:            BasicFee,
 }
 
