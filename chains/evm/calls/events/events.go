@@ -24,7 +24,8 @@ const (
 	KeyRefreshSig        EventSig = "KeyRefresh(string)"
 	ProposalExecutionSig EventSig = "ProposalExecution(uint8,uint64,bytes32,bytes)"
 	FeeChangedSig        EventSig = "FeeChanged(uint256)"
-	RetrySig             EventSig = "Retry(uint8,uint8,uint256,bytes32)"
+	RetryV2Sig           EventSig = "Retry(uint8,uint8,uint256,bytes32)"
+	RetryV1Sig           EventSig = "Retry(string)"
 	FeeHandlerChanged    EventSig = "FeeHandlerChanged(address)"
 )
 
