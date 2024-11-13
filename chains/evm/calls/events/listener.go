@@ -72,9 +72,9 @@ func (l *Listener) parseDeposit(ctx context.Context, dl ethTypes.Log) (*Deposit,
 	d.SenderAddress = common.BytesToAddress(dl.Topics[1].Bytes())
 	block, err := l.client.BlockByNumber(ctx, new(big.Int).SetUint64(dl.BlockNumber))
 	if err == nil {
-		log.Warn().Msgf("Failed fetching block with number %d because of: %+v", dl.BlockNumber, err)
 		d.Timestamp = time.Unix(int64(block.Time()), 0)
 	} else {
+		log.Warn().Msgf("Failed fetching block with number %d because of: %+v", dl.BlockNumber, err)
 		d.Timestamp = time.Now()
 	}
 
@@ -119,7 +119,7 @@ func (l *Listener) FetchRetryDepositEvents(event RetryV1Event, bridgeAddress com
 }
 
 func (l *Listener) FetchRetryV1Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryV1Event, error) {
-	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetrySig), startBlock, endBlock)
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetryV1Sig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (l *Listener) FetchRetryV1Events(ctx context.Context, contractAddress commo
 }
 
 func (l *Listener) FetchRetryV2Events(ctx context.Context, contractAddress common.Address, startBlock *big.Int, endBlock *big.Int) ([]RetryV2Event, error) {
-	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetrySig), startBlock, endBlock)
+	logs, err := l.client.FetchEventLogs(ctx, contractAddress, string(RetryV2Sig), startBlock, endBlock)
 	if err != nil {
 		return nil, err
 	}
