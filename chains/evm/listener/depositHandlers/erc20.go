@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/ChainSafe/sygma-relayer/relayer/transfer"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/sygmaprotocol/sygma-core/relayer/message"
 )
+
+const OPTIONAL_REVERT_GAS = 100000
 
 type Erc20DepositHandler struct{}
 
@@ -49,7 +52,10 @@ func (dh *Erc20DepositHandler) HandleDeposit(
 	metadata := make(map[string]interface{})
 	// append optional message if it exists
 	if len(calldata) > int(96+recipientAddressLength.Int64()) {
-		metadata["gasLimit"] = new(big.Int).SetBytes(calldata[64+recipientAddressLength.Int64() : 96+recipientAddressLength.Int64()]).Uint64()
+		maxFee := new(big.Int).Add(new(big.Int).SetBytes(calldata[64+recipientAddressLength.Int64():96+recipientAddressLength.Int64()]), big.NewInt(OPTIONAL_REVERT_GAS))
+		metadata["gasLimit"] = maxFee.Uint64()
+
+		copy(calldata[64+recipientAddressLength.Int64():96+recipientAddressLength.Int64()], common.LeftPadBytes(maxFee.Bytes(), 32))
 		payload = append(payload, calldata[64+recipientAddressLength.Int64():])
 	}
 
