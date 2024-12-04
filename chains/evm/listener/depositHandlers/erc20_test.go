@@ -37,8 +37,11 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 	optionalMessage := common.LeftPadBytes(maxFee.Bytes(), 32)
 	optionalMessage = append(optionalMessage, []byte("optionalMessage")...)
 
+	optionalMessageWithRevertGas := common.LeftPadBytes(new(big.Int).Add(maxFee, big.NewInt(depositHandlers.OPTIONAL_REVERT_GAS)).Bytes(), 32)
+	optionalMessageWithRevertGas = append(optionalMessageWithRevertGas, []byte("optionalMessage")...)
+
 	metadata := make(map[string]interface{})
-	metadata["gasLimit"] = uint64(200000)
+	metadata["gasLimit"] = uint64(300000)
 
 	calldata := evm.ConstructErc20DepositData(recipientByteSlice, big.NewInt(2))
 	calldata = append(calldata, optionalMessage...)
@@ -65,7 +68,7 @@ func (s *Erc20HandlerTestSuite) TestErc20HandleEvent() {
 			Payload: []interface{}{
 				amountParsed,
 				recipientAddressParsed,
-				optionalMessage,
+				optionalMessageWithRevertGas,
 			},
 			Type:     transfer.FungibleTransfer,
 			Metadata: metadata,
