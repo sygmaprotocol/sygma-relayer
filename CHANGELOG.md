@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.6.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.5.0...v2.6.0) (2024-12-04)
+
+
+### Features
+
+* cross network retry ([#337](https://github.com/sygmaprotocol/sygma-relayer/issues/337)) ([eb43206](https://github.com/sygmaprotocol/sygma-relayer/commit/eb432060ef3fa823437e5039137320ecbbe84cc3))
+* metrics ([#380](https://github.com/sygmaprotocol/sygma-relayer/issues/380)) ([03ec27c](https://github.com/sygmaprotocol/sygma-relayer/commit/03ec27cc9b9ab754279a3c6e7cdacc52ce7606bd))
+
+
+### Bug Fixes
+
+* add optional revert gas to max fee set by user ([#388](https://github.com/sygmaprotocol/sygma-relayer/issues/388)) ([aacf99a](https://github.com/sygmaprotocol/sygma-relayer/commit/aacf99a30ec2b3d8ba10469b3f000e4aad8b9d6b))
+* v1 retry signature ([#386](https://github.com/sygmaprotocol/sygma-relayer/issues/386)) ([ae06d67](https://github.com/sygmaprotocol/sygma-relayer/commit/ae06d6776ef302cf95d25dbc2afaaced476de7f3))
+
+
+### Miscellaneous
+
+* added loki logs to example docker-compose ([#385](https://github.com/sygmaprotocol/sygma-relayer/issues/385)) ([2f772c2](https://github.com/sygmaprotocol/sygma-relayer/commit/2f772c26e1949ba6258689d77b28beb632bebd79))
+
 ## [2.5.0](https://github.com/sygmaprotocol/sygma-relayer/compare/v2.4.1...v2.5.0) (2024-10-23)
 
 
